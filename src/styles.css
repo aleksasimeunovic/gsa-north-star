@@ -210,3 +210,17 @@ select { font: inherit; min-height: 44px; padding: 4px 8px; border: 1px solid va
 /* Land: the map spans the whole width, details below */
 .land-layout[data-map='full'] { flex-direction: column; align-items: stretch; }
 .land-layout[data-map='full'] .land-map, .land-layout[data-map='full'] .land-side { flex: none; width: 100%; }
+
+/* Stretch: inputs, choices and actions fill their space */
+.field input:not([type='file']):not([type='range']), .field textarea, .field select, select { width: 100%; }
+.field input[type='range'] { width: 100%; min-height: 44px; }
+.field input[inputmode='numeric'] { max-width: 12rem; }
+.card, .banner, .compare, .readiness, .table { width: 100%; }
+.radio-group[data-inline] { display: flex; flex-wrap: wrap; gap: 0 24px; }
+.step-nav > .btn { flex: 1 1 0; }
+.step-nav > .banner { flex-basis: 100%; }
+@media (max-width: 599px) {
+  .inline > .btn:not([data-variant='link']), main .stack > div > .btn:not([data-variant='link']) { flex: 1 1 auto; width: 100%; }
+  .radio-group[data-inline] .radio { flex: 1 1 0; border: 1px solid var(--line); padding: 10px 12px; margin: 0; }
+  .radio-group[data-inline] { gap: 8px; }
+}

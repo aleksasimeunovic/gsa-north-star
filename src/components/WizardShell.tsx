@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
-import { en, wiz } from '../copy/en'
+import { useEffect, useState, type ReactNode } from 'react'
+import { en, itemLabel, wiz } from '../copy/en'
 import type { StepId } from '../logic/status'
 import { neighbours } from '../logic/wizard'
+import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
-import { Stack } from '../ui/Layout'
+import { Inline, Stack, Text } from '../ui/Layout'
 import { StatusBadge } from '../ui/StatusBadge'
 import { Stepper } from '../ui/Stepper'
 import { useApp } from './AppContext'
@@ -14,10 +15,19 @@ export function WizardShell({ stepId, children }: { stepId: StepId; children: Re
   const step = steps.find((s) => s.id === stepId)!
   const { index, total, previous, next } = neighbours(steps, stepId)
 
-  const onNext = () => {
-    // Moving on records the step as passed; anything still open stays in readiness.
-    if (step.status !== 'action_required') dispatch({ type: 'confirm_step', stepId })
+  const open = derived.items.filter((i) => i.stepId === stepId && i.status === 'action_required')
+  const [asking, setAsking] = useState(false)
+  useEffect(() => setAsking(false), [stepId])
+
+  const moveOn = () => {
+    setAsking(false)
     if (next) go(next)
+  }
+  const onNext = () => {
+    // Open items: say what's left first. He can still move on; readiness keeps track.
+    if (open.length > 0 && !asking) return setAsking(true)
+    if (open.length === 0) dispatch({ type: 'confirm_step', stepId })
+    moveOn()
   }
 
   return (
@@ -36,15 +46,37 @@ export function WizardShell({ stepId, children }: { stepId: StepId; children: Re
 
       {children}
 
-      {/* Always within reach: sticks to the bottom of the screen. */}
+      {/* Always within reach: sticks to the bottom of the screen. Submit has its own bar. */}
+      {stepId !== 'submit' && (
       <nav className="step-nav" aria-label={wiz.stepNav}>
+        {asking && open.length > 0 && (
+          <Banner tone="attention">
+            <Stack gap="sm">
+              <Text variant="strong">{wiz.stillOpen(open.map((i) => itemLabel(i.id)).join(', '))}</Text>
+              <Inline>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setAsking(false)
+                    // Stay on this step and bring the open item into view.
+                    go(stepId, open[0].id === 'herd' ? 'change-herd' : `item-${open[0].id}`)
+                  }}
+                >
+                  {wiz.finishIt}
+                </Button>
+                <Button onClick={moveOn}>{wiz.later}</Button>
+              </Inline>
+            </Stack>
+          </Banner>
+        )}
         <Button onClick={() => (previous ? go(previous) : go('welcome'))}>{previous ? wiz.back : wiz.backToOverview}</Button>
         {next && (
-          <Button variant="primary" onClick={onNext}>
+          <Button variant={asking ? 'secondary' : 'primary'} onClick={onNext} aria-expanded={open.length > 0 ? asking : undefined}>
             {step.mode === 'confirm' ? wiz.confirmNext : wiz.next}
           </Button>
         )}
       </nav>
+      )}
     </Stack>
   )
 }

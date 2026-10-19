@@ -118,15 +118,18 @@ export function SplitOverlay({ field, d, svgRef, interactive }: { field: Field; 
 /** Controls under the map: slider alternative, crops, undo, confirm. */
 export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft; onConfirm: (s: Split) => void }) {
   const [slider, setSlider] = useState(false)
+  const [tried, setTried] = useState(false)
   const { draft, result } = d
-  const complete = !!result && !!draft.crops[0] && !!draft.crops[1]
+  const same = !!draft.crops[0] && draft.crops[0] === draft.crops[1]
+  const complete = !!result && !!draft.crops[0] && !!draft.crops[1] && !same
+  const cropError = (i: 0 | 1) =>
+    !tried ? undefined : !draft.crops[i] ? wiz.split.chooseError : i === 1 && same ? wiz.split.sameError : undefined
   const options = CROPS.map((c) => ({ value: c, label: en.crops[c] }))
 
   return (
     <Stack gap="sm">
       <Text variant="strong">{wiz.split.title}</Text>
       <Text>{wiz.split.instruction}</Text>
-      <Text variant="small">{wiz.split.guardrail}</Text>
       <div>
         <Note kind="north_star" /> <Note kind="tested" />
       </div>
@@ -163,6 +166,7 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft;
             placeholder={wiz.split.choose}
             options={options}
             value={draft.crops[i] ?? ''}
+            error={cropError(i)}
             onChange={(e) => {
               const crops: [Crop | null, Crop | null] = [...draft.crops]
               crops[i] = (e.target.value || null) as Crop | null
@@ -170,10 +174,16 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft;
             }}
           />
         ))}
-      {!complete && result && <Text variant="small">{wiz.split.missing}</Text>}
       <Inline>
         <Button onClick={d.undo} disabled={!d.canUndo}>{wiz.split.undo}</Button>
-        <Button variant="primary" aria-disabled={!complete} onClick={() => complete && onConfirm(draft)}>
+        <Button
+          variant="primary"
+          onClick={() => {
+            if (complete) return onConfirm(draft)
+            setTried(true)
+            document.querySelector<HTMLElement>('.land-side [aria-invalid], .land-side select')?.focus()
+          }}
+        >
           {wiz.split.confirm}
         </Button>
       </Inline>

@@ -76,6 +76,8 @@ export function riverSplitComplete(s: Scenario, a: Answers): boolean {
   const field = s.fields.find((f) => f.id === 'river')
   const split = a.river.split
   if (!field || !split || !split.crops[0] || !split.crops[1]) return false
+  // Two crops means two different crops.
+  if (split.crops[0] === split.crops[1]) return false
   return splitPolygon(field.polygon, split.line[0], split.line[1]) !== null
 }
 

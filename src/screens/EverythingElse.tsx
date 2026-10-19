@@ -57,6 +57,7 @@ export function EverythingElse() {
   // First year: he chooses measures once; fitting ones start ticked.
   const choosing = items.find((i) => i.id === 'measures')!.status === 'action_required'
   const [chosen, setChosen] = useState<string[]>(fitting.map((m) => m.id))
+  const [measureError, setMeasureError] = useState(false)
 
   return (
     <Stack gap="lg">
@@ -101,14 +102,25 @@ export function EverythingElse() {
                 <Checkbox
                   label={finish.ee.applyFor(en.measures[m.id])}
                   checked={chosen.includes(m.id)}
-                  onChange={(v) => setChosen(v ? [...chosen, m.id] : chosen.filter((x) => x !== m.id))}
+                  onChange={(v) => {
+                    setMeasureError(false)
+                    setChosen(v ? [...chosen, m.id] : chosen.filter((x) => x !== m.id))
+                  }}
                 />
               )}
             </div>
           ))}
           {choosing && (
             <div>
-              <Button onClick={() => dispatch({ type: 'confirm_step', stepId: 'everything_else' })}>{finish.ee.confirmMeasures}</Button>
+              {measureError && <Text variant="strong"><span className="error" role="alert">{finish.ee.chooseOne}</span></Text>}
+              <Button
+                onClick={() => {
+                  if (chosen.length === 0) return setMeasureError(true)
+                  dispatch({ type: 'confirm_step', stepId: 'everything_else' })
+                }}
+              >
+                {finish.ee.confirmMeasures}
+              </Button>
             </div>
           )}
           {others.length > 0 && (

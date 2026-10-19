@@ -131,7 +131,7 @@ export const en = {
   estimate: {
     title: 'Estimated subsidy based on current information',
     about: (d: string) => `About ${d}`,
-    scope: 'Covers only this application.',
+    scope: 'For this application only.',
     caveat: 'The payment still depends on inspection and final eligibility.',
   },
 
@@ -166,13 +166,14 @@ export const ui = {
     greeting: 'Welcome back, Milan',
     greetingFirst: 'Welcome, Milan',
     window: (opens: string, closes: string) => `Applications are open from ${formatDate(opens)} to ${formatDate(closes)}.`,
-    activeFarmer: "You're an active farmer. Your status is renewed for this year.",
+    activeFarmer: "You're an active farmer for this year.",
     notRenewed:
       'Your active farmer status needs renewing before you can submit. You can prepare your application now.',
     changesIntro: (n: number) =>
       n === 1 ? 'One thing may have changed since last year.' : `${WORDS[n] ?? n} things may have changed since last year.`,
-    changesSub: 'We found these in government records. Only you know what is true. Answer each one and your application adapts.',
-    firstYear: "This is your first application in GSA. We've filled in what government records show. Check each part as you go.",
+    changesSub: 'Only you know what is true. Answer each one and your application adapts.',
+    allAnswered: "Thank you, that's everything that changed.",
+    firstYear: "Welcome to your first application in GSA. We've filled in what we could.",
     noChanges: 'Nothing seems to have changed since last year.',
     continue: 'Continue to your application',
   },
@@ -187,8 +188,8 @@ export const ui = {
     done: (n: number) => `Herd confirmed: ${n} cattle.`,
     replaced: 'Before, this meant changing nine ear tags one by one.',
     countLabel: 'How many cattle do you have today?',
-    countHint: 'Count every animal you keep, calves included.',
-    countError: 'Enter a whole number, for example 41.',
+    countHint: 'Include calves.',
+    countError: 'Please enter a whole number, like 41.',
     countSave: 'Save my number',
   },
 
@@ -196,8 +197,8 @@ export const ui = {
     title: 'Your number and the registry are different',
     record: 'Animal registry',
     yours: 'You declared',
-    explain: "The registry stays the official record until it's checked. We keep both numbers. You don't have to settle this yourself.",
-    nonBlocking: "This doesn't stop you submitting. Only the herd part waits for the check.",
+    explain: "We keep both numbers. The registry stays official until it's checked. You don't have to settle this yourself.",
+    nonBlocking: 'You can still submit.',
     askCheck: 'Ask the registry to check',
     checkAsked: 'The registry has been asked to check. You will see the result here.',
     sendJelena: 'Send to Jelena',
@@ -206,7 +207,7 @@ export const ui = {
 
   jelena: {
     title: 'Send this problem to Jelena',
-    who: 'Jelena, your advisor at PSSS Čačak, will see only this problem, with both numbers.',
+    who: 'Jelena, your advisor at PSSS Čačak, sees only this problem.',
     problem: (reg: number, his: number) => `Herd: the animal registry shows ${reg} cattle. Milan declared ${his}.`,
     noteLabel: 'Add a note (optional)',
     noteHint: 'For example, what happened to the animals.',
@@ -221,14 +222,14 @@ export const ui = {
     question: 'Are you growing two crops in the river field?',
     why: "Satellite photos are taken through the season. They can see that part of a field looks different. They can't see what you planted. You decide.",
     done: 'Two crops in the river field.',
-    next: 'Your land step will open on the river field. Draw one line where the second crop starts.',
+    next: 'Next, in Land, draw one line where the second crop starts.',
     choose: 'What would you like to do?',
     redraw: 'Redraw the field',
     redrawHint: 'If the field itself has a different shape now.',
     fieldCheck: 'Ask for a field check',
-    fieldCheckHint: "An inspector checks the field. This part won't count unless it is checked.",
-    redrawNext: 'Your land step will open on the river field so you can redraw it.',
-    fieldCheckDone: "Field check asked for. This part won't count unless it is checked. This doesn't stop you submitting.",
+    fieldCheckHint: "An inspector checks it. Until then, this part won't count.",
+    redrawNext: 'Next, in Land, redraw the river field.',
+    fieldCheckDone: "Field check asked for. Until it's done, this part won't count. You can still submit.",
     openLand: 'Go to the river field',
   },
 
@@ -238,9 +239,9 @@ export const ui = {
     question: 'Did the road take part of this field?',
     why: 'The land map is the official record of land that can get support. When it changes, the area you can claim may change too.',
     done: (ha: string, left: string) => `The road took ${ha}. Your field is now ${left}.`,
-    noIntro: "If the road didn't take this land, ask for a correction. You'll mark the strip on the map in the Land step.",
+    noIntro: "Then ask for a correction. We keep your field as it was until it's checked.",
     askCorrection: 'Ask for a correction',
-    correctionAsked: "Correction asked for. The land map stays the official record until it's checked. This doesn't stop you submitting.",
+    correctionAsked: 'Correction asked for. You can still submit.',
   },
 
   preview: {
@@ -255,7 +256,7 @@ export const ui = {
     label: 'Is my application ready?',
     counts: (action: number, awaiting: number, complete: number) =>
       `${action} need your action · ${awaiting} awaiting verification · ${complete} complete`,
-    open: 'See all items',
+    open: 'See all',
     drawerTitle: 'Your application, item by item',
     groupHint: {
       action_required: 'These stop you submitting until they are done.',
@@ -290,14 +291,17 @@ export const wiz = {
   back: 'Back',
   backToOverview: 'Back to the overview',
   stepNav: 'Step navigation',
+  stillOpen: (what: string) => `${what} still needs your answer. Want to finish it now?`,
+  finishIt: 'Finish it now',
+  later: 'Do it later',
 
   herd: {
     confirm: (n: number) => `You have ${n} cattle.`,
-    confirmHint: 'Nothing else to do here. Confirm and continue.',
+    confirmHint: 'All good with your herd.',
   },
 
   land: {
-    intro: 'Your five fields from last year. Choose a field to see or change it.',
+    intro: 'Your fields from last year. Tap one to see it.',
     introFirst: 'Draw each field once. Next year it will be your starting point.',
     drawnFirst: 'In this prototype, drawing is simplified: confirm when your fields are drawn.',
     drawnButton: 'My fields are drawn',
@@ -324,7 +328,7 @@ export const wiz = {
 
   split: {
     title: 'Split the river field',
-    instruction: 'Draw one line where the sunflowers start. Drag the two ends of the line across the field.',
+    instruction: 'Drag the two ends of the line to where the sunflowers start.',
     keyboardHint: 'Or choose an end and move it with the arrow keys.',
     handleStart: 'Start of the line',
     handleEnd: 'End of the line',
@@ -337,7 +341,8 @@ export const wiz = {
     choose: 'Choose a crop',
     undo: 'Undo',
     confirm: 'Confirm the split',
-    missing: 'Choose a crop for both parts to confirm.',
+    chooseError: 'Choose a crop for this part.',
+    sameError: 'Choose a different crop from part A. Two crops means two different ones.',
     done: (a: string, b: string) => `Split confirmed: ${a} and ${b}.`,
     edit: 'Change the split',
     guardrail: 'The line stays inside your field. Nothing outside land that can get support is counted.',
@@ -346,9 +351,9 @@ export const wiz = {
 
 export const finish = {
   ee: {
-    intro: 'Everything here is the same as last year. Check it once and confirm.',
+    intro: 'Nothing here has changed since last year. Have a quick look and confirm.',
     recordsTitle: 'Your records',
-    recordsNote: 'From government records. You can’t change them here.',
+    recordsNote: 'From government records.',
     holder: 'Holder',
     place: 'Place',
     year: 'Application year',
@@ -362,6 +367,7 @@ export const finish = {
     measuresNoteFirst: 'Choose the measures you apply for. The ones that fit your farm come first and are ticked.',
     applyFor: (name: string) => `Apply for ${name}`,
     confirmMeasures: 'Confirm my measures',
+    chooseOne: 'Tick at least one measure to apply for.',
     paysFor: 'What it pays for',
     yourPart: 'Your part',
     whyFits: 'Why it fits your farm',
@@ -390,16 +396,16 @@ export const finish = {
     },
   },
   submit: {
-    readyTitle: 'Ready to submit',
-    readyNote: 'Nothing needs your action. This does not mean approved.',
-    blockedTitle: "You can't submit yet",
+    readyTitle: "You're ready to submit, Milan.",
+    readyNote: 'Nothing needs your action. Ready does not mean approved.',
+    blockedTitle: 'Almost there. Before you submit:',
     reasons: {
       renewal: 'Renew your active farmer status.',
       action_required: (n: number) => (n === 1 ? '1 thing needs your action:' : `${n} things need your action:`),
       declarations: 'Confirm the declaration below.',
     },
     goRenew: 'Renew now',
-    awaitingNote: "This doesn't stop you submitting. Only that part waits for the check.",
+    awaitingNote: 'These wait for a check. You can still submit.',
     checksTitle: 'What the state will still check',
     checks: {
       eligibility: 'That you and each measure are eligible.',
@@ -408,14 +414,16 @@ export const finish = {
       payment: 'The final amount. The estimate may change.',
     },
     declarationTitle: 'Declaration',
+    signError: 'Tick the box to confirm the declaration. Then you can submit.',
     declaration: 'I confirm under full criminal and material liability that the information in this application is true.',
     button: 'Submit application',
   },
   receipt: {
     title: 'Your application is submitted.',
+    thanks: 'Thank you, Milan. There is nothing more you need to do now.',
     when: (d: string) => `Submitted on ${d}.`,
     reference: 'Reference number',
-    referenceNote: 'Keep this number. (Prototype value.)',
+    referenceNote: 'Keep this number.',
     nextTitle: 'What happens next',
     next: [
       'The state checks your application against its records.',
@@ -430,8 +438,8 @@ export const finish = {
   },
   renewal: {
     title: 'Renew your active farmer status',
-    why: 'You need an active farmer status to submit. Renewing is a separate step, not your application.',
-    prepare: 'You can prepare your application before you renew. Only submitting waits.',
+    why: 'You need it to submit. It takes a moment and is separate from your application.',
+    prepare: 'You can prepare everything first. Only submitting waits.',
     button: 'Renew my status',
     mockNote: 'In this prototype, renewal is one click.',
     doneTitle: "You're an active farmer.",
@@ -461,7 +469,7 @@ export const proto = {
 export const advisor = {
   nav: { queue: 'Problems sent to you', milan: "Milan's application" },
   title: 'Problems sent to you',
-  intro: 'Only problems farmers sent you from GSA. Each one comes with its full context, so you can start on the hard part.',
+  intro: 'Good to see you, Jelena. Only problems farmers sent you are here, each with its context.',
   openCount: (n: number) => (n === 1 ? '1 open' : `${n} open`),
   shortcuts: 'Shortcuts: J next, K previous, O open, X select, H mark as handled.',
   listLabel: 'Cases',

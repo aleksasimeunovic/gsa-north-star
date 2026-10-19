@@ -18,6 +18,7 @@ export function Receipt() {
     <Stack gap="lg">
       <Banner tone="success">
         <h1 tabIndex={-1} id="receipt-title">{finish.receipt.title}</h1>
+        <Text>{finish.receipt.thanks}</Text>
         <Text>{finish.receipt.when(`${formatDateYear(derived.scenario.today)}, ${formatTime(at)}`)}</Text>
       </Banner>
       <Compare items={[{ label: finish.receipt.reference, value: referenceNumber(at) }]} />

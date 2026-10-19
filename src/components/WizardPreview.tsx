@@ -21,7 +21,6 @@ export function WizardPreview() {
     if (waiting.length > 0) return waiting.map((r) => ({ key: r.tested, waiting: true, row: r }))
     return [{ key: step.id, waiting: false, step, includes: rows.map((r) => en.testedSteps[r.tested]) }]
   })
-  const leftOut = assembly.filter((r) => r.becomes === null && r.waitingOn.length === 0)
 
   return (
     <Card id="preview" title={ui.preview.title} headingLevel={2}>
@@ -48,11 +47,6 @@ export function WizardPreview() {
             ),
           )}
         </ol>
-        {leftOut.length > 0 && (
-          <Text variant="small">
-            {ui.preview.leftOut}: {leftOut.map((r) => `${en.testedSteps[r.tested]} (${en.fate[r.fate].toLowerCase()})`).join('. ')}.
-          </Text>
-        )}
       </Stack>
     </Card>
   )

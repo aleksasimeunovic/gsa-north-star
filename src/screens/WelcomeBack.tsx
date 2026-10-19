@@ -58,6 +58,9 @@ export function WelcomeBack() {
           {changes.map((c) => (
             <ChangeCard key={c} id={c} onCarryOn={carryOn} />
           ))}
+          {changes.length > 0 && changes.every((c) => isAnswered(c, state.answers)) && (
+            <Banner tone="success">{ui.welcome.allAnswered}</Banner>
+          )}
           <div>
             <Button variant="primary" onClick={() => go(firstStep.id)}>{ui.welcome.continue}</Button>
           </div>

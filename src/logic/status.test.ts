@@ -37,6 +37,10 @@ describe('status per item', () => {
     expect(item(run('second_year', { type: 'answer_river', answer: 'yes' }, split), 'field_river').status).toBe('complete')
   })
 
+  it('a split with the same crop twice is not two crops', () => {
+    expect(item(run('second_year', { type: 'answer_river', answer: 'yes' }, halfSplit(['wheat', 'wheat'])), 'field_river').status).toBe('action_required')
+  })
+
   it('river no: redraw or field check (flagged part may not count)', () => {
     const no = { type: 'answer_river', answer: 'no' } as const
     expect(item(run('second_year', no), 'field_river').detail).toBe('river_needs_choice')

@@ -1,4 +1,5 @@
-import { en, finish, itemLabel } from '../copy/en'
+import { useState } from 'react'
+import { en, finish, itemLabel, wiz } from '../copy/en'
 import { useApp } from '../components/AppContext'
 import { itemTarget } from '../components/targets'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
@@ -13,11 +14,11 @@ import { Note } from '../ui/Note'
 /** Unambiguous submission: what's done, what waits, what the state checks, one button. */
 export function Submit() {
   const { derived, state, dispatch, go } = useApp()
-  const { items, readiness, changes } = derived
+  const { readiness, changes } = derived
   const signed = state.answers.declarationsSigned
   const check = submitCheck(readiness, signed)
   const actionOrRenewal = check.reasons.filter((r) => r !== 'declarations')
-  const complete = items.filter((i) => i.status === 'complete')
+  const [tried, setTried] = useState(false)
 
   return (
     <Stack gap="lg">
@@ -29,6 +30,7 @@ export function Submit() {
       ) : (
         <Banner tone="attention">
           <Stack gap="sm">
+            <span id="submit-blockers" tabIndex={-1} />
             <Text variant="strong">{finish.submit.blockedTitle}</Text>
             {check.reasons.includes('renewal') && (
               <div>
@@ -74,13 +76,6 @@ export function Submit() {
         </section>
       )}
 
-      <section aria-labelledby="complete-title">
-        <h2 id="complete-title">
-          <StatusBadge status="complete" />
-        </h2>
-        <Text variant="secondary">{complete.map((i) => itemLabel(i.id)).join(', ')}.</Text>
-      </section>
-
       <section aria-labelledby="checks-title">
         <h2 id="checks-title">{finish.submit.checksTitle}</h2>
         <ul>
@@ -91,30 +86,37 @@ export function Submit() {
       </section>
 
       <Card title={finish.submit.declarationTitle} headingLevel={2}>
+        <span id="declaration" tabIndex={-1} />
+        {tried && !signed && (
+          <Text variant="strong" as="p">
+            <span className="error" role="alert">{finish.submit.signError}</span>
+          </Text>
+        )}
         <Checkbox label={finish.submit.declaration} checked={signed} onChange={(v) => dispatch({ type: 'sign_declarations', signed: v })} />
       </Card>
 
-      <Stack gap="sm">
-        {!check.canSubmit && check.reasons.length > 0 && (
-          <Text variant="small" as="p">
-            <span id="submit-why">{check.reasons.map((r) => (r === 'action_required' ? finish.submit.reasons.action_required(readiness.blockers.length).replace(':', '.') : finish.submit.reasons[r])).join(' ')}</span>
-          </Text>
-        )}
-        <div>
-          <Button
+      {/* Same sticky bar as the other steps, with Submit as its one primary action. */}
+      <nav className="step-nav" aria-label={wiz.stepNav}>
+        <Button onClick={() => go('everything_else')}>{wiz.back}</Button>
+        <Button
             variant="primary"
-            aria-disabled={!check.canSubmit}
-            aria-describedby={check.canSubmit ? undefined : 'submit-why'}
             onClick={() => {
-              if (!check.canSubmit) return
+              if (!check.canSubmit) {
+                // Say what's left, right where it is.
+                setTried(true)
+                const first = actionOrRenewal.length ? 'submit-blockers' : 'declaration'
+                const el = document.getElementById(first)
+                el?.scrollIntoView({ block: 'center' })
+                el?.focus({ preventScroll: true })
+                return
+              }
               dispatch({ type: 'submit' })
               go('receipt')
             }}
           >
             {finish.submit.button}
           </Button>
-        </div>
-      </Stack>
+      </nav>
     </Stack>
   )
 }
