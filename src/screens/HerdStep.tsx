@@ -12,14 +12,6 @@ export function HerdStep() {
   const a = state.answers.herd
   const carryOn = () => go('land')
 
-  if (derived.scenario.firstYear && a.answer === null) {
-    return (
-      <Stack gap="md">
-        <Text>{wiz.herd.firstYear(herd.registryCount)}</Text>
-        <ChangeCard id="herd" onCarryOn={carryOn} />
-      </Stack>
-    )
-  }
   if (item.status === 'awaiting_verification') return <ConflictPanel item={item} onCarryOn={carryOn} />
   if (item.status === 'action_required') return <ChangeCard id="herd" onCarryOn={carryOn} />
 

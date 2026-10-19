@@ -192,3 +192,49 @@ export const SCENARIOS: Record<ScenarioId, Scenario> = {
 }
 
 export const SCENARIO_IDS = Object.keys(SCENARIOS) as ScenarioId[]
+
+// Advisor mode: only escalated problems reach Jelena.
+export type CaseKind = 'herd_discrepancy' | 'inherited_parcel'
+
+export interface AdvisorCaseSeed {
+  id: string
+  farmer: string
+  kind: CaseKind
+  sentAt: string
+  note: string
+  /** Record vs farmer's value, when there are two numbers. */
+  values?: { record: number; his: number }
+  owner: 'animal_registry' | 'land_registry'
+  /** Earlier history on the application before it reached Jelena. */
+  history: { at: string; actor: string; action: string }[]
+}
+
+export const ADVISOR = {
+  name: 'Jelena',
+  office: 'PSSS Čačak',
+}
+
+/** Shown when Milan hasn't sent his own problem yet in this session. */
+export const MILAN_CASE: AdvisorCaseSeed = {
+  id: 'milan_herd',
+  farmer: 'Milan Dragović',
+  kind: 'herd_discrepancy',
+  sentAt: '2026-04-28T09:12:00Z',
+  note: '4 sold, 2 slaughtered, 3 calves born.',
+  values: { record: 38, his: 41 },
+  owner: 'animal_registry',
+  history: [],
+}
+
+export const NEIGHBOUR_CASE: AdvisorCaseSeed = {
+  id: 'neighbour_parcel',
+  farmer: "Milan's neighbour, Bečanj",
+  kind: 'inherited_parcel',
+  sentAt: '2026-04-27T15:40:00Z',
+  note: "The parcel is still in my late father's name.",
+  owner: 'land_registry',
+  history: [
+    { at: '2026-04-27T15:20:00Z', actor: 'Neighbour', action: 'confirm_step' },
+    { at: '2026-04-27T15:40:00Z', actor: 'Neighbour', action: 'send_to_jelena' },
+  ],
+}

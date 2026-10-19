@@ -17,10 +17,11 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 3,
+  version: 4,
   scenarioId: 'second_year',
   role: 'farmer',
   prototype: { showNotes: false },
+  advisor: { handled: [], log: [] },
   answers: emptyAnswers(),
   history: [],
 })
@@ -76,6 +77,20 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
   if (action.type === 'set_scenario') return { ...initialState(), ...keep, scenarioId: action.scenarioId }
   if (action.type === 'set_role') return { ...state, role: action.role }
   if (action.type === 'set_notes') return { ...state, prototype: { showNotes: action.show } }
+  if (action.type === 'advisor_act') {
+    const handled = action.act === 'handled' ? addUnique(state.advisor.handled, action.caseId) : state.advisor.handled
+    return { ...state, advisor: { handled, log: [...state.advisor.log, { caseId: action.caseId, act: action.act, at }] } }
+  }
+  if (action.type === 'advisor_handle_many') {
+    const fresh = action.caseIds.filter((id) => !state.advisor.handled.includes(id))
+    return {
+      ...state,
+      advisor: {
+        handled: [...state.advisor.handled, ...fresh],
+        log: [...state.advisor.log, ...fresh.map((caseId) => ({ caseId, act: 'handled' as const, at }))],
+      },
+    }
+  }
   // Submission only goes through when nothing blocks it.
   if (action.type === 'submit') {
     const d = derive(state)

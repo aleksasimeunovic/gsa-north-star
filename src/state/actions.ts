@@ -36,12 +36,22 @@ export interface HistoryEntry {
   action: Action['type']
 }
 
+export type AdvisorAct = 'opened' | 'asked_owner' | 'replied' | 'handled'
+
+export interface AdvisorLogEntry {
+  caseId: string
+  act: AdvisorAct
+  at: string
+}
+
 export interface AppState {
-  version: 3
+  version: 4
   scenarioId: ScenarioId
   role: Role
   /** Prototype only, not part of GSA. */
   prototype: { showNotes: boolean }
+  /** Jelena's work on escalated cases. */
+  advisor: { handled: string[]; log: AdvisorLogEntry[] }
   answers: Answers
   history: HistoryEntry[]
 }
@@ -50,6 +60,8 @@ export type Action =
   | { type: 'set_scenario'; scenarioId: ScenarioId }
   | { type: 'set_role'; role: Role }
   | { type: 'set_notes'; show: boolean }
+  | { type: 'advisor_act'; caseId: string; act: AdvisorAct }
+  | { type: 'advisor_handle_many'; caseIds: string[] }
   | { type: 'answer_herd'; answer: YesNo }
   | { type: 'set_herd_count'; count: number | null }
   | { type: 'send_to_jelena'; itemId: string; note: string }

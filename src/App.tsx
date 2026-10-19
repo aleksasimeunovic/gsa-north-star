@@ -1,10 +1,11 @@
-import { en } from './copy/en'
+import { advisor, en } from './copy/en'
 import { AppContext } from './components/AppContext'
 import { PrototypeControls } from './components/PrototypeControls'
 import { ReadinessBar } from './components/ReadinessBar'
 import { derive } from './logic/derive'
 import type { StepId } from './logic/status'
 import { WizardShell } from './components/WizardShell'
+import { AdvisorQueue } from './screens/AdvisorQueue'
 import { DebugView } from './screens/DebugView'
 import { HerdStep } from './screens/HerdStep'
 import { LandStep } from './screens/LandStep'
@@ -43,7 +44,9 @@ export function App() {
   }
 
   const main =
-    screen === 'receipt' && state.answers.submittedAt ? (
+    screen === 'queue' ? (
+      <AdvisorQueue />
+    ) : screen === 'receipt' && state.answers.submittedAt ? (
       <Receipt />
     ) : screen === 'renewal' ? (
       <Renewal />
@@ -62,12 +65,20 @@ export function App() {
         <div className="page">
           <header className="topbar">
             <a href="#/welcome" className="brand">{en.appName}</a>
+            {state.role === 'advisor' && (
+              <nav aria-label="Advisor" className="advisor-nav">
+                <a href="#/queue" aria-current={screen === 'queue' ? 'page' : undefined}>{advisor.nav.queue}</a>
+                <a href="#/welcome" aria-current={screen !== 'queue' ? 'page' : undefined}>{advisor.nav.milan}</a>
+              </nav>
+            )}
             {savedAt && <span className="saved">{en.saved}</span>}
           </header>
           <div className="layout">
-            <aside className="side" aria-label="Application status">
-              <ReadinessBar />
-            </aside>
+            {screen !== 'queue' && (
+              <aside className="side" aria-label="Application status">
+                <ReadinessBar />
+              </aside>
+            )}
             <main className="main">{main}</main>
           </div>
           <footer className="footer">

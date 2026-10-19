@@ -105,10 +105,11 @@ function HerdChange({ onCarryOn, bare }: { onCarryOn: () => void; bare?: boolean
       title={ui.herd.title}
       record={
         <>
-          {ui.herd.record(herd.registryCount, herd.lastYearDeclared ?? 0)} <Note kind="tested" />
+          {herd.lastYearDeclared === null ? ui.herd.recordFirst(herd.registryCount) : ui.herd.record(herd.registryCount, herd.lastYearDeclared)}{' '}
+          <Note kind="tested" />
         </>
       }
-      question={ui.herd.question(herd.registryCount)}
+      question={herd.lastYearDeclared === null ? ui.herd.questionFirst : ui.herd.question(herd.registryCount)}
       why={ui.herd.why}
       answer={a.answer}
       onAnswer={(answer) => {

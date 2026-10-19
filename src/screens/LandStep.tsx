@@ -108,6 +108,16 @@ export function LandStep({ target }: { target: string | null }) {
   return (
     <Stack gap="md">
       <Text>{scenario.firstYear ? wiz.land.introFirst : wiz.land.intro}</Text>
+      {scenario.firstYear && step.status === 'action_required' && (
+        <Banner>
+          <Stack gap="sm">
+            <Text variant="small">{wiz.land.drawnFirst}</Text>
+            <div>
+              <Button onClick={() => dispatch({ type: 'confirm_step', stepId: 'land' })}>{wiz.land.drawnButton}</Button>
+            </div>
+          </Stack>
+        </Banner>
+      )}
       <div><Note kind="tested" /></div>
       <div className="land-layout">
         <div className="land-map">

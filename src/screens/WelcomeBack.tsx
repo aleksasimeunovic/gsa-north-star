@@ -53,6 +53,8 @@ export function WelcomeBack() {
               {ui.welcome.changesSub} <Note kind="north_star" />
             </Text>
           )}
+          {/* First year: registry data becomes a question. */}
+          {scenario.firstYear && scenario.herd && <ChangeCard id="herd" onCarryOn={carryOn} />}
           {changes.map((c) => (
             <ChangeCard key={c} id={c} onCarryOn={carryOn} />
           ))}

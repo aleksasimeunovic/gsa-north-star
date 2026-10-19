@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { en, finish, formatDateYear, formatDinars } from '../copy/en'
 import type { Measure } from '../data/scenarios'
 import { useApp } from '../components/AppContext'
@@ -6,6 +7,7 @@ import { orderMeasures } from '../logic/status'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
+import { Checkbox } from '../ui/Checkbox'
 import { Disclosure } from '../ui/Disclosure'
 import { FileInput } from '../ui/FileInput'
 import { Compare, Stack, Text } from '../ui/Layout'
@@ -52,6 +54,9 @@ export function EverythingElse() {
   const fitting = measures.filter((m) => m.fits)
   const others = measures.filter((m) => !m.fits)
   const docsItem = items.find((i) => i.id === 'documents')!
+  // First year: he chooses measures once; fitting ones start ticked.
+  const choosing = items.find((i) => i.id === 'measures')!.status === 'action_required'
+  const [chosen, setChosen] = useState<string[]>(fitting.map((m) => m.id))
 
   return (
     <Stack gap="lg">
@@ -87,11 +92,25 @@ export function EverythingElse() {
       <section id="item-measures" tabIndex={-1} aria-labelledby="measures-title">
         <Stack gap="sm">
           <h2 id="measures-title">{finish.ee.measuresTitle}</h2>
-          <Text variant="small">{finish.ee.measuresNote}</Text>
+          <Text variant="small">{scenario.firstYear ? finish.ee.measuresNoteFirst : finish.ee.measuresNote}</Text>
           <div><Note kind="tested" /></div>
           {fitting.map((m) => (
-            <MeasureCard key={m.id} m={m} />
+            <div key={m.id}>
+              <MeasureCard m={m} />
+              {choosing && (
+                <Checkbox
+                  label={finish.ee.applyFor(en.measures[m.id])}
+                  checked={chosen.includes(m.id)}
+                  onChange={(v) => setChosen(v ? [...chosen, m.id] : chosen.filter((x) => x !== m.id))}
+                />
+              )}
+            </div>
           ))}
+          {choosing && (
+            <div>
+              <Button onClick={() => dispatch({ type: 'confirm_step', stepId: 'everything_else' })}>{finish.ee.confirmMeasures}</Button>
+            </div>
+          )}
           {others.length > 0 && (
             <Disclosure label={`${finish.ee.otherMeasures} (${others.length})`}>
               <Stack gap="sm">

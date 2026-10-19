@@ -44,7 +44,10 @@ export function PrototypeControls() {
               { value: 'farmer', label: proto.milan },
               { value: 'advisor', label: proto.jelena },
             ]}
-            onChange={(role) => dispatch({ type: 'set_role', role })}
+            onChange={(role) => {
+              dispatch({ type: 'set_role', role })
+              go(role === 'advisor' ? 'queue' : 'welcome')
+            }}
           />
           <div>
             <Toggle label={proto.notes} checked={state.prototype.showNotes} onChange={(show) => dispatch({ type: 'set_notes', show })} />
