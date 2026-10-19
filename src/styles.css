@@ -1,0 +1,26 @@
+/* Low fidelity: greyscale, system font, plain boxes. Design system comes later. */
+:root { --fg: #111; --muted: #555; --line: #999; --bg: #fff; --soft: #f2f2f2; --focus: #000; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--fg); background: var(--bg); }
+.page { max-width: 960px; margin: 0 auto; padding: 16px; }
+h1, h2, h3 { line-height: 1.25; margin: 1.25em 0 0.5em; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.btn { min-height: 44px; min-width: 44px; padding: 8px 16px; font: inherit; border: 1px solid var(--fg); background: var(--bg); color: var(--fg); cursor: pointer; }
+.btn[data-variant='primary'] { background: var(--fg); color: var(--bg); }
+.btn[data-variant='link'] { border: 0; text-decoration: underline; padding: 0 4px; }
+.btn[data-density='compact'] { min-height: 32px; padding: 4px 10px; }
+.status { display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--line); padding: 0 6px; white-space: nowrap; }
+.status[data-status='action_required'] { border-width: 2px; border-color: var(--fg); font-weight: 600; }
+.status[data-status='awaiting_verification'] { border-style: dashed; }
+.note { font-size: 0.8rem; border: 1px dashed var(--line); padding: 0 4px; color: var(--muted); }
+.box { border: 1px solid var(--line); padding: 12px 16px; margin: 12px 0; }
+.grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+fieldset { border: 1px solid var(--line); margin: 0 0 12px; padding: 8px 12px; }
+label { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-right: 12px; }
+input[type='number'], select { font: inherit; min-height: 44px; padding: 4px 8px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; border-bottom: 1px solid var(--soft); padding: 4px 6px; vertical-align: top; }
+.muted { color: var(--muted); }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 0.875rem; color: var(--muted); }
+.saved { float: right; }
