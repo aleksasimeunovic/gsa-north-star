@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { Action, Actor, Answers, AppState } from './actions'
 import { derive } from '../logic/derive'
 import { submitCheck } from '../logic/submit'
@@ -108,8 +108,12 @@ export function useStore() {
   const [state, rawDispatch] = useReducer(reducer, undefined, () => loadState() ?? initialState())
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
+  const arrived = useRef(state)
+
   useEffect(() => {
-    if (saveState(state)) setSavedAt(new Date().toISOString())
+    const saved = saveState(state)
+    // "Saved" appears once he has changed something, not on arrival.
+    if (saved && state !== arrived.current) setSavedAt(new Date().toISOString())
   }, [state])
 
   const dispatch = useCallback((action: Action) => rawDispatch({ action, at: new Date().toISOString() }), [])

@@ -231,3 +231,24 @@ select { font: inherit; min-height: 44px; padding: 4px 8px; border: 1px solid va
 .chevron[data-open] { transform: rotate(180deg); }
 .drawer[data-variant='prototype'] { left: auto; right: 0; border-right: 0; border-left: 2px solid var(--fg); }
 .topbar .prototype-launcher { z-index: auto; }
+
+/* Spacing: a little more air between objects and sections; titles stay 8px from their body */
+h1, h2, h3 { margin: 0 0 8px; }
+.stack { gap: 24px; }
+.stack[data-gap='sm'] { gap: 8px; }
+.stack[data-gap='lg'] { gap: 48px; }
+.stack[data-gap='md'] > :is(h1, h2, h3) + * { margin-top: -16px; }
+.stack[data-gap='lg'] > :is(h1, h2, h3, .step-head) + * { margin-top: -40px; }
+.card { padding: 20px; }
+.card-head { margin-bottom: 8px; }
+.field { gap: 8px; }
+.radio-group legend { margin-bottom: 8px; }
+.item-list { gap: 12px; }
+.topbar { margin-bottom: 24px; }
+.step-head h1 { margin: 0; }
+
+/* Readiness: the line itself is the link */
+.readiness-link { font: inherit; font-weight: 600; background: none; border: 0; padding: 8px 0; min-height: 44px; color: var(--fg); cursor: pointer; text-align: left; display: inline-flex; align-items: center; gap: 8px; }
+.readiness-link .readiness-text { text-decoration: underline; text-underline-offset: 3px; }
+.readiness-link:hover .readiness-text { text-decoration-thickness: 2px; }
+.topbar .readiness { justify-content: flex-start; }

@@ -62,6 +62,11 @@ export function Receipt() {
               {finish.receipt.amend}
             </Button>
           </div>
+          <div>
+            <Button variant="link" onClick={() => go('welcome')}>
+              {finish.receipt.backHome}
+            </Button>
+          </div>
         </Stack>
       </Card>
     </Stack>
