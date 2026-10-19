@@ -1,5 +1,6 @@
 import type { Scenario } from '../data/scenarios'
 import type { Answers, Role } from '../state/actions'
+import { type ChangeId, detectChanges, isAnswered } from './changes'
 import { type Item, type ItemId, type Status, type StepId, worstStatus } from './status'
 
 /**
@@ -115,4 +116,23 @@ export function compareMapping(s: Scenario, wizard: Wizard): CompareRow[] {
     { tested: 'conditionality', becomes: null, fate: 'left_out' },
     { tested: 'summary', becomes: null, fate: 'replaced_by_readiness' },
   ]
+}
+
+// Which open change each tested step is waiting on before it can fold into its new step.
+const WAITS_ON: Partial<Record<TestedStepId, ChangeId[]>> = {
+  parcels: ['river', 'road'],
+  animal_measures: ['herd'],
+}
+
+export interface AssemblyRow extends CompareRow {
+  waitingOn: ChangeId[]
+}
+
+/**
+ * Live preview of the application while he answers: tested steps still waiting on an
+ * answer stay as they were; the rest have already folded into their new step.
+ */
+export function assembly(s: Scenario, a: Answers, compare: CompareRow[]): AssemblyRow[] {
+  const open = detectChanges(s).filter((c) => !isAnswered(c, a))
+  return compare.map((row) => ({ ...row, waitingOn: (WAITS_ON[row.tested] ?? []).filter((c) => open.includes(c)) }))
 }

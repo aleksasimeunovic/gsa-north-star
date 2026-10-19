@@ -11,14 +11,23 @@ export interface Split {
 
 // Only what people answered. Steps, statuses and the estimate are derived.
 export interface Answers {
-  herd: { answer: YesNo | null; ownCount: number | null; followUps: ('registry_check' | 'jelena')[] }
+  herd: { answer: YesNo | null; ownCount: number | null }
   river: { answer: YesNo | null; noOption: 'redraw' | 'field_check' | null; redrawn: boolean; split: Split | null }
   road: { answer: YesNo | null; correctionRequested: boolean }
   confirmedSteps: string[]
+  /** One specific problem sent on: to Jelena, or to the record's owner to check. */
+  requests: Request[]
   attachedDocuments: string[]
   renewed: boolean
   declarationsSigned: boolean
   submittedAt: string | null
+}
+
+export interface Request {
+  kind: 'jelena' | 'record_check'
+  itemId: string
+  note: string
+  at: string
 }
 
 export interface HistoryEntry {
@@ -28,7 +37,7 @@ export interface HistoryEntry {
 }
 
 export interface AppState {
-  version: 1
+  version: 2
   scenarioId: ScenarioId
   role: Role
   answers: Answers
@@ -40,7 +49,8 @@ export type Action =
   | { type: 'set_role'; role: Role }
   | { type: 'answer_herd'; answer: YesNo }
   | { type: 'set_herd_count'; count: number | null }
-  | { type: 'herd_follow_up'; followUp: 'registry_check' | 'jelena' }
+  | { type: 'send_to_jelena'; itemId: string; note: string }
+  | { type: 'ask_record_check'; itemId: string }
   | { type: 'answer_river'; answer: YesNo }
   | { type: 'river_no_option'; option: 'redraw' | 'field_check' }
   | { type: 'river_redrawn' }

@@ -147,3 +147,136 @@ export const en = {
 
 export const itemLabel = (id: string) =>
   id.startsWith('field_') ? en.fields[id.slice(6) as FieldId] : en.items[id] ?? id
+
+const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six']
+const dateFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+const dateYearFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+export const formatDate = (iso: string) => dateFmt.format(new Date(`${iso}T00:00:00Z`))
+export const formatDateYear = (iso: string) => dateYearFmt.format(new Date(`${iso}T00:00:00Z`))
+
+export const ui = {
+  yes: 'Yes',
+  no: 'No',
+  why: 'Why am I seeing this?',
+  changeAnswer: 'Change answer',
+  close: 'Close',
+  goToIt: 'Go to it',
+  back: 'Back to your application',
+
+  welcome: {
+    greeting: 'Welcome back, Milan',
+    greetingFirst: 'Welcome, Milan',
+    window: (opens: string, closes: string) => `Applications are open from ${formatDate(opens)} to ${formatDate(closes)}.`,
+    activeFarmer: "You're an active farmer. Your status is renewed for this year.",
+    notRenewed:
+      'Your active farmer status needs renewing before you can submit. You can prepare your application now.',
+    changesIntro: (n: number) =>
+      n === 1 ? 'One thing may have changed since last year.' : `${WORDS[n] ?? n} things may have changed since last year.`,
+    changesSub: 'We found these in government records. Only you know what is true. Answer each one and your application adapts.',
+    firstYear: "This is your first application in GSA. We've filled in what government records show. Check each part as you go.",
+    noChanges: 'Nothing seems to have changed since last year.',
+    continue: 'Continue to your application',
+  },
+
+  herd: {
+    title: 'Herd',
+    record: (reg: number, last: number) => `The animal registry shows ${reg} cattle. Last year you declared ${last}.`,
+    question: (reg: number) => `Do you have ${reg} cattle now?`,
+    why: 'The animal registry counts cattle by ear tag. It knows how many it has today, not what happened in between. Only you know if this is your herd now.',
+    done: (n: number) => `Herd confirmed: ${n} cattle.`,
+    replaced: 'Before, this meant changing nine ear tags one by one.',
+    countLabel: 'How many cattle do you have today?',
+    countHint: 'Count every animal you keep, calves included.',
+    countError: 'Enter a whole number, for example 41.',
+    countSave: 'Save my number',
+  },
+
+  conflict: {
+    title: 'Your number and the registry are different',
+    record: 'Animal registry',
+    yours: 'You declared',
+    explain: "The registry stays the official record until it's checked. We keep both numbers. You don't have to settle this yourself.",
+    nonBlocking: "This doesn't stop you submitting. Only the herd part waits for the check.",
+    askCheck: 'Ask the registry to check',
+    checkAsked: 'The registry has been asked to check. You will see the result here.',
+    sendJelena: 'Send to Jelena',
+    carryOn: 'Carry on with your application',
+  },
+
+  jelena: {
+    title: 'Send this problem to Jelena',
+    who: 'Jelena, your advisor at PSSS Čačak, will see only this problem, with both numbers.',
+    problem: (reg: number, his: number) => `Herd: the animal registry shows ${reg} cattle. Milan declared ${his}.`,
+    noteLabel: 'Add a note (optional)',
+    noteHint: 'For example, what happened to the animals.',
+    send: 'Send to Jelena',
+    cancel: 'Cancel',
+    sent: 'Sent. Jelena will see this problem and your note.',
+  },
+
+  river: {
+    title: 'River field',
+    record: 'The satellite photo shows the lower part of the river field looks different from the rest.',
+    question: 'Are you growing two crops in the river field?',
+    why: "Satellite photos are taken through the season. They can see that part of a field looks different. They can't see what you planted. You decide.",
+    done: 'Two crops in the river field.',
+    next: 'Your land step will open on the river field. Draw one line where the second crop starts.',
+    choose: 'What would you like to do?',
+    redraw: 'Redraw the field',
+    redrawHint: 'If the field itself has a different shape now.',
+    fieldCheck: 'Ask for a field check',
+    fieldCheckHint: "An inspector checks the field. This part won't count unless it is checked.",
+    redrawNext: 'Your land step will open on the river field so you can redraw it.',
+    fieldCheckDone: "Field check asked for. This part won't count unless it is checked. This doesn't stop you submitting.",
+    openLand: 'Go to the river field',
+  },
+
+  road: {
+    title: 'Road field',
+    record: (ha: string) => `The land map now marks ${ha} of the road field as road. The road was widened.`,
+    question: 'Did the road take part of this field?',
+    why: 'The land map is the official record of land that can get support. When it changes, the area you can claim may change too.',
+    done: (ha: string, left: string) => `The road took ${ha}. Your field is now ${left}.`,
+    noIntro: "If the road didn't take this land, ask for a correction. You'll mark the strip on the map in the Land step.",
+    askCorrection: 'Ask for a correction',
+    correctionAsked: "Correction asked for. The land map stays the official record until it's checked. This doesn't stop you submitting.",
+  },
+
+  preview: {
+    title: 'Your application this year',
+    count: (n: number, tested: number) => `${n} steps this year. The tested version had ${tested}.`,
+    waiting: 'Waiting for your answer above',
+    includes: 'Includes',
+    leftOut: 'Left out this year',
+  },
+
+  readiness: {
+    label: 'Is my application ready?',
+    counts: (action: number, awaiting: number, complete: number) =>
+      `${action} need your action · ${awaiting} awaiting verification · ${complete} complete`,
+    open: 'See all items',
+    drawerTitle: 'Your application, item by item',
+    groupHint: {
+      action_required: 'These stop you submitting until they are done.',
+      awaiting_verification: "These don't stop you submitting. Only that part waits for the check.",
+      complete: 'Nothing left to do here.',
+    } satisfies Record<Status, string>,
+    renewal: 'Renew your active farmer status',
+    readyNote: 'Ready to submit means nothing needs your action. It does not mean approved.',
+    empty: 'None',
+  },
+
+  estimateHow: {
+    toggle: 'How is this worked out?',
+    plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} per hectare = ${total}`,
+    cows: (n: number, from: string, to: string, rate: string, total: string) =>
+      `${n} cows that calved between ${from} and ${to} × ${rate} = ${total}`,
+    total: (t: string) => `Total: ${t}`,
+    receipts: 'Plant production support is justified with your input receipts.',
+  },
+
+  placeholder: {
+    title: (step: string) => `${step}`,
+    body: 'This step is built in the next phase of the prototype.',
+  },
+}

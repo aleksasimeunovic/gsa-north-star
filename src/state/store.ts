@@ -3,10 +3,11 @@ import type { Action, Actor, Answers, AppState } from './actions'
 import { loadState, saveState } from './persist'
 
 export const emptyAnswers = (): Answers => ({
-  herd: { answer: null, ownCount: null, followUps: [] },
+  herd: { answer: null, ownCount: null },
   river: { answer: null, noOption: null, redrawn: false, split: null },
   road: { answer: null, correctionRequested: false },
   confirmedSteps: [],
+  requests: [],
   attachedDocuments: [],
   renewed: false,
   declarationsSigned: false,
@@ -14,7 +15,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 1,
+  version: 2,
   scenarioId: 'second_year',
   role: 'farmer',
   answers: emptyAnswers(),
@@ -29,8 +30,11 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, herd: { ...a.herd, answer: action.answer } }
     case 'set_herd_count':
       return { ...a, herd: { ...a.herd, ownCount: action.count } }
-    case 'herd_follow_up':
-      return { ...a, herd: { ...a.herd, followUps: addUnique(a.herd.followUps, action.followUp) } }
+    case 'send_to_jelena':
+      return { ...a, requests: [...a.requests, { kind: 'jelena', itemId: action.itemId, note: action.note, at }] }
+    case 'ask_record_check':
+      if (a.requests.some((r) => r.kind === 'record_check' && r.itemId === action.itemId)) return a
+      return { ...a, requests: [...a.requests, { kind: 'record_check', itemId: action.itemId, note: '', at }] }
     case 'answer_river':
       return { ...a, river: { ...a.river, answer: action.answer } }
     case 'river_no_option':
