@@ -9,6 +9,7 @@ import { Card } from '../ui/Card'
 import { Disclosure } from '../ui/Disclosure'
 import { FileInput } from '../ui/FileInput'
 import { Compare, Stack, Text } from '../ui/Layout'
+import { Note } from '../ui/Note'
 
 function MeasureCard({ m }: { m: Measure }) {
   const { derived } = useApp()
@@ -60,6 +61,7 @@ export function EverythingElse() {
         <Stack gap="sm">
           <h2 id="records-title">{finish.ee.recordsTitle}</h2>
           <Text variant="small">{finish.ee.recordsNote}</Text>
+          <div><Note kind="eu_mandate" /></div>
           <dl className="records">
             <dt>{finish.ee.holder}</dt>
             <dd>{g.holder}</dd>
@@ -86,6 +88,7 @@ export function EverythingElse() {
         <Stack gap="sm">
           <h2 id="measures-title">{finish.ee.measuresTitle}</h2>
           <Text variant="small">{finish.ee.measuresNote}</Text>
+          <div><Note kind="tested" /></div>
           {fitting.map((m) => (
             <MeasureCard key={m.id} m={m} />
           ))}

@@ -12,6 +12,7 @@ import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Stack, Text } from '../ui/Layout'
 import { StatusBadge } from '../ui/StatusBadge'
+import { Note } from '../ui/Note'
 
 /** Land: map-first. Opens on the changed field; all fields still shown. */
 export function LandStep({ target }: { target: string | null }) {
@@ -107,6 +108,7 @@ export function LandStep({ target }: { target: string | null }) {
   return (
     <Stack gap="md">
       <Text>{scenario.firstYear ? wiz.land.introFirst : wiz.land.intro}</Text>
+      <div><Note kind="tested" /></div>
       <div className="land-layout">
         <div className="land-map">
           <FieldMap

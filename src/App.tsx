@@ -1,5 +1,6 @@
 import { en } from './copy/en'
 import { AppContext } from './components/AppContext'
+import { PrototypeControls } from './components/PrototypeControls'
 import { ReadinessBar } from './components/ReadinessBar'
 import { derive } from './logic/derive'
 import type { StepId } from './logic/status'
@@ -15,6 +16,7 @@ import { WelcomeBack } from './screens/WelcomeBack'
 import { useHashScreen } from './state/useHashScreen'
 import { useStore } from './state/store'
 import { DensityContext } from './ui/Density'
+import { NotesContext } from './ui/Note'
 
 const STEPS: StepId[] = ['herd', 'land', 'everything_else', 'submit']
 
@@ -56,6 +58,7 @@ export function App() {
   return (
     <AppContext.Provider value={{ state, derived, dispatch, go }}>
       <DensityContext.Provider value={derived.wizard.density}>
+      <NotesContext.Provider value={state.prototype.showNotes}>
         <div className="page">
           <header className="topbar">
             <a href="#/welcome" className="brand">{en.appName}</a>
@@ -70,7 +73,9 @@ export function App() {
           <footer className="footer">
             <p>{en.footer}</p>
           </footer>
+          <PrototypeControls />
         </div>
+      </NotesContext.Provider>
       </DensityContext.Provider>
     </AppContext.Provider>
   )

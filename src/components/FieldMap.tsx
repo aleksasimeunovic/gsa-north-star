@@ -3,6 +3,7 @@ import { en, formatHa, wiz } from '../copy/en'
 import type { FieldId, Polygon, Scenario } from '../data/scenarios'
 import { bounds } from '../logic/geometry'
 import type { Status } from '../logic/status'
+import { Note } from '../ui/Note'
 
 const pts = (p: Polygon) => p.map((q) => `${q.x},${q.y}`).join(' ')
 const PAD = 16
@@ -90,7 +91,9 @@ export function MapLegend() {
   ] as const
   return (
     <section aria-labelledby="legend-title">
-      <h2 id="legend-title" className="legend-title">{wiz.land.legendTitle}</h2>
+      <h2 id="legend-title" className="legend-title">
+        {wiz.land.legendTitle} <Note kind="tested" />
+      </h2>
       <dl className="legend">
         {items.map(([kind, item]) => (
           <div key={kind}>

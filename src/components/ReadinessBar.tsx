@@ -4,6 +4,7 @@ import { Button } from '../ui/Button'
 import { Inline, Text, VisuallyHidden } from '../ui/Layout'
 import { useApp } from './AppContext'
 import { ReadinessDrawer } from './ReadinessDrawer'
+import { Note } from '../ui/Note'
 
 const SHAPE = { waiting_for_renewal: '!', action_required: '!', ready_to_submit: '✓', submitted: '✓' } as const
 
@@ -32,6 +33,7 @@ export function ReadinessBar() {
         {r.state === 'ready_to_submit' && <Text variant="small">{ui.readiness.readyNote}</Text>}
       </div>
       <Inline>
+        <Note kind="north_star" />
         <Button ref={opener} aria-expanded={open} onClick={() => setOpen(true)}>
           {ui.readiness.open}
         </Button>

@@ -37,9 +37,11 @@ export interface HistoryEntry {
 }
 
 export interface AppState {
-  version: 2
+  version: 3
   scenarioId: ScenarioId
   role: Role
+  /** Prototype only, not part of GSA. */
+  prototype: { showNotes: boolean }
   answers: Answers
   history: HistoryEntry[]
 }
@@ -47,6 +49,7 @@ export interface AppState {
 export type Action =
   | { type: 'set_scenario'; scenarioId: ScenarioId }
   | { type: 'set_role'; role: Role }
+  | { type: 'set_notes'; show: boolean }
   | { type: 'answer_herd'; answer: YesNo }
   | { type: 'set_herd_count'; count: number | null }
   | { type: 'send_to_jelena'; itemId: string; note: string }

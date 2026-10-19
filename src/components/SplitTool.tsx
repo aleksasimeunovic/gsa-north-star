@@ -7,6 +7,7 @@ import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Inline, Stack, Text } from '../ui/Layout'
 import { Select } from '../ui/Select'
+import { Note } from '../ui/Note'
 
 const LETTERS = ['A', 'B'] as const
 const STEP_M = 5
@@ -126,6 +127,9 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft;
       <Text variant="strong">{wiz.split.title}</Text>
       <Text>{wiz.split.instruction}</Text>
       <Text variant="small">{wiz.split.guardrail}</Text>
+      <div>
+        <Note kind="north_star" /> <Note kind="tested" />
+      </div>
       <div>
         <Button variant="link" onClick={() => setSlider(!slider)}>{slider ? wiz.split.useDrag : wiz.split.useSlider}</Button>
       </div>

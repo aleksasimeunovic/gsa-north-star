@@ -9,6 +9,7 @@ import { changeTarget } from '../components/targets'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Stack, Text } from '../ui/Layout'
+import { Note } from '../ui/Note'
 
 /** Moment 1: opens with what GSA knows, asks only about what changed. */
 export function WelcomeBack() {
@@ -28,6 +29,7 @@ export function WelcomeBack() {
       <header>
         <h1>{scenario.firstYear ? ui.welcome.greetingFirst : ui.welcome.greeting}</h1>
         <Text>
+          <Note kind="eu_mandate" />
           {ui.welcome.window(scenario.window.opens, scenario.window.closes)}{' '}
           <strong>{en.daysLeft(daysLeft(scenario.today, scenario.window.closes))}.</strong>
         </Text>
@@ -46,7 +48,11 @@ export function WelcomeBack() {
           <h2 id="changes-title">
             {scenario.firstYear ? ui.welcome.firstYear : changes.length ? ui.welcome.changesIntro(changes.length) : ui.welcome.noChanges}
           </h2>
-          {changes.length > 0 && <Text variant="secondary">{ui.welcome.changesSub}</Text>}
+          {changes.length > 0 && (
+            <Text variant="secondary">
+              {ui.welcome.changesSub} <Note kind="north_star" />
+            </Text>
+          )}
           {changes.map((c) => (
             <ChangeCard key={c} id={c} onCarryOn={carryOn} />
           ))}

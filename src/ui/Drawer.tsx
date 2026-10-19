@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
 import { ui } from '../copy/en'
 import { Button } from './Button'
 
@@ -8,10 +8,13 @@ interface Props {
   onClose: () => void
   returnFocusTo: RefObject<HTMLElement>
   children: ReactNode
+  /** prototype: clearly outside GSA. */
+  variant?: 'default' | 'prototype'
 }
 
 // Non-modal: no focus trap. Esc closes and focus returns to the opener.
-export function Drawer({ open, title, onClose, returnFocusTo, children }: Props) {
+export function Drawer({ open, title, onClose, returnFocusTo, children, variant = 'default' }: Props) {
+  const titleId = useId()
   const headingRef = useRef<HTMLHeadingElement>(null)
   const wasOpen = useRef(false)
 
@@ -30,9 +33,9 @@ export function Drawer({ open, title, onClose, returnFocusTo, children }: Props)
 
   if (!open) return null
   return (
-    <section className="drawer" role="dialog" aria-modal="false" aria-labelledby="drawer-title">
+    <section className="drawer" data-variant={variant} role="dialog" aria-modal="false" aria-labelledby={titleId}>
       <div className="drawer-head">
-        <h2 id="drawer-title" ref={headingRef} tabIndex={-1}>{title}</h2>
+        <h2 id={titleId} ref={headingRef} tabIndex={-1}>{title}</h2>
         <Button onClick={onClose}>{ui.close}</Button>
       </div>
       {children}

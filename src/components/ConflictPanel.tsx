@@ -7,6 +7,7 @@ import { Compare, Inline, Stack, Text } from '../ui/Layout'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
 import { SendToJelena } from './SendToJelena'
+import { Note } from '../ui/Note'
 
 /** Both values kept, explained, who settles it, and always a way to carry on. */
 export function ConflictPanel({ item, onCarryOn }: { item: Item; onCarryOn: () => void }) {
@@ -26,7 +27,10 @@ export function ConflictPanel({ item, onCarryOn }: { item: Item; onCarryOn: () =
       </Inline>
       <Compare items={[{ label: ui.conflict.record, value: record }, { label: ui.conflict.yours, value: his }]} />
       <Text>{ui.conflict.explain}</Text>
-      <Text variant="secondary">{ui.conflict.nonBlocking}</Text>
+      <Text variant="secondary">
+        {ui.conflict.nonBlocking} <Note kind="assumption" />
+      </Text>
+      <div><Note kind="north_star" /></div>
       {checkAsked && <Banner tone="success">{ui.conflict.checkAsked}</Banner>}
       {sent && <Banner tone="success">{ui.jelena.sent}</Banner>}
       {composing ? (

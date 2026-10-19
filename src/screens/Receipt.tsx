@@ -5,6 +5,7 @@ import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Compare, Stack, Text } from '../ui/Layout'
+import { Note } from '../ui/Note'
 
 // Date follows the prototype clock; the time is real.
 /** Never ambiguous: submitted, when, which number, what next. */
@@ -49,6 +50,7 @@ export function Receipt() {
       <Card title={finish.receipt.amendTitle} headingLevel={2}>
         <Stack gap="sm">
           <Text>{finish.receipt.amendText}</Text>
+          <div><Note kind="assumption" /></div>
           <div>
             <Button
               onClick={() => {

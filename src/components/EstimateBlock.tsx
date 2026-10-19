@@ -3,6 +3,7 @@ import { Card } from '../ui/Card'
 import { Disclosure } from '../ui/Disclosure'
 import { Stack, Text } from '../ui/Layout'
 import { useApp } from './AppContext'
+import { Note } from '../ui/Note'
 
 /** Separate from status. An estimate, with its assumptions on request. Never the hero. */
 export function EstimateBlock() {
@@ -13,6 +14,7 @@ export function EstimateBlock() {
   return (
     <Card id="estimate" title={en.estimate.title} headingLevel={2}>
       <Stack gap="sm">
+        <div><Note kind="north_star" /></div>
         <Text variant="strong">
           <span aria-live="polite">{en.estimate.about(formatDinars(e.aboutDinars))}</span>
         </Text>

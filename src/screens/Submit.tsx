@@ -8,6 +8,7 @@ import { Card } from '../ui/Card'
 import { Checkbox } from '../ui/Checkbox'
 import { Stack, Text } from '../ui/Layout'
 import { StatusBadge } from '../ui/StatusBadge'
+import { Note } from '../ui/Note'
 
 /** Unambiguous submission: what's done, what waits, what the state checks, one button. */
 export function Submit() {
@@ -37,7 +38,9 @@ export function Submit() {
             )}
             {check.reasons.includes('action_required') && (
               <div>
-                <Text>{finish.submit.reasons.action_required(readiness.blockers.length)}</Text>
+                <Text>
+                  {finish.submit.reasons.action_required(readiness.blockers.length)} <Note kind="tested" />
+                </Text>
                 <ul>
                   {readiness.blockers.map((i) => (
                     <li key={i.id}>
@@ -58,7 +61,9 @@ export function Submit() {
           <h2 id="awaiting-title">
             <StatusBadge status="awaiting_verification" />
           </h2>
-          <Text variant="secondary">{finish.submit.awaitingNote}</Text>
+          <Text variant="secondary">
+            {finish.submit.awaitingNote} <Note kind="assumption" />
+          </Text>
           <ul>
             {readiness.awaiting.map((i) => (
               <li key={i.id}>

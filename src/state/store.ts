@@ -17,9 +17,10 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 2,
+  version: 3,
   scenarioId: 'second_year',
   role: 'farmer',
+  prototype: { showNotes: false },
   answers: emptyAnswers(),
   history: [],
 })
@@ -69,9 +70,12 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
 type Stamped = { action: Action; at: string }
 
 export function reducer(state: AppState, { action, at }: Stamped): AppState {
-  if (action.type === 'reset') return { ...initialState(), scenarioId: state.scenarioId, role: state.role }
-  if (action.type === 'set_scenario') return { ...initialState(), scenarioId: action.scenarioId, role: state.role }
+  // Prototype controls: keep role and notes, start the scenario fresh.
+  const keep = { role: state.role, prototype: state.prototype }
+  if (action.type === 'reset') return { ...initialState(), ...keep, scenarioId: state.scenarioId }
+  if (action.type === 'set_scenario') return { ...initialState(), ...keep, scenarioId: action.scenarioId }
   if (action.type === 'set_role') return { ...state, role: action.role }
+  if (action.type === 'set_notes') return { ...state, prototype: { showNotes: action.show } }
   // Submission only goes through when nothing blocks it.
   if (action.type === 'submit') {
     const d = derive(state)

@@ -1,0 +1,78 @@
+import { useRef, useState } from 'react'
+import { en, proto } from '../copy/en'
+import { SCENARIO_IDS } from '../data/scenarios'
+import type { Role } from '../state/actions'
+import { Button } from '../ui/Button'
+import { Drawer } from '../ui/Drawer'
+import { Stack, Text } from '../ui/Layout'
+import { RadioGroup } from '../ui/RadioGroup'
+import { Toggle } from '../ui/Toggle'
+import { useApp } from './AppContext'
+
+/** Clearly separate from GSA: scenario, role, design notes, reset. */
+export function PrototypeControls() {
+  const { state, dispatch, go } = useApp()
+  const [open, setOpen] = useState(false)
+  const opener = useRef<HTMLButtonElement>(null)
+
+  return (
+    <>
+      <div className="prototype-launcher">
+        <Button ref={opener} variant="prototype" aria-expanded={open} onClick={() => setOpen(!open)}>
+          {proto.open}
+        </Button>
+      </div>
+      <Drawer open={open} title={proto.title} variant="prototype" onClose={() => setOpen(false)} returnFocusTo={opener}>
+        <Stack gap="md">
+          <Text variant="strong">{proto.notPart}</Text>
+          <div>
+            <RadioGroup
+              legend={proto.scenario}
+              value={state.scenarioId}
+              options={SCENARIO_IDS.map((id) => ({ value: id, label: en.scenarios[id] }))}
+              onChange={(scenarioId) => {
+                dispatch({ type: 'set_scenario', scenarioId })
+                go('welcome')
+              }}
+            />
+            <Text variant="small">{proto.scenarioHint}</Text>
+          </div>
+          <RadioGroup<Role>
+            legend={proto.signInAs}
+            value={state.role}
+            options={[
+              { value: 'farmer', label: proto.milan },
+              { value: 'advisor', label: proto.jelena },
+            ]}
+            onChange={(role) => dispatch({ type: 'set_role', role })}
+          />
+          <div>
+            <Toggle label={proto.notes} checked={state.prototype.showNotes} onChange={(show) => dispatch({ type: 'set_notes', show })} />
+            <Text variant="small">{proto.notesHint}</Text>
+          </div>
+          <div>
+            <Button
+              onClick={() => {
+                dispatch({ type: 'reset' })
+                go('welcome')
+              }}
+            >
+              {proto.reset}
+            </Button>
+          </div>
+          <div>
+            <Button
+              variant="link"
+              onClick={() => {
+                setOpen(false)
+                go('debug')
+              }}
+            >
+              {proto.debug}
+            </Button>
+          </div>
+        </Stack>
+      </Drawer>
+    </>
+  )
+}

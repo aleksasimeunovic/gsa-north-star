@@ -4,6 +4,7 @@ import { Card } from '../ui/Card'
 import { Stack, Text } from '../ui/Layout'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
+import { Note } from '../ui/Note'
 
 type Entry =
   | { key: string; waiting: true; row: AssemblyRow }
@@ -26,7 +27,7 @@ export function WizardPreview() {
     <Card id="preview" title={ui.preview.title} headingLevel={2}>
       <Stack gap="sm">
         <Text variant="secondary" as="p">
-          <span aria-live="polite">{ui.preview.count(entries.length, TESTED_STEPS.length)}</span>
+          <span aria-live="polite">{ui.preview.count(entries.length, TESTED_STEPS.length)}</span> <Note kind="north_star" />
         </Text>
         <ol className="preview-list">
           {entries.map((e) =>

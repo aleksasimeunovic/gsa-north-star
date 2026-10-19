@@ -13,6 +13,7 @@ import { RadioGroup } from '../ui/RadioGroup'
 import { useApp } from './AppContext'
 import { ConflictPanel } from './ConflictPanel'
 import { changeTarget } from './targets'
+import { Note } from '../ui/Note'
 
 const YES_NO = [
   { value: 'yes' as const, label: ui.yes },
@@ -25,7 +26,7 @@ interface ShellProps {
   itemId: string
   record: ReactNode
   question: string
-  why: string
+  why: ReactNode
   answer: YesNo | null
   onAnswer: (a: YesNo) => void
   /** Shown under the question while a follow-up is still needed. */
@@ -102,7 +103,11 @@ function HerdChange({ onCarryOn, bare }: { onCarryOn: () => void; bare?: boolean
       id="herd"
       itemId="herd"
       title={ui.herd.title}
-      record={ui.herd.record(herd.registryCount, herd.lastYearDeclared ?? 0)}
+      record={
+        <>
+          {ui.herd.record(herd.registryCount, herd.lastYearDeclared ?? 0)} <Note kind="tested" />
+        </>
+      }
       question={ui.herd.question(herd.registryCount)}
       why={ui.herd.why}
       answer={a.answer}
@@ -165,7 +170,11 @@ function RiverChange({ bare }: { bare?: boolean }) {
       title={ui.river.title}
       record={ui.river.record}
       question={ui.river.question}
-      why={ui.river.why}
+      why={
+        <>
+          {ui.river.why} <Note kind="eu_mandate" />
+        </>
+      }
       answer={a.answer}
       onAnswer={(answer) => dispatch({ type: 'answer_river', answer })}
       needsFollowUp={a.answer === 'no' && a.noOption === null}

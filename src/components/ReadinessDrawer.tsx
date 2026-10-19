@@ -7,6 +7,7 @@ import { Stack, Text } from '../ui/Layout'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
 import { itemTarget } from './targets'
+import { Note } from '../ui/Note'
 
 const ORDER: Status[] = ['action_required', 'awaiting_verification', 'complete']
 
@@ -39,7 +40,9 @@ export function ReadinessDrawer({ open, onClose, returnFocusTo }: { open: boolea
               <h3 id={`group-${status}`}>
                 <StatusBadge status={status} /> <span className="count">({group.length})</span>
               </h3>
-              <Text variant="small">{ui.readiness.groupHint[status]}</Text>
+              <Text variant="small">
+                {ui.readiness.groupHint[status]} {status === 'awaiting_verification' && <Note kind="assumption" />}
+              </Text>
               {group.length === 0 ? (
                 <Text variant="secondary">{ui.readiness.empty}</Text>
               ) : (

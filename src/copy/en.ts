@@ -441,3 +441,18 @@ export const finish = {
 
 const timeFmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 export const formatTime = (iso: string) => timeFmt.format(new Date(iso))
+
+export const proto = {
+  open: 'Prototype',
+  title: 'Prototype controls',
+  notPart: 'Not part of GSA. These controls exist only to explore the prototype.',
+  scenario: 'Scenario',
+  scenarioHint: 'Switching starts that scenario fresh.',
+  signInAs: 'Sign in as',
+  milan: 'Milan (farmer)',
+  jelena: 'Jelena (advisor)',
+  notes: 'Show design notes',
+  notesHint: 'Tags show what was tested, what is proposed, what the EU requires and what is assumed.',
+  reset: 'Reset this scenario',
+  debug: 'Open the debug view',
+}
