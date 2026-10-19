@@ -18,8 +18,11 @@ export function PrototypeControls() {
   return (
     <>
       <div className="prototype-launcher">
-        <Button ref={opener} variant="prototype" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Button ref={opener} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(!open)}>
           {proto.open}
+          <svg className="chevron" data-open={open || undefined} width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" />
+          </svg>
         </Button>
       </div>
       <Drawer open={open} title={proto.title} variant="prototype" onClose={() => setOpen(false)} returnFocusTo={opener}>

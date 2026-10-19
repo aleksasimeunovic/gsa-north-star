@@ -224,3 +224,10 @@ select { font: inherit; min-height: 44px; padding: 4px 8px; border: 1px solid va
   .radio-group[data-inline] .radio { flex: 1 1 0; border: 1px solid var(--line); padding: 10px 12px; margin: 0; }
   .radio-group[data-inline] { gap: 8px; }
 }
+
+/* Prototype menu: a normal button with a chevron; panel opens on the right */
+.prototype-launcher .btn { display: inline-flex; align-items: center; gap: 8px; }
+.chevron { transition: transform 0.15s; }
+.chevron[data-open] { transform: rotate(180deg); }
+.drawer[data-variant='prototype'] { left: auto; right: 0; border-right: 0; border-left: 2px solid var(--fg); }
+.topbar .prototype-launcher { z-index: auto; }
