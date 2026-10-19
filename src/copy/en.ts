@@ -10,7 +10,6 @@ export const formatHa = (ha: number) => `${ha.toFixed(2)} ha`
 
 export const en = {
   appName: 'GSA',
-  footer: 'North Star concept by Aleksa Simeunović. Not built or tested. Not part of the UN engagement.',
   saved: 'Saved',
 
   status: {
@@ -290,11 +289,7 @@ export const wiz = {
   confirmNext: 'Confirm and continue',
   back: 'Back',
   backToOverview: 'Back to the overview',
-  compareToggle: 'Compare with the tested 8-step wizard',
-  compareTitle: 'What happened to the tested steps',
-  compareSummary: (tested: number, now: number) => `The tested wizard had ${tested} steps. Yours has ${now}, built around your farm.`,
-  compareHead: { tested: 'Tested step', now: 'This year', what: 'What happened' },
-  notThisYear: 'Not a step this year',
+  stepNav: 'Step navigation',
 
   herd: {
     confirm: (n: number) => `You have ${n} cattle.`,

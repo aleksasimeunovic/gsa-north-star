@@ -186,3 +186,27 @@ select { font: inherit; min-height: 44px; padding: 4px 8px; border: 1px solid va
 #case-detail:focus-visible { outline: 3px solid var(--focus); }
 .topbar { flex-wrap: wrap; gap: 4px 16px; }
 @media (max-width: 959px) { .advisor-nav { order: 3; width: 100%; } }
+
+/* Header with readiness, always visible */
+.topbar { position: sticky; top: 0; z-index: 6; background: var(--bg); padding: 8px 0; margin-bottom: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.topbar .brand { order: 1; }
+.topbar .readiness { order: 2; flex: 1; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; border: 0; border-left: 2px solid var(--fg); padding: 0 0 0 12px; background: none; }
+.topbar .readiness > [aria-live] .text { margin: 0; }
+.topbar .saved { order: 3; float: none; }
+.topbar .prototype-launcher { order: 4; position: static; }
+.topbar .advisor-nav { order: 5; }
+@media (max-width: 959px) {
+  .topbar .readiness { order: 5; flex-basis: 100%; border-left: 0; border-top: 2px solid var(--fg); padding: 8px 0 0; }
+  .topbar .saved { margin-left: auto; }
+  .stepper-list { display: flex; }
+}
+.page { padding-bottom: 16px; }
+.card, h1, h2, [id^='item-'], [id^='change-'] { scroll-margin-top: 140px; }
+.status[data-icon-only] { padding: 0 6px; min-width: 1.6em; justify-content: center; }
+
+/* Back and Continue always within reach */
+.step-nav { position: sticky; bottom: 0; z-index: 4; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 12px 0; background: var(--bg); border-top: 1px solid var(--line); }
+
+/* Land: the map spans the whole width, details below */
+.land-layout[data-map='full'] { flex-direction: column; align-items: stretch; }
+.land-layout[data-map='full'] .land-map, .land-layout[data-map='full'] .land-side { flex: none; width: 100%; }

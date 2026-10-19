@@ -65,6 +65,7 @@ export function App() {
         <div className="page">
           <header className="topbar">
             <a href="#/welcome" className="brand">{en.appName}</a>
+            {screen !== 'queue' && <ReadinessBar />}
             {state.role === 'advisor' && (
               <nav aria-label="Advisor" className="advisor-nav">
                 <a href="#/queue" aria-current={screen === 'queue' ? 'page' : undefined}>{advisor.nav.queue}</a>
@@ -72,19 +73,9 @@ export function App() {
               </nav>
             )}
             {savedAt && <span className="saved">{en.saved}</span>}
+            <PrototypeControls />
           </header>
-          <div className="layout">
-            {screen !== 'queue' && (
-              <aside className="side" aria-label="Application status">
-                <ReadinessBar />
-              </aside>
-            )}
-            <main className="main">{main}</main>
-          </div>
-          <footer className="footer">
-            <p>{en.footer}</p>
-          </footer>
-          <PrototypeControls />
+          <main className="main">{main}</main>
         </div>
       </NotesContext.Provider>
       </DensityContext.Provider>

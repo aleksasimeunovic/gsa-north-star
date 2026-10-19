@@ -22,7 +22,7 @@ export function Stepper({ label, current, steps, stepOf, onSelect }: Props) {
             <button type="button" className="stepper-step" aria-current={i === current ? 'step' : undefined} onClick={() => onSelect(s.id)}>
               {s.name}
             </button>
-            {s.status && <StatusBadge status={s.status} />}
+            {s.status && <StatusBadge status={s.status} iconOnly />}
           </li>
         ))}
       </ol>

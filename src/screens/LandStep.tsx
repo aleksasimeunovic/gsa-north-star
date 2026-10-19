@@ -119,7 +119,7 @@ export function LandStep({ target }: { target: string | null }) {
         </Banner>
       )}
       <div><Note kind="tested" /></div>
-      <div className="land-layout">
+      <div className="land-layout" data-map="full">
         <div className="land-map">
           <FieldMap
             scenario={scenario}

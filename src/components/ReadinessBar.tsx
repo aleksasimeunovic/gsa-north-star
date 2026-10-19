@@ -8,7 +8,7 @@ import { Note } from '../ui/Note'
 
 const SHAPE = { waiting_for_renewal: '!', action_required: '!', ready_to_submit: '✓', submitted: '✓' } as const
 
-/** On every screen: answers "Is my application ready?". Never ranked by money. */
+/** In the header, on every screen: answers "Is my application ready?". Never ranked by money. */
 export function ReadinessBar() {
   const { derived } = useApp()
   const r = derived.readiness
@@ -27,10 +27,6 @@ export function ReadinessBar() {
         <Text variant="strong">
           <span aria-hidden="true" className="readiness-icon">{SHAPE[r.state]}</span> {headline}
         </Text>
-        <Text variant="small">
-          {ui.readiness.counts(r.counts.action_required, r.counts.awaiting_verification, r.counts.complete)}
-        </Text>
-        {r.state === 'ready_to_submit' && <Text variant="small">{ui.readiness.readyNote}</Text>}
       </div>
       <Inline>
         <Note kind="north_star" />

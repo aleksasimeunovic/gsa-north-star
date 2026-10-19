@@ -23,8 +23,8 @@ Where each item from CLAUDE.md sections 3 and 13 can be checked in the prototype
 
 - [x] Smartest version of the wizard, not a new product; no AI chat ("Why am I seeing this?" is static text).
 - [x] Opens with what GSA knows; asks only about what changed.
-- [x] Live preview reassembles as Milan answers; progress counts only his steps; 8 → 4 compare view on every step.
-- [x] Readiness bar and drawer on every screen; the 38 vs 41 conflict returns to the application ("Carry on").
+- [x] Live preview reassembles as Milan answers and says "4 steps this year. The tested version had 8."; progress counts only his steps. (The separate compare view was removed at Aleksa's request.)
+- [x] Readiness in the always-visible header, with its drawer, on every screen; the 38 vs 41 conflict returns to the application ("Carry on").
 - [x] Status (complete / needs your action / awaiting verification) is separate from payment impact (estimate block).
 - [x] "Ready to submit", never "safe"; ready isn't approved; Submit lists what the state still checks.
 - [x] 38 vs 41: both values kept, explained, awaiting verification, ask the registry or Jelena, no dead end.
