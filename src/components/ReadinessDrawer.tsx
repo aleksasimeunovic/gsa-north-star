@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { en, itemLabel, ui } from '../copy/en'
+import { en, finish, itemLabel, ui } from '../copy/en'
 import type { Status } from '../logic/status'
 import { Button } from '../ui/Button'
 import { Drawer } from '../ui/Drawer'
@@ -21,6 +21,15 @@ export function ReadinessDrawer({ open, onClose, returnFocusTo }: { open: boolea
           <section aria-labelledby="group-renewal">
             <h3 id="group-renewal"><StatusBadge status="action_required" /></h3>
             <Text>{ui.welcome.notRenewed}</Text>
+            <Button
+              variant="link"
+              onClick={() => {
+                onClose()
+                go('renewal')
+              }}
+            >
+              {finish.renewal.title}
+            </Button>
           </section>
         )}
         {ORDER.map((status) => {

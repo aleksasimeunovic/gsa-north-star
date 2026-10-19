@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import type { Action, Actor, Answers, AppState } from './actions'
+import { derive } from '../logic/derive'
+import { submitCheck } from '../logic/submit'
 import { loadState, saveState } from './persist'
 
 export const emptyAnswers = (): Answers => ({
@@ -57,6 +59,8 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, declarationsSigned: action.signed }
     case 'submit':
       return { ...a, submittedAt: at }
+    case 'amend':
+      return { ...a, submittedAt: null, declarationsSigned: false }
     default:
       return a
   }
@@ -68,6 +72,11 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
   if (action.type === 'reset') return { ...initialState(), scenarioId: state.scenarioId, role: state.role }
   if (action.type === 'set_scenario') return { ...initialState(), scenarioId: action.scenarioId, role: state.role }
   if (action.type === 'set_role') return { ...state, role: action.role }
+  // Submission only goes through when nothing blocks it.
+  if (action.type === 'submit') {
+    const d = derive(state)
+    if (!submitCheck(d.readiness, state.answers.declarationsSigned).canSubmit) return state
+  }
   const actor: Actor = state.role === 'advisor' ? 'Jelena' : 'Milan'
   return {
     ...state,

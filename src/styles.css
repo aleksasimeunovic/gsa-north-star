@@ -146,3 +146,15 @@ select { font: inherit; min-height: 44px; padding: 4px 8px; border: 1px solid va
 .map-label { font-size: 16px; }
 .split-label { font-size: 15px; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
 @media (max-width: 959px) { .stepper-list { display: none; } }
+
+/* Phase 4 */
+.checkbox { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; padding: 8px 0; margin: 0; }
+.checkbox input { width: 24px; height: 24px; flex: none; margin: 0; }
+.checkbox[data-density='compact'] { min-height: 32px; }
+.records { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
+.records dt { color: var(--muted); }
+.records dd { margin: 0; font-weight: 600; }
+.compare dd .text { font-size: 1rem; font-weight: 400; }
+.banner h1 { margin: 0 0 4px; }
+.btn[data-variant='link'] { text-align: left; min-height: 44px; }
+.banner ul { list-style: none; padding: 0; margin: 4px 0 0; }

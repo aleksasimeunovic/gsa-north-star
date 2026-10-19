@@ -7,7 +7,10 @@ import { WizardShell } from './components/WizardShell'
 import { DebugView } from './screens/DebugView'
 import { HerdStep } from './screens/HerdStep'
 import { LandStep } from './screens/LandStep'
-import { StepPlaceholder } from './screens/StepPlaceholder'
+import { EverythingElse } from './screens/EverythingElse'
+import { Receipt } from './screens/Receipt'
+import { Renewal } from './screens/Renewal'
+import { Submit } from './screens/Submit'
 import { WelcomeBack } from './screens/WelcomeBack'
 import { useHashScreen } from './state/useHashScreen'
 import { useStore } from './state/store'
@@ -23,16 +26,29 @@ export function App() {
   // A step the farm doesn't have (e.g. no animals) falls back to the first step he has.
   const renderStep = (requested: StepId) => {
     const id = derived.wizard.steps.some((s) => s.id === requested) ? requested : derived.wizard.steps[0].id
+    if (id === 'submit' && state.answers.submittedAt) return <Receipt />
     const body =
-      id === 'herd' ? <HerdStep /> : id === 'land' ? <LandStep key={state.scenarioId} target={target} /> : <StepPlaceholder stepId={id} />
+      id === 'herd' ? (
+        <HerdStep />
+      ) : id === 'land' ? (
+        <LandStep key={state.scenarioId} target={target} />
+      ) : id === 'everything_else' ? (
+        <EverythingElse />
+      ) : (
+        <Submit />
+      )
     return <WizardShell stepId={id}>{body}</WizardShell>
   }
 
   const main =
-    screen === 'debug' ? (
+    screen === 'receipt' && state.answers.submittedAt ? (
+      <Receipt />
+    ) : screen === 'renewal' ? (
+      <Renewal />
+    ) : screen === 'debug' ? (
       <DebugView state={state} derived={derived} dispatch={dispatch} />
-    ) : STEPS.includes(screen as StepId) ? (
-      renderStep(screen as StepId)
+    ) : STEPS.includes(screen as StepId) || screen === 'receipt' ? (
+      renderStep(screen === 'receipt' ? 'submit' : (screen as StepId))
     ) : (
       <WelcomeBack />
     )

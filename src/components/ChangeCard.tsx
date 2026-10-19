@@ -32,6 +32,8 @@ interface ShellProps {
   followUp: ReactNode
   needsFollowUp: boolean
   outcome: ReactNode
+  /** Inside another card (Land panel): no outer card or title. */
+  bare?: boolean
 }
 
 /** One clear question per change. Answered cards collapse; answers stay editable. */
@@ -41,8 +43,7 @@ function ChangeShell(p: ShellProps) {
   const item = derived.items.find((i) => i.id === p.itemId)
   const showQuestion = p.answer === null || editing || p.needsFollowUp
 
-  return (
-    <Card id={changeTarget(p.id)} title={p.title} status={item?.status}>
+  const body = (
       <Stack gap="sm">
         <Text>{p.record}</Text>
         {showQuestion ? (
@@ -71,11 +72,16 @@ function ChangeShell(p: ShellProps) {
           </>
         )}
       </Stack>
+  )
+  if (p.bare) return <div id={changeTarget(p.id)} tabIndex={-1}>{body}</div>
+  return (
+    <Card id={changeTarget(p.id)} title={p.title} status={item?.status}>
+      {body}
     </Card>
   )
 }
 
-function HerdChange({ onCarryOn }: { onCarryOn: () => void }) {
+function HerdChange({ onCarryOn, bare }: { onCarryOn: () => void; bare?: boolean }) {
   const { derived, state, dispatch } = useApp()
   const herd = derived.scenario.herd!
   const a = state.answers.herd
@@ -92,6 +98,7 @@ function HerdChange({ onCarryOn }: { onCarryOn: () => void }) {
 
   return (
     <ChangeShell
+      bare={bare}
       id="herd"
       itemId="herd"
       title={ui.herd.title}
@@ -142,7 +149,7 @@ function HerdChange({ onCarryOn }: { onCarryOn: () => void }) {
   )
 }
 
-function RiverChange() {
+function RiverChange({ bare }: { bare?: boolean }) {
   const { state, dispatch, go } = useApp()
   const a = state.answers.river
   const toLand = (
@@ -152,6 +159,7 @@ function RiverChange() {
   )
   return (
     <ChangeShell
+      bare={bare}
       id="river"
       itemId="field_river"
       title={ui.river.title}
@@ -194,13 +202,14 @@ function RiverChange() {
   )
 }
 
-function RoadChange() {
+function RoadChange({ bare }: { bare?: boolean }) {
   const { derived, state, dispatch } = useApp()
   const field = derived.scenario.fields.find((f) => f.id === 'road')!
   const strip = field.signal?.kind === 'road_strip' ? field.signal.stripHa : 0
   const a = state.answers.road
   return (
     <ChangeShell
+      bare={bare}
       id="road"
       itemId="field_road"
       title={ui.road.title}
@@ -231,8 +240,8 @@ function RoadChange() {
   )
 }
 
-export function ChangeCard({ id, onCarryOn }: { id: ChangeId; onCarryOn: () => void }) {
-  if (id === 'herd') return <HerdChange onCarryOn={onCarryOn} />
-  if (id === 'river') return <RiverChange />
-  return <RoadChange />
+export function ChangeCard({ id, onCarryOn, bare }: { id: ChangeId; onCarryOn: () => void; bare?: boolean }) {
+  if (id === 'herd') return <HerdChange onCarryOn={onCarryOn} bare={bare} />
+  if (id === 'river') return <RiverChange bare={bare} />
+  return <RoadChange bare={bare} />
 }

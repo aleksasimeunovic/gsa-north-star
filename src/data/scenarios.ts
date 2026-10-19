@@ -52,6 +52,13 @@ export interface Herd {
   calvingPeriod: { from: string; to: string }
 }
 
+/** Records GSA brings in. Read-only for Milan. */
+export interface GeneralData {
+  holder: string
+  place: string
+  applicationYear: number
+}
+
 export type ScenarioId =
   | 'second_year'
   | 'second_year_not_renewed'
@@ -66,6 +73,7 @@ export interface Scenario {
   window: { opens: string; closes: string }
   // Prototype clock (assumption), so "days left" means something.
   today: string
+  generalData: GeneralData
   herd: Herd | null
   fields: Field[]
   /** Physical blocks: land that can get support. */
@@ -153,6 +161,7 @@ const BASE: Scenario = {
   renewed: true,
   window: { opens: '2026-04-10', closes: '2026-05-26' },
   today: '2026-04-28',
+  generalData: { holder: 'Milan Dragović', place: 'Bečanj, near Čačak', applicationYear: 2026 },
   herd: HERD,
   fields: FIELDS,
   blocks: BLOCKS,

@@ -1,4 +1,4 @@
-import { en, ui } from '../copy/en'
+import { en, finish, ui } from '../copy/en'
 import { daysLeft, isRenewed } from '../logic/readiness'
 import { isAnswered } from '../logic/changes'
 import { useApp } from '../components/AppContext'
@@ -34,7 +34,10 @@ export function WelcomeBack() {
         {isRenewed(scenario, state.answers) ? (
           <Text variant="secondary">{ui.welcome.activeFarmer}</Text>
         ) : (
-          <Banner tone="attention">{ui.welcome.notRenewed}</Banner>
+          <Banner tone="attention">
+            <Text>{ui.welcome.notRenewed}</Text>
+            <Button variant="link" onClick={() => go('renewal')}>{finish.renewal.title}</Button>
+          </Banner>
         )}
       </header>
 

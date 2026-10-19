@@ -45,7 +45,7 @@ export function LandStep({ target }: { target: string | null }) {
     const sig = field.signal
     if (sig?.kind === 'satellite_difference') {
       const r = state.answers.river
-      if (r.answer === null || (r.answer === 'no' && r.noOption === null)) return <ChangeCard id="river" onCarryOn={carryOn} />
+      if (r.answer === null || (r.answer === 'no' && r.noOption === null)) return <ChangeCard bare id="river" onCarryOn={carryOn} />
       if (r.answer === 'yes') {
         if (splitting)
           return (
@@ -90,7 +90,7 @@ export function LandStep({ target }: { target: string | null }) {
     }
     if (sig?.kind === 'road_strip') {
       const r = state.answers.road
-      if (r.answer === null || (r.answer === 'no' && !r.correctionRequested)) return <ChangeCard id="road" onCarryOn={carryOn} />
+      if (r.answer === null || (r.answer === 'no' && !r.correctionRequested)) return <ChangeCard bare id="road" onCarryOn={carryOn} />
       const left = formatHa(roundHa(field.areaHa - sig.stripHa))
       if (r.answer === 'yes')
         return (

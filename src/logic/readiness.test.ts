@@ -45,7 +45,7 @@ describe('application state', () => {
   })
 
   it('submitted after submit', () => {
-    expect(run('second_year', ...allYes, { type: 'submit' }).readiness.state).toBe('submitted')
+    expect(run('second_year', ...allYes, { type: 'sign_declarations', signed: true }, { type: 'submit' }).readiness.state).toBe('submitted')
   })
 
   it('days left counts the closing day', () => {

@@ -62,4 +62,5 @@ export type Action =
   | { type: 'renew' }
   | { type: 'sign_declarations'; signed: boolean }
   | { type: 'submit' }
+  | { type: 'amend' }
   | { type: 'reset' }
