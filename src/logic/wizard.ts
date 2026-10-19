@@ -136,3 +136,9 @@ export function assembly(s: Scenario, a: Answers, compare: CompareRow[]): Assemb
   const open = detectChanges(s).filter((c) => !isAnswered(c, a))
   return compare.map((row) => ({ ...row, waitingOn: (WAITS_ON[row.tested] ?? []).filter((c) => open.includes(c)) }))
 }
+
+/** Where a step sits among the steps he has. Progress counts only these. */
+export function neighbours(steps: Step[], id: StepId) {
+  const index = steps.findIndex((s) => s.id === id)
+  return { index, total: steps.length, previous: steps[index - 1]?.id ?? null, next: steps[index + 1]?.id ?? null }
+}

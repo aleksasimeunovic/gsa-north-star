@@ -71,7 +71,7 @@ export function splitPolygon(poly: Polygon, a: Point, b: Point): SplitResult | n
   return { parts: [left, right], areasHa, chord }
 }
 
-const bounds = (poly: Polygon) => ({
+export const bounds = (poly: Polygon) => ({
   minX: Math.min(...poly.map((p) => p.x)),
   maxX: Math.max(...poly.map((p) => p.x)),
   minY: Math.min(...poly.map((p) => p.y)),
@@ -86,4 +86,46 @@ export function lineAtFraction(poly: Polygon, t: number): [Point, Point] {
     { x: minX - 1, y },
     { x: maxX + 1, y },
   ]
+}
+
+/** Area-weighted centre, for labelling a part on the map. */
+export function centroid(poly: Polygon): Point {
+  let a = 0
+  let cx = 0
+  let cy = 0
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i]
+    const q = poly[(i + 1) % poly.length]
+    const cross = p.x * q.y - q.x * p.y
+    a += cross
+    cx += (p.x + q.x) * cross
+    cy += (p.y + q.y) * cross
+  }
+  if (a === 0) return poly[0]
+  return { x: cx / (3 * a), y: cy / (3 * a) }
+}
+
+/** Keep a drag handle near the field (margin in metres). */
+export function clampToBounds(p: Point, poly: Polygon, margin = 10): Point {
+  const b = bounds(poly)
+  return {
+    x: Math.min(b.maxX + margin, Math.max(b.minX - margin, p.x)),
+    y: Math.min(b.maxY + margin, Math.max(b.minY - margin, p.y)),
+  }
+}
+
+/** Shapes whose bounding boxes overlap the field (rectangular data: exact). */
+export function overlapping<T extends { polygon: Polygon }>(field: Polygon, shapes: T[]): T[] {
+  const f = bounds(field)
+  return shapes.filter((s) => {
+    const b = bounds(s.polygon)
+    return Math.min(f.maxX, b.maxX) - Math.max(f.minX, b.minX) > 0 && Math.min(f.maxY, b.maxY) - Math.max(f.minY, b.minY) > 0
+  })
+}
+
+/** Fraction (0 top, 1 bottom) of a horizontal line, for the slider. */
+export function fractionOfLine(poly: Polygon, line: [Point, Point]): number {
+  const b = bounds(poly)
+  const y = (line[0].y + line[1].y) / 2
+  return Math.min(1, Math.max(0, (y - b.minY) / (b.maxY - b.minY)))
 }

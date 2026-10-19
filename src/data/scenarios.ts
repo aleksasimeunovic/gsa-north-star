@@ -23,6 +23,13 @@ export interface Field {
   signal?: FieldSignal
 }
 
+/** Reference layers for the map legend. */
+export interface LandShape {
+  id: string
+  label: string
+  polygon: Polygon
+}
+
 export type MeasureId = 'plant_production' | 'cows_raising_calves' | 'eco_scheme'
 
 export interface Measure {
@@ -61,6 +68,10 @@ export interface Scenario {
   today: string
   herd: Herd | null
   fields: Field[]
+  /** Physical blocks: land that can get support. */
+  blocks: LandShape[]
+  /** Cadastral parcels: the legal plots. Reference only; labels are placeholders. */
+  parcels: LandShape[]
   measures: Measure[]
   documents: Document[]
 }
@@ -97,6 +108,32 @@ const FIELDS: Field[] = [
   { id: 'house', name: 'House field', areaHa: 1.3, cropLastYear: 'maize', arable: true, polygon: rect(390, 0, 130, 100) },
 ]
 
+const BLOCKS: LandShape[] = [
+  {
+    id: 'block_1',
+    label: 'Block 1',
+    // Ends where the widened road starts.
+    polygon: [
+      { x: 0, y: 0 },
+      { x: 370, y: 0 },
+      { x: 370, y: 112 },
+      { x: 200, y: 112 },
+      { x: 200, y: 120 },
+      { x: 0, y: 120 },
+    ],
+  },
+  { id: 'block_2', label: 'Block 2', polygon: rect(0, 140, 370, 100) },
+  { id: 'block_3', label: 'Block 3', polygon: rect(390, 0, 130, 100) },
+]
+
+const PARCELS: LandShape[] = [
+  { id: 'parcel_1', label: 'Parcel 1', polygon: rect(0, 0, 120, 120) },
+  { id: 'parcel_2', label: 'Parcel 2', polygon: rect(120, 0, 250, 120) },
+  { id: 'parcel_3', label: 'Parcel 3', polygon: rect(0, 140, 370, 60) },
+  { id: 'parcel_4', label: 'Parcel 4', polygon: rect(0, 200, 370, 40) },
+  { id: 'parcel_5', label: 'Parcel 5', polygon: rect(390, 0, 130, 100) },
+]
+
 const HERD: Herd = {
   lastYearDeclared: 41,
   registryCount: 38,
@@ -118,6 +155,8 @@ const BASE: Scenario = {
   today: '2026-04-28',
   herd: HERD,
   fields: FIELDS,
+  blocks: BLOCKS,
+  parcels: PARCELS,
   measures: MEASURES,
   documents: [{ id: 'input_receipts', attached: true }],
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Action } from '../state/actions'
-import { TESTED_STEPS } from './wizard'
+import { neighbours, TESTED_STEPS } from './wizard'
 import { halfSplit, run } from './testUtils'
 
 const steps = (r: ReturnType<typeof run>) => r.wizard.steps.map((s) => `${s.id}:${s.mode}`)
@@ -87,5 +87,16 @@ describe('wizard generator', () => {
   it('compare view: no animals hides animal measures', () => {
     const row = run('no_animals').compare.find((c) => c.tested === 'animal_measures')!
     expect(row).toEqual({ tested: 'animal_measures', becomes: null, fate: 'hidden_no_animals' })
+  })
+})
+
+describe('step navigation', () => {
+  it('moves through only the steps he has', () => {
+    const steps = run('second_year').wizard.steps
+    expect(neighbours(steps, 'herd')).toEqual({ index: 0, total: 4, previous: null, next: 'land' })
+    expect(neighbours(steps, 'submit')).toEqual({ index: 3, total: 4, previous: 'everything_else', next: null })
+  })
+  it('no animals: land is first, 3 in total', () => {
+    expect(neighbours(run('no_animals').wizard.steps, 'land')).toEqual({ index: 0, total: 3, previous: null, next: 'everything_else' })
   })
 })

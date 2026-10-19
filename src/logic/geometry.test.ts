@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { clipLineToPolygon, lineAtFraction, polygonAreaHa, splitPolygon } from './geometry'
+import { centroid, clampToBounds, clipLineToPolygon, fractionOfLine, lineAtFraction, overlapping, polygonAreaHa, splitPolygon } from './geometry'
 
 const fields = SCENARIOS.second_year.fields
 const river = fields.find((f) => f.id === 'river')!.polygon
@@ -45,5 +45,31 @@ describe('geometry', () => {
     const [a, b] = lineAtFraction(river, 0.25)
     const r = splitPolygon(river, a, b)!
     expect([...r.areasHa].sort()).toEqual([0.6, 1.8])
+  })
+})
+
+describe('map helpers', () => {
+  it('centroids label the two halves of the river field', () => {
+    const r = splitPolygon(river, { x: 0, y: 60 }, { x: 200, y: 60 })!
+    const ys = r.parts.map((p) => centroid(p).y).sort((a, b) => a - b)
+    expect(ys).toEqual([30, 90])
+    expect(r.parts.map((p) => centroid(p).x)).toEqual([100, 100])
+  })
+
+  it('a handle dragged far away is held near the field, and the line still clips to the field', () => {
+    const a = clampToBounds({ x: -900, y: 60 }, river)
+    expect(a).toEqual({ x: -10, y: 60 })
+    const chord = clipLineToPolygon(river, a, { x: 900, y: 60 })!
+    expect(chord.every((p) => p.x >= 0 && p.x <= 200)).toBe(true)
+  })
+
+  it('finds the cadastral parcels under a field', () => {
+    const s = SCENARIOS.second_year
+    expect(overlapping(river, s.parcels).map((p) => p.label)).toEqual(['Parcel 1', 'Parcel 2'])
+    expect(overlapping(river, s.blocks).map((p) => p.label)).toEqual(['Block 1'])
+  })
+
+  it('slider position round-trips', () => {
+    expect(fractionOfLine(river, lineAtFraction(river, 0.5))).toBe(0.5)
   })
 })

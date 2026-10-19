@@ -93,3 +93,56 @@ th, td { text-align: left; border-bottom: 1px solid var(--soft); padding: 4px 6p
   .card, h1, h2 { scroll-margin-top: 96px; }
 }
 @media (min-width: 960px) { .card { scroll-margin-top: 16px; } }
+
+/* Phase 3: wizard and map */
+.stepper { display: flex; flex-direction: column; gap: 6px; }
+.stepper-count { margin: 0; font-weight: 600; }
+.stepper progress { width: 100%; height: 12px; accent-color: var(--fg); }
+.stepper-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.stepper-list li { display: flex; align-items: center; gap: 6px; }
+.stepper-step { font: inherit; background: none; border: 0; padding: 0; min-height: 44px; text-decoration: underline; cursor: pointer; color: var(--fg); }
+.stepper-step[aria-current='step'] { font-weight: 700; text-decoration: none; border-bottom: 3px solid var(--fg); }
+.stepper[data-density='compact'] .stepper-step { min-height: 28px; }
+.step-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.step-head h1 { margin: 0; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+.toggle input { width: 22px; height: 22px; }
+.table caption { text-align: left; font-weight: 600; padding-bottom: 4px; }
+select { font: inherit; min-height: 44px; padding: 4px 8px; border: 1px solid var(--fg); background: var(--bg); color: var(--fg); max-width: 100%; }
+.land-layout { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 960px) { .land-layout { flex-direction: row; align-items: flex-start; } .land-map { flex: 3; } .land-side { flex: 2; } }
+.field-map { width: 100%; height: auto; display: block; border: 1px solid var(--line); background: var(--bg); touch-action: none; }
+.layer-parcel { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; }
+.layer-block { fill: none; stroke: var(--fg); stroke-width: 2.5; stroke-dasharray: 10 5; }
+.layer-field { fill: var(--soft); stroke: var(--fg); stroke-width: 1.5; }
+.map-field { cursor: pointer; }
+.map-field[data-selected] .layer-field { stroke-width: 4; fill: #e2e2e2; }
+.map-field:focus-visible { outline: none; }
+.map-field:focus-visible .layer-field { stroke-width: 5; stroke-dasharray: 6 3; }
+.layer-road, .layer-flag { stroke: var(--fg); stroke-width: 0.8; }
+.pattern-line { stroke: var(--fg); stroke-width: 1.5; }
+.pattern-dot { fill: var(--fg); }
+.map-label { font-size: 11px; fill: var(--fg); pointer-events: none; font-weight: 600; }
+.split-line { stroke: var(--fg); stroke-width: 3; }
+.split-guide { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.split-label { font-size: 10px; }
+.split-handle { fill: var(--bg); stroke: var(--fg); stroke-width: 3; cursor: grab; }
+.split-handle:focus-visible { outline: none; stroke-width: 5; }
+.legend-title { font-size: 1.1rem; }
+.legend { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.legend dt { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.legend dd { margin: 0 0 0 36px; color: var(--muted); font-size: 0.875rem; }
+.legend-swatch rect { stroke: var(--fg); }
+.legend-swatch[data-kind='field'] rect { fill: var(--soft); stroke-width: 1.5; }
+.legend-swatch[data-kind='block'] rect { stroke-width: 2.5; stroke-dasharray: 6 3; }
+.legend-swatch[data-kind='parcel'] rect { stroke-width: 1; stroke-dasharray: 2 3; stroke: var(--muted); }
+.field-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.field-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--soft); }
+.field-row { font: inherit; background: none; border: 0; text-align: left; padding: 8px 0; min-height: 44px; cursor: pointer; color: var(--fg); display: flex; flex-direction: column; }
+.field-row[aria-pressed='true'] .field-row-name { text-decoration: underline; text-decoration-thickness: 3px; }
+.field-row-name { font-weight: 600; }
+.field-row-meta { font-size: 0.875rem; color: var(--muted); }
+.btn[aria-disabled='true'] { opacity: 0.6; cursor: not-allowed; }
+.map-label { font-size: 16px; }
+.split-label { font-size: 15px; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+@media (max-width: 959px) { .stepper-list { display: none; } }
