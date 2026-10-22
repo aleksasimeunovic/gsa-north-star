@@ -132,10 +132,11 @@ select { font: inherit; min-height: 44px; padding: 4px 8px; border: 1px solid va
 @media (min-width: 960px) { .queue-layout { flex-direction: row; align-items: flex-start; } .queue-list { flex: 2; } .queue-detail { flex: 3; } }
 .queue-row { display: flex; gap: 8px; align-items: flex-start; }
 .queue-row[data-current] { border-left: 4px solid var(--fg); padding-left: 6px; }
-.queue-row .checkbox span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .queue-open { font: inherit; text-align: left; background: none; border: 0; padding: 6px 0; cursor: pointer; color: var(--fg); display: flex; flex-direction: column; gap: 2px; }
 .queue-who { font-weight: 700; }
 .queue-meta { font-size: 0.875rem; color: var(--muted); }
+.queue-state { font-weight: 600; }
+.queue-row[data-state='resolved'] .queue-open { color: var(--muted); }
 #case-detail:focus-visible { outline: 3px solid var(--focus); }
 .topbar { flex-wrap: wrap; gap: 4px 16px; }
 @media (max-width: 959px) { .advisor-nav { order: 3; width: 100%; } }

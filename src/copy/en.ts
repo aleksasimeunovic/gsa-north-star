@@ -109,7 +109,7 @@ export const tasks = {
     measures: 'Your measures',
     receipts: 'Your input receipts',
     submit: 'Sign and submit',
-  } as Record<TaskId | 'submit' | 'field_upper' | 'field_meadow' | 'field_house', string>,
+  } as Record<TaskId | 'submit', string>,
   receiptsMissingTitle: 'Upload your input receipts',
 
   work: {
@@ -250,7 +250,6 @@ export const map = {
 }
 
 export const split = {
-  title: 'Split the river field',
   proposed: 'Line placed where the satellite photo changes.',
   moveLine: 'Drag the line to move it',
   handleStart: 'Left end of the line',
@@ -276,7 +275,6 @@ export const finish = {
     readyTitle: "You're ready to submit, Milan.",
     readyNote: 'Nothing needs your action. Ready does not mean approved.',
     blockedTitle: 'Before you submit:',
-    renewal: 'Renew your active farmer status',
     goTo: (what: string) => `Go to: ${what}`,
     awaitingTitle: 'Awaiting verification',
     awaitingNote: 'These wait for a check. You can still submit.',

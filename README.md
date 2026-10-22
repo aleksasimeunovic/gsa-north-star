@@ -1,6 +1,6 @@
 # GSA North Star
 
-A clickable, low-fidelity prototype of Aleksa Simeunović's North Star proposal for Serbia's agricultural subsidy application (GSA): the wizard is generated around Milan's farm rather than fixed around the government's process.
+A clickable, low-fidelity prototype of Aleksa Simeunović's North Star proposal for Serbia's agricultural subsidy application (GSA): the application is generated around Milan's farm rather than fixed around the government's process.
 
 ## Run
 
@@ -23,6 +23,6 @@ The site is served at `https://<user>.github.io/gsa-north-star/`. Navigation use
 
 ## Structure
 
-`src/logic` holds the pure, tested rules (wizard generator, status, readiness, estimate, geometry, submit, advisor queue). `src/ui` holds primitives with semantic props, ready for a design system. All text is in `src/copy/en.ts`; all scenario facts are in `src/data/scenarios.ts`. `CLAUDE.md` is the brief.
+`src/logic` holds the pure, tested rules (application list, status, readiness, estimate, geometry, submit, advisor queue). `src/ui` holds primitives with semantic props, ready for a design system. All text is in `src/copy/en.ts`; all scenario facts are in `src/data/scenarios.ts`. `CLAUDE.md` is the brief.
 
-See `docs/acceptance.md` for where each problem and acceptance item is answered.
+See `docs/acceptance.md` for a five-minute path and where each problem and acceptance item is answered, and `docs/decisions.md` for the decision log.
