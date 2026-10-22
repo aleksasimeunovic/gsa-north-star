@@ -8,13 +8,14 @@ const allYes: Action[] = [
   { type: 'answer_river', answer: 'yes' },
   halfSplit(),
   { type: 'answer_road', answer: 'yes' },
+  ...(['fields_other', 'details', 'measures', 'receipts'] as const).map((what) => ({ type: 'confirm', what }) as const),
 ]
 
 describe('application state', () => {
-  it('action required until every change is answered', () => {
+  it('action required until every task is done', () => {
     const r = run('second_year').readiness
     expect(r.state).toBe('action_required')
-    expect(r.counts.action_required).toBe(3)
+    expect(r.counts.action_required).toBe(7)
     expect(r.canSubmit).toBe(false)
   })
 

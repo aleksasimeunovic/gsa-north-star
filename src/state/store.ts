@@ -8,7 +8,7 @@ export const emptyAnswers = (): Answers => ({
   herd: { answer: null, ownCount: null },
   river: { answer: null, noOption: null, redrawn: false, split: null },
   road: { answer: null, correctionRequested: false },
-  confirmedSteps: [],
+  confirmed: [],
   requests: [],
   attachedDocuments: [],
   renewed: false,
@@ -17,11 +17,11 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 4,
+  version: 5,
   scenarioId: 'second_year',
   role: 'farmer',
   prototype: { showNotes: false },
-  advisor: { handled: [], log: [] },
+  advisor: { log: [] },
   answers: emptyAnswers(),
   history: [],
 })
@@ -31,7 +31,8 @@ const addUnique = <T,>(list: T[], item: T) => (list.includes(item) ? list : [...
 function reduceAnswers(a: Answers, action: Action, at: string): Answers {
   switch (action.type) {
     case 'answer_herd':
-      return { ...a, herd: { ...a.herd, answer: action.answer } }
+      // "No" always asks for his own number afresh.
+      return { ...a, herd: { answer: action.answer, ownCount: action.answer === 'no' ? null : a.herd.ownCount } }
     case 'set_herd_count':
       return { ...a, herd: { ...a.herd, ownCount: action.count } }
     case 'send_to_jelena':
@@ -51,10 +52,11 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, road: { ...a.road, answer: action.answer } }
     case 'request_road_correction':
       return { ...a, road: { ...a.road, correctionRequested: true } }
-    case 'confirm_step':
-      return { ...a, confirmedSteps: addUnique(a.confirmedSteps, action.stepId) }
+    case 'confirm':
+      return { ...a, confirmed: addUnique(a.confirmed, action.what) }
     case 'attach_document':
-      return { ...a, attachedDocuments: addUnique(a.attachedDocuments, action.documentId) }
+      // Uploading them is confirming them.
+      return { ...a, attachedDocuments: addUnique(a.attachedDocuments, action.documentId), confirmed: addUnique(a.confirmed, 'receipts') }
     case 'renew':
       return { ...a, renewed: true }
     case 'sign_declarations':
@@ -78,18 +80,7 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
   if (action.type === 'set_role') return { ...state, role: action.role }
   if (action.type === 'set_notes') return { ...state, prototype: { showNotes: action.show } }
   if (action.type === 'advisor_act') {
-    const handled = action.act === 'handled' ? addUnique(state.advisor.handled, action.caseId) : state.advisor.handled
-    return { ...state, advisor: { handled, log: [...state.advisor.log, { caseId: action.caseId, act: action.act, at }] } }
-  }
-  if (action.type === 'advisor_handle_many') {
-    const fresh = action.caseIds.filter((id) => !state.advisor.handled.includes(id))
-    return {
-      ...state,
-      advisor: {
-        handled: [...state.advisor.handled, ...fresh],
-        log: [...state.advisor.log, ...fresh.map((caseId) => ({ caseId, act: 'handled' as const, at }))],
-      },
-    }
+    return { ...state, advisor: { log: [...state.advisor.log, { caseId: action.caseId, act: action.act, at }] } }
   }
   // Submission only goes through when nothing blocks it.
   if (action.type === 'submit') {

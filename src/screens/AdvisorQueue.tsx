@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { advisor, formatDateYear, formatTime } from '../copy/en'
+import { advisor, en, formatDate, formatDateYear, formatTime } from '../copy/en'
 import { useApp } from '../components/AppContext'
 import { SCENARIOS } from '../data/scenarios'
 import { advisorQueue, type AdvisorCase } from '../logic/advisor'
-import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
-import { Checkbox } from '../ui/Checkbox'
 import { Compare, Inline, Stack, Text } from '../ui/Layout'
-import { Note } from '../ui/Note'
 import { Table } from '../ui/Table'
 
 // Dates follow the prototype clock; times are real.
@@ -18,14 +15,17 @@ const when = (iso: string) => {
   return `${formatDateYear(day)}, ${formatTime(iso)}`
 }
 
+/** Who owns the next action, in words; a named office when it's waiting on one. */
+const stateLine = (c: AdvisorCase) => (c.state === 'waiting_office' ? advisor.waitingFor(en.offices[c.owner]) : advisor.state[c.state])
+
 function CaseDetail({ c }: { c: AdvisorCase }) {
   const { dispatch, go } = useApp()
-  const act = (a: 'asked_owner' | 'replied' | 'handled') => dispatch({ type: 'advisor_act', caseId: c.id, act: a })
+  const act = (a: 'referred' | 'asked_farmer' | 'resolved') => dispatch({ type: 'advisor_act', caseId: c.id, act: a })
+  const office = en.offices[c.owner]
   return (
     <Card id="case-detail" title={`${c.farmer}: ${advisor.kind[c.kind]}`} headingLevel={2}>
       <Stack gap="sm">
-        {!c.live && c.id === 'milan_herd' && <Text variant="small">{advisor.example}</Text>}
-        <Text>{advisor.detail[c.kind]}</Text>
+        <Text variant="strong">{stateLine(c)}</Text>
         {c.values && (
           <Compare
             items={[
@@ -38,23 +38,19 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
           <Text variant="small">{advisor.note}</Text>
           <Text>{c.note || advisor.noNote}</Text>
         </div>
-        <Text variant="secondary">{advisor.owner[c.owner]}</Text>
-        <Text variant="small">{advisor.sent(when(c.sentAt))}</Text>
-        {c.lastAct && <Banner tone="success">{advisor.done[c.lastAct]}</Banner>}
-        <Inline>
-          <Button onClick={() => act('asked_owner')}>{advisor.act.asked_owner[c.owner]}</Button>
-          <Button onClick={() => act('replied')}>{advisor.act.replied}</Button>
-          {c.status === 'open' && (
-            <Button variant="primary" onClick={() => act('handled')}>
-              {advisor.act.handled}
-            </Button>
-          )}
-          {c.id === 'milan_herd' && (
-            <Button variant="link" onClick={() => go('welcome')}>
-              {advisor.act.openApp}
-            </Button>
-          )}
-        </Inline>
+        <Text variant="secondary">{advisor.owner(office)}</Text>
+        {c.state !== 'resolved' && (
+          <Inline>
+            {c.state !== 'waiting_office' && <Button onClick={() => act('referred')}>{advisor.act.referred(office)}</Button>}
+            {c.state !== 'waiting_farmer' && <Button onClick={() => act('asked_farmer')}>{advisor.act.asked_farmer}</Button>}
+            <Button variant="primary" onClick={() => act('resolved')}>{advisor.act.resolved}</Button>
+          </Inline>
+        )}
+        {c.id === 'milan_herd' && (
+          <div>
+            <Button variant="link" onClick={() => go('welcome')}>{advisor.act.openApp}</Button>
+          </div>
+        )}
         <Table
           caption={advisor.historyTitle}
           head={[advisor.historyHead.when, advisor.historyHead.who, advisor.historyHead.what]}
@@ -65,16 +61,14 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
   )
 }
 
-/** Advisor mode: same information, denser, issues first; her time goes to hard cases. */
+/** Advisor mode: only hard cases, ordered by what matters, each saying who acts next. */
 export function AdvisorQueue() {
   const { state, dispatch } = useApp()
   const cases = advisorQueue(state)
-  const [current, setCurrent] = useState(0)
-  const [selected, setSelected] = useState<string[]>([])
+  const [currentId, setCurrentId] = useState(cases[0]?.id)
   const rows = useRef<(HTMLButtonElement | null)[]>([])
-  const c = cases[Math.min(current, cases.length - 1)]
-
-  const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+  const index = Math.max(0, cases.findIndex((x) => x.id === currentId))
+  const c = cases[index]
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -82,69 +76,52 @@ export function AdvisorQueue() {
       if (e.metaKey || e.ctrlKey || e.altKey || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return
       const k = e.key.toLowerCase()
       if (k === 'j' || k === 'k') {
-        const next = Math.max(0, Math.min(cases.length - 1, current + (k === 'j' ? 1 : -1)))
-        setCurrent(next)
+        const next = Math.max(0, Math.min(cases.length - 1, index + (k === 'j' ? 1 : -1)))
+        setCurrentId(cases[next].id)
         rows.current[next]?.focus()
-      } else if (k === 'o') {
+      } else if (k === 'o' && c) {
         dispatch({ type: 'advisor_act', caseId: c.id, act: 'opened' })
         document.getElementById('case-detail')?.focus()
-      } else if (k === 'x') toggle(c.id)
-      else if (k === 'h' && c.status === 'open') dispatch({ type: 'advisor_act', caseId: c.id, act: 'handled' })
-      else return
+      } else return
       e.preventDefault()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [cases, current, c, dispatch])
-
-  const open = cases.filter((x) => x.status === 'open').length
+  }, [cases, index, c, dispatch])
 
   return (
     <Stack gap="md">
       <header>
         <h1>{advisor.title}</h1>
-        <Text>{advisor.intro}</Text>
-        <Inline>
-          <Text variant="strong" as="span">{advisor.openCount(open)}</Text>
-          <Note kind="north_star" />
-        </Inline>
         <Text variant="small">{advisor.shortcuts}</Text>
       </header>
 
       <div className="queue-layout">
         <section aria-label={advisor.listLabel} className="queue-list">
-          <ul className="item-list">
+          <ol className="item-list">
             {cases.map((x, i) => (
-              <li key={x.id} className="queue-row" data-current={i === current || undefined}>
-                <Checkbox label={advisor.select(x.farmer)} checked={selected.includes(x.id)} onChange={() => toggle(x.id)} />
+              <li key={x.id} className="queue-row" data-current={i === index || undefined} data-state={x.state}>
                 <button
                   ref={(el) => (rows.current[i] = el)}
                   type="button"
                   className="queue-open"
-                  aria-current={i === current ? 'true' : undefined}
+                  aria-current={i === index ? 'true' : undefined}
+                  aria-keyshortcuts="J K O"
                   onClick={() => {
-                    setCurrent(i)
+                    setCurrentId(x.id)
                     dispatch({ type: 'advisor_act', caseId: x.id, act: 'opened' })
                   }}
                 >
                   <span className="queue-who">{x.farmer}</span>
                   <span>{advisor.kind[x.kind]}</span>
+                  <span className="queue-state">{stateLine(x)}</span>
                   <span className="queue-meta">
-                    {advisor.status[x.status]} · {advisor.sent(when(x.sentAt))}
+                    {[x.blocksSubmission && x.state !== 'resolved' && advisor.blocks, advisor.deadline(formatDate(x.deadline))].filter(Boolean).join(' · ')}
                   </span>
                 </button>
               </li>
             ))}
-          </ul>
-          <Button
-            disabled={selected.length === 0}
-            onClick={() => {
-              dispatch({ type: 'advisor_handle_many', caseIds: selected })
-              setSelected([])
-            }}
-          >
-            {advisor.bulk(selected.length)}
-          </Button>
+          </ol>
         </section>
         <div className="queue-detail">{c && <CaseDetail c={c} />}</div>
       </div>

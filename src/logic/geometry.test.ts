@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { centroid, clampToBounds, clipLineToPolygon, fractionOfLine, lineAtFraction, overlapping, polygonAreaHa, splitPolygon } from './geometry'
+import { centroid, clampToField, clipLineToPolygon, fractionOfLine, inArea, lineAtFraction, partNames, polygonAreaHa, proposedSplitLine, splitPolygon, translateLine } from './geometry'
 
 const fields = SCENARIOS.second_year.fields
 const river = fields.find((f) => f.id === 'river')!.polygon
@@ -56,18 +56,35 @@ describe('map helpers', () => {
     expect(r.parts.map((p) => centroid(p).x)).toEqual([100, 100])
   })
 
-  it('a handle dragged far away is held near the field, and the line still clips to the field', () => {
-    const a = clampToBounds({ x: -900, y: 60 }, river)
-    expect(a).toEqual({ x: -10, y: 60 })
-    const chord = clipLineToPolygon(river, a, { x: 900, y: 60 })!
-    expect(chord.every((p) => p.x >= 0 && p.x <= 200)).toBe(true)
+  it('guardrail: a handle stops at the field edge and says so', () => {
+    expect(clampToField({ x: -900, y: 60 }, river)).toEqual({ point: { x: 0, y: 60 }, clamped: true })
+    expect(clampToField({ x: 50, y: 60 }, river)).toEqual({ point: { x: 50, y: 60 }, clamped: false })
   })
 
-  it('finds the cadastral parcels under a field', () => {
-    const s = SCENARIOS.second_year
-    expect(overlapping(river, s.parcels).map((p) => p.label)).toEqual(['Parcel 1', 'Parcel 2'])
-    expect(overlapping(river, s.blocks).map((p) => p.label)).toEqual(['Block 1'])
+  it('moving the whole line keeps it inside the field', () => {
+    const r = translateLine([{ x: 0, y: 60 }, { x: 200, y: 60 }], 30, 500, river)
+    expect(r.line).toEqual([{ x: 0, y: 120 }, { x: 200, y: 120 }])
+    expect(r.clamped).toBe(true)
+    expect(translateLine([{ x: 0, y: 60 }, { x: 200, y: 60 }], 0, 10, river)).toMatchObject({ clamped: false })
   })
+
+  it('proposes the split along the top of the flagged area', () => {
+    const f = fields.find((x) => x.id === 'river')!
+    const flag = f.signal?.kind === 'satellite_difference' ? f.signal.flagPolygon : []
+    expect(proposedSplitLine(river, flag)).toEqual([{ x: 0, y: 60 }, { x: 200, y: 60 }])
+  })
+
+  it('names the parts as they look and finds the flagged one', () => {
+    const f = fields.find((x) => x.id === 'river')!
+    const flag = f.signal?.kind === 'satellite_difference' ? f.signal.flagPolygon : []
+    const r = splitPolygon(river, { x: 0, y: 60 }, { x: 200, y: 60 })!
+    const names = partNames(r.parts)
+    expect([...names].sort()).toEqual(['bottom', 'top'])
+    const bottom = r.parts[names.indexOf('bottom')]
+    expect(inArea(bottom, flag)).toBe(true)
+    expect(inArea(r.parts[names.indexOf('top')], flag)).toBe(false)
+  })
+
 
   it('slider position round-trips', () => {
     expect(fractionOfLine(river, lineAtFraction(river, 0.5))).toBe(0.5)

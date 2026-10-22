@@ -38,7 +38,6 @@ export function PrototypeControls() {
                 go('welcome')
               }}
             />
-            <Text variant="small">{proto.scenarioHint}</Text>
           </div>
           <RadioGroup<Role>
             legend={proto.signInAs}
@@ -52,10 +51,7 @@ export function PrototypeControls() {
               go(role === 'advisor' ? 'queue' : 'welcome')
             }}
           />
-          <div>
-            <Toggle label={proto.notes} checked={state.prototype.showNotes} onChange={(show) => dispatch({ type: 'set_notes', show })} />
-            <Text variant="small">{proto.notesHint}</Text>
-          </div>
+          <Toggle label={proto.notes} checked={state.prototype.showNotes} onChange={(show) => dispatch({ type: 'set_notes', show })} />
           <div>
             <Button
               onClick={() => {
@@ -64,17 +60,6 @@ export function PrototypeControls() {
               }}
             >
               {proto.reset}
-            </Button>
-          </div>
-          <div>
-            <Button
-              variant="link"
-              onClick={() => {
-                setOpen(false)
-                go('debug')
-              }}
-            >
-              {proto.debug}
             </Button>
           </div>
         </Stack>

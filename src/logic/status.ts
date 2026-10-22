@@ -3,8 +3,7 @@ import type { Answers } from '../state/actions'
 import { roundHa, splitPolygon } from './geometry'
 
 export type Status = 'complete' | 'action_required' | 'awaiting_verification'
-export type StepId = 'herd' | 'land' | 'everything_else' | 'submit'
-export type ItemId = 'herd' | `field_${FieldId}` | 'general_data' | 'measures' | 'documents'
+export type ItemId = 'herd' | `field_${FieldId}` | 'fields_other' | 'details' | 'measures' | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
 export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'field_check_pending'
@@ -30,17 +29,19 @@ export type ItemDetail =
   | 'road_confirmed'
   | 'road_needs_correction'
   | 'road_correction_requested'
-  | 'field_unchanged'
-  | 'field_to_draw'
-  | 'records_from_registry'
-  | 'measures_kept'
-  | 'measures_to_choose'
-  | 'documents_attached'
-  | 'documents_missing'
+  | 'fields_same'
+  | 'fields_confirmed'
+  | 'details_to_confirm'
+  | 'details_confirmed'
+  | 'details_correction'
+  | 'measures_to_confirm'
+  | 'measures_confirmed'
+  | 'receipts_to_confirm'
+  | 'receipts_confirmed'
+  | 'receipts_missing'
 
 export interface Item {
   id: ItemId
-  stepId: StepId
   status: Status
   detail: ItemDetail
   paymentImpact?: PaymentImpact
@@ -49,7 +50,7 @@ export interface Item {
 }
 
 const plantRate = (s: Scenario) => s.measures.find((m) => m.id === 'plant_production')?.rateDinars ?? 0
-const impact = (s: Scenario, areaHa: number, reason: ImpactReason): PaymentImpact => ({
+export const impactOf = (s: Scenario, areaHa: number, reason: ImpactReason): PaymentImpact => ({
   amountDinars: -Math.round(areaHa * plantRate(s)),
   areaHa,
   reason,
@@ -57,15 +58,15 @@ const impact = (s: Scenario, areaHa: number, reason: ImpactReason): PaymentImpac
 
 function herdItem(s: Scenario, a: Answers): Item | null {
   if (!s.herd) return null
-  const base = { id: 'herd' as const, stepId: 'herd' as const }
+  const id = 'herd' as const
   const { answer, ownCount } = a.herd
-  if (answer === null) return { ...base, status: 'action_required', detail: 'herd_unanswered' }
-  if (answer === 'yes') return { ...base, status: 'complete', detail: 'herd_confirmed' }
-  if (ownCount === null || ownCount < 0) return { ...base, status: 'action_required', detail: 'herd_needs_count' }
-  if (ownCount === s.herd.registryCount) return { ...base, status: 'complete', detail: 'herd_confirmed' }
+  if (answer === null) return { id, status: 'action_required', detail: 'herd_unanswered' }
+  if (answer === 'yes') return { id, status: 'complete', detail: 'herd_confirmed' }
+  if (ownCount === null || ownCount < 0) return { id, status: 'action_required', detail: 'herd_needs_count' }
+  if (ownCount === s.herd.registryCount) return { id, status: 'complete', detail: 'herd_confirmed' }
   // A record never overwrites his answer, and his answer never overwrites the record.
   return {
-    ...base,
+    id,
     status: 'awaiting_verification',
     detail: 'herd_differs',
     conflict: { record: s.herd.registryCount, his: ownCount, owner: 'animal_registry' },
@@ -81,90 +82,82 @@ export function riverSplitComplete(s: Scenario, a: Answers): boolean {
   return splitPolygon(field.polygon, split.line[0], split.line[1]) !== null
 }
 
-function fieldItem(s: Scenario, a: Answers, id: FieldId): Item {
-  const base = { id: `field_${id}` as const, stepId: 'land' as const }
+/** A field with a detected change gets its own item. */
+function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
   const field = s.fields.find((f) => f.id === id)!
-  if (s.firstYear) {
-    const drawn = a.confirmedSteps.includes('land')
-    return { ...base, status: drawn ? 'complete' : 'action_required', detail: drawn ? 'field_unchanged' : 'field_to_draw' }
-  }
   const signal = field.signal
+  const itemId = `field_${id}` as const
   if (signal?.kind === 'satellite_difference') {
     // Satellite only flags. Milan decides what he planted.
     const r = a.river
-    if (r.answer === null) return { ...base, status: 'action_required', detail: 'river_unanswered' }
+    if (r.answer === null) return { id: itemId, status: 'action_required', detail: 'river_unanswered' }
     if (r.answer === 'yes') {
       return riverSplitComplete(s, a)
-        ? { ...base, status: 'complete', detail: 'river_split_done' }
-        : { ...base, status: 'action_required', detail: 'river_needs_split' }
+        ? { id: itemId, status: 'complete', detail: 'river_split_done' }
+        : { id: itemId, status: 'action_required', detail: 'river_needs_split' }
     }
-    if (r.noOption === null) return { ...base, status: 'action_required', detail: 'river_needs_choice' }
+    if (r.noOption === null) return { id: itemId, status: 'action_required', detail: 'river_needs_choice' }
     if (r.noOption === 'redraw') {
       return r.redrawn
-        ? { ...base, status: 'complete', detail: 'river_redrawn' }
-        : { ...base, status: 'action_required', detail: 'river_needs_redraw' }
+        ? { id: itemId, status: 'complete', detail: 'river_redrawn' }
+        : { id: itemId, status: 'action_required', detail: 'river_needs_redraw' }
     }
     return {
-      ...base,
+      id: itemId,
       status: 'awaiting_verification',
       detail: 'river_field_check',
-      paymentImpact: impact(s, signal.flagHa, 'field_check_pending'),
+      paymentImpact: impactOf(s, signal.flagHa, 'field_check_pending'),
     }
   }
   if (signal?.kind === 'road_strip') {
     const r = a.road
-    if (r.answer === null) return { ...base, status: 'action_required', detail: 'road_unanswered' }
+    if (r.answer === null) return { id: itemId, status: 'action_required', detail: 'road_unanswered' }
     if (r.answer === 'yes') {
-      return { ...base, status: 'complete', detail: 'road_confirmed', paymentImpact: impact(s, signal.stripHa, 'road_took_area') }
+      return { id: itemId, status: 'complete', detail: 'road_confirmed', paymentImpact: impactOf(s, signal.stripHa, 'road_took_area') }
     }
-    if (!r.correctionRequested) return { ...base, status: 'action_required', detail: 'road_needs_correction' }
+    if (!r.correctionRequested) return { id: itemId, status: 'action_required', detail: 'road_needs_correction' }
     // The land map stays the official record until the correction is checked.
     return {
-      ...base,
+      id: itemId,
       status: 'awaiting_verification',
       detail: 'road_correction_requested',
-      paymentImpact: impact(s, signal.stripHa, 'road_pending_correction'),
+      paymentImpact: impactOf(s, signal.stripHa, 'road_pending_correction'),
       conflict: { record: roundHa(field.areaHa - signal.stripHa), his: field.areaHa, owner: 'land_map' },
     }
   }
-  return { ...base, status: 'complete', detail: 'field_unchanged' }
+  return null
 }
 
-function everythingElseItems(s: Scenario, a: Answers): Item[] {
-  const base = { stepId: 'everything_else' as const }
-  const items: Item[] = [{ ...base, id: 'general_data', status: 'complete', detail: 'records_from_registry' }]
-  const chosen = !s.firstYear || a.confirmedSteps.includes('everything_else')
-  items.push({
-    ...base,
-    id: 'measures',
-    status: chosen ? 'complete' : 'action_required',
-    detail: s.firstYear ? 'measures_to_choose' : 'measures_kept',
-  })
-  const missing = s.documents.some((d) => !d.attached && !a.attachedDocuments.includes(d.id))
-  items.push({
-    ...base,
-    id: 'documents',
-    status: missing ? 'action_required' : 'complete',
-    detail: missing ? 'documents_missing' : 'documents_attached',
-  })
-  return items
-}
+const confirmedItem = (id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDetail): Item =>
+  done ? { id, status: 'complete', detail: ok } : { id, status: 'action_required', detail: todo }
 
-/** Every item gets a status. Pure: derived from scenario + answers, never stored. */
+/**
+ * Every item gets a status. Pure: derived from scenario + answers, never stored.
+ * Unchanged things are named confirmations, not complete by default: he hasn't seen them yet.
+ */
 export function deriveItems(s: Scenario, a: Answers): Item[] {
   const herd = herdItem(s, a)
-  return [
-    ...(herd ? [herd] : []),
-    ...s.fields.map((f) => fieldItem(s, a, f.id)),
-    ...everythingElseItems(s, a),
-  ]
-}
+  const changed = s.fields.flatMap((f) => changedFieldItem(s, a, f.id) ?? [])
+  const unchanged = s.fields.filter((f) => !f.signal)
+  const items: Item[] = [...(herd ? [herd] : []), ...changed]
 
-const SEVERITY: Record<Status, number> = { complete: 0, awaiting_verification: 1, action_required: 2 }
+  if (unchanged.length) items.push(confirmedItem('fields_other', a.confirmed.includes('fields_other'), 'fields_same', 'fields_confirmed'))
 
-/** A step's status is its most pressing item. */
-export function worstStatus(statuses: Status[]): Status {
-  return statuses.reduce<Status>((w, s) => (SEVERITY[s] > SEVERITY[w] ? s : w), 'complete')
+  const correction = a.requests.some((r) => r.kind === 'record_check' && r.itemId === 'details')
+  items.push(
+    correction
+      ? { id: 'details', status: 'awaiting_verification', detail: 'details_correction' }
+      : confirmedItem('details', a.confirmed.includes('details'), 'details_to_confirm', 'details_confirmed'),
+  )
+  items.push(confirmedItem('measures', a.confirmed.includes('measures'), 'measures_to_confirm', 'measures_confirmed'))
+
+  const missing = s.documents.some((d) => !d.attached && !a.attachedDocuments.includes(d.id))
+  items.push(
+    missing
+      ? { id: 'receipts', status: 'action_required', detail: 'receipts_missing' }
+      : confirmedItem('receipts', a.confirmed.includes('receipts'), 'receipts_to_confirm', 'receipts_confirmed'),
+  )
+  return items
 }
 
 /** Fitting measures first, then the rest. The full list always stays. */

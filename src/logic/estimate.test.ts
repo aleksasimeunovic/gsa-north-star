@@ -28,8 +28,4 @@ describe('estimate', () => {
     const e = run('second_year', { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }).estimate
     expect(e.totalDinars).toBe(442_000)
   })
-
-  it('no animals: plant production only', () => {
-    expect(run('no_animals').estimate.totalDinars).toBe(162_000)
-  })
 })

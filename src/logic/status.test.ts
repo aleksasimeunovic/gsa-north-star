@@ -7,11 +7,26 @@ const item = (r: ReturnType<typeof run>, id: string) => r.items.find((i) => i.id
 const split = halfSplit()
 
 describe('status per item', () => {
-  it('starts with three changes needing action, everything else complete', () => {
+  it('starts with the three changes and the named confirmations needing action; nothing is complete before he sees it', () => {
     const r = run('second_year')
-    expect(r.items.filter((i) => i.status === 'action_required').map((i) => i.id)).toEqual(['herd', 'field_river', 'field_road'])
-    expect(item(r, 'field_upper').status).toBe('complete')
-    expect(item(r, 'general_data').status).toBe('complete')
+    expect(r.items.map((i) => [i.id, i.status])).toEqual([
+      ['herd', 'action_required'],
+      ['field_river', 'action_required'],
+      ['field_road', 'action_required'],
+      ['fields_other', 'action_required'],
+      ['details', 'action_required'],
+      ['measures', 'action_required'],
+      ['receipts', 'action_required'],
+    ])
+  })
+
+  it('confirming an unchanged thing completes it', () => {
+    expect(item(run('second_year', { type: 'confirm', what: 'measures' }), 'measures').status).toBe('complete')
+    expect(item(run('second_year', { type: 'confirm', what: 'fields_other' }), 'fields_other').detail).toBe('fields_confirmed')
+  })
+
+  it('a correction to his details waits for the record owner and does not block', () => {
+    expect(item(run('second_year', { type: 'ask_record_check', itemId: 'details' }), 'details').status).toBe('awaiting_verification')
   })
 
   it('herd yes is complete', () => {
@@ -65,20 +80,9 @@ describe('status per item', () => {
     expect(r.conflict).toEqual({ record: 1.68, his: 1.8, owner: 'land_map' })
   })
 
-  it('a missing document needs action until attached', () => {
-    expect(item(run('missing_document'), 'documents').status).toBe('action_required')
-    expect(item(run('missing_document', { type: 'attach_document', documentId: 'input_receipts' }), 'documents').status).toBe('complete')
-  })
-
-  it('no animals: no herd item', () => {
-    expect(run('no_animals').items.some((i) => i.id === 'herd')).toBe(false)
-  })
-
-  it('first year: registry headcount is a question; fields and measures need doing', () => {
-    const r = run('first_year')
-    expect(item(r, 'herd').status).toBe('action_required')
-    expect(item(r, 'field_river').detail).toBe('field_to_draw')
-    expect(item(r, 'measures').status).toBe('action_required')
+  it('missing receipts need action until uploaded; uploading confirms them', () => {
+    expect(item(run('missing_document'), 'receipts').detail).toBe('receipts_missing')
+    expect(item(run('missing_document', { type: 'attach_document', documentId: 'input_receipts' }), 'receipts').status).toBe('complete')
   })
 
   it('orders fitting measures first and keeps the full list', () => {

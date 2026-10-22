@@ -1,4 +1,7 @@
-import { en, finish, formatDateYear, formatTime, itemLabel } from '../copy/en'
+import { finish, formatDateYear, formatTime } from '../copy/en'
+import { taskSummary } from '../components/TaskBodies'
+import { taskTitle } from '../components/TaskList'
+import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from '../components/AppContext'
 import { referenceNumber } from '../logic/submit'
 import { Banner } from '../ui/Banner'
@@ -33,20 +36,18 @@ export function Receipt() {
         </ol>
       </section>
 
-      <section aria-labelledby="still-title">
-        <h2 id="still-title">{finish.receipt.awaitingTitle}</h2>
-        {awaiting.length === 0 ? (
-          <Text>{finish.receipt.nothingAwaiting}</Text>
-        ) : (
-          <ul>
+      {awaiting.length > 0 && (
+        <section aria-labelledby="still-title">
+          <h2 id="still-title">{finish.submit.awaitingTitle}</h2>
+          <ul className="plain-list">
             {awaiting.map((i) => (
               <li key={i.id}>
-                <strong>{itemLabel(i.id)}</strong>: {en.itemDetail[i.detail]}
+                <StatusBadge status={i.status} iconOnly /> <strong>{taskTitle(i.id)}</strong>: {taskSummary(i.id, derived, state)}
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
       <Card title={finish.receipt.amendTitle} headingLevel={2}>
         <Stack gap="sm">
@@ -60,11 +61,6 @@ export function Receipt() {
               }}
             >
               {finish.receipt.amend}
-            </Button>
-          </div>
-          <div>
-            <Button variant="link" onClick={() => go('welcome')}>
-              {finish.receipt.backHome}
             </Button>
           </div>
         </Stack>

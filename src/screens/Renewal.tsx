@@ -27,11 +27,9 @@ export function Renewal() {
     <Stack gap="md">
       <h1 tabIndex={-1}>{finish.renewal.title}</h1>
       <Text>{finish.renewal.why}</Text>
-      <Text variant="secondary">{finish.renewal.prepare}</Text>
       <div>
         <Button variant="primary" onClick={() => dispatch({ type: 'renew' })}>{finish.renewal.button}</Button>
       </div>
-      <Text variant="small">{finish.renewal.mockNote}</Text>
     </Stack>
   )
 }

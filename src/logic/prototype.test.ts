@@ -8,9 +8,9 @@ describe('prototype controls (reducer)', () => {
       { type: 'set_role', role: 'advisor' },
       { type: 'set_notes', show: true },
       { type: 'answer_herd', answer: 'yes' },
-      { type: 'set_scenario', scenarioId: 'no_animals' },
+      { type: 'set_scenario', scenarioId: 'missing_document' },
     )
-    expect(s).toMatchObject({ scenarioId: 'no_animals', role: 'advisor', prototype: { showNotes: true } })
+    expect(s).toMatchObject({ scenarioId: 'missing_document', role: 'advisor', prototype: { showNotes: true } })
     expect(s.answers.herd.answer).toBeNull()
     expect(s.history).toEqual([])
   })

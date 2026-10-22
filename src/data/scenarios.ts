@@ -23,7 +23,7 @@ export interface Field {
   signal?: FieldSignal
 }
 
-/** Reference layers for the map legend. */
+/** Reference layers on the map. */
 export interface LandShape {
   id: string
   label: string
@@ -37,7 +37,6 @@ export interface Measure {
   unit: 'ha' | 'cow_calved'
   rateDinars: number
   fits: boolean
-  keptFromLastYear: boolean
 }
 
 export interface Document {
@@ -56,19 +55,12 @@ export interface Herd {
 export interface GeneralData {
   holder: string
   place: string
-  applicationYear: number
 }
 
-export type ScenarioId =
-  | 'second_year'
-  | 'second_year_not_renewed'
-  | 'first_year'
-  | 'no_animals'
-  | 'missing_document'
+export type ScenarioId = 'second_year' | 'second_year_not_renewed' | 'missing_document'
 
 export interface Scenario {
   id: ScenarioId
-  firstYear: boolean
   renewed: boolean
   window: { opens: string; closes: string }
   // Prototype clock (assumption), so "days left" means something.
@@ -76,9 +68,9 @@ export interface Scenario {
   generalData: GeneralData
   herd: Herd | null
   fields: Field[]
-  /** Physical blocks: land that can get support. */
+  /** Land the government has registered as farmland (physical blocks). Fields stay inside it. */
   blocks: LandShape[]
-  /** Cadastral parcels: the legal plots. Reference only; labels are placeholders. */
+  /** Land register plots (cadastral parcels). Reference only, hidden by default. */
   parcels: LandShape[]
   measures: Measure[]
   documents: Document[]
@@ -150,18 +142,17 @@ const HERD: Herd = {
 }
 
 const MEASURES: Measure[] = [
-  { id: 'plant_production', unit: 'ha', rateDinars: 18_000, fits: true, keptFromLastYear: true },
-  { id: 'cows_raising_calves', unit: 'cow_calved', rateDinars: 20_000, fits: true, keptFromLastYear: true },
-  { id: 'eco_scheme', unit: 'ha', rateDinars: 0, fits: false, keptFromLastYear: false },
+  { id: 'plant_production', unit: 'ha', rateDinars: 18_000, fits: true },
+  { id: 'cows_raising_calves', unit: 'cow_calved', rateDinars: 20_000, fits: true },
+  { id: 'eco_scheme', unit: 'ha', rateDinars: 0, fits: false },
 ]
 
 const BASE: Scenario = {
   id: 'second_year',
-  firstYear: false,
   renewed: true,
   window: { opens: '2026-04-10', closes: '2026-05-26' },
   today: '2026-04-28',
-  generalData: { holder: 'Milan Dragović', place: 'Bečanj, near Čačak', applicationYear: 2026 },
+  generalData: { holder: 'Milan Dragović', place: 'Bečanj, near Čačak' },
   herd: HERD,
   fields: FIELDS,
   blocks: BLOCKS,
@@ -174,21 +165,6 @@ export const SCENARIOS: Record<ScenarioId, Scenario> = {
   second_year: BASE,
   second_year_not_renewed: { ...BASE, id: 'second_year_not_renewed', renewed: false },
   missing_document: { ...BASE, id: 'missing_document', documents: [{ id: 'input_receipts', attached: false }] },
-  no_animals: {
-    ...BASE,
-    id: 'no_animals',
-    herd: null,
-    measures: MEASURES.map((m) => (m.id === 'cows_raising_calves' ? { ...m, fits: false, keptFromLastYear: false } : m)),
-  },
-  first_year: {
-    ...BASE,
-    id: 'first_year',
-    firstYear: true,
-    // No last year: the registry headcount becomes a question.
-    herd: { ...HERD, lastYearDeclared: null, registryCount: 41 },
-    fields: FIELDS.map(({ signal: _signal, ...f }) => f),
-    measures: MEASURES.map((m) => ({ ...m, keptFromLastYear: false })),
-  },
 }
 
 export const SCENARIO_IDS = Object.keys(SCENARIOS) as ScenarioId[]
@@ -196,15 +172,20 @@ export const SCENARIO_IDS = Object.keys(SCENARIOS) as ScenarioId[]
 // Advisor mode: only escalated problems reach Jelena.
 export type CaseKind = 'herd_discrepancy' | 'inherited_parcel'
 
+export type Office = 'animal_registry' | 'land_registry'
+
 export interface AdvisorCaseSeed {
   id: string
   farmer: string
   kind: CaseKind
   sentAt: string
   note: string
+  /** The farmer can't submit until this is sorted. */
+  blocksSubmission: boolean
+  deadline: string
   /** Record vs farmer's value, when there are two numbers. */
   values?: { record: number; his: number }
-  owner: 'animal_registry' | 'land_registry'
+  owner: Office
   /** Earlier history on the application before it reached Jelena. */
   history: { at: string; actor: string; action: string }[]
 }
@@ -214,13 +195,15 @@ export const ADVISOR = {
   office: 'PSSS Čačak',
 }
 
-/** Shown when Milan hasn't sent his own problem yet in this session. */
+/** Milan's case, filled in from his own request once he sends it. */
 export const MILAN_CASE: AdvisorCaseSeed = {
   id: 'milan_herd',
   farmer: 'Milan Dragović',
   kind: 'herd_discrepancy',
   sentAt: '2026-04-28T09:12:00Z',
-  note: '4 sold, 2 slaughtered, 3 calves born.',
+  note: '',
+  blocksSubmission: false,
+  deadline: '2026-05-26',
   values: { record: 38, his: 41 },
   owner: 'animal_registry',
   history: [],
@@ -232,9 +215,11 @@ export const NEIGHBOUR_CASE: AdvisorCaseSeed = {
   kind: 'inherited_parcel',
   sentAt: '2026-04-27T15:40:00Z',
   note: "The parcel is still in my late father's name.",
+  blocksSubmission: true,
+  deadline: '2026-05-26',
   owner: 'land_registry',
   history: [
-    { at: '2026-04-27T15:20:00Z', actor: 'Neighbour', action: 'confirm_step' },
+    { at: '2026-04-27T15:20:00Z', actor: 'Neighbour', action: 'confirm' },
     { at: '2026-04-27T15:40:00Z', actor: 'Neighbour', action: 'send_to_jelena' },
   ],
 }

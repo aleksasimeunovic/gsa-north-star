@@ -78,13 +78,26 @@ export const bounds = (poly: Polygon) => ({
   maxY: Math.max(...poly.map((p) => p.y)),
 })
 
-/** Keyboard alternative: a horizontal line at fraction t (0 top, 1 bottom). */
+/** Slider alternative: a horizontal line edge to edge at fraction t (0 top, 1 bottom). */
 export function lineAtFraction(poly: Polygon, t: number): [Point, Point] {
   const { minX, maxX, minY, maxY } = bounds(poly)
   const y = minY + Math.min(1, Math.max(0, t)) * (maxY - minY)
   return [
-    { x: minX - 1, y },
-    { x: maxX + 1, y },
+    { x: minX, y },
+    { x: maxX, y },
+  ]
+}
+
+/**
+ * The satellite suggests, Milan decides: GSA proposes the split line along the top of the
+ * flagged area, edge to edge. He accepts it or nudges it.
+ */
+export function proposedSplitLine(field: Polygon, flag: Polygon): [Point, Point] {
+  const f = bounds(field)
+  const y = bounds(flag).minY
+  return [
+    { x: f.minX, y },
+    { x: f.maxX, y },
   ]
 }
 
@@ -105,22 +118,46 @@ export function centroid(poly: Polygon): Point {
   return { x: cx / (3 * a), y: cy / (3 * a) }
 }
 
-/** Keep a drag handle near the field (margin in metres). */
-export function clampToBounds(p: Point, poly: Polygon, margin = 10): Point {
+/**
+ * Guardrail: a handle stops at the field's edge. `clamped` says the edge stopped it,
+ * so the map can say why at that moment.
+ */
+export function clampToField(p: Point, poly: Polygon): { point: Point; clamped: boolean } {
   const b = bounds(poly)
+  const point = { x: Math.min(b.maxX, Math.max(b.minX, p.x)), y: Math.min(b.maxY, Math.max(b.minY, p.y)) }
+  return { point, clamped: point.x !== p.x || point.y !== p.y }
+}
+
+/** Move the whole line; it stays inside the field as one piece. */
+export function translateLine(line: [Point, Point], dx: number, dy: number, poly: Polygon): { line: [Point, Point]; clamped: boolean } {
+  const b = bounds(poly)
+  const xs = line.map((p) => p.x)
+  const ys = line.map((p) => p.y)
+  const cdx = Math.min(b.maxX - Math.max(...xs), Math.max(b.minX - Math.min(...xs), dx))
+  const cdy = Math.min(b.maxY - Math.max(...ys), Math.max(b.minY - Math.min(...ys), dy))
   return {
-    x: Math.min(b.maxX + margin, Math.max(b.minX - margin, p.x)),
-    y: Math.min(b.maxY + margin, Math.max(b.minY - margin, p.y)),
+    line: [
+      { x: line[0].x + cdx, y: line[0].y + cdy },
+      { x: line[1].x + cdx, y: line[1].y + cdy },
+    ],
+    clamped: cdx !== dx || cdy !== dy,
   }
 }
 
-/** Shapes whose bounding boxes overlap the field (rectangular data: exact). */
-export function overlapping<T extends { polygon: Polygon }>(field: Polygon, shapes: T[]): T[] {
-  const f = bounds(field)
-  return shapes.filter((s) => {
-    const b = bounds(s.polygon)
-    return Math.min(f.maxX, b.maxX) - Math.max(f.minX, b.minX) > 0 && Math.min(f.maxY, b.maxY) - Math.max(f.minY, b.minY) > 0
-  })
+export type PartName = 'top' | 'bottom' | 'left' | 'right'
+
+/** Name the two parts as he sees them on the map, not as A and B. */
+export function partNames(parts: [Polygon, Polygon]): [PartName, PartName] {
+  const [a, b] = parts.map(centroid)
+  if (Math.abs(a.y - b.y) >= Math.abs(a.x - b.x)) return a.y < b.y ? ['top', 'bottom'] : ['bottom', 'top']
+  return a.x < b.x ? ['left', 'right'] : ['right', 'left']
+}
+
+/** Whether a part lies mostly in the flagged area (its centre is inside the flag's bounds). */
+export function inArea(part: Polygon, area: Polygon): boolean {
+  const c = centroid(part)
+  const b = bounds(area)
+  return c.x >= b.minX && c.x <= b.maxX && c.y >= b.minY && c.y <= b.maxY
 }
 
 /** Fraction (0 top, 1 bottom) of a horizontal line, for the slider. */

@@ -1,75 +1,67 @@
 import { useState } from 'react'
-import { en, finish, itemLabel, wiz } from '../copy/en'
+import { finish } from '../copy/en'
 import { useApp } from '../components/AppContext'
-import { itemTarget } from '../components/targets'
+import { taskSummary } from '../components/TaskBodies'
+import { taskTitle } from '../components/TaskList'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Checkbox } from '../ui/Checkbox'
 import { Stack, Text } from '../ui/Layout'
-import { StatusBadge } from '../ui/StatusBadge'
 import { Note } from '../ui/Note'
+import { StatusBadge } from '../ui/StatusBadge'
 
-/** Unambiguous submission: what's done, what waits, what the state checks, one button. */
+/** Unambiguous submission: what's left or what waits, what the state checks, one primary action. */
 export function Submit() {
   const { derived, state, dispatch, go } = useApp()
-  const { readiness, changes } = derived
+  const { readiness } = derived
   const signed = state.answers.declarationsSigned
   const check = submitCheck(readiness, signed)
-  const actionOrRenewal = check.reasons.filter((r) => r !== 'declarations')
   const [tried, setTried] = useState(false)
+  const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
+  const left = [...(readiness.renewalNeeded ? (['renewal'] as const) : []), ...readiness.blockers.map((i) => i.id)]
+  const goTo = (id: string) => (id === 'renewal' ? go('renewal') : go('welcome', `task-${id}`))
 
   return (
     <Stack gap="lg">
-      {actionOrRenewal.length === 0 ? (
+      <h1 tabIndex={-1}>{finish.submit.title}</h1>
+
+      {left.length > 0 ? (
+        <>
+          <Banner tone="attention">
+            <Stack gap="sm">
+              <Text variant="strong">{finish.submit.blockedTitle}</Text>
+              <ul className="plain-list">
+                {left.map((id) => (
+                  <li key={id}>
+                    <Button variant="link" onClick={() => goTo(id)}>{taskTitle(id, receiptsMissing)}</Button>
+                  </li>
+                ))}
+              </ul>
+            </Stack>
+          </Banner>
+          <div>
+            <Button variant="primary" onClick={() => goTo(left[0])}>{finish.submit.goTo(taskTitle(left[0], receiptsMissing))}</Button>
+          </div>
+        </>
+      ) : (
         <Banner tone="success">
           <Text variant="strong">{finish.submit.readyTitle}</Text>
           <Text>{finish.submit.readyNote}</Text>
-        </Banner>
-      ) : (
-        <Banner tone="attention">
-          <Stack gap="sm">
-            <span id="submit-blockers" tabIndex={-1} />
-            <Text variant="strong">{finish.submit.blockedTitle}</Text>
-            {check.reasons.includes('renewal') && (
-              <div>
-                <Text>{finish.submit.reasons.renewal}</Text>
-                <Button variant="link" onClick={() => go('renewal')}>{finish.submit.goRenew}</Button>
-              </div>
-            )}
-            {check.reasons.includes('action_required') && (
-              <div>
-                <Text>
-                  {finish.submit.reasons.action_required(readiness.blockers.length)} <Note kind="tested" />
-                </Text>
-                <ul>
-                  {readiness.blockers.map((i) => (
-                    <li key={i.id}>
-                      <Button variant="link" onClick={() => go(...itemTarget(i, changes))}>
-                        {itemLabel(i.id)}: {en.itemDetail[i.detail]}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Stack>
         </Banner>
       )}
 
       {readiness.awaiting.length > 0 && (
         <section aria-labelledby="awaiting-title">
-          <h2 id="awaiting-title">
-            <StatusBadge status="awaiting_verification" />
-          </h2>
+          <h2 id="awaiting-title">{finish.submit.awaitingTitle}</h2>
           <Text variant="secondary">
             {finish.submit.awaitingNote} <Note kind="assumption" />
           </Text>
-          <ul>
+          <ul className="plain-list">
             {readiness.awaiting.map((i) => (
               <li key={i.id}>
-                <strong>{itemLabel(i.id)}</strong>: {en.itemDetail[i.detail]}
+                <StatusBadge status={i.status} iconOnly /> <strong>{taskTitle(i.id)}</strong>: {taskSummary(i.id, derived, state)}
               </li>
             ))}
           </ul>
@@ -85,38 +77,39 @@ export function Submit() {
         </ul>
       </section>
 
-      <Card title={finish.submit.declarationTitle} headingLevel={2}>
-        <span id="declaration" tabIndex={-1} />
-        {tried && !signed && (
-          <Text variant="strong" as="p">
-            <span className="error" role="alert">{finish.submit.signError}</span>
-          </Text>
-        )}
-        <Checkbox label={finish.submit.declaration} checked={signed} onChange={(v) => dispatch({ type: 'sign_declarations', signed: v })} />
-      </Card>
+      {left.length === 0 && (
+        <>
+          <Card title={finish.submit.declarationTitle} headingLevel={2}>
+            <span id="declaration" tabIndex={-1} />
+            {tried && !signed && (
+              <Text variant="strong" as="p">
+                <span className="error" role="alert">{finish.submit.signError}</span>
+              </Text>
+            )}
+            <Checkbox label={finish.submit.declaration} checked={signed} onChange={(v) => dispatch({ type: 'sign_declarations', signed: v })} />
+          </Card>
+          <div>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (!check.canSubmit) {
+                  setTried(true)
+                  document.getElementById('declaration')?.focus()
+                  return
+                }
+                dispatch({ type: 'submit' })
+                go('receipt')
+              }}
+            >
+              {finish.submit.button}
+            </Button>
+          </div>
+        </>
+      )}
 
-      {/* Same sticky bar as the other steps, with Submit as its one primary action. */}
-      <nav className="step-nav" aria-label={wiz.stepNav}>
-        <Button onClick={() => go('everything_else')}>{wiz.back}</Button>
-        <Button
-            variant="primary"
-            onClick={() => {
-              if (!check.canSubmit) {
-                // Say what's left, right where it is.
-                setTried(true)
-                const first = actionOrRenewal.length ? 'submit-blockers' : 'declaration'
-                const el = document.getElementById(first)
-                el?.scrollIntoView({ block: 'center' })
-                el?.focus({ preventScroll: true })
-                return
-              }
-              dispatch({ type: 'submit' })
-              go('receipt')
-            }}
-          >
-            {finish.submit.button}
-          </Button>
-      </nav>
+      <div>
+        <Button variant="link" onClick={() => go('welcome')}>{finish.submit.back}</Button>
+      </div>
     </Stack>
   )
 }

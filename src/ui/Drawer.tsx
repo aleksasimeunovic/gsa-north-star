@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
-import { ui } from '../copy/en'
+import { en } from '../copy/en'
 import { Button } from './Button'
 
 interface Props {
@@ -36,7 +36,7 @@ export function Drawer({ open, title, onClose, returnFocusTo, children, variant 
     <section className="drawer" data-variant={variant} role="dialog" aria-modal="false" aria-labelledby={titleId}>
       <div className="drawer-head">
         <h2 id={titleId} ref={headingRef} tabIndex={-1}>{title}</h2>
-        <Button onClick={onClose}>{ui.close}</Button>
+        <Button onClick={onClose}>{en.close}</Button>
       </div>
       {children}
     </section>

@@ -3,12 +3,8 @@ import type { Answers } from '../state/actions'
 
 export type ChangeId = 'herd' | 'river' | 'road'
 
-/**
- * What may have changed since last year, found from records and signals.
- * First year: nothing to compare with, so no changes (records become questions instead).
- */
+/** What may have changed since last year, found from records and signals. */
 export function detectChanges(s: Scenario): ChangeId[] {
-  if (s.firstYear) return []
   const changes: ChangeId[] = []
   if (s.herd && s.herd.lastYearDeclared !== null && s.herd.lastYearDeclared !== s.herd.registryCount) changes.push('herd')
   for (const f of s.fields) {

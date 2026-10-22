@@ -3,81 +3,55 @@ import { AppContext } from './components/AppContext'
 import { PrototypeControls } from './components/PrototypeControls'
 import { ReadinessBar } from './components/ReadinessBar'
 import { derive } from './logic/derive'
-import type { StepId } from './logic/status'
-import { WizardShell } from './components/WizardShell'
 import { AdvisorQueue } from './screens/AdvisorQueue'
-import { DebugView } from './screens/DebugView'
-import { HerdStep } from './screens/HerdStep'
-import { LandStep } from './screens/LandStep'
-import { EverythingElse } from './screens/EverythingElse'
+import { Application } from './screens/Application'
 import { Receipt } from './screens/Receipt'
 import { Renewal } from './screens/Renewal'
 import { Submit } from './screens/Submit'
-import { WelcomeBack } from './screens/WelcomeBack'
 import { useHashScreen } from './state/useHashScreen'
 import { useStore } from './state/store'
 import { DensityContext } from './ui/Density'
 import { NotesContext } from './ui/Note'
 
-const STEPS: StepId[] = ['herd', 'land', 'everything_else', 'submit']
-
 export function App() {
   const { state, dispatch, savedAt } = useStore()
   const { screen, target, go } = useHashScreen()
   const derived = derive(state)
-
-  // A step the farm doesn't have (e.g. no animals) falls back to the first step he has.
-  const renderStep = (requested: StepId) => {
-    const id = derived.wizard.steps.some((s) => s.id === requested) ? requested : derived.wizard.steps[0].id
-    if (id === 'submit' && state.answers.submittedAt) return <Receipt />
-    const body =
-      id === 'herd' ? (
-        <HerdStep />
-      ) : id === 'land' ? (
-        <LandStep key={state.scenarioId} target={target} />
-      ) : id === 'everything_else' ? (
-        <EverythingElse />
-      ) : (
-        <Submit />
-      )
-    return <WizardShell stepId={id}>{body}</WizardShell>
-  }
+  const submitted = !!state.answers.submittedAt
 
   const main =
     screen === 'queue' ? (
       <AdvisorQueue />
-    ) : screen === 'receipt' && state.answers.submittedAt ? (
-      <Receipt />
     ) : screen === 'renewal' ? (
       <Renewal />
-    ) : screen === 'debug' ? (
-      <DebugView state={state} derived={derived} dispatch={dispatch} />
-    ) : STEPS.includes(screen as StepId) || screen === 'receipt' ? (
-      renderStep(screen === 'receipt' ? 'submit' : (screen as StepId))
+    ) : (screen === 'receipt' || screen === 'submit') && submitted ? (
+      <Receipt />
+    ) : screen === 'submit' ? (
+      <Submit />
     ) : (
-      <WelcomeBack />
+      <Application key={state.scenarioId} target={target} />
     )
 
   return (
     <AppContext.Provider value={{ state, derived, dispatch, go }}>
-      <DensityContext.Provider value={derived.wizard.density}>
-      <NotesContext.Provider value={state.prototype.showNotes}>
-        <div className="page">
-          <header className="topbar">
-            <a href="#/welcome" className="brand">{en.appName}</a>
-            {screen !== 'queue' && <ReadinessBar />}
-            {state.role === 'advisor' && (
-              <nav aria-label="Advisor" className="advisor-nav">
-                <a href="#/queue" aria-current={screen === 'queue' ? 'page' : undefined}>{advisor.nav.queue}</a>
-                <a href="#/welcome" aria-current={screen !== 'queue' ? 'page' : undefined}>{advisor.nav.milan}</a>
-              </nav>
-            )}
-            {savedAt && <span className="saved">{en.saved}</span>}
-            <PrototypeControls />
-          </header>
-          <main className="main">{main}</main>
-        </div>
-      </NotesContext.Provider>
+      <DensityContext.Provider value={derived.list.density}>
+        <NotesContext.Provider value={state.prototype.showNotes}>
+          <div className="page">
+            <header className="topbar">
+              <a href="#/welcome" className="brand">{en.appName}</a>
+              {screen !== 'queue' && <ReadinessBar />}
+              {state.role === 'advisor' && (
+                <nav aria-label="Advisor" className="advisor-nav">
+                  <a href="#/queue" aria-current={screen === 'queue' ? 'page' : undefined}>{advisor.nav.queue}</a>
+                  <a href="#/welcome" aria-current={screen !== 'queue' ? 'page' : undefined}>{advisor.nav.milan}</a>
+                </nav>
+              )}
+              {savedAt && <span className="saved">{en.saved}</span>}
+              <PrototypeControls />
+            </header>
+            <main className="main">{main}</main>
+          </div>
+        </NotesContext.Provider>
       </DensityContext.Provider>
     </AppContext.Provider>
   )

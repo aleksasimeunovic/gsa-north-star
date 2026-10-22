@@ -8,6 +8,7 @@ const ready: Action[] = [
   { type: 'answer_river', answer: 'yes' },
   halfSplit(),
   { type: 'answer_road', answer: 'yes' },
+  ...(['fields_other', 'details', 'measures', 'receipts'] as const).map((what) => ({ type: 'confirm', what }) as const),
 ]
 
 describe('submit', () => {

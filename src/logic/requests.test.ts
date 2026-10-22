@@ -8,7 +8,7 @@ describe('requests (reducer)', () => {
     expect(s.history[s.history.length - 1]).toMatchObject({ actor: 'Milan', action: 'send_to_jelena' })
   })
   it('asks the record owner to check only once', () => {
-    const s = play('second_year', { type: 'ask_record_check', itemId: 'herd' }, { type: 'ask_record_check', itemId: 'herd' })
+    const s = play('second_year', { type: 'ask_record_check', itemId: 'details' }, { type: 'ask_record_check', itemId: 'details' })
     expect(s.answers.requests).toHaveLength(1)
   })
 })

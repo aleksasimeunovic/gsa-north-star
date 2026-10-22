@@ -1,39 +1,51 @@
 import { describe, expect, it } from 'vitest'
-import { advisorQueue } from './advisor'
+import { advisorQueue, milanCaseState } from './advisor'
 import { play } from './testUtils'
 
+const sendHerd = [
+  { type: 'answer_herd', answer: 'no' },
+  { type: 'set_herd_count', count: 41 },
+  { type: 'send_to_jelena', itemId: 'herd', note: 'Sold four.' },
+] as const
+
 describe('advisor queue', () => {
-  it('holds only the escalated problems, oldest open first', () => {
-    const q = advisorQueue(play('second_year'))
-    expect(q.map((c) => c.kind)).toEqual(['inherited_parcel', 'herd_discrepancy'])
-    expect(q.every((c) => c.status === 'open')).toBe(true)
+  it('holds only problems farmers sent; Milan appears once he sends his', () => {
+    expect(advisorQueue(play('second_year')).map((c) => c.id)).toEqual(['neighbour_parcel'])
+    expect(advisorQueue(play('second_year', ...sendHerd)).map((c) => c.id)).toEqual(['neighbour_parcel', 'milan_herd'])
   })
 
   it("Milan's case carries his values, his note and his history", () => {
-    const s = play(
-      'second_year',
-      { type: 'answer_herd', answer: 'no' },
-      { type: 'set_herd_count', count: 41 },
-      { type: 'send_to_jelena', itemId: 'herd', note: 'Sold four.' },
-    )
-    const milan = advisorQueue(s).find((c) => c.id === 'milan_herd')!
-    expect(milan).toMatchObject({ live: true, note: 'Sold four.', values: { record: 38, his: 41 } })
+    const milan = advisorQueue(play('second_year', ...sendHerd)).find((c) => c.id === 'milan_herd')!
+    expect(milan).toMatchObject({ state: 'assigned', note: 'Sold four.', values: { record: 38, his: 41 } })
     expect(milan.history.map((h) => h.action)).toEqual(['answer_herd', 'set_herd_count', 'send_to_jelena'])
   })
 
-  it('handled cases move down; bulk handles several and logs each', () => {
-    const s = play('second_year', { type: 'set_role', role: 'advisor' }, { type: 'advisor_handle_many', caseIds: ['neighbour_parcel'] })
-    const q = advisorQueue(s)
-    expect(q.map((c) => [c.id, c.status])).toEqual([
-      ['milan_herd', 'open'],
-      ['neighbour_parcel', 'handled'],
-    ])
-    expect(q[1].history[q[1].history.length - 1]).toMatchObject({ actor: 'Jelena', action: 'handled' })
+  it('blocks submission comes first among her cases', () => {
+    const q = advisorQueue(play('second_year', ...sendHerd))
+    expect(q[0]).toMatchObject({ id: 'neighbour_parcel', blocksSubmission: true })
   })
 
-  it("Jelena's actions are kept per case", () => {
-    const s = play('second_year', { type: 'advisor_act', caseId: 'milan_herd', act: 'asked_owner' })
-    const milan = advisorQueue(s).find((c) => c.id === 'milan_herd')!
-    expect(milan.lastAct).toBe('asked_owner')
+  it('referring to another office is waiting, not resolved, and moves below her own cases', () => {
+    const s = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'referred' })
+    const q = advisorQueue(s)
+    expect(q.map((c) => [c.id, c.state])).toEqual([
+      ['milan_herd', 'assigned'],
+      ['neighbour_parcel', 'waiting_office'],
+    ])
+    expect(q[1].history[q[1].history.length - 1]).toMatchObject({ actor: 'Jelena', action: 'referred' })
+  })
+
+  it('opening a case does not change who owns it; resolved goes last', () => {
+    const s = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'opened' })
+    expect(advisorQueue(s)[0].state).toBe('assigned')
+    const r = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'resolved' })
+    expect(advisorQueue(r).map((c) => c.state)).toEqual(['assigned', 'resolved'])
+  })
+
+  it('Milan sees the same state on his item', () => {
+    expect(milanCaseState(play('second_year'))).toBeNull()
+    expect(milanCaseState(play('second_year', ...sendHerd))).toBe('assigned')
+    expect(milanCaseState(play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'milan_herd', act: 'referred' }))).toBe('waiting_office')
+    expect(milanCaseState(play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'milan_herd', act: 'asked_farmer' }))).toBe('waiting_farmer')
   })
 })
