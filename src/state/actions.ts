@@ -15,8 +15,9 @@ export interface Split {
 // Only what people answered. Tasks, statuses and the estimate are derived.
 export interface Answers {
   herd: { answer: YesNo | null; ownCount: number | null }
-  river: { answer: YesNo | null; noOption: 'redraw' | 'field_check' | null; redrawn: boolean; split: Split | null }
-  road: { answer: YesNo | null; correctionRequested: boolean }
+  river: { answer: YesNo | null; split: Split | null }
+  /** No sends the correction: the land map's area counts until it is checked. */
+  road: { answer: YesNo | null }
   confirmed: Confirmable[]
   /** One specific problem sent on: to Jelena, or to the record's owner to check. */
   requests: Request[]
@@ -49,7 +50,7 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 5
+  version: 6
   scenarioId: ScenarioId
   role: Role
   /** Prototype only, not part of GSA. */
@@ -70,12 +71,11 @@ export type Action =
   | { type: 'send_to_jelena'; itemId: string; note: string }
   | { type: 'ask_record_check'; itemId: string }
   | { type: 'answer_river'; answer: YesNo }
-  | { type: 'river_no_option'; option: 'redraw' | 'field_check' }
-  | { type: 'river_redrawn' }
   | { type: 'set_split'; split: Split | null }
   | { type: 'answer_road'; answer: YesNo }
-  | { type: 'request_road_correction' }
   | { type: 'confirm'; what: Confirmable }
+  /** "Yes, all the same as last year": confirms every unchanged thing still to confirm. */
+  | { type: 'confirm_same'; what: Confirmable[] }
   | { type: 'attach_document'; documentId: string }
   | { type: 'renew' }
   | { type: 'sign_declarations'; signed: boolean }

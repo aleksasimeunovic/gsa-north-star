@@ -8,7 +8,7 @@ const allYes: Action[] = [
   { type: 'answer_river', answer: 'yes' },
   halfSplit(),
   { type: 'answer_road', answer: 'yes' },
-  ...(['fields_other', 'details', 'measures', 'receipts'] as const).map((what) => ({ type: 'confirm', what }) as const),
+  { type: 'confirm_same', what: ['fields_other', 'details', 'measures', 'receipts'] },
 ]
 
 describe('application state', () => {
@@ -17,6 +17,11 @@ describe('application state', () => {
     expect(r.state).toBe('action_required')
     expect(r.counts.action_required).toBe(7)
     expect(r.canSubmit).toBe(false)
+  })
+
+  it('counts "same as last year" as one thing left: 3 changes + 1', () => {
+    expect(run('second_year').list.todo).toHaveLength(4)
+    expect(run('missing_document').list.todo).toHaveLength(5)
   })
 
   it('ready to submit once nothing needs his action', () => {

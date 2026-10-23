@@ -8,7 +8,7 @@ export function ReadinessBar() {
   const { derived, go } = useApp()
   const r = derived.readiness
   const next = derived.list.next
-  const headline = r.state === 'action_required' ? en.readiness.action(r.blockers.length) : en.readiness.headline[r.state]
+  const headline = r.state === 'action_required' ? en.readiness.left(derived.list.todo.length) : en.readiness.headline[r.state]
 
   return (
     <section className="readiness" aria-label={en.readiness.label} data-state={r.state}>

@@ -1,4 +1,4 @@
-# Decision log (round 2)
+# Decision log (rounds 2 and 3)
 
 One line per decision: what was chosen, the alternative rejected, why.
 
@@ -31,3 +31,19 @@ One line per decision: what was chosen, the alternative rejected, why.
 27. **Submit, when blocked, makes "Go to" the first blocker its primary action and hides the declaration**, rather than a primary Submit button that only shows an error, so the next action is always the most visible thing.
 28. **Submit and the receipt stay separate screens**, rather than a last task in the list, because research showed farmers missed the final finish button; the submission has to be unmistakable.
 29. **Unchanged fields are confirmed with one button and have no "something changed" path in this prototype**, rather than a full redraw flow, to keep scope on Earl's points; noted as a gap.
+
+## Round 3
+
+30. **The list is ordered by status: what needs him, then "Waiting for a check (n)", then "Done (n)" collapsed into one line**, rather than a fixed order where finished cards stay in place, so the next action is always at the top and the list is the readiness view at a glance. Replaces part of 1.
+31. **Unchanged things form one task, "Same as last year", each thing named, summarised in one line and openable, confirmed with "Yes, all the same as last year"**, rather than four separate confirmations, so the 4 unchanged things don't look as urgent as the 3 real changes. Replaces 5's four confirmations but keeps its rule: nothing is complete until he confirms it. Anything he changes (a correction to his details) or that needs attention (missing receipts) leaves the group as its own task.
+32. **Readiness says "n things left before you can submit" and counts the group as one**, rather than "n things need your action" with 7 identical badges, because it is Earl's definition of readiness and less alarming. Tasks that need him show the status as an icon (text for screen readers); only "awaiting verification" keeps its words.
+33. **One header line says what GSA did and what's left ("Check 3 changes and confirm the rest")**, rather than "You're an active farmer" plus "Three things may have changed", so there is one count on the screen. Active-farmer status lives in "Your details" unless it needs renewing.
+34. **Removed work shows once, as a struck-through line at the top of the list until his next answer; "May be needed" shows only on the open task**, rather than on every card, because finished tasks now move into Done and four "May be needed" lines before any answer was noise. Replaces 3's placement, keeps its rule.
+35. **A task that becomes "awaiting verification" while open stays in place with Continue, then moves to "Waiting for a check"**, rather than jumping away mid-read. Keeps 4.
+36. **River "No, one crop" completes the field: his declaration stands, the estimate doesn't change, and "The state may still check it" is labelled an assumption**, rather than asking him to redraw or request a field check that cut 1.20 ha from the estimate, because that punished an honest answer, asked him to pick a procedure and let the satellite decide.
+37. **No field photo on river No**, rather than a one-tap upload, because even one tap offers a procedure when No should need nothing more. Kept as an idea for the ministry (EU area monitoring accepts geotagged photos).
+38. **Road "No" sends the correction itself: "Correction asked for. Until it's checked, the land map's area counts."**, rather than No followed by an "Ask for a correction" button, the same way the herd routes itself (10). "Change" undoes it.
+39. **Receipts list the attached files (placeholder names and dates)**, rather than "Attached" and "Yes, these are right", so he can see what he confirms.
+40. **Measures show the amount ("8.88 ha × 18,000 = about 160,000 dinars")**, rather than the multiplication alone (refines 19), so he never does arithmetic.
+41. **The herd disagreement says "This doesn't change your estimate."**, because the estimate uses cows that calved, not the headcount, and fear of losing money is what this moment is about. It also shows status and payment impact kept apart.
+42. **When everything is done, "Ready to submit" with the button "Sign and submit" sits at the top**, rather than a "Sign and submit" title over a "Sign and submit" button at the bottom.

@@ -6,7 +6,7 @@ export type Status = 'complete' | 'action_required' | 'awaiting_verification'
 export type ItemId = 'herd' | `field_${FieldId}` | 'fields_other' | 'details' | 'measures' | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
-export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'field_check_pending'
+export type ImpactReason = 'road_took_area' | 'road_pending_correction'
 export interface PaymentImpact {
   amountDinars: number // negative = less payment
   areaHa: number
@@ -21,13 +21,9 @@ export type ItemDetail =
   | 'river_unanswered'
   | 'river_needs_split'
   | 'river_split_done'
-  | 'river_needs_choice'
-  | 'river_needs_redraw'
-  | 'river_redrawn'
-  | 'river_field_check'
+  | 'river_one_crop'
   | 'road_unanswered'
   | 'road_confirmed'
-  | 'road_needs_correction'
   | 'road_correction_requested'
   | 'fields_same'
   | 'fields_confirmed'
@@ -96,18 +92,8 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
         ? { id: itemId, status: 'complete', detail: 'river_split_done' }
         : { id: itemId, status: 'action_required', detail: 'river_needs_split' }
     }
-    if (r.noOption === null) return { id: itemId, status: 'action_required', detail: 'river_needs_choice' }
-    if (r.noOption === 'redraw') {
-      return r.redrawn
-        ? { id: itemId, status: 'complete', detail: 'river_redrawn' }
-        : { id: itemId, status: 'action_required', detail: 'river_needs_redraw' }
-    }
-    return {
-      id: itemId,
-      status: 'awaiting_verification',
-      detail: 'river_field_check',
-      paymentImpact: impactOf(s, signal.flagHa, 'field_check_pending'),
-    }
+    // No: his declaration stands. The satellite never decides what he planted.
+    return { id: itemId, status: 'complete', detail: 'river_one_crop' }
   }
   if (signal?.kind === 'road_strip') {
     const r = a.road
@@ -115,8 +101,7 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
     if (r.answer === 'yes') {
       return { id: itemId, status: 'complete', detail: 'road_confirmed', paymentImpact: impactOf(s, signal.stripHa, 'road_took_area') }
     }
-    if (!r.correctionRequested) return { id: itemId, status: 'action_required', detail: 'road_needs_correction' }
-    // The land map stays the official record until the correction is checked.
+    // No sends the correction. The land map stays the official record until the correction is checked.
     return {
       id: itemId,
       status: 'awaiting_verification',

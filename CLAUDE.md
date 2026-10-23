@@ -122,11 +122,11 @@ The application is one list of named tasks. It is also the readiness view.
 | A possible change is detected | Its own task, opening on the evidence and the question |
 | An answer makes work unnecessary | That work leaves the list with a one-line reason |
 | A task is done | It collapses to one line with its outcome |
-| Something hasn't changed | A named confirmation (his details, his measures, his fields). Never a miscellaneous bucket |
+| Something hasn't changed | One task, "Same as last year": each thing named (his other fields, details, measures, receipts) with a one-line summary, openable, confirmed in one tap. Never a miscellaneous bucket. Anything he changes leaves it as its own task |
 | Something needs attention | Its own named task, e.g. "Upload your input receipts" |
 | A rule doesn't apply to his farm | Left out |
 | Choosing measures | Ones that fit come first, with the reason; full list stays |
-| Always | Exactly one next action, the most visible thing on screen |
+| Always | Ordered by status: what needs him, then "Waiting for a check (n)", then "Done (n)" collapsed. Exactly one next action, at the top, the most visible thing on screen |
 | Advisor signs in | Same list, denser, what needs action first |
 
 Structure by what Milan has to accomplish, not by the smallest step count. There is no target number of steps.
@@ -158,7 +158,7 @@ Earl: one connected experience, not separate features. How the application chang
 **Flow:** welcome back → changes → land → readiness → submit → receipt. All of it reads as one application list that shrinks to what's left.
 
 ### Welcome back: his application as one list
-- Greeting, deadline and days left, active farmer status.
+- Greeting, deadline and days left, one line saying what GSA filled in and what's left. Active farmer status only when it needs renewing.
 - One list: **his application**. The change tasks and the rest of his application are the same list, not cards on top and an overview underneath.
 - It starts from the full set of possible work. As he confirms a change, GSA removes what isn't needed (one-line reason), collapses what's done, and the next meaningful action gets focus. One primary action at a time.
 - A short transition may explain each change (respect `prefers-reduced-motion`). Changes are announced with `aria-live`.
@@ -173,8 +173,9 @@ A card is one line of context (what GSA found, and where), the evidence, the que
 
 Paths:
 - Herd yes → herd complete. Herd no → "How many cattle do you have today?" → he enters 41 → **registry 38 | you declared 41** side by side, "The registry stays the official record until it's checked", awaiting verification, he can ask the registry to check or send it to Jelena, and carry on. Never a dead end. This is the one meaningful disagreement with a government record.
-- River yes → the river field split becomes the next action. River no → redraw the field, or ask for a field check (this part won't count unless checked).
-- Road yes → complete; area and estimate drop with the reason shown. Road no → he asks for a correction (awaiting verification).
+- River yes → the river field split becomes the next action. River no → his declaration stands (one crop), complete, estimate unchanged; "The state may still check it" (assumption).
+- Road yes → complete; area and estimate drop with the reason shown. Road no → the correction is sent in the same step (awaiting verification); the land map's area counts until checked.
+- Herd disagreement also says "This doesn't change your estimate" (the estimate uses cows that calved).
 - Answers stay editable; changing one re-runs the list rules.
 
 ### Land: plain-language map and suggested split
@@ -184,8 +185,8 @@ Paths:
 - **Split:** GSA proposes the line along the area the satellite flagged. Milan accepts it or nudges it: large handles, drag the whole line. No precise point placement with a finger. Keep the guardrail (line clipped to eligible land), live areas, undo and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
 
 ### Readiness through submit
-- Readiness is the application list itself, with a one-line summary on every screen ("2 things need your action" / "Ready to submit"), text plus icon shape, announced politely.
-- Unchanged things are named confirmations: his details (records, read-only, "Records wrong? Ask for a correction"), his measures (fitting ones first, each with what it pays for, *your part*, why it fits), his receipts. Missing receipts become their own task, "Upload your input receipts".
+- Readiness is the application list itself, with a one-line summary on every screen ("4 things left before you can submit" / "Ready to submit"), text plus icon shape, announced politely. "Same as last year" counts as one.
+- Unchanged things sit in "Same as last year": his details (records, read-only, incl. active farmer, "Records wrong? Ask for a correction"), his measures (fitting ones first, each with the amount worked out, *your part*, why it fits), his receipts (the files listed). Missing receipts become their own task, "Upload your input receipts".
 - **Submit:** what's complete, what's awaiting verification and that it doesn't block (assumption), what the state will still check, declaration signed once ("I confirm under full criminal and material liability..."), one clear Submit button. If blocked: say exactly what's left, linked, and make that the primary action.
 - **Receipt:** "Your application is submitted." Date, reference number, what happens next, what's still awaiting verification, how to amend until the national deadline. Never ambiguous.
 - Renewal gate (scenario): first screen says renewal is needed, links to it (mock), lets him prepare but not submit; after renewal: "You're an active farmer. Next: your application."
@@ -225,9 +226,9 @@ src/
   copy/        en.ts
 ```
 
-## 10. Phases (round 2; stop after each; Aleksa checks and commits)
+## 10. Phases (round 3; stop after each; Aleksa checks and commits)
 
-Round 1 (foundation, four moments, prototype controls, advisor mode, deploy) is done.
+Round 1 (foundation, four moments, prototype controls, advisor mode, deploy) and round 2 (one list, evidence cards, plain map, suggested split) are done. Round 3 makes Milan think less: (1) fewer decisions on arrival, next action on top, river and road No fixed, see what he confirms; (2) maps, split tool, copy cuts, desktop column, Jelena at a desk, AI design note.
 
 1. **Review and CLAUDE.md update** (no code).
 2. **Welcome back as one workflow:** contextual change cards with evidence, one application list that shrinks after each answer, "Everything else" replaced by named tasks.

@@ -20,6 +20,11 @@ describe('status per item', () => {
     ])
   })
 
+  it('"yes, all the same" confirms every unchanged thing at once', () => {
+    const r = run('second_year', { type: 'confirm_same', what: ['fields_other', 'details', 'measures', 'receipts'] })
+    expect(r.items.filter((i) => i.status === 'complete').map((i) => i.id)).toEqual(['fields_other', 'details', 'measures', 'receipts'])
+  })
+
   it('confirming an unchanged thing completes it', () => {
     expect(item(run('second_year', { type: 'confirm', what: 'measures' }), 'measures').status).toBe('complete')
     expect(item(run('second_year', { type: 'confirm', what: 'fields_other' }), 'fields_other').detail).toBe('fields_confirmed')
@@ -56,14 +61,10 @@ describe('status per item', () => {
     expect(item(run('second_year', { type: 'answer_river', answer: 'yes' }, halfSplit(['wheat', 'wheat'])), 'field_river').status).toBe('action_required')
   })
 
-  it('river no: redraw or field check (flagged part may not count)', () => {
-    const no = { type: 'answer_river', answer: 'no' } as const
-    expect(item(run('second_year', no), 'field_river').detail).toBe('river_needs_choice')
-    expect(item(run('second_year', no, { type: 'river_no_option', option: 'redraw' }), 'field_river').status).toBe('action_required')
-    expect(item(run('second_year', no, { type: 'river_no_option', option: 'redraw' }, { type: 'river_redrawn' }), 'field_river').status).toBe('complete')
-    const check = item(run('second_year', no, { type: 'river_no_option', option: 'field_check' }), 'field_river')
-    expect(check.status).toBe('awaiting_verification')
-    expect(check.paymentImpact).toEqual({ amountDinars: -21_600, areaHa: 1.2, reason: 'field_check_pending' })
+  it('river no: his declaration stands, complete, and the estimate does not change', () => {
+    const r = run('second_year', { type: 'answer_river', answer: 'no' })
+    expect(item(r, 'field_river')).toEqual({ id: 'field_river', status: 'complete', detail: 'river_one_crop' })
+    expect(r.estimate.totalDinars).toBe(run('second_year').estimate.totalDinars)
   })
 
   it('road yes is complete but still lowers the payment', () => {
@@ -72,12 +73,11 @@ describe('status per item', () => {
     expect(road.paymentImpact).toEqual({ amountDinars: -2_160, areaHa: 0.12, reason: 'road_took_area' })
   })
 
-  it('road no: action until a correction is requested, then awaiting verification', () => {
-    const no = { type: 'answer_road', answer: 'no' } as const
-    expect(item(run('second_year', no), 'field_road').status).toBe('action_required')
-    const r = item(run('second_year', no, { type: 'request_road_correction' }), 'field_road')
+  it('road no sends the correction: awaiting verification, the land map area counts until checked', () => {
+    const r = item(run('second_year', { type: 'answer_road', answer: 'no' }), 'field_road')
     expect(r.status).toBe('awaiting_verification')
     expect(r.conflict).toEqual({ record: 1.68, his: 1.8, owner: 'land_map' })
+    expect(r.paymentImpact?.reason).toBe('road_pending_correction')
   })
 
   it('missing receipts need action until uploaded; uploading confirms them', () => {

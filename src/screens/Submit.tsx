@@ -20,7 +20,7 @@ export function Submit() {
   const check = submitCheck(readiness, signed)
   const [tried, setTried] = useState(false)
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
-  const left = [...(readiness.renewalNeeded ? (['renewal'] as const) : []), ...readiness.blockers.map((i) => i.id)]
+  const left = derived.list.todo.map((t) => t.id)
   const goTo = (id: string) => (id === 'renewal' ? go('renewal') : go('welcome', `task-${id}`))
 
   return (

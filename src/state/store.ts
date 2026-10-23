@@ -6,8 +6,8 @@ import { loadState, saveState } from './persist'
 
 export const emptyAnswers = (): Answers => ({
   herd: { answer: null, ownCount: null },
-  river: { answer: null, noOption: null, redrawn: false, split: null },
-  road: { answer: null, correctionRequested: false },
+  river: { answer: null, split: null },
+  road: { answer: null },
   confirmed: [],
   requests: [],
   attachedDocuments: [],
@@ -17,7 +17,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 5,
+  version: 6,
   scenarioId: 'second_year',
   role: 'farmer',
   prototype: { showNotes: false },
@@ -42,18 +42,14 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, requests: [...a.requests, { kind: 'record_check', itemId: action.itemId, note: '', at }] }
     case 'answer_river':
       return { ...a, river: { ...a.river, answer: action.answer } }
-    case 'river_no_option':
-      return { ...a, river: { ...a.river, noOption: action.option } }
-    case 'river_redrawn':
-      return { ...a, river: { ...a.river, redrawn: true } }
     case 'set_split':
       return { ...a, river: { ...a.river, split: action.split } }
     case 'answer_road':
       return { ...a, road: { ...a.road, answer: action.answer } }
-    case 'request_road_correction':
-      return { ...a, road: { ...a.road, correctionRequested: true } }
     case 'confirm':
       return { ...a, confirmed: addUnique(a.confirmed, action.what) }
+    case 'confirm_same':
+      return { ...a, confirmed: action.what.reduce((list, w) => addUnique(list, w), a.confirmed) }
     case 'attach_document':
       // Uploading them is confirming them.
       return { ...a, attachedDocuments: addUnique(a.attachedDocuments, action.documentId), confirmed: addUnique(a.confirmed, 'receipts') }

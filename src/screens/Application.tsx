@@ -1,6 +1,6 @@
 import { home } from '../copy/en'
 import { isAnswered } from '../logic/changes'
-import { daysLeft, isRenewed } from '../logic/readiness'
+import { daysLeft } from '../logic/readiness'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
 import { TaskList } from '../components/TaskList'
@@ -22,8 +22,7 @@ export function Application({ target }: { target: string | null }) {
           {home.deadline(scenario.window.closes)} <strong>{home.daysLeft(daysLeft(scenario.today, scenario.window.closes))}.</strong>{' '}
           <Note kind="eu_mandate" />
         </Text>
-        {isRenewed(scenario, state.answers) && <Text variant="secondary">{home.activeFarmer}</Text>}
-        {derived.changes.some((c) => !isAnswered(c, state.answers)) && <Text variant="secondary">{home.changesIntro(derived.changes.length)}</Text>}
+        {derived.changes.some((c) => !isAnswered(c, state.answers)) && <Text>{home.intro(derived.changes.length)}</Text>}
       </header>
 
       {state.answers.submittedAt && (

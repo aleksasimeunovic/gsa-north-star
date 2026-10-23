@@ -42,6 +42,8 @@ export interface Measure {
 export interface Document {
   id: 'input_receipts'
   attached: boolean
+  /** Placeholder names and dates, so he can see what he confirms. */
+  files: { name: string; date: string }[]
 }
 
 export interface Herd {
@@ -147,6 +149,12 @@ const MEASURES: Measure[] = [
   { id: 'eco_scheme', unit: 'ha', rateDinars: 0, fits: false },
 ]
 
+const RECEIPTS = [
+  { name: 'Seed receipt.pdf', date: '2026-03-12' },
+  { name: 'Fertiliser receipt.pdf', date: '2026-03-20' },
+  { name: 'Diesel receipt.jpg', date: '2026-04-02' },
+]
+
 const BASE: Scenario = {
   id: 'second_year',
   renewed: true,
@@ -158,13 +166,13 @@ const BASE: Scenario = {
   blocks: BLOCKS,
   parcels: PARCELS,
   measures: MEASURES,
-  documents: [{ id: 'input_receipts', attached: true }],
+  documents: [{ id: 'input_receipts', attached: true, files: RECEIPTS }],
 }
 
 export const SCENARIOS: Record<ScenarioId, Scenario> = {
   second_year: BASE,
   second_year_not_renewed: { ...BASE, id: 'second_year_not_renewed', renewed: false },
-  missing_document: { ...BASE, id: 'missing_document', documents: [{ id: 'input_receipts', attached: false }] },
+  missing_document: { ...BASE, id: 'missing_document', documents: [{ id: 'input_receipts', attached: false, files: [] }] },
 }
 
 export const SCENARIO_IDS = Object.keys(SCENARIOS) as ScenarioId[]
