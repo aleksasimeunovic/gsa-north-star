@@ -24,6 +24,18 @@ describe('estimate', () => {
     expect(after).toBe(before)
   })
 
+  it("the neighbour's line takes 0.10 ha more: 8.78 ha, 438,040", () => {
+    const e = run('second_year', { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }).estimate
+    expect(e.assumptions.eligibleAreaHa).toBe(8.78)
+    expect(e.totalDinars).toBe(438_040)
+  })
+
+  it('only chosen measures count; ones without a known rate are named, not guessed', () => {
+    const e = run('second_year', { type: 'choose_measures', chosen: ['cows_raising_calves', 'insurance'] }).estimate
+    expect(e.totalDinars).toBe(280_000)
+    expect(e.unpriced).toEqual(['insurance'])
+  })
+
   it('herd disagreement does not change the cow measure (14 cows calved)', () => {
     const e = run('second_year', { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }).estimate
     expect(e.totalDinars).toBe(442_000)

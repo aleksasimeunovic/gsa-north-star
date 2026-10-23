@@ -12,6 +12,8 @@ export type FieldId = 'river' | 'road' | 'upper' | 'meadow' | 'house'
 export type FieldSignal =
   | { kind: 'satellite_difference'; flagPolygon: Polygon; flagHa: number }
   | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number }
+  /** Last year's drawing runs into a neighbour's declared field. */
+  | { kind: 'overlap'; neighbourPolygon: Polygon; overlapPolygon: Polygon; overlapHa: number }
 
 export interface Field {
   id: FieldId
@@ -30,13 +32,42 @@ export interface LandShape {
   polygon: Polygon
 }
 
-export type MeasureId = 'plant_production' | 'cows_raising_calves' | 'eco_scheme'
+export type MeasureId =
+  | 'plant_production'
+  | 'cows_raising_calves'
+  | 'fertiliser'
+  | 'diesel'
+  | 'certified_seed'
+  | 'insurance'
+  | 'breeding_cattle'
+  | 'insemination'
+  | 'green_cover'
+  | 'irrigation'
+  | 'organic'
+  | 'milk'
+
+/**
+ * What a measure needs. 'auto' is something GSA already has from a record; the rest he adds.
+ * `when` shows a requirement only after a given answer to another one.
+ */
+export type RequirementKind = 'auto' | 'upload' | 'number' | 'text' | 'longtext' | 'choice' | 'fields' | 'confirm'
+export interface Requirement {
+  id: string
+  kind: RequirementKind
+  options?: string[]
+  when?: { id: string; value: string }
+  /** A choice value that rules the measure out, so GSA can say so at once. */
+  blocks?: string
+}
 
 export interface Measure {
   id: MeasureId
-  unit: 'ha' | 'cow_calved'
-  rateDinars: number
+  /** Only the two real 2026 rates are numbers; the rest are worked out after checks. */
+  unit?: 'ha' | 'cow_calved'
+  rateDinars?: number
   fits: boolean
+  lastYear: boolean
+  requirements: Requirement[]
 }
 
 export interface Document {
@@ -44,6 +75,12 @@ export interface Document {
   attached: boolean
   /** Placeholder names and dates, so he can see what he confirms. */
   files: { name: string; date: string }[]
+}
+
+/** Other animals in the registry that weren't declared last year. */
+export interface Pigs {
+  lastYearDeclared: number
+  registryCount: number
 }
 
 export interface Herd {
@@ -69,6 +106,7 @@ export interface Scenario {
   today: string
   generalData: GeneralData
   herd: Herd | null
+  pigs: Pigs | null
   fields: Field[]
   /** Land the government has registered as farmland (physical blocks). Fields stay inside it. */
   blocks: LandShape[]
@@ -105,7 +143,16 @@ const FIELDS: Field[] = [
     polygon: rect(220, 0, 150, 120),
     signal: { kind: 'road_strip', stripPolygon: rect(220, 112, 150, 8), stripHa: 0.12 },
   },
-  { id: 'upper', name: 'Upper field', areaHa: 2.0, cropLastYear: 'wheat', arable: true, polygon: rect(0, 140, 200, 100) },
+  {
+    id: 'upper',
+    name: 'Upper field',
+    areaHa: 2.0,
+    cropLastYear: 'wheat',
+    arable: true,
+    polygon: rect(0, 140, 200, 100),
+    // The neighbour's new declaration starts 5 m inside last year's drawing.
+    signal: { kind: 'overlap', neighbourPolygon: rect(0, 235, 200, 55), overlapPolygon: rect(0, 235, 200, 5), overlapHa: 0.1 },
+  },
   { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100) },
   { id: 'house', name: 'House field', areaHa: 1.3, cropLastYear: 'maize', arable: true, polygon: rect(390, 0, 130, 100) },
 ]
@@ -143,10 +190,72 @@ const HERD: Herd = {
   calvingPeriod: { from: '2025-04-01', to: '2026-03-31' },
 }
 
+const PIGS: Pigs = { lastYearDeclared: 0, registryCount: 3 }
+
+// Ten fit his farm, two don't. Fitting ones first; the two he applied for last year are chosen already.
 const MEASURES: Measure[] = [
-  { id: 'plant_production', unit: 'ha', rateDinars: 18_000, fits: true },
-  { id: 'cows_raising_calves', unit: 'cow_calved', rateDinars: 20_000, fits: true },
-  { id: 'eco_scheme', unit: 'ha', rateDinars: 0, fits: false },
+  {
+    id: 'plant_production',
+    unit: 'ha',
+    rateDinars: 18_000,
+    fits: true,
+    lastYear: true,
+    requirements: [
+      { id: 'land', kind: 'auto' },
+      { id: 'receipts', kind: 'auto' },
+    ],
+  },
+  { id: 'cows_raising_calves', unit: 'cow_calved', rateDinars: 20_000, fits: true, lastYear: true, requirements: [{ id: 'calvings', kind: 'auto' }] },
+  { id: 'fertiliser', fits: true, lastYear: false, requirements: [{ id: 'fertiliser_receipt', kind: 'auto' }] },
+  {
+    id: 'diesel',
+    fits: true,
+    lastYear: false,
+    requirements: [
+      { id: 'who_works', kind: 'choice', options: ['own', 'contractor'] },
+      { id: 'contract', kind: 'upload', when: { id: 'who_works', value: 'contractor' } },
+    ],
+  },
+  {
+    id: 'certified_seed',
+    fits: true,
+    lastYear: false,
+    requirements: [
+      { id: 'seed_label', kind: 'upload' },
+      { id: 'seed_kg', kind: 'number' },
+    ],
+  },
+  {
+    id: 'insurance',
+    fits: true,
+    lastYear: false,
+    requirements: [
+      { id: 'insurer', kind: 'text' },
+      { id: 'policy', kind: 'upload' },
+    ],
+  },
+  { id: 'breeding_cattle', fits: true, lastYear: false, requirements: [{ id: 'herd_book', kind: 'choice', options: ['yes', 'no'], blocks: 'no' }] },
+  { id: 'insemination', fits: true, lastYear: false, requirements: [{ id: 'vet_certificate', kind: 'upload' }] },
+  {
+    id: 'green_cover',
+    fits: true,
+    lastYear: false,
+    requirements: [
+      { id: 'cover_fields', kind: 'fields' },
+      { id: 'cover_promise', kind: 'confirm' },
+    ],
+  },
+  {
+    id: 'irrigation',
+    fits: true,
+    lastYear: false,
+    requirements: [
+      { id: 'water_permit', kind: 'upload' },
+      { id: 'how_water', kind: 'longtext' },
+    ],
+  },
+  { id: 'organic', fits: false, lastYear: false, requirements: [] },
+  { id: 'milk', fits: false, lastYear: false, requirements: [] },
 ]
 
 const RECEIPTS = [
@@ -162,6 +271,7 @@ const BASE: Scenario = {
   today: '2026-04-28',
   generalData: { holder: 'Milan Dragović', place: 'Bečanj, near Čačak' },
   herd: HERD,
+  pigs: PIGS,
   fields: FIELDS,
   blocks: BLOCKS,
   parcels: PARCELS,

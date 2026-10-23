@@ -1,48 +1,59 @@
-import { home } from '../copy/en'
-import { isAnswered } from '../logic/changes'
+import { bar, home } from '../copy/en'
 import { daysLeft } from '../logic/readiness'
+import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
-import { ReadinessBar } from '../components/ReadinessBar'
+import { FarmPicture } from '../components/FarmPicture'
 import { TaskList } from '../components/TaskList'
+import { useApplicationFlow } from '../components/useApplicationFlow'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Stack, Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
 
-/** Welcome back: opens with what GSA knows, and his application as one list. */
+/** Welcome back: opens with what GSA knows, his application as one list, and the way forward always in reach. */
 export function Application({ target }: { target: string | null }) {
   const { derived, state, go } = useApp()
   const { scenario } = derived
+  const flow = useApplicationFlow(target)
+  const submitted = !!state.answers.submittedAt
 
   return (
     <Stack gap="lg">
       <header>
         <h1>{home.greeting}</h1>
         <Text>
-          {home.deadline(scenario.window.closes)} <strong>{home.daysLeft(daysLeft(scenario.today, scenario.window.closes))}.</strong>{' '}
-          <Note kind="eu_mandate" />
+          {home.deadline(daysLeft(scenario.today, scenario.window.closes), scenario.window.closes)} <Note kind="eu_mandate" />
         </Text>
-        {derived.changes.some((c) => !isAnswered(c, state.answers)) && <Text>{home.intro(derived.changes.length)}</Text>}
       </header>
 
-      {state.answers.submittedAt && (
+      {submitted && (
         <Banner tone="success">
           <Text variant="strong">{home.submitted}</Text>
           <Button variant="link" onClick={() => go('receipt')}>{home.seeReceipt}</Button>
         </Banner>
       )}
 
-      {/* Desktop: readiness and the estimate in a sticky side column. Mobile: readiness stays in the header, the estimate below the list. */}
+      {/* Desktop: his farm and the estimate in a sticky side column. Mobile: below the list. */}
       <div className="app-layout">
-        <TaskList target={target} />
+        <TaskList flow={flow} />
         <aside className="app-side">
-          <div className="side-readiness">
-            <ReadinessBar />
-          </div>
+          <FarmPicture />
           <EstimateBlock />
         </aside>
       </div>
+
+      {!submitted && (
+        <ActionBar
+          back={flow.back && { label: bar.back, onClick: flow.back }}
+          forward={{
+            label: flow.forward === 'submit' ? bar.toSubmit : bar.next(flow.title(flow.forward)),
+            onClick: () => (flow.forward === 'submit' ? go('submit') : flow.show(flow.forward)),
+          }}
+          forwardIsPrimary={flow.forwardIsPrimary}
+          onPick={(id) => flow.show(id)}
+        />
+      )}
     </Stack>
   )
 }

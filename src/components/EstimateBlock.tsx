@@ -19,6 +19,7 @@ export function EstimateBlock() {
         {e.changes.map((c) => (
           <Text key={c.reason}>{en.impact[c.reason](formatHa(c.areaHa), formatDinars(-c.aboutDinars))}</Text>
         ))}
+        {e.unpriced.length > 0 && <Text variant="small">{en.estimate.unpriced(e.unpriced.length)}</Text>}
         <Text variant="small">{en.estimate.caveat}</Text>
         <Disclosure label={en.estimate.how}>
           <ul>

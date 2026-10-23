@@ -1,7 +1,6 @@
 import { advisor, en } from './copy/en'
 import { AppContext } from './components/AppContext'
 import { PrototypeControls } from './components/PrototypeControls'
-import { ReadinessBar } from './components/ReadinessBar'
 import { derive } from './logic/derive'
 import { AdvisorQueue } from './screens/AdvisorQueue'
 import { Application } from './screens/Application'
@@ -39,7 +38,6 @@ export function App() {
           <div className="page" data-screen={screen}>
             <header className="topbar">
               <a href="#/welcome" className="brand">{en.appName}</a>
-              {screen !== 'queue' && <ReadinessBar />}
               {state.role === 'advisor' && (
                 <nav aria-label="Advisor" className="advisor-nav">
                   <a href="#/queue" aria-current={screen === 'queue' ? 'page' : undefined}>{advisor.nav.queue}</a>

@@ -21,10 +21,10 @@ This file is the single source of truth. Read it fully before planning. If somet
 
 ## 2. How to work (token budget matters)
 
-- Work **one phase at a time** (section 10). Start each phase in plan mode, show a short plan, wait for approval, build, then stop.
+- Work **one phase at a time** (section 10). For a round of feedback, decide and build; don't ask Aleksa to approve plans. Recommend when a design question comes up, log it in `docs/decisions.md`.
 - Keep chat output short: no long explanations, no recaps of code you wrote. At the end of a phase, list what to click to check it, in under 10 lines.
 - Don't re-read files you just wrote. Make small, targeted edits.
-- Ask before adding any dependency beyond those in section 9.
+- Ask before adding any dependency beyond those in section 9 (OpenLayers is approved).
 - No CSS beyond one small `src/styles.css` (layout, spacing, focus rings, greyscale). No CSS frameworks yet.
 - Tests: only unit tests for the pure logic in `src/logic/`. No UI tests. Update the tests when a rule changes.
 - Commit at the end of each phase with a one-line message.
@@ -136,17 +136,18 @@ Structure by what Milan has to accomplish, not by the smallest step count. There
 Use exactly these facts. Don't invent research findings or extra numbers.
 
 - **Farm:** active farmer status renewed (scenario toggle can make it not renewed). Application window: 10 April to 26 May; show days left.
+- **Pigs:** the animal registry shows 3 pigs; none declared last year. Question: only for the household? (household pigs needing no declaration is an assumption).
 - **Herd:** last year declared 41 cattle. Animal registry today: 38 (registry has headcount only, no history, so never show a breakdown of movements). Milan knows why: 4 sold, 2 slaughtered, 3 calves born. 14 cows calved between 1 April 2025 and 31 March 2026.
 - **Land:** five fields, 9.00 ha total. Use local-style names:
   - River field, 2.40 ha, wheat last year. Satellite photo: lower part looks different. The lower half floods every spring; this year sunflowers there, wheat on the rest.
   - Road field, 1.80 ha, maize. Land map: 0.12 ha strip now marked as road (wider road).
-  - Upper field, 2.00 ha, wheat. Unchanged.
+  - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's drawing. Yes: GSA moves his edge (about 1,800 dinars less). No: he draws where his field ends on an OpenLayers map.
   - Meadow, 1.50 ha, grassland/fodder. Unchanged.
   - House field, 1.30 ha, maize. Unchanged.
-- **Measures (real 2026 rates):**
-  - Basic support for plant production: 18,000 dinars per hectare, justified with input receipts. Fits: he farms arable land.
-  - Cows raising calves for fattening: 20,000 dinars per cow that calved 1 Apr 2025 to 31 Mar 2026. Fits: 14 cows calved.
-  - One measure that doesn't fit, in the full list only (e.g. an eco-scheme practice with its condition stated).
+- **Measures:** 12 in the list, 10 fit his farm, 2 don't (organic, milk premium). Last year he had the first two:
+  - Basic support for plant production: 18,000 dinars per hectare (real 2026 rate), justified with input receipts.
+  - Cows raising calves for fattening: 20,000 dinars per cow that calved 1 Apr 2025 to 31 Mar 2026 (real 2026 rate). 14 cows calved.
+  - Fertiliser, diesel, certified seed, insurance, quality breeding cattle, artificial insemination, green cover over winter, watering fields: no rates (never invent one); each states what it pays for and what it needs (uploads, numbers, text, a choice, fields, a promise). Data in `scenarios.ts`.
 - **Estimate:** 9.00 × 18,000 + 14 × 20,000 = 442,000. After the road: 8.88 × 18,000 + 280,000 = 439,840, shown as "about 440,000", with "The road took 0.12 ha. About 2,200 dinars less." Splitting the river field doesn't change the estimate (same rate per hectare). Label: "Estimated subsidy based on current information", covers only this application, assumptions visible on request (rates, eligible area, cows that calved), "The payment still depends on inspection and final eligibility."
 - **Jelena:** PSSS advisor in Čačak, about 20 applications a day, studied agronomy.
 - **Neighbour (advisor mode only):** has a parcel still in his late father's name; he sent just that problem to Jelena. Referring it to the land registry means waiting for that office, not handled.
@@ -179,7 +180,7 @@ Paths:
 - Answers stay editable; changing one re-runs the list rules.
 
 ### Land: plain-language map and suggested split
-- Fields on an SVG map (no map library, no tiles). Card maps zoom to one field with neighbours faint and unlabelled; "Your other fields" draws only those fields. Maps capped at 300 px tall.
+- Fields on an SVG map (no tiles). The one exception: drawing where a field ends uses OpenLayers (corners, snapping, live area, guardrails, slider alternative), loaded only when needed. Card maps zoom to one field with neighbours faint and unlabelled; "Your other fields" draws only those fields. Maps capped at 300 px tall.
 - Plain labels and clearly different boundary styles, e.g. "Land the government has registered" vs "Draw the area you actually farm". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
 - When a boundary stops an action, explain why at that moment, in place.
 - **Split:** GSA proposes the line along the area the satellite flagged. Milan accepts it or nudges it: large handles, drag the whole line. No precise point placement with a finger. Keep the guardrail (line clipped to eligible land), live areas (on the map and in the crop labels), undo (shown once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
@@ -207,7 +208,7 @@ Paths:
 - Autosave the store to `localStorage` wrapped in try/catch; the app must work without it. Show a quiet "Saved" indicator.
 - Data in `src/data/scenarios.ts` (all facts from section 7, nothing hardcoded in components).
 - Deploy: GitHub Actions workflow to GitHub Pages; Vite `base` is the repo name. README with run and deploy steps (short).
-- No backend, no real APIs, no map library, no analytics.
+- No backend, no real APIs, no analytics. OpenLayers (`ol`) only for the drawing map.
 
 ### Content rules
 - All UI text in `src/copy/en.ts` (English for Earl; Serbian later). British spelling, plain language, short sentences, no em dashes, no jargon. Field and place names may stay local.
@@ -235,6 +236,8 @@ Round 1 (foundation, four moments, prototype controls, advisor mode, deploy) and
 2. **Welcome back as one workflow:** contextual change cards with evidence, one application list that shrinks after each answer, "Everything else" replaced by named tasks.
 3. **Land:** plain-language map and the suggested split line.
 4. **Readiness through submit, Jelena's states and priority, scenario cuts, final content pass, `docs/acceptance.md`, deploy.**
+
+Round 4 (Aleksa, 23 Oct): no stepper; an "After your answer" panel with Undo, a readiness drawer, a sticky action bar (Back, readiness, forward), GSA's next-step line, "Your farm this year", pigs and the neighbour overlap, OpenLayers drawing, 10 measures with their own inputs, Jelena's question and Milan's reply. See `docs/decisions.md` 55 to 68.
 
 Prototype controls (floating "Prototype" button, clearly separated panel, "Not part of GSA"): scenario, sign in as Milan or Jelena, show design notes, reset. No new scenarios.
 

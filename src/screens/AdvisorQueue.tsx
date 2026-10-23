@@ -20,8 +20,6 @@ const when = (iso: string) => {
 const CLOSE_DAYS = 7
 const GROUPS: CaseState[] = ['assigned', 'waiting_farmer', 'waiting_office', 'resolved']
 
-/** Who owns the next action, in words; a named office when it's waiting on one. */
-const stateLine = (c: AdvisorCase) => (c.state === 'waiting_office' ? advisor.waitingFor(en.offices[c.owner]) : advisor.state[c.state])
 
 function CaseDetail({ c }: { c: AdvisorCase }) {
   const { dispatch, go } = useApp()
@@ -30,7 +28,8 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
   return (
     <Card id="case-detail" title={`${c.farmer}: ${advisor.kind[c.kind]}`} headingLevel={2}>
       <Stack gap="sm">
-        <Text variant="strong">{stateLine(c)}</Text>
+        {/* Who owns the next action, said once. */}
+        <Text variant="strong">{advisor.next[c.state](en.offices[c.owner])}</Text>
         {c.values && (
           <Compare
             items={[
@@ -43,6 +42,12 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
           <Text variant="small">{advisor.note}</Text>
           <Text>{c.note || advisor.noNote}</Text>
         </div>
+        {c.reply && (
+          <div>
+            <Text variant="small">{advisor.reply}</Text>
+            <Text>{c.reply}</Text>
+          </div>
+        )}
         <Text variant="secondary">{advisor.owner(office)}</Text>
         {/* The likely next step is primary: an official record goes to its owner; resolve once the owner has settled it. */}
         {c.state !== 'resolved' && (
@@ -128,7 +133,7 @@ export function AdvisorQueue() {
                       >
                         <span className="queue-who">{x.farmer}</span>
                         <span>{advisor.kind[x.kind]}</span>
-                        {x.state === 'waiting_office' && <span className="queue-state">{stateLine(x)}</span>}
+                        <span className="queue-state">{advisor.next[x.state](en.offices[x.owner])}</span>
                         <span className="queue-meta">
                           {[
                             x.blocksSubmission && x.state !== 'resolved' && advisor.blocks,

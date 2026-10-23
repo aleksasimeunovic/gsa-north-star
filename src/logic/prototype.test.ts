@@ -24,4 +24,16 @@ describe('prototype controls (reducer)', () => {
   it('notes are not part of the farm history', () => {
     expect(play('second_year', { type: 'set_notes', show: true }).history).toEqual([])
   })
+
+  it('undo takes back his last answer, one at a time', () => {
+    const s = play('second_year', { type: 'answer_herd', answer: 'yes' }, { type: 'answer_pigs', answer: 'yes' }, { type: 'undo' })
+    expect(s.answers.pigs.answer).toBeNull()
+    expect(s.answers.herd.answer).toBe('yes')
+    const t = play('second_year', { type: 'answer_herd', answer: 'yes' }, { type: 'undo' }, { type: 'undo' })
+    expect(t.answers.herd.answer).toBeNull()
+  })
+
+  it("starts with last year's measures chosen", () => {
+    expect(play('second_year').answers.measures.chosen).toEqual(['plant_production', 'cows_raising_calves'])
+  })
 })

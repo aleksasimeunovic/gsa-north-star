@@ -1,6 +1,6 @@
 import { finish, formatDateYear, formatTime } from '../copy/en'
 import { taskSummary } from '../components/TaskBodies'
-import { taskTitle } from '../components/TaskList'
+import { taskTitle } from '../components/useApplicationFlow'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from '../components/AppContext'
 import { referenceNumber } from '../logic/submit'

@@ -166,3 +166,67 @@ export function fractionOfLine(poly: Polygon, line: [Point, Point]): number {
   const y = (line[0].y + line[1].y) / 2
   return Math.min(1, Math.max(0, (y - b.minY) / (b.maxY - b.minY)))
 }
+
+/** The part of a polygon inside a convex area (Sutherland–Hodgman). The subject may be any simple polygon. */
+export function clipToConvex(subject: Polygon, area: Polygon): Polygon {
+  // Walk the area's edges so that "inside" is always the same side, whatever its winding.
+  const ccw = area.reduce((s, p, i) => {
+    const q = area[(i + 1) % area.length]
+    return s + (p.x * q.y - q.x * p.y)
+  }, 0) > 0
+  let out = subject
+  for (let i = 0; i < area.length && out.length; i++) {
+    const a = area[i]
+    const b = area[(i + 1) % area.length]
+    out = clipHalfPlane(out, a, b, ccw)
+  }
+  return out
+}
+
+/** How much of one polygon lies inside a convex other, in hectares. */
+export const overlapHa = (poly: Polygon, convexOther: Polygon) => roundHa(polygonAreaHa(clipToConvex(poly, convexOther)))
+
+const segmentsCross = (p1: Point, p2: Point, q1: Point, q2: Point) => {
+  const d1 = side(q1, p1, p2)
+  const d2 = side(q2, p1, p2)
+  const d3 = side(p1, q1, q2)
+  const d4 = side(p2, q1, q2)
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+}
+
+/** A drawn edge that crosses another edge of the same shape. */
+export function selfCrosses(poly: Polygon): boolean {
+  const n = poly.length
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue // neighbouring edges share a corner
+      if (segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])) return true
+    }
+  }
+  return false
+}
+
+export type DrawingProblem = 'crosses_itself' | 'outside_land' | 'overlaps_neighbour' | 'overlaps_own' | 'too_small'
+
+/** Below this, a difference is drawing noise, not land. */
+const TOLERANCE_HA = 0.01
+
+/**
+ * What stops a drawn field from being saved, explained where it happens.
+ * Registered land and other fields are convex in this scenario.
+ */
+export function drawingProblems(
+  poly: Polygon,
+  land: Polygon,
+  neighbour: Polygon | null,
+  ownOthers: Polygon[],
+): DrawingProblem[] {
+  const out: DrawingProblem[] = []
+  // A crossed shape can add up to almost no area, so say what's actually wrong first.
+  if (poly.length >= 3 && selfCrosses(poly)) return ['crosses_itself']
+  if (poly.length < 3 || polygonAreaHa(poly) < TOLERANCE_HA) return ['too_small']
+  if (polygonAreaHa(poly) - polygonAreaHa(clipToConvex(poly, land)) > TOLERANCE_HA) out.push('outside_land')
+  if (neighbour && overlapHa(poly, neighbour) > TOLERANCE_HA) out.push('overlaps_neighbour')
+  if (ownOthers.some((o) => overlapHa(poly, o) > TOLERANCE_HA)) out.push('overlaps_own')
+  return out
+}

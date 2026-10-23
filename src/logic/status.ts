@@ -1,12 +1,13 @@
-import type { FieldId, Measure, Scenario } from '../data/scenarios'
-import type { Answers } from '../state/actions'
-import { roundHa, splitPolygon } from './geometry'
+import type { FieldId, Measure, MeasureId, Requirement, Scenario } from '../data/scenarios'
+import type { Answers, MeasureValue } from '../state/actions'
+import type { CaseState } from './advisor'
+import { overlapHa, polygonAreaHa, roundHa, splitPolygon } from './geometry'
 
 export type Status = 'complete' | 'action_required' | 'awaiting_verification'
-export type ItemId = 'herd' | `field_${FieldId}` | 'fields_other' | 'details' | 'measures' | 'receipts'
+export type ItemId = 'herd' | 'pigs' | `field_${FieldId}` | 'fields_other' | 'details' | 'measures' | `measure_${MeasureId}` | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
-export type ImpactReason = 'road_took_area' | 'road_pending_correction'
+export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'redrawn' | 'overlap_pending'
 export interface PaymentImpact {
   amountDinars: number // negative = less payment
   areaHa: number
@@ -18,6 +19,7 @@ export type ItemDetail =
   | 'herd_needs_count'
   | 'herd_confirmed'
   | 'herd_differs' // his value and the registry's are both kept
+  | 'herd_jelena_asks' // Jelena sent the problem back to him with a question
   | 'river_unanswered'
   | 'river_needs_split'
   | 'river_split_done'
@@ -25,13 +27,24 @@ export type ItemDetail =
   | 'road_unanswered'
   | 'road_confirmed'
   | 'road_correction_requested'
+  | 'upper_unanswered'
+  | 'upper_moved'
+  | 'upper_needs_drawing'
+  | 'upper_drawn'
+  | 'upper_drawn_overlaps' // his line and the neighbour's both kept
+  | 'pigs_unanswered'
+  | 'pigs_household'
+  | 'pigs_declared'
   | 'fields_same'
   | 'fields_confirmed'
   | 'details_to_confirm'
   | 'details_confirmed'
   | 'details_correction'
-  | 'measures_to_confirm'
-  | 'measures_confirmed'
+  | 'measures_to_choose'
+  | 'measures_chosen'
+  | 'measure_needs_input'
+  | 'measure_ruled_out' // an answer means the measure can't be paid; he leaves it out
+  | 'measure_ready'
   | 'receipts_to_confirm'
   | 'receipts_confirmed'
   | 'receipts_missing'
@@ -43,16 +56,24 @@ export interface Item {
   paymentImpact?: PaymentImpact
   /** Both values, when his answer differs from a record. */
   conflict?: { record: number; his: number; owner: 'animal_registry' | 'land_map' }
+  /** For a measure: what he still has to add. */
+  missing?: string[]
 }
 
 const plantRate = (s: Scenario) => s.measures.find((m) => m.id === 'plant_production')?.rateDinars ?? 0
+
+function pigsItem(s: Scenario, a: Answers): Item | null {
+  if (!s.pigs || s.pigs.registryCount === s.pigs.lastYearDeclared) return null
+  if (a.pigs.answer === null) return { id: 'pigs', status: 'action_required', detail: 'pigs_unanswered' }
+  return { id: 'pigs', status: 'complete', detail: a.pigs.answer === 'yes' ? 'pigs_household' : 'pigs_declared' }
+}
 export const impactOf = (s: Scenario, areaHa: number, reason: ImpactReason): PaymentImpact => ({
   amountDinars: -Math.round(areaHa * plantRate(s)),
   areaHa,
   reason,
 })
 
-function herdItem(s: Scenario, a: Answers): Item | null {
+function herdItem(s: Scenario, a: Answers, jelena: CaseState | null): Item | null {
   if (!s.herd) return null
   const id = 'herd' as const
   const { answer, ownCount } = a.herd
@@ -61,10 +82,12 @@ function herdItem(s: Scenario, a: Answers): Item | null {
   if (ownCount === null || ownCount < 0) return { id, status: 'action_required', detail: 'herd_needs_count' }
   if (ownCount === s.herd.registryCount) return { id, status: 'complete', detail: 'herd_confirmed' }
   // A record never overwrites his answer, and his answer never overwrites the record.
+  // If Jelena asks him something, the next action is his again.
+  const asked = jelena === 'waiting_farmer'
   return {
     id,
-    status: 'awaiting_verification',
-    detail: 'herd_differs',
+    status: asked ? 'action_required' : 'awaiting_verification',
+    detail: asked ? 'herd_jelena_asks' : 'herd_differs',
     conflict: { record: s.herd.registryCount, his: ownCount, owner: 'animal_registry' },
   }
 }
@@ -110,7 +133,59 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
       conflict: { record: roundHa(field.areaHa - signal.stripHa), his: field.areaHa, owner: 'land_map' },
     }
   }
+  if (signal?.kind === 'overlap') {
+    const u = a.upper
+    if (u.answer === null) return { id: itemId, status: 'action_required', detail: 'upper_unanswered' }
+    if (u.answer === 'yes') {
+      return { id: itemId, status: 'complete', detail: 'upper_moved', paymentImpact: impactOf(s, signal.overlapHa, 'overlap_removed') }
+    }
+    if (!u.drawn) return { id: itemId, status: 'action_required', detail: 'upper_needs_drawing' }
+    const drawnHa = roundHa(polygonAreaHa(u.drawn))
+    const lost = roundHa(field.areaHa - drawnHa)
+    // His line still runs into the neighbour's: both declarations are kept until the payments office checks.
+    const still = overlapHa(u.drawn, signal.neighbourPolygon)
+    if (still >= 0.01) {
+      return { id: itemId, status: 'awaiting_verification', detail: 'upper_drawn_overlaps', paymentImpact: impactOf(s, roundHa(lost + still), 'overlap_pending') }
+    }
+    return { id: itemId, status: 'complete', detail: 'upper_drawn', ...(lost !== 0 ? { paymentImpact: impactOf(s, lost, 'redrawn') } : {}) }
+  }
   return null
+}
+
+const empty = (v: MeasureValue | undefined) => v === undefined || v === '' || v === false || (Array.isArray(v) && v.length === 0)
+
+/** A requirement he sees: always, or once another answer makes it needed. */
+export const shown = (m: Measure, r: Requirement, inputs: Answers['measures']['inputs']) =>
+  !r.when || inputs[`${m.id}.${r.when.id}`] === r.when.value
+
+/** What he still has to add for a measure, and whether an answer rules it out. */
+export function measureGaps(m: Measure, inputs: Answers['measures']['inputs']): { missing: string[]; ruledOut: boolean } {
+  const visible = m.requirements.filter((r) => r.kind !== 'auto' && shown(m, r, inputs))
+  return {
+    missing: visible.filter((r) => empty(inputs[`${m.id}.${r.id}`])).map((r) => r.id),
+    ruledOut: visible.some((r) => r.blocks !== undefined && inputs[`${m.id}.${r.id}`] === r.blocks),
+  }
+}
+
+/** Measures that fit his farm. */
+export const fitting = (s: Scenario) => s.measures.filter((m) => m.fits)
+
+/**
+ * Choosing measures is its own task. Once chosen, every measure that needs something from him
+ * becomes its own task; measures GSA can fill in from records need nothing more.
+ */
+function measureItems(s: Scenario, a: Answers): Item[] {
+  const m = a.measures
+  const items: Item[] = [m.confirmed ? { id: 'measures', status: 'complete', detail: 'measures_chosen' } : { id: 'measures', status: 'action_required', detail: 'measures_to_choose' }]
+  if (!m.confirmed) return items
+  for (const measure of fitting(s).filter((x) => m.chosen.includes(x.id) && x.requirements.some((r) => r.kind !== 'auto'))) {
+    const { missing, ruledOut } = measureGaps(measure, m.inputs)
+    const id = `measure_${measure.id}` as const
+    if (ruledOut) items.push({ id, status: 'action_required', detail: 'measure_ruled_out' })
+    else if (missing.length) items.push({ id, status: 'action_required', detail: 'measure_needs_input', missing })
+    else items.push({ id, status: 'complete', detail: 'measure_ready' })
+  }
+  return items
 }
 
 const confirmedItem = (id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDetail): Item =>
@@ -120,11 +195,12 @@ const confirmedItem = (id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDeta
  * Every item gets a status. Pure: derived from scenario + answers, never stored.
  * Unchanged things are named confirmations, not complete by default: he hasn't seen them yet.
  */
-export function deriveItems(s: Scenario, a: Answers): Item[] {
-  const herd = herdItem(s, a)
+export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = null): Item[] {
+  const herd = herdItem(s, a, jelena)
+  const pigs = pigsItem(s, a)
   const changed = s.fields.flatMap((f) => changedFieldItem(s, a, f.id) ?? [])
   const unchanged = s.fields.filter((f) => !f.signal)
-  const items: Item[] = [...(herd ? [herd] : []), ...changed]
+  const items: Item[] = [...(herd ? [herd] : []), ...(pigs ? [pigs] : []), ...changed]
 
   if (unchanged.length) items.push(confirmedItem('fields_other', a.confirmed.includes('fields_other'), 'fields_same', 'fields_confirmed'))
 
@@ -134,7 +210,7 @@ export function deriveItems(s: Scenario, a: Answers): Item[] {
       ? { id: 'details', status: 'awaiting_verification', detail: 'details_correction' }
       : confirmedItem('details', a.confirmed.includes('details'), 'details_to_confirm', 'details_confirmed'),
   )
-  items.push(confirmedItem('measures', a.confirmed.includes('measures'), 'measures_to_confirm', 'measures_confirmed'))
+  items.push(...measureItems(s, a))
 
   const missing = s.documents.some((d) => !d.attached && !a.attachedDocuments.includes(d.id))
   items.push(

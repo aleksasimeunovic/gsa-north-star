@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { orderMeasures } from './status'
+import { measureGaps, orderMeasures } from './status'
 import { halfSplit, run } from './testUtils'
 
 const item = (r: ReturnType<typeof run>, id: string) => r.items.find((i) => i.id === id)!
 const split = halfSplit()
 
 describe('status per item', () => {
-  it('starts with the three changes and the named confirmations needing action; nothing is complete before he sees it', () => {
+  it('starts with the five changes, the named confirmations and measures needing action; nothing is complete before he sees it', () => {
     const r = run('second_year')
     expect(r.items.map((i) => [i.id, i.status])).toEqual([
       ['herd', 'action_required'],
+      ['pigs', 'action_required'],
       ['field_river', 'action_required'],
       ['field_road', 'action_required'],
+      ['field_upper', 'action_required'],
       ['fields_other', 'action_required'],
       ['details', 'action_required'],
       ['measures', 'action_required'],
@@ -21,12 +23,11 @@ describe('status per item', () => {
   })
 
   it('"yes, all the same" confirms every unchanged thing at once', () => {
-    const r = run('second_year', { type: 'confirm_same', what: ['fields_other', 'details', 'measures', 'receipts'] })
-    expect(r.items.filter((i) => i.status === 'complete').map((i) => i.id)).toEqual(['fields_other', 'details', 'measures', 'receipts'])
+    const r = run('second_year', { type: 'confirm_same', what: ['fields_other', 'details', 'receipts'] })
+    expect(r.items.filter((i) => i.status === 'complete').map((i) => i.id)).toEqual(['fields_other', 'details', 'receipts'])
   })
 
   it('confirming an unchanged thing completes it', () => {
-    expect(item(run('second_year', { type: 'confirm', what: 'measures' }), 'measures').status).toBe('complete')
     expect(item(run('second_year', { type: 'confirm', what: 'fields_other' }), 'fields_other').detail).toBe('fields_confirmed')
   })
 
@@ -85,9 +86,52 @@ describe('status per item', () => {
     expect(item(run('missing_document', { type: 'attach_document', documentId: 'input_receipts' }), 'receipts').status).toBe('complete')
   })
 
-  it('orders fitting measures first and keeps the full list', () => {
+  it('orders fitting measures first and keeps the full list: 10 fit, 2 do not', () => {
     const ordered = orderMeasures([...SCENARIOS.second_year.measures].reverse())
-    expect(ordered.map((m) => m.fits)).toEqual([true, true, false])
-    expect(ordered).toHaveLength(3)
+    expect(ordered.filter((m) => m.fits)).toHaveLength(10)
+    expect(ordered.slice(-2).map((m) => m.fits)).toEqual([false, false])
+  })
+
+  it('pigs: household only or declared, both complete', () => {
+    expect(item(run('second_year', { type: 'answer_pigs', answer: 'yes' }), 'pigs').detail).toBe('pigs_household')
+    expect(item(run('second_year', { type: 'answer_pigs', answer: 'no' }), 'pigs').detail).toBe('pigs_declared')
+  })
+
+  it("upper yes: complete, the neighbour's strip lowers the payment", () => {
+    const u = item(run('second_year', { type: 'answer_upper', answer: 'yes' }), 'field_upper')
+    expect(u.status).toBe('complete')
+    expect(u.paymentImpact).toEqual({ amountDinars: -1_800, areaHa: 0.1, reason: 'overlap_removed' })
+  })
+
+  it('upper no: needs his drawing; a line clear of the neighbour completes it, one still over it waits for a check', () => {
+    expect(item(run('second_year', { type: 'answer_upper', answer: 'no' }), 'field_upper').detail).toBe('upper_needs_drawing')
+    const rect = (h: number) => [{ x: 0, y: 140 }, { x: 200, y: 140 }, { x: 200, y: 140 + h }, { x: 0, y: 140 + h }]
+    const clear = item(run('second_year', { type: 'answer_upper', answer: 'no' }, { type: 'set_upper_drawing', polygon: rect(95) }), 'field_upper')
+    expect(clear).toMatchObject({ status: 'complete', detail: 'upper_drawn', paymentImpact: { areaHa: 0.1, reason: 'redrawn' } })
+    const over = item(run('second_year', { type: 'answer_upper', answer: 'no' }, { type: 'set_upper_drawing', polygon: rect(100) }), 'field_upper')
+    expect(over).toMatchObject({ status: 'awaiting_verification', detail: 'upper_drawn_overlaps', paymentImpact: { areaHa: 0.1, reason: 'overlap_pending' } })
+  })
+
+  it('a measure lists what he still has to add, including what an earlier answer makes needed', () => {
+    const diesel = SCENARIOS.second_year.measures.find((m) => m.id === 'diesel')!
+    expect(measureGaps(diesel, {}).missing).toEqual(['who_works'])
+    expect(measureGaps(diesel, { 'diesel.who_works': 'own' }).missing).toEqual([])
+    expect(measureGaps(diesel, { 'diesel.who_works': 'contractor' }).missing).toEqual(['contract'])
+  })
+
+  it('an answer that rules a measure out is said at once', () => {
+    const r = run('second_year', { type: 'choose_measures', chosen: ['breeding_cattle'] }, { type: 'save_measure', measureId: 'breeding_cattle', inputs: { 'breeding_cattle.herd_book': 'no' } })
+    expect(item(r, 'measure_breeding_cattle')).toMatchObject({ status: 'action_required', detail: 'measure_ruled_out' })
+  })
+
+  it('Jelena asking him something makes the herd his action again', () => {
+    const r = run(
+      'second_year',
+      { type: 'answer_herd', answer: 'no' },
+      { type: 'set_herd_count', count: 41 },
+      { type: 'send_to_jelena', itemId: 'herd', note: '' },
+      { type: 'advisor_act', caseId: 'milan_herd', act: 'asked_farmer' },
+    )
+    expect(item(r, 'herd')).toMatchObject({ status: 'action_required', detail: 'herd_jelena_asks' })
   })
 })

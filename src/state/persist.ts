@@ -1,6 +1,6 @@
 import type { AppState } from './actions'
 
-const KEY = 'gsa-north-star/v6'
+const KEY = 'gsa-north-star/v7'
 
 // Storage can be missing or blocked; the app must work without it.
 export function loadState(): AppState | null {
@@ -8,7 +8,7 @@ export function loadState(): AppState | null {
     const raw = window.localStorage.getItem(KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as AppState
-    return parsed.version === 6 ? parsed : null
+    return parsed.version === 7 ? parsed : null
   } catch {
     return null
   }

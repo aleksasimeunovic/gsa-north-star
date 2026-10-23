@@ -10,9 +10,9 @@ export type TaskId = 'renewal' | 'same' | ItemId
  * Work a change could still need. It starts as possible; his answer makes it needed or
  * removes it with a reason. This is what makes the application shrink as he answers.
  */
-export type WorkId = 'herd_by_tag' | 'river_split' | 'road_redraw'
+export type WorkId = 'river_split' | 'road_redraw' | 'upper_redraw' | 'pigs_declare'
 export type WorkState = 'possible' | 'needed' | 'done' | 'removed'
-export type RemovalReason = 'registry_has_count' | 'both_kept' | 'one_crop' | 'edge_moved' | 'kept_until_checked'
+export type RemovalReason = 'one_crop' | 'edge_moved' | 'kept_until_checked' | 'neighbour_line' | 'household'
 
 export interface Work {
   id: WorkId
@@ -39,22 +39,20 @@ export interface ApplicationList {
   density: 'comfortable' | 'compact'
 }
 
-export const CHANGE_TASKS: TaskId[] = ['herd', 'field_river', 'field_road']
+export const CHANGE_TASKS: TaskId[] = ['herd', 'pigs', 'field_river', 'field_road', 'field_upper']
 
 /** Unchanged things go in "same as last year" while they only need confirming. */
 const CONFIRMABLE = new Set<ItemDetail>([
   'fields_same', 'fields_confirmed', 'details_to_confirm', 'details_confirmed',
-  'measures_to_confirm', 'measures_confirmed', 'receipts_to_confirm', 'receipts_confirmed',
+  'receipts_to_confirm', 'receipts_confirmed',
 ])
 
 const removed = (id: WorkId, reason: RemovalReason): Work => ({ id, state: 'removed', reason })
 
 function workFor(id: TaskId, a: Answers, item: Item | undefined): Work[] {
-  if (id === 'herd') {
-    const { answer, ownCount } = a.herd
-    if (answer === 'yes') return [removed('herd_by_tag', 'registry_has_count')]
-    if (answer === 'no' && ownCount !== null) return [removed('herd_by_tag', 'both_kept')]
-    return [{ id: 'herd_by_tag', state: 'possible' }]
+  if (id === 'pigs') {
+    if (a.pigs.answer === 'yes') return [removed('pigs_declare', 'household')]
+    return [{ id: 'pigs_declare', state: a.pigs.answer === 'no' ? 'done' : 'possible' }]
   }
   if (id === 'field_river') {
     if (a.river.answer === 'yes') return [{ id: 'river_split', state: item?.status === 'complete' ? 'done' : 'needed' }]
@@ -65,6 +63,11 @@ function workFor(id: TaskId, a: Answers, item: Item | undefined): Work[] {
     if (a.road.answer === 'yes') return [removed('road_redraw', 'edge_moved')]
     if (a.road.answer === 'no') return [removed('road_redraw', 'kept_until_checked')]
     return [{ id: 'road_redraw', state: 'possible' }]
+  }
+  if (id === 'field_upper') {
+    if (a.upper.answer === 'yes') return [removed('upper_redraw', 'neighbour_line')]
+    if (a.upper.answer === 'no') return [{ id: 'upper_redraw', state: item?.status === 'action_required' ? 'needed' : 'done' }]
+    return [{ id: 'upper_redraw', state: 'possible' }]
   }
   return []
 }

@@ -1,4 +1,5 @@
-import type { Scenario } from '../data/scenarios'
+import type { MeasureId, Scenario } from '../data/scenarios'
+import type { Answers } from '../state/actions'
 import type { Item, ImpactReason } from './status'
 
 export interface EstimateLine {
@@ -21,6 +22,8 @@ export interface Estimate {
   aboutDinars: number
   lines: EstimateLine[]
   changes: EstimateChange[]
+  /** Chosen measures whose amount is only worked out after checks. */
+  unpriced: MeasureId[]
   assumptions: { eligibleAreaHa: number; cowsCalved: number; rates: { perHa: number; perCow: number } }
 }
 
@@ -31,33 +34,37 @@ const round = (n: number, to: number) => Math.round(n / to) * to
  * The payment still depends on inspection and final eligibility.
  * Splitting a field changes nothing here: same rate per hectare.
  */
-export function estimate(s: Scenario, items: Item[]): Estimate {
+export function estimate(s: Scenario, a: Answers, items: Item[]): Estimate {
+  const chosen = (id: MeasureId) => a.measures.chosen.includes(id)
   const plant = s.measures.find((m) => m.id === 'plant_production')!
   const cows = s.measures.find((m) => m.id === 'cows_raising_calves')!
+  const plantOn = plant.fits && chosen(plant.id)
 
   // Work in hundredths of a hectare to avoid floating point drift.
   const declaredCentiHa = s.fields.reduce((sum, f) => sum + Math.round(f.areaHa * 100), 0)
   const impacts = items.flatMap((i) => (i.paymentImpact ? [i.paymentImpact] : []))
   const lostCentiHa = impacts.reduce((sum, p) => sum + Math.round(p.areaHa * 100), 0)
-  const eligibleCentiHa = plant.fits ? declaredCentiHa - lostCentiHa : 0
+  const eligibleCentiHa = plantOn ? declaredCentiHa - lostCentiHa : 0
+  const plantRate = plant.rateDinars ?? 0
+  const cowRate = cows.rateDinars ?? 0
 
-  const cowsCalved = cows.fits && s.herd ? s.herd.cowsCalved : 0
+  const cowsCalved = cows.fits && chosen(cows.id) && s.herd ? s.herd.cowsCalved : 0
 
   const lines: EstimateLine[] = []
-  if (plant.fits) {
+  if (plantOn) {
     lines.push({
       measureId: 'plant_production',
       quantity: eligibleCentiHa / 100,
-      rateDinars: plant.rateDinars,
-      amountDinars: (eligibleCentiHa * plant.rateDinars) / 100,
+      rateDinars: plantRate,
+      amountDinars: (eligibleCentiHa * plantRate) / 100,
     })
   }
   if (cowsCalved > 0) {
     lines.push({
       measureId: 'cows_raising_calves',
       quantity: cowsCalved,
-      rateDinars: cows.rateDinars,
-      amountDinars: cowsCalved * cows.rateDinars,
+      rateDinars: cowRate,
+      amountDinars: cowsCalved * cowRate,
     })
   }
 
@@ -72,10 +79,11 @@ export function estimate(s: Scenario, items: Item[]): Estimate {
       amountDinars: p.amountDinars,
       aboutDinars: round(p.amountDinars, 100),
     })),
+    unpriced: s.measures.filter((m) => m.fits && chosen(m.id) && m.rateDinars === undefined).map((m) => m.id),
     assumptions: {
       eligibleAreaHa: eligibleCentiHa / 100,
       cowsCalved,
-      rates: { perHa: plant.rateDinars, perCow: cows.rateDinars },
+      rates: { perHa: plantRate, perCow: cowRate },
     },
   }
 }

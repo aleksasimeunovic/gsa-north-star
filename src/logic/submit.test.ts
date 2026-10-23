@@ -1,15 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Action } from '../state/actions'
 import { referenceNumber, submitCheck } from './submit'
-import { halfSplit, play, run } from './testUtils'
-
-const ready: Action[] = [
-  { type: 'answer_herd', answer: 'yes' },
-  { type: 'answer_river', answer: 'yes' },
-  halfSplit(),
-  { type: 'answer_road', answer: 'yes' },
-  { type: 'confirm_same', what: ['fields_other', 'details', 'measures', 'receipts'] },
-]
+import { play, ready, run } from './testUtils'
 
 describe('submit', () => {
   it('blocked while a change needs action, and until declarations are signed', () => {
@@ -23,7 +14,7 @@ describe('submit', () => {
   })
 
   it('awaiting verification does not block', () => {
-    const r = run('second_year', { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }, ...ready.slice(1)).readiness
+    const r = run('second_year', ...ready, { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }).readiness
     expect(submitCheck(r, true)).toEqual({ canSubmit: true, reasons: [] })
   })
 

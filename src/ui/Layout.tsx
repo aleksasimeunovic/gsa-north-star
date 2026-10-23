@@ -29,3 +29,17 @@ export function Compare({ items }: { items: { label: string; value: ReactNode }[
     </dl>
   )
 }
+
+/** Facts as label and value pairs. */
+export function KeyValues({ items }: { items: { label: string; value: ReactNode }[] }) {
+  return (
+    <dl className="records">
+      {items.map((i) => (
+        <div key={i.label} className="records-row">
+          <dt>{i.label}</dt>
+          <dd>{i.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}

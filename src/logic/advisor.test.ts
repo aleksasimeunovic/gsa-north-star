@@ -48,4 +48,11 @@ describe('advisor queue', () => {
     expect(milanCaseState(play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'milan_herd', act: 'referred' }))).toBe('waiting_office')
     expect(milanCaseState(play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'milan_herd', act: 'asked_farmer' }))).toBe('waiting_farmer')
   })
+
+  it("his reply hands the next step back to Jelena, and she sees it", () => {
+    const s = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'milan_herd', act: 'asked_farmer' }, { type: 'reply_to_jelena', note: 'Sold in March.' })
+    const milan = advisorQueue(s).find((c) => c.id === 'milan_herd')!
+    expect(milan).toMatchObject({ state: 'assigned', reply: 'Sold in March.' })
+    expect(milanCaseState(s)).toBe('assigned')
+  })
 })

@@ -3,11 +3,15 @@ import type { Action, Actor, Answers, AppState } from './actions'
 import { derive } from '../logic/derive'
 import { submitCheck } from '../logic/submit'
 import { loadState, saveState } from './persist'
+import { MILAN_CASE, SCENARIOS, type ScenarioId, type Scenario } from '../data/scenarios'
 
 export const emptyAnswers = (): Answers => ({
   herd: { answer: null, ownCount: null },
   river: { answer: null, split: null },
   road: { answer: null },
+  upper: { answer: null, drawn: null },
+  pigs: { answer: null },
+  measures: { chosen: [], confirmed: false, inputs: {} },
   confirmed: [],
   requests: [],
   attachedDocuments: [],
@@ -17,14 +21,30 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 6,
+  version: 7,
   scenarioId: 'second_year',
   role: 'farmer',
   prototype: { showNotes: false },
   advisor: { log: [] },
   answers: emptyAnswers(),
+  past: [],
   history: [],
 })
+
+/** Measures he applied for last year start chosen. */
+export const startingAnswers = (s: Scenario): Answers => ({
+  ...emptyAnswers(),
+  measures: { chosen: s.measures.filter((m) => m.fits && m.lastYear).map((m) => m.id), confirmed: false, inputs: {} },
+})
+
+export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(), scenarioId, answers: startingAnswers(SCENARIOS[scenarioId]) })
+
+/** Answers that can be taken back with Undo. Prototype, advisor and submit actions can't. */
+const UNDOABLE = new Set<Action['type']>([
+  'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper', 'set_upper_drawing',
+  'answer_pigs', 'confirm', 'confirm_same', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
+])
+const PAST_LIMIT = 20
 
 const addUnique = <T,>(list: T[], item: T) => (list.includes(item) ? list : [...list, item])
 
@@ -46,6 +66,19 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, river: { ...a.river, split: action.split } }
     case 'answer_road':
       return { ...a, road: { ...a.road, answer: action.answer } }
+    case 'answer_upper':
+      // "No" always asks him to draw afresh.
+      return { ...a, upper: { answer: action.answer, drawn: action.answer === 'no' ? a.upper.drawn : null } }
+    case 'set_upper_drawing':
+      return { ...a, upper: { ...a.upper, drawn: action.polygon } }
+    case 'answer_pigs':
+      return { ...a, pigs: { answer: action.answer } }
+    case 'choose_measures':
+      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true } }
+    case 'save_measure':
+      return { ...a, measures: { ...a.measures, inputs: { ...a.measures.inputs, ...action.inputs } } }
+    case 'reply_to_jelena':
+      return a
     case 'confirm':
       return { ...a, confirmed: addUnique(a.confirmed, action.what) }
     case 'confirm_same':
@@ -71,12 +104,25 @@ type Stamped = { action: Action; at: string }
 export function reducer(state: AppState, { action, at }: Stamped): AppState {
   // Prototype controls: keep role and notes, start the scenario fresh.
   const keep = { role: state.role, prototype: state.prototype }
-  if (action.type === 'reset') return { ...initialState(), ...keep, scenarioId: state.scenarioId }
-  if (action.type === 'set_scenario') return { ...initialState(), ...keep, scenarioId: action.scenarioId }
+  if (action.type === 'reset') return { ...fresh(state.scenarioId), ...keep }
+  if (action.type === 'set_scenario') return { ...fresh(action.scenarioId), ...keep }
   if (action.type === 'set_role') return { ...state, role: action.role }
   if (action.type === 'set_notes') return { ...state, prototype: { showNotes: action.show } }
   if (action.type === 'advisor_act') {
     return { ...state, advisor: { log: [...state.advisor.log, { caseId: action.caseId, act: action.act, at }] } }
+  }
+  // His reply goes back to Jelena: the next action is hers again.
+  if (action.type === 'reply_to_jelena') {
+    return {
+      ...state,
+      advisor: { log: [...state.advisor.log, { caseId: MILAN_CASE.id, act: 'farmer_replied', at, note: action.note }] },
+      history: [...state.history, { at, actor: 'Milan', action: action.type }],
+    }
+  }
+  if (action.type === 'undo') {
+    const prev = state.past[state.past.length - 1]
+    if (!prev) return state
+    return { ...state, answers: prev, past: state.past.slice(0, -1), history: [...state.history, { at, actor: 'Milan', action: 'undo' }] }
   }
   // Submission only goes through when nothing blocks it.
   if (action.type === 'submit') {
@@ -84,15 +130,17 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
     if (!submitCheck(d.readiness, state.answers.declarationsSigned).canSubmit) return state
   }
   const actor: Actor = state.role === 'advisor' ? 'Jelena' : 'Milan'
+  const answers = reduceAnswers(state.answers, action, at)
   return {
     ...state,
-    answers: reduceAnswers(state.answers, action, at),
+    answers,
+    past: UNDOABLE.has(action.type) && answers !== state.answers ? [...state.past, state.answers].slice(-PAST_LIMIT) : state.past,
     history: [...state.history, { at, actor, action: action.type }],
   }
 }
 
 export function useStore() {
-  const [state, rawDispatch] = useReducer(reducer, undefined, () => loadState() ?? initialState())
+  const [state, rawDispatch] = useReducer(reducer, undefined, () => loadState() ?? fresh('second_year'))
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
   const arrived = useRef(state)

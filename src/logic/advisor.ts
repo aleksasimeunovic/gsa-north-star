@@ -13,11 +13,14 @@ export type CaseState = 'assigned' | 'waiting_office' | 'waiting_farmer' | 'reso
 export interface AdvisorCase extends AdvisorCaseSeed {
   state: CaseState
   history: HistoryLine[]
+  /** The farmer's latest reply to her question. */
+  reply?: string
 }
 
 const STATE_OF: Partial<Record<AdvisorAct, CaseState>> = {
   referred: 'waiting_office',
   asked_farmer: 'waiting_farmer',
+  farmer_replied: 'assigned',
   resolved: 'resolved',
 }
 
@@ -69,7 +72,8 @@ export function advisorQueue(state: AppState): AdvisorCase[] {
       return {
         ...c,
         state: caseState(state.advisor.log, c.id),
-        history: [...c.history, ...log.map((l) => ({ at: l.at, actor: 'Jelena', action: l.act }))].sort((x, y) => x.at.localeCompare(y.at)),
+        reply: [...log].reverse().find((l) => l.act === 'farmer_replied')?.note,
+        history: [...c.history, ...log.filter((l) => l.act !== 'farmer_replied').map((l) => ({ at: l.at, actor: 'Jelena', action: l.act }))].sort((x, y) => x.at.localeCompare(y.at)),
       }
     })
     .sort(byPriority)

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { finish } from '../copy/en'
+import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { taskSummary } from '../components/TaskBodies'
-import { taskTitle } from '../components/TaskList'
+import { taskTitle } from '../components/useApplicationFlow'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
@@ -41,9 +42,6 @@ export function Submit() {
               </ul>
             </Stack>
           </Banner>
-          <div>
-            <Button variant="primary" onClick={() => goTo(left[0])}>{finish.submit.goTo(taskTitle(left[0], receiptsMissing))}</Button>
-          </div>
         </>
       ) : (
         // Ready is not approved: what the state still checks, in the same heading.
@@ -84,28 +82,31 @@ export function Submit() {
             )}
             <Checkbox label={finish.submit.declaration} checked={signed} onChange={(v) => dispatch({ type: 'sign_declarations', signed: v })} />
           </Card>
-          <div>
-            <Button
-              variant="primary"
-              onClick={() => {
-                if (!check.canSubmit) {
-                  setTried(true)
-                  document.getElementById('declaration')?.focus()
-                  return
-                }
-                dispatch({ type: 'submit' })
-                go('receipt')
-              }}
-            >
-              {finish.submit.button}
-            </Button>
-          </div>
         </>
       )}
 
-      <div>
-        <Button variant="link" onClick={() => go('welcome')}>{finish.submit.back}</Button>
-      </div>
+      {/* One primary action: submit when nothing is left, otherwise the first thing that is. */}
+      <ActionBar
+        back={{ label: finish.submit.back, onClick: () => go('welcome') }}
+        forward={
+          left.length > 0
+            ? { label: finish.submit.goTo(taskTitle(left[0], receiptsMissing)), onClick: () => goTo(left[0]) }
+            : {
+                label: finish.submit.button,
+                onClick: () => {
+                  if (!check.canSubmit) {
+                    setTried(true)
+                    document.getElementById('declaration')?.focus()
+                    return
+                  }
+                  dispatch({ type: 'submit' })
+                  go('receipt')
+                },
+              }
+        }
+        forwardIsPrimary
+        onPick={(id) => goTo(id)}
+      />
     </Stack>
   )
 }

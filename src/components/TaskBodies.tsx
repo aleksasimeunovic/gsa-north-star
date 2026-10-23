@@ -1,29 +1,31 @@
-import { useRef, useState } from 'react'
-import { en, formatDate, formatDateYear, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
+import { lazy, Suspense, useRef, useState } from 'react'
+import { draw, en, formatDate, formatDinars, formatHa, home, map, tasks } from '../copy/en'
 import { milanCaseState } from '../logic/advisor'
 import type { Task, TaskId } from '../logic/application'
-import { partNames, roundHa, splitPolygon } from '../logic/geometry'
-import { impactOf, orderMeasures, type Item, type ItemId } from '../logic/status'
+import { partNames, polygonAreaHa, roundHa, splitPolygon } from '../logic/geometry'
+import { impactOf, type Item, type ItemId } from '../logic/status'
 import type { Confirmable, YesNo } from '../state/actions'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Disclosure } from '../ui/Disclosure'
 import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
-import { Compare, Stack, Text, VisuallyHidden } from '../ui/Layout'
+import { Compare, KeyValues, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { RadioGroup } from '../ui/RadioGroup'
 import { useApp, type AppCtx } from './AppContext'
 import { FieldMap } from './FieldMap'
 import { SendToJelena } from './SendToJelena'
+import { MeasureBody, MeasuresBody, measureSummary } from './MeasureBodies'
 import { SplitControls, SplitOverlay, useSplitDraft } from './SplitTool'
 
+// The drawing map loads only when he needs it.
+const FieldEditor = lazy(() => import('./FieldEditor'))
+
 type Derived = AppCtx['derived']
-type Body = { advance: () => void }
 
 const itemOf = (d: Derived, id: string) => d.items.find((i) => i.id === id) as Item
 const about = (n: number) => formatDinars(Math.abs(Math.round(n / 100) * 100))
-const aboutThousand = (n: number) => formatDinars(Math.round(n / 1000) * 1000)
 const YES_NO = [
   { value: 'yes' as const, label: en.yes },
   { value: 'no' as const, label: en.no },
@@ -76,7 +78,7 @@ function RenewalBody() {
   )
 }
 
-function HerdBody({ advance }: Body) {
+function HerdBody() {
   const { derived, state, dispatch } = useApp()
   const herd = derived.scenario.herd!
   const item = itemOf(derived, 'herd')
@@ -136,11 +138,12 @@ function HerdBody({ advance }: Body) {
       {c && (
         <>
           <Text>{tasks.herd.keepBoth}</Text>
-          <Text>{tasks.herd.sameEstimate}</Text>
           <Text variant="secondary">
             {tasks.herd.canSubmit} <Note kind="assumption" />
           </Text>
-          {jelena ? (
+          {jelena === 'waiting_farmer' ? (
+            <ReplyToJelena />
+          ) : jelena ? (
             <Banner>{tasks.jelena.state[jelena]}</Banner>
           ) : composing ? (
             <SendToJelena itemId="herd" onDone={() => setComposing(false)} />
@@ -149,8 +152,111 @@ function HerdBody({ advance }: Body) {
               <Button onClick={() => setComposing(true)}>{tasks.herd.sendJelena}</Button>
             </div>
           )}
-          {!composing && <Primary onClick={advance}>{en.continue}</Primary>}
         </>
+      )}
+    </Stack>
+  )
+}
+
+/** Jelena sent the problem back with a question: his reply hands the next step back to her. */
+function ReplyToJelena() {
+  const { dispatch } = useApp()
+  const [note, setNote] = useState('')
+  return (
+    <Stack gap="sm">
+      <Banner tone="attention">{tasks.jelena.asks}</Banner>
+      <Field multiline label={tasks.jelena.replyLabel} value={note} rows={3} onChange={(e) => setNote(e.target.value)} />
+      <Primary onClick={() => dispatch({ type: 'reply_to_jelena', note: note.trim() })}>{tasks.jelena.reply}</Primary>
+    </Stack>
+  )
+}
+
+/** Animals in the registry he didn't declare: one question decides whether there's anything to do. */
+function PigsBody() {
+  const { derived, state, dispatch } = useApp()
+  const n = derived.scenario.pigs!.registryCount
+  const a = state.answers.pigs
+  return (
+    <Stack gap="sm">
+      <Compare
+        items={[
+          { label: tasks.herd.lastYear, value: derived.scenario.pigs!.lastYearDeclared },
+          { label: tasks.herd.registry, value: n },
+        ]}
+      />
+      <Question
+        legend={tasks.pigs.question}
+        hint={tasks.pigs.hint}
+        value={a.answer}
+        answer={a.answer === 'yes' ? tasks.pigs.answerYes : tasks.pigs.answerNo}
+        onAnswer={(answer) => dispatch({ type: 'answer_pigs', answer })}
+      />
+      {a.answer === null && (
+        <Text variant="small">
+          <Note kind="assumption" />
+        </Text>
+      )}
+    </Stack>
+  )
+}
+
+/**
+ * A drawing that runs into the neighbour's field: the evidence on the map first, then one question.
+ * Yes: GSA moves his edge. No: he shows where his field ends on the drawing map.
+ */
+function UpperBody() {
+  const { derived, state, dispatch } = useApp()
+  const s = derived.scenario
+  const field = s.fields.find((f) => f.id === 'upper')!
+  const signal = field.signal?.kind === 'overlap' ? field.signal : null
+  const item = itemOf(derived, 'field_upper')
+  const a = state.answers.upper
+  const [editing, setEditing] = useState(false)
+  if (!signal) return null
+  const drawing = a.answer === 'no' && (!a.drawn || editing)
+
+  return (
+    <Stack gap="sm">
+      {drawing ? (
+        <Suspense fallback={<Text>{draw.loading}</Text>}>
+          <FieldEditor
+            scenario={s}
+            fieldId="upper"
+            start={a.drawn ?? field.polygon}
+            onSave={(polygon) => {
+              dispatch({ type: 'set_upper_drawing', polygon })
+              setEditing(false)
+            }}
+          />
+        </Suspense>
+      ) : (
+        <figure className="map-figure">
+          <FieldMap scenario={s} focus="upper" label={`${map.title}: ${en.fields.upper}`} />
+          {a.answer === null && <figcaption className="text" data-variant="small">{tasks.upper.source}</figcaption>}
+        </figure>
+      )}
+      {a.answer === null && (
+        <ul className="facts">
+          <li>{tasks.upper.overlap(formatHa(signal.overlapHa))}</li>
+          <li>{tasks.road.payment(about(impactOf(s, signal.overlapHa, 'overlap_removed').amountDinars))}</li>
+        </ul>
+      )}
+      <Question
+        legend={tasks.upper.question}
+        hint={tasks.upper.hint}
+        value={a.answer}
+        answer={a.answer === 'yes' ? tasks.upper.answerYes : tasks.upper.answerNo}
+        onAnswer={(answer) => dispatch({ type: 'answer_upper', answer })}
+      />
+      {item.status === 'awaiting_verification' && (
+        <Text variant="secondary">
+          {tasks.upper.drawnOverlaps}. {tasks.herd.canSubmit} <Note kind="assumption" />
+        </Text>
+      )}
+      {a.answer === 'no' && a.drawn && !editing && (
+        <div>
+          <Button variant="link" onClick={() => setEditing(true)}>{tasks.upper.redraw}</Button>
+        </div>
       )}
     </Stack>
   )
@@ -209,7 +315,7 @@ function RiverBody() {
   )
 }
 
-function RoadBody({ advance }: Body) {
+function RoadBody() {
   const { derived, state, dispatch } = useApp()
   const s = derived.scenario
   const field = s.fields.find((f) => f.id === 'road')!
@@ -227,12 +333,7 @@ function RoadBody({ advance }: Body) {
         <li>{tasks.road.payment(about(impactOf(s, strip, 'road_took_area').amountDinars))}</li>
       </ul>
       <Question legend={tasks.road.question} value={a.answer} onAnswer={(answer) => dispatch({ type: 'answer_road', answer })} />
-      {item.status === 'awaiting_verification' && (
-        <>
-          <Text>{tasks.road.correctionAsked}</Text>
-          <Primary onClick={advance}>{en.continue}</Primary>
-        </>
-      )}
+      {item.status === 'awaiting_verification' && <Text>{tasks.road.correctionAsked}</Text>}
     </Stack>
   )
 }
@@ -255,69 +356,25 @@ function FieldsBody() {
   )
 }
 
-function DetailsBody({ advance }: Body) {
+function DetailsBody() {
   const { derived, dispatch } = useApp()
   const g = derived.scenario.generalData
   const asked = itemOf(derived, 'details').status === 'awaiting_verification'
   return (
     <Stack gap="sm">
-      <dl className="records">
-        <dt>{tasks.details.holder}</dt>
-        <dd>{g.holder}</dd>
-        <dt>{tasks.details.place}</dt>
-        <dd>{g.place}</dd>
-        <dt>{tasks.details.active}</dt>
-        <dd>{tasks.details.activeYes}</dd>
-      </dl>
+      <KeyValues
+        items={[
+          { label: tasks.details.holder, value: g.holder },
+          { label: tasks.details.place, value: g.place },
+          { label: tasks.details.active, value: tasks.details.activeYes },
+        ]}
+      />
       {asked ? (
-        <>
-          <Text>{tasks.details.asked}</Text>
-          <Primary onClick={advance}>{en.continue}</Primary>
-        </>
+        <Text>{tasks.details.asked}</Text>
       ) : (
         <div>
           <Button variant="link" onClick={() => dispatch({ type: 'ask_record_check', itemId: 'details' })}>{tasks.details.wrong}</Button>
         </div>
-      )}
-    </Stack>
-  )
-}
-
-function MeasuresBody() {
-  const { derived } = useApp()
-  const { scenario: s, estimate } = derived
-  const herd = s.herd
-  const measures = orderMeasures(s.measures)
-  const others = measures.filter((m) => !m.fits)
-  const t = tasks.measures
-  return (
-    <Stack gap="sm">
-      {/* What he gets, worked out on his own numbers. */}
-      {estimate.lines.map((l) => (
-        <div key={l.measureId} className="measure">
-          <Text variant="strong">{en.measures[l.measureId]}</Text>
-          <Text>
-            {l.measureId === 'plant_production'
-              ? t.plant(formatHa(l.quantity), formatNumber(l.rateDinars), aboutThousand(l.amountDinars))
-              : t.cows(l.quantity, formatNumber(l.rateDinars), aboutThousand(l.amountDinars))}
-          </Text>
-          <Text variant="small">
-            {l.measureId === 'plant_production'
-              ? `${t.plantWhy} ${t.plantPart}`
-              : `${t.cowsWhy(formatDateYear(herd!.calvingPeriod.from), formatDateYear(herd!.calvingPeriod.to))} ${t.cowsPart}`}
-          </Text>
-        </div>
-      ))}
-      <div><Note kind="tested" /></div>
-      {others.length > 0 && (
-        <Disclosure label={t.others(others.length)}>
-          {others.map((m) => (
-            <div key={m.id}>
-              <Text variant="strong">{en.measures[m.id]}</Text>
-              <Text variant="small">{t.doesNotFit} {m.id === 'eco_scheme' && t.ecoCondition}</Text>
-            </div>
-          ))}
-        </Disclosure>
       )}
     </Stack>
   )
@@ -372,28 +429,33 @@ function SameBody({ task }: { task: Task }) {
 
 function MemberBody({ id }: { id: ItemId }) {
   if (id === 'fields_other') return <FieldsBody />
-  if (id === 'details') return <DetailsBody advance={() => {}} />
-  if (id === 'measures') return <MeasuresBody />
+  if (id === 'details') return <DetailsBody />
   return <ReceiptsBody />
 }
 
-export function TaskBody({ task, advance }: { task: Task; advance: () => void }) {
+// Each kind of decision gets its own body: a number, a map, a drawing, a choice of measures, a form.
+export function TaskBody({ task }: { task: Task }) {
   const id = task.id
+  if (id.startsWith('measure_')) return <MeasureBody taskId={id} />
   switch (id) {
     case 'same':
       return <SameBody task={task} />
     case 'renewal':
       return <RenewalBody />
     case 'herd':
-      return <HerdBody advance={advance} />
+      return <HerdBody />
+    case 'pigs':
+      return <PigsBody />
     case 'field_river':
       return <RiverBody />
     case 'field_road':
-      return <RoadBody advance={advance} />
+      return <RoadBody />
+    case 'field_upper':
+      return <UpperBody />
     case 'fields_other':
       return <FieldsBody />
     case 'details':
-      return <DetailsBody advance={advance} />
+      return <DetailsBody />
     case 'measures':
       return <MeasuresBody />
     case 'receipts':
@@ -409,12 +471,13 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
   const jelena = milanCaseState(state)
   if (id === 'renewal') return d.list.todo.some((t) => t.id === 'renewal') ? tasks.renewal.body : home.activeFarmer
   if (id === 'same') return d.list.done.concat(d.list.todo).find((t) => t.id === 'same')?.members?.map((m) => tasks.title[m]).join(', ') ?? ''
+  if (id.startsWith('measure_') || id === 'measures') return measureSummary(id, d)
   const item = itemOf(d, id)
   const done = item.status === 'complete'
   switch (id) {
     case 'herd': {
       const h = s.herd!
-      if (item.conflict) return `${tasks.herd.differs(item.conflict.his, item.conflict.record)} ${jelena ? tasks.jelena.state[jelena] : tasks.herd.willCheck}`
+      if (item.conflict) return `${tasks.herd.differs(item.conflict.his, item.conflict.record)}, ${jelena ? tasks.jelena.state[jelena].toLowerCase() : tasks.herd.willCheck}`
       if (done) return tasks.herd.done(h.registryCount)
       return item.detail === 'herd_needs_count' ? tasks.herd.countLabel : tasks.herd.summary(h.registryCount, h.lastYearDeclared ?? 0)
     }
@@ -427,15 +490,28 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
         const [x, y] = order.map((i) => tasks.river.part(en.crops[sp.crops[i]!], formatHa(r.areasHa[i])))
         return tasks.river.split(x, y)
       }
-      if (item.detail === 'river_one_crop') return `${tasks.river.answerNo}. ${tasks.river.mayCheck}`
+      if (item.detail === 'river_one_crop') return `${tasks.river.answerNo}, ${tasks.river.mayCheck}`
       return tasks.river.context
     }
     case 'field_road': {
       const f = s.fields.find((x) => x.id === 'road')!
       const strip = f.signal?.kind === 'road_strip' ? f.signal.stripHa : 0
-      if (done && item.paymentImpact) return `${tasks.road.done(formatHa(roundHa(f.areaHa - strip)))}. ${tasks.road.payment(about(item.paymentImpact.amountDinars))}.`
+      if (done && item.paymentImpact) return `${tasks.road.done(formatHa(roundHa(f.areaHa - strip)))}, ${tasks.road.payment(about(item.paymentImpact.amountDinars)).toLowerCase()}`
       if (item.status === 'awaiting_verification') return tasks.road.correctionAsked
       return tasks.road.context
+    }
+    case 'pigs':
+      if (item.detail === 'pigs_household') return tasks.pigs.household
+      if (item.detail === 'pigs_declared') return tasks.pigs.declared(s.pigs!.registryCount)
+      return tasks.pigs.context(s.pigs!.registryCount)
+    case 'field_upper': {
+      const f = s.fields.find((x) => x.id === 'upper')!
+      const drawn = state.answers.upper.drawn
+      if (item.detail === 'upper_moved' && f.signal?.kind === 'overlap') return tasks.upper.moved(formatHa(roundHa(f.areaHa - f.signal.overlapHa)))
+      if (item.detail === 'upper_drawn' && drawn) return tasks.upper.drawn(formatHa(roundHa(polygonAreaHa(drawn))))
+      if (item.detail === 'upper_drawn_overlaps') return tasks.upper.drawnOverlaps
+      if (item.detail === 'upper_needs_drawing') return draw.how
+      return tasks.upper.context
     }
     case 'fields_other': {
       const names = s.fields.filter((f) => !f.signal).map((f) => en.fields[f.id]).join(', ')
@@ -443,8 +519,6 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
     }
     case 'details':
       return item.status === 'awaiting_verification' ? tasks.details.asked : `${s.generalData.holder}, ${s.generalData.place}`
-    case 'measures':
-      return tasks.measures.done(d.estimate.lines.length)
     case 'receipts':
       return item.detail === 'receipts_missing' ? tasks.receipts.needed : tasks.receipts.files(Math.max(1, s.documents.flatMap((x) => x.files).length))
     default:

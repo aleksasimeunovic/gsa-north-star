@@ -1,11 +1,14 @@
-import type { Crop, Point, ScenarioId } from '../data/scenarios'
+import type { Crop, MeasureId, Point, Polygon, ScenarioId } from '../data/scenarios'
 
 export type YesNo = 'yes' | 'no'
 export type Role = 'farmer' | 'advisor'
 export type Actor = 'Milan' | 'Jelena' | 'GSA'
 
 /** Things that haven't changed, confirmed by name. */
-export type Confirmable = 'fields_other' | 'details' | 'measures' | 'receipts'
+export type Confirmable = 'fields_other' | 'details' | 'receipts'
+
+/** A measure input: text or a number as text, a choice, a list of fields, a ticked promise, or a file name. */
+export type MeasureValue = string | string[] | boolean
 
 export interface Split {
   line: [Point, Point]
@@ -18,6 +21,12 @@ export interface Answers {
   river: { answer: YesNo | null; split: Split | null }
   /** No sends the correction: the land map's area counts until it is checked. */
   road: { answer: YesNo | null }
+  /** Yes: GSA moves his edge back to the neighbour's line. No: he draws where his field ends. */
+  upper: { answer: YesNo | null; drawn: Polygon | null }
+  /** Yes: household only, nothing to declare. */
+  pigs: { answer: YesNo | null }
+  /** Chosen measures and what each needs, keyed `${measureId}.${requirementId}`. */
+  measures: { chosen: MeasureId[]; confirmed: boolean; inputs: Record<string, MeasureValue> }
   confirmed: Confirmable[]
   /** One specific problem sent on: to Jelena, or to the record's owner to check. */
   requests: Request[]
@@ -41,16 +50,17 @@ export interface HistoryEntry {
 }
 
 /** Each act says who owns the next step: Jelena, another office, or the farmer. */
-export type AdvisorAct = 'opened' | 'referred' | 'asked_farmer' | 'resolved'
+export type AdvisorAct = 'opened' | 'referred' | 'asked_farmer' | 'farmer_replied' | 'resolved'
 
 export interface AdvisorLogEntry {
   caseId: string
   act: AdvisorAct
   at: string
+  note?: string
 }
 
 export interface AppState {
-  version: 6
+  version: 7
   scenarioId: ScenarioId
   role: Role
   /** Prototype only, not part of GSA. */
@@ -58,6 +68,8 @@ export interface AppState {
   /** Jelena's work on escalated cases. */
   advisor: { log: AdvisorLogEntry[] }
   answers: Answers
+  /** Earlier answers, newest last, so his last answer can be undone. */
+  past: Answers[]
   history: HistoryEntry[]
 }
 
@@ -73,6 +85,13 @@ export type Action =
   | { type: 'answer_river'; answer: YesNo }
   | { type: 'set_split'; split: Split | null }
   | { type: 'answer_road'; answer: YesNo }
+  | { type: 'answer_upper'; answer: YesNo }
+  | { type: 'set_upper_drawing'; polygon: Polygon | null }
+  | { type: 'answer_pigs'; answer: YesNo }
+  | { type: 'choose_measures'; chosen: MeasureId[] }
+  | { type: 'save_measure'; measureId: MeasureId; inputs: Record<string, MeasureValue> }
+  | { type: 'reply_to_jelena'; note: string }
+  | { type: 'undo' }
   | { type: 'confirm'; what: Confirmable }
   /** "Yes, all the same as last year": confirms every unchanged thing still to confirm. */
   | { type: 'confirm_same'; what: Confirmable[] }
