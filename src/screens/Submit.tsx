@@ -46,10 +46,15 @@ export function Submit() {
           </div>
         </>
       ) : (
-        <Banner tone="success">
-          <Text variant="strong">{finish.submit.readyTitle}</Text>
-          <Text>{finish.submit.readyNote}</Text>
-        </Banner>
+        // Ready is not approved: what the state still checks, in the same heading.
+        <section aria-labelledby="checks-title">
+          <h2 id="checks-title">{finish.submit.readyTitle}</h2>
+          <ul>
+            {STATE_CHECKS.map((c) => (
+              <li key={c}>{finish.submit.checks[c]}</li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {readiness.awaiting.length > 0 && (
@@ -67,15 +72,6 @@ export function Submit() {
           </ul>
         </section>
       )}
-
-      <section aria-labelledby="checks-title">
-        <h2 id="checks-title">{finish.submit.checksTitle}</h2>
-        <ul>
-          {STATE_CHECKS.map((c) => (
-            <li key={c}>{finish.submit.checks[c]}</li>
-          ))}
-        </ul>
-      </section>
 
       {left.length === 0 && (
         <>

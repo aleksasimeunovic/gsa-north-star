@@ -13,9 +13,8 @@ import { FileInput } from '../ui/FileInput'
 import { Compare, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { RadioGroup } from '../ui/RadioGroup'
-import { Toggle } from '../ui/Toggle'
 import { useApp, type AppCtx } from './AppContext'
-import { FieldMap, MapKey } from './FieldMap'
+import { FieldMap } from './FieldMap'
 import { SendToJelena } from './SendToJelena'
 import { SplitControls, SplitOverlay, useSplitDraft } from './SplitTool'
 
@@ -180,7 +179,7 @@ function RiverBody() {
         />
         {a.answer === null && (
           <figcaption className="text" data-variant="small">
-            {tasks.river.source} <Note kind="eu_mandate" />
+            {tasks.river.source} <Note kind="eu_mandate" /> <Note kind="ai" />
           </figcaption>
         )}
       </figure>
@@ -242,12 +241,9 @@ function FieldsBody() {
   const { derived } = useApp()
   const s = derived.scenario
   const same = s.fields.filter((f) => !f.signal)
-  const [plots, setPlots] = useState(false)
   return (
     <Stack gap="sm">
-      <FieldMap scenario={s} highlight={same.map((f) => f.id)} showPlots={plots} label={map.title} />
-      <MapKey />
-      <Toggle label={map.plots} checked={plots} onChange={setPlots} />
+      <FieldMap scenario={s} only={same.map((f) => f.id)} label={map.title} />
       <ul className="plain-list">
         {same.map((f) => (
           <li key={f.id}>

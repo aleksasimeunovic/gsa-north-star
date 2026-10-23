@@ -10,8 +10,9 @@ export function EstimateBlock() {
   const e = derived.estimate
 
   return (
-    <Card id="estimate" title={en.estimate.title} headingLevel={2}>
+    <Card id="estimate" title={en.estimate.title} headingLevel={2} emphasis="low">
       <Stack gap="sm">
+        <Text variant="small">{en.estimate.basis}</Text>
         <Text variant="strong">
           <span aria-live="polite">{en.estimate.about(formatDinars(e.aboutDinars))}</span>
         </Text>

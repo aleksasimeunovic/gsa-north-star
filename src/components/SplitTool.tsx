@@ -15,7 +15,7 @@ import {
 import type { Split } from '../state/actions'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
-import { Inline, Stack, Text } from '../ui/Layout'
+import { Inline, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { Select } from '../ui/Select'
 
@@ -192,7 +192,7 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft;
   return (
     <Stack gap="sm">
       <Text variant="small">
-        {copy.proposed} <Note kind="eu_mandate" />
+        {copy.proposed} <Note kind="ai" />
       </Text>
       <div aria-live="polite">
         {!result ? (
@@ -200,7 +200,8 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft;
         ) : d.edgeHit ? (
           <Banner tone="attention">{map.edge}</Banner>
         ) : (
-          <Text>{order.map((i) => copy.partArea(label(i), formatHa(result.areasHa[i]))).join('. ')}</Text>
+          // The areas are on the map and in the crop labels; said once more for screen readers.
+          <VisuallyHidden>{order.map((i) => copy.partArea(label(i), formatHa(result.areasHa[i]))).join('. ')}</VisuallyHidden>
         )}
       </div>
       {slider && (
@@ -238,7 +239,7 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft;
           />
         ))}
       <Inline>
-        <Button onClick={d.undo} disabled={!d.canUndo}>{copy.undo}</Button>
+        {d.canUndo && <Button onClick={d.undo}>{copy.undo}</Button>}
         <Button
           variant="primary"
           onClick={() => {

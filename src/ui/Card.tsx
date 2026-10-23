@@ -8,14 +8,16 @@ interface Props {
   title: string
   status?: Status
   headingLevel?: 2 | 3
+  /** Low: a supporting block, its title at body size (the estimate is never the hero). */
+  emphasis?: 'normal' | 'low'
   children: ReactNode
 }
 
-export function Card({ id, title, status, headingLevel = 3, children }: Props) {
+export function Card({ id, title, status, headingLevel = 3, emphasis = 'normal', children }: Props) {
   const H = `h${headingLevel}` as const
   const headingId = id ? `${id}-title` : undefined
   return (
-    <section id={id} tabIndex={-1} className="card" data-density={useDensity()} aria-labelledby={headingId}>
+    <section id={id} tabIndex={-1} className="card" data-density={useDensity()} data-emphasis={emphasis} aria-labelledby={headingId}>
       <div className="card-head">
         <H id={headingId} className="card-title">{title}</H>
         {status && <StatusBadge status={status} />}

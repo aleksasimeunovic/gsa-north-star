@@ -3,6 +3,7 @@ import { isAnswered } from '../logic/changes'
 import { daysLeft } from '../logic/readiness'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
+import { ReadinessBar } from '../components/ReadinessBar'
 import { TaskList } from '../components/TaskList'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
@@ -32,8 +33,16 @@ export function Application({ target }: { target: string | null }) {
         </Banner>
       )}
 
-      <TaskList target={target} />
-      <EstimateBlock />
+      {/* Desktop: readiness and the estimate in a sticky side column. Mobile: readiness stays in the header, the estimate below the list. */}
+      <div className="app-layout">
+        <TaskList target={target} />
+        <aside className="app-side">
+          <div className="side-readiness">
+            <ReadinessBar />
+          </div>
+          <EstimateBlock />
+        </aside>
+      </div>
     </Stack>
   )
 }

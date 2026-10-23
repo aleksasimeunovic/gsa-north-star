@@ -75,7 +75,7 @@ Advisors:
 - **Mandated** (EU rules, not Aleksa's decision): one application a year; pre-filled forms from last year and the animal database; satellite monitoring exists.
 - **Assumption to confirm with the ministry:** items awaiting verification don't block submission; amendments allowed until a national deadline.
 
-Design notes are off by default and appear only where they mark a real distinction (tested, EU mandate, assumption). Since everything is North Star, don't tag things as North Star. Points that matter for the case study become design notes, never UI copy.
+Design notes are off by default and appear only where they mark a real distinction (tested, EU mandate, assumption, and "AI behind the scenes" on change detection, the satellite flag and the suggested split line, so Earl sees where AI works). Since everything is North Star, don't tag things as North Star. Points that matter for the case study become design notes, never UI copy.
 
 ## 6. The product model
 
@@ -162,7 +162,7 @@ Earl: one connected experience, not separate features. How the application chang
 - One list: **his application**. The change tasks and the rest of his application are the same list, not cards on top and an overview underneath.
 - It starts from the full set of possible work. As he confirms a change, GSA removes what isn't needed (one-line reason), collapses what's done, and the next meaningful action gets focus. One primary action at a time.
 - A short transition may explain each change (respect `prefers-reduced-motion`). Changes are announced with `aria-live`.
-- The estimate stays a separate block, never mixed with status.
+- The estimate stays a separate block at body size, never mixed with status. On desktop, readiness and the estimate sit in a sticky right column.
 
 ### Change cards: evidence before the question
 A card is one line of context (what GSA found, and where), the evidence, the question and the actions. The three changes are different kinds of decision, so the cards differ:
@@ -179,10 +179,10 @@ Paths:
 - Answers stay editable; changing one re-runs the list rules.
 
 ### Land: plain-language map and suggested split
-- All five fields on an SVG map (no map library, no tiles), opening on the river field.
-- Plain labels and clearly different boundary styles, e.g. "Land the government has registered" vs "Draw the area you actually farm". No technical terms. Legend shrunk or removed. Cadastral parcels hidden by default (reference only). Road strip hatched; satellite flag patterned.
+- Fields on an SVG map (no map library, no tiles). Card maps zoom to one field with neighbours faint and unlabelled; "Your other fields" draws only those fields. Maps capped at 300 px tall.
+- Plain labels and clearly different boundary styles, e.g. "Land the government has registered" vs "Draw the area you actually farm". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
 - When a boundary stops an action, explain why at that moment, in place.
-- **Split:** GSA proposes the line along the area the satellite flagged. Milan accepts it or nudges it: large handles, drag the whole line. No precise point placement with a finger. Keep the guardrail (line clipped to eligible land), live areas, undo and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
+- **Split:** GSA proposes the line along the area the satellite flagged. Milan accepts it or nudges it: large handles, drag the whole line. No precise point placement with a finger. Keep the guardrail (line clipped to eligible land), live areas (on the map and in the crop labels), undo (shown once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
 
 ### Readiness through submit
 - Readiness is the application list itself, with a one-line summary on every screen ("4 things left before you can submit" / "Ready to submit"), text plus icon shape, announced politely. "Same as last year" counts as one.
@@ -194,7 +194,8 @@ Paths:
 ### Jelena (advisor mode): small, don't let it grow
 - Sign in as Jelena via prototype controls. A queue of only escalated problems (Milan's herd discrepancy with both values and his note; the neighbour's inherited parcel), each with full context.
 - Case states say who owns the next action: **assigned to Jelena**, **waiting for another office** (named), **waiting for the farmer**, **resolved**. Referring to the land registry is waiting, not resolved.
-- Queue order: blocks submission, then close to the deadline, then waiting on others.
+- Desktop first (checked at 1280 px). Grouped by state; within hers: blocks submission, then close to the deadline. The national deadline shows only within 7 days.
+- Primary action is the likely next step: refer to the record's owner; resolve once the owner has it.
 - Milan sees the same state on his item, e.g. "Jelena asked the animal registry to check."
 - Keyboard shortcuts and an action history per application (who did what, when).
 

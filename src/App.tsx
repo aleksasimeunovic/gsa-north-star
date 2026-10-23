@@ -36,7 +36,7 @@ export function App() {
     <AppContext.Provider value={{ state, derived, dispatch, go }}>
       <DensityContext.Provider value={derived.list.density}>
         <NotesContext.Provider value={state.prototype.showNotes}>
-          <div className="page">
+          <div className="page" data-screen={screen}>
             <header className="topbar">
               <a href="#/welcome" className="brand">{en.appName}</a>
               {screen !== 'queue' && <ReadinessBar />}

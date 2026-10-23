@@ -33,7 +33,7 @@ export function milanCaseState(state: AppState): CaseState | null {
   return sent ? caseState(state.advisor.log, MILAN_CASE.id) : null
 }
 
-const STATE_RANK: Record<CaseState, number> = { assigned: 0, waiting_farmer: 1, waiting_office: 1, resolved: 2 }
+const STATE_RANK: Record<CaseState, number> = { assigned: 0, waiting_farmer: 1, waiting_office: 2, resolved: 3 }
 
 /** Hers first; among hers, what blocks submission, then the nearest deadline, then the oldest. Waiting on others after. */
 export function byPriority(x: AdvisorCase, y: AdvisorCase): number {

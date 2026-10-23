@@ -63,7 +63,8 @@ export const en = {
   } satisfies Record<ImpactReason, (ha: string, about: string) => string>,
 
   estimate: {
-    title: 'Estimated subsidy based on current information',
+    title: 'Estimated subsidy',
+    basis: "Based on what you've told us so far.",
     about: (d: string) => `About ${d}`,
     caveat: 'The payment still depends on inspection and final eligibility.',
     how: 'How is this worked out?',
@@ -233,9 +234,6 @@ export const tasks = {
 
 export const map = {
   title: 'Map of your fields',
-  yours: 'Your fields',
-  registered: 'Land the government has registered',
-  plots: 'Show land register plots',
   strip: (ha: string) => `${ha} road`,
   edge: "The line stops at your field's edge. Land outside it can't get support.",
 }
@@ -263,13 +261,11 @@ export const split = {
 export const finish = {
   submit: {
     title: 'Sign and submit',
-    readyTitle: "You're ready to submit, Milan.",
-    readyNote: 'Nothing needs your action. Ready does not mean approved.',
+    readyTitle: 'Ready to submit. The state still checks:',
     blockedTitle: 'Before you submit:',
     goTo: (what: string) => `Go to: ${what}`,
-    awaitingTitle: 'Awaiting verification',
-    awaitingNote: 'These wait for a check. You can still submit.',
-    checksTitle: 'What the state will still check',
+    awaitingTitle: 'Waiting for a check',
+    awaitingNote: 'You can still submit.',
     checks: {
       eligibility: 'That you and each measure are eligible.',
       records: 'Your answers against the animal registry and the land map.',
@@ -311,7 +307,7 @@ export const finish = {
 export const proto = {
   open: 'Prototype',
   title: 'Prototype controls',
-  notPart: 'Not part of GSA. These controls exist only to explore the prototype.',
+  notPart: 'Not part of GSA.',
   scenario: 'Scenario',
   signInAs: 'Sign in as',
   milan: 'Milan (farmer)',
@@ -334,11 +330,11 @@ export const advisor = {
   waitingFor: (office: string) => `Waiting for ${office}`,
   blocks: 'Blocks submission',
   deadline: (d: string) => `Deadline ${d}`,
+  owner: (office: string) => `The official record belongs to ${office}.`,
   kind: {
     herd_discrepancy: 'Herd differs from the animal registry',
     inherited_parcel: "Parcel still in a late parent's name",
   },
-  owner: (office: string) => `The official record belongs to ${office}.`,
   sent: (d: string) => `Sent ${d}`,
   note: "Farmer's note",
   noNote: 'No note.',

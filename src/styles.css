@@ -270,3 +270,27 @@ h1, h2, h3 { margin: 0 0 8px; }
 .same-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .same-list > li { border-bottom: 1px solid var(--line); padding-bottom: 8px; }
 .same-list .task-summary { padding-left: 1.4em; }
+.card[data-emphasis='low'] .card-title { font-size: 1rem; }
+
+/* Maps never dominate: capped height on wide screens */
+.task .field-map { max-height: 300px; }
+
+/* Desktop: readiness and the estimate in a sticky right column */
+.app-layout { display: flex; flex-direction: column; gap: 48px; }
+.side-readiness { display: none; }
+@media (min-width: 1024px) {
+  .app-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 32px; align-items: start; }
+  .app-side { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 16px; }
+  .side-readiness { display: block; border: 1px solid var(--line); padding: 4px 12px; }
+  .page[data-screen='welcome'] .topbar .readiness { display: none; }
+  .task-section { max-width: none; }
+}
+
+/* Header: brand and navigation left, Saved and Prototype right */
+.topbar .saved { margin-left: auto; }
+@media (min-width: 960px) {
+  .topbar .advisor-nav { order: 2; }
+}
+.queue-group + .queue-group { margin-top: 24px; }
+.topbar .prototype-launcher { margin-left: auto; }
+.topbar .saved ~ .prototype-launcher { margin-left: 0; }

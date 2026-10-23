@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { advisor, en, formatDate, formatDateYear, formatTime } from '../copy/en'
 import { useApp } from '../components/AppContext'
 import { SCENARIOS } from '../data/scenarios'
-import { advisorQueue, type AdvisorCase } from '../logic/advisor'
+import { advisorQueue, type AdvisorCase, type CaseState } from '../logic/advisor'
+import { daysLeft } from '../logic/readiness'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { Compare, Inline, Stack, Text } from '../ui/Layout'
@@ -14,6 +15,10 @@ const when = (iso: string) => {
   const day = iso.slice(0, 10) > TODAY ? TODAY : iso.slice(0, 10)
   return `${formatDateYear(day)}, ${formatTime(iso)}`
 }
+
+/** The national deadline is the same for everyone: show it only when it's close. */
+const CLOSE_DAYS = 7
+const GROUPS: CaseState[] = ['assigned', 'waiting_farmer', 'waiting_office', 'resolved']
 
 /** Who owns the next action, in words; a named office when it's waiting on one. */
 const stateLine = (c: AdvisorCase) => (c.state === 'waiting_office' ? advisor.waitingFor(en.offices[c.owner]) : advisor.state[c.state])
@@ -39,11 +44,16 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
           <Text>{c.note || advisor.noNote}</Text>
         </div>
         <Text variant="secondary">{advisor.owner(office)}</Text>
+        {/* The likely next step is primary: an official record goes to its owner; resolve once the owner has settled it. */}
         {c.state !== 'resolved' && (
           <Inline>
-            {c.state !== 'waiting_office' && <Button onClick={() => act('referred')}>{advisor.act.referred(office)}</Button>}
+            {c.state === 'waiting_office' ? (
+              <Button variant="primary" onClick={() => act('resolved')}>{advisor.act.resolved}</Button>
+            ) : (
+              <Button variant="primary" onClick={() => act('referred')}>{advisor.act.referred(office)}</Button>
+            )}
             {c.state !== 'waiting_farmer' && <Button onClick={() => act('asked_farmer')}>{advisor.act.asked_farmer}</Button>}
-            <Button variant="primary" onClick={() => act('resolved')}>{advisor.act.resolved}</Button>
+            {c.state !== 'waiting_office' && <Button variant="link" onClick={() => act('resolved')}>{advisor.act.resolved}</Button>}
           </Inline>
         )}
         {c.id === 'milan_herd' && (
@@ -98,30 +108,42 @@ export function AdvisorQueue() {
 
       <div className="queue-layout">
         <section aria-label={advisor.listLabel} className="queue-list">
-          <ol className="item-list">
-            {cases.map((x, i) => (
-              <li key={x.id} className="queue-row" data-current={i === index || undefined} data-state={x.state}>
-                <button
-                  ref={(el) => (rows.current[i] = el)}
-                  type="button"
-                  className="queue-open"
-                  aria-current={i === index ? 'true' : undefined}
-                  aria-keyshortcuts="J K O"
-                  onClick={() => {
-                    setCurrentId(x.id)
-                    dispatch({ type: 'advisor_act', caseId: x.id, act: 'opened' })
-                  }}
-                >
-                  <span className="queue-who">{x.farmer}</span>
-                  <span>{advisor.kind[x.kind]}</span>
-                  <span className="queue-state">{stateLine(x)}</span>
-                  <span className="queue-meta">
-                    {[x.blocksSubmission && x.state !== 'resolved' && advisor.blocks, advisor.deadline(formatDate(x.deadline))].filter(Boolean).join(' · ')}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
+          {GROUPS.filter((g) => cases.some((x) => x.state === g)).map((g) => (
+            <div key={g} className="queue-group">
+              <h2 className="group-title">{advisor.state[g]}</h2>
+              <ol className="item-list">
+                {cases.map((x, i) =>
+                  x.state !== g ? null : (
+                    <li key={x.id} className="queue-row" data-current={i === index || undefined} data-state={x.state}>
+                      <button
+                        ref={(el) => (rows.current[i] = el)}
+                        type="button"
+                        className="queue-open"
+                        aria-current={i === index ? 'true' : undefined}
+                        aria-keyshortcuts="J K O"
+                        onClick={() => {
+                          setCurrentId(x.id)
+                          dispatch({ type: 'advisor_act', caseId: x.id, act: 'opened' })
+                        }}
+                      >
+                        <span className="queue-who">{x.farmer}</span>
+                        <span>{advisor.kind[x.kind]}</span>
+                        {x.state === 'waiting_office' && <span className="queue-state">{stateLine(x)}</span>}
+                        <span className="queue-meta">
+                          {[
+                            x.blocksSubmission && x.state !== 'resolved' && advisor.blocks,
+                            x.state !== 'resolved' && daysLeft(TODAY, x.deadline) <= CLOSE_DAYS && advisor.deadline(formatDate(x.deadline)),
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      </button>
+                    </li>
+                  ),
+                )}
+              </ol>
+            </div>
+          ))}
         </section>
         <div className="queue-detail">{c && <CaseDetail c={c} />}</div>
       </div>
