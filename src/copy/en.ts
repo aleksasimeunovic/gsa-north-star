@@ -100,14 +100,17 @@ export const home = {
   greeting: 'Welcome back, Milan',
   deadline: (n: number, closes: string) =>
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
+  daysLeft: (n: number) => (n === 1 ? '1 day left to apply' : `${n} days left to apply`),
   activeFarmer: "You're an active farmer for this year",
   kind: { change: 'Changes GSA found', choice: 'Your choices', same: 'To confirm' } satisfies Record<TaskKind, string>,
-  stepDone: (step: string) => `${step}: done`,
+  stepDone: (step: string) => `Nothing left to do in ${step.toLowerCase()}`,
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check, and you can still submit' : `${n} things wait for a check, and you can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
   now: 'Now',
   todo: 'To do',
-  outline: (done: number, total: number) => `${done} of ${total} done`,
+  /** Where this part stands, said as what's left, what's done and what waits for someone else. */
+  outline: (left: number, done: number, waiting: number) =>
+    [left ? `${left} to do` : 'Nothing left to do', done && `${done} done`, waiting && `${waiting} waiting for a check`].filter(Boolean).join(', '),
   submitted: 'Your application is submitted.',
   seeReceipt: 'See your receipt',
   // Said to screen readers when the list changes.
@@ -137,8 +140,6 @@ export const tasks = {
     household: 'Your household',
     calvings: 'Cows that calved',
     field_meadow: 'Meadow',
-    suggest_green_cover: 'Green cover over winter',
-    suggest_insemination: 'Artificial insemination',
     receipt_unreadable: 'Diesel receipt',
     herd: 'Your herd',
     pigs: 'Your pigs',
@@ -162,8 +163,6 @@ export const tasks = {
     calvings: 'Confirm your cows that calved',
     field_meadow: 'Check the meadow',
     fields_other: 'Confirm your other fields',
-    suggest_green_cover: 'Green cover may fit your farm',
-    suggest_insemination: 'Insemination support may fit your farm',
     receipt_unreadable: 'Send a clearer diesel receipt',
     herd: 'Check your herd',
     pigs: 'Tell us about your pigs',
@@ -242,12 +241,6 @@ export const tasks = {
   suggest: {
     green_cover: 'The satellite photos show your wheat fields stayed green all winter',
     insemination: (n: number) => `The animal registry shows ${n} inseminations by your vet since last April`,
-    question: { green_cover: 'Add green cover to your measures?', insemination: 'Add artificial insemination to your measures?' } as Record<string, string>,
-    filled: (fields: string) => `We'll fill in ${fields} for you`,
-    answerYes: 'Yes, add it',
-    answerNo: 'No, leave it out',
-    added: 'Added to your measures',
-    declined: 'Left out',
   },
 
   unreadable: {
@@ -299,7 +292,13 @@ export const tasks = {
   },
 
   river: {
-    context: 'The satellite photo shows the lower part looks different',
+    context: 'The satellite photo shows the lower part of the field looks different from the rest',
+    /** What GSA makes of the photo, so he can tell at a glance whether it's right. */
+    insight: [
+      'The dotted area is the strip along the river, where the field floods most springs',
+      "This year it's greening later than the wheat above it",
+      'That usually means another crop was sown there after the water went down',
+    ],
     source: 'Source: satellite photo',
     question: 'Are you growing two crops in the river field?',
     hint: "The photo can't see what you planted, so you decide",
@@ -364,15 +363,17 @@ export const tasks = {
   },
 
   measures: {
-    lead: (fit: number) => `You can apply for ${fit} measures`,
-    leadHint: (last: number) => `The ${last} you had last year are ticked`,
+    lead: (fit: number) => `You can apply for ${fit} measures this year`,
+    groupLast: 'You had these last year',
+    groupSuggested: (n: number) => (n === 1 ? 'GSA found 1 more that fits your farm' : `GSA found ${n} more that fit your farm`),
+    groupMore: (n: number) => `${n} more measures you can apply for`,
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
     lastYear: 'You had it last year',
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
     fromRecords: 'Nothing to add, GSA has it from your records',
     youAdd: (list: string) => `You add: ${list}`,
-    others: (n: number) => `Don't fit your farm (${n})`,
+    others: (list: string) => `Not for your farm: ${list}`,
     confirm: (n: number) => (n === 1 ? 'Apply for 1 measure' : `Apply for ${n} measures`),
     noneError: 'Choose at least one measure to apply for',
     pays: {
@@ -460,7 +461,7 @@ export const tasks = {
 
 export const map = {
   title: 'Map of your fields',
-  flag: 'Looks different',
+  flag: 'Along the river, looks different',
   notMown: 'No mowing seen',
   strip: (ha: string) => `${ha} now road`,
   edge: "The line stops at your field's edge, because land outside it can't get support",
@@ -473,7 +474,8 @@ export const map = {
   backTo: (field: string) => `Back to the ${field.toLowerCase()}`,
   backToFields: 'Back to your fields',
   wholeFarm: 'Whole farm',
-  larger: 'Larger map',
+  larger: 'Show larger map',
+  smaller: 'Show smaller map',
   back: 'Back to your application',
 }
 
@@ -635,7 +637,6 @@ export const advisor = {
     set_bank_account: 'Gave his account for payments',
     answer_household: 'Answered the household question',
     answer_meadow: 'Answered the meadow question',
-    answer_suggestion: 'Answered a suggested measure',
     attach_document: 'Attached a document',
     renew: 'Renewed active farmer status',
     sign_declarations: 'Signed the declaration',
@@ -671,6 +672,8 @@ export const steps = {
   of: (i: number, n: number) => `Step ${i} of ${n}`,
   left: (n: number) => (n === 1 ? '1 thing left' : `${n} things left`),
   done: 'Done',
+  /** Under each part's name in the stepper. */
+  status: (left: number, waiting: number) => (left ? `${left} to do` : waiting ? 'Done, waiting for a check' : 'Done'),
 }
 
 export const bar = {

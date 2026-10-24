@@ -3,6 +3,7 @@ import type { TaskId } from '../logic/application'
 import { Button } from '../ui/Button'
 import { Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
+import { Icon } from '../ui/Icon'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
 import { TaskBody, taskSummary } from './TaskBodies'
@@ -33,7 +34,7 @@ function NextAction({ flow }: { flow: Flow }) {
   return (
     <section id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
       <p className="next-kind">
-        {home.kind[task.kind]} {task.kind === 'change' && <Note kind="ai" />}
+        <Icon name={task.kind} size="sm" /> {home.kind[task.kind]} {task.kind === 'change' && <Note kind="ai" />}
       </p>
       <div className="next-head">
         <h3 id="next-title" tabIndex={-1}>{heading}</h3>
@@ -103,12 +104,12 @@ function AfterAnswerPanel({ flow }: { flow: Flow }) {
         ))}
         {a.removed.map(({ work }) => (
           <li key={work.id} data-kind="removed">
-            <span aria-hidden="true" className="after-icon">−</span> {copy.removed(tasks.work[work.id], tasks.reason[work.reason!])}
+            <span className="after-icon"><Icon name="removed" size="sm" /></span> {copy.removed(tasks.work[work.id], tasks.reason[work.reason!])}
           </li>
         ))}
         {a.added.map((id) => (
           <li key={id} data-kind="added">
-            <span aria-hidden="true" className="after-icon">+</span> {flow.title(id)}: {outcome(id)}
+            <span className="after-icon"><Icon name="added" size="sm" /></span> {flow.title(id)}: {outcome(id)}
           </li>
         ))}
       </ul>

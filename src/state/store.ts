@@ -14,7 +14,6 @@ export const emptyAnswers = (): Answers => ({
   bank: { answer: null, account: null },
   household: { answer: null },
   meadow: { answer: null },
-  suggestions: {},
   measures: { chosen: [], confirmed: false, inputs: {} },
   confirmed: [],
   requests: [],
@@ -47,7 +46,7 @@ export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(),
 const UNDOABLE = new Set<Action['type']>([
   'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper', 'set_upper_drawing',
   'answer_pigs', 'confirm', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
-  'answer_bank', 'set_bank_account', 'answer_household', 'answer_meadow', 'answer_suggestion',
+  'answer_bank', 'set_bank_account', 'answer_household', 'answer_meadow',
 ])
 const PAST_LIMIT = 20
 
@@ -87,22 +86,16 @@ function reduceAnswers(a: Answers, action: Action, at: string, s: Scenario): Ans
       return { ...a, household: { answer: action.answer } }
     case 'answer_meadow':
       return { ...a, meadow: { answer: action.answer } }
-    case 'answer_suggestion': {
-      // Yes puts the measure among his chosen ones, with the fields the evidence was about filled in;
-      // no takes it out again.
-      const chosen = a.measures.chosen.filter((id) => id !== action.measureId)
-      const g = s.suggestions.find((x) => x.measureId === action.measureId)
-      const pick = s.measures.find((m) => m.id === action.measureId)?.requirements.find((r) => r.kind === 'fields')
-      const key = pick && `${action.measureId}.${pick.id}`
-      const fill = action.answer === 'yes' && g?.fields && key && a.measures.inputs[key] === undefined ? { [key]: g.fields } : {}
-      return {
-        ...a,
-        suggestions: { ...a.suggestions, [action.measureId]: action.answer },
-        measures: { ...a.measures, chosen: action.answer === 'yes' ? [...chosen, action.measureId] : chosen, inputs: { ...a.measures.inputs, ...fill } },
+    case 'choose_measures': {
+      // A measure GSA suggested comes with the fields its evidence was about filled in.
+      const fill: Record<string, string[]> = {}
+      for (const g of s.suggestions) {
+        const pick = s.measures.find((m) => m.id === g.measureId)?.requirements.find((r) => r.kind === 'fields')
+        const key = pick && `${g.measureId}.${pick.id}`
+        if (key && g.fields && action.chosen.includes(g.measureId) && a.measures.inputs[key] === undefined) fill[key] = g.fields
       }
+      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true, inputs: { ...a.measures.inputs, ...fill } } }
     }
-    case 'choose_measures':
-      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true } }
     case 'save_measure':
       return { ...a, measures: { ...a.measures, inputs: { ...a.measures.inputs, ...action.inputs } } }
     case 'reply_to_jelena':

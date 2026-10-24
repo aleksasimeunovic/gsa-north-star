@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from 'react'
+import { Icon } from './Icon'
 
 export function Disclosure({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false)
@@ -6,7 +7,7 @@ export function Disclosure({ label, children }: { label: string; children: React
   return (
     <div className="disclosure">
       <button type="button" className="disclosure-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
-        <span aria-hidden="true">{open ? '−' : '+'}</span> {label}
+        <Icon name="disclose" /> {label}
       </button>
       <div id={id} hidden={!open} className="disclosure-body">{children}</div>
     </div>

@@ -21,8 +21,6 @@ describe('status per item', () => {
       ['field_upper', 'action_required'],
       ['field_meadow', 'action_required'],
       ['fields_other', 'action_required'],
-      ['suggest_green_cover', 'action_required'],
-      ['suggest_insemination', 'action_required'],
       ['measures', 'action_required'],
       ['receipt_unreadable', 'action_required'],
       ['receipts', 'action_required'],
@@ -52,17 +50,12 @@ describe('status per item', () => {
     expect(out.paymentImpact).toEqual({ amountDinars: -27_000, areaHa: 1.5, reason: 'meadow_out' })
   })
 
-  it('a suggested measure: yes puts it among his measures, no leaves it out', () => {
-    const yes = run('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' })
-    expect(item(yes, 'suggest_green_cover').detail).toBe('suggestion_added')
-    const added = play('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' }).answers.measures
-    expect(added.chosen).toContain('green_cover')
-    // The fields the satellite saw are filled in for him; only his promise is left.
-    expect(added.inputs['green_cover.cover_fields']).toEqual(['river', 'upper'])
-    const r = run('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' }, { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] })
+  it('choosing a measure GSA suggested fills in the fields its evidence was about', () => {
+    const chosen = play('second_year', { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] }).answers.measures
+    expect(chosen.inputs['green_cover.cover_fields']).toEqual(['river', 'upper'])
+    // Only his promise is left.
+    const r = run('second_year', { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] })
     expect(item(r, 'measure_green_cover').missing).toEqual(['cover_promise'])
-    const no = play('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' }, { type: 'answer_suggestion', measureId: 'green_cover', answer: 'no' })
-    expect(no.answers.measures.chosen).not.toContain('green_cover')
   })
 
   it('an unreadable receipt needs a new photo; sending it does not confirm the other receipts', () => {

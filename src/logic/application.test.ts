@@ -15,7 +15,7 @@ describe('application list', () => {
       'bank', 'household', 'details',
       'herd', 'pigs', 'calvings',
       'field_river', 'field_road', 'field_upper', 'field_meadow', 'fields_other',
-      'suggest_green_cover', 'suggest_insemination', 'measures',
+      'measures',
       'receipt_unreadable', 'receipts',
     ])
   })
@@ -133,7 +133,7 @@ describe('parts and kinds of work', () => {
       ['details', 3],
       ['animals', 3],
       ['land', 5],
-      ['measures', 3],
+      ['measures', 1],
       ['documents', 2],
       ['submit', 0],
     ])
@@ -143,7 +143,7 @@ describe('parts and kinds of work', () => {
     expect(['bank', 'household', 'details', 'renewal'].map((id) => stepOf(id as never))).toEqual(Array(4).fill('details'))
     expect(['herd', 'pigs', 'calvings'].map((id) => stepOf(id as never))).toEqual(Array(3).fill('animals'))
     expect(['field_meadow', 'fields_other'].map((id) => stepOf(id as never))).toEqual(['land', 'land'])
-    expect(['suggest_green_cover', 'measures', 'measure_diesel'].map((id) => stepOf(id as never))).toEqual(Array(3).fill('measures'))
+    expect(['measures', 'measure_diesel'].map((id) => stepOf(id as never))).toEqual(Array(2).fill('measures'))
     expect(['receipt_unreadable', 'receipts'].map((id) => stepOf(id as never))).toEqual(['documents', 'documents'])
   })
 
@@ -153,7 +153,7 @@ describe('parts and kinds of work', () => {
       bank: 'change', household: 'change', details: 'same',
       herd: 'change', pigs: 'change', calvings: 'same',
       field_meadow: 'change', fields_other: 'same',
-      suggest_insemination: 'change', measures: 'choice',
+      measures: 'choice',
       receipt_unreadable: 'change', receipts: 'same',
     })
   })

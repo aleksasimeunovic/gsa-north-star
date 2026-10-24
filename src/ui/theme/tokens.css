@@ -1,0 +1,96 @@
+/*
+ * Design tokens, after shadcn/ui (MIT): the same semantic names, so its components and themes map across.
+ * Tier 1 (primitives) are raw values; tier 2 (semantic) say what a colour is for; components only use tier 2.
+ */
+:root {
+  /* Tier 1: primitives (zinc scale, status hues) */
+  --zinc-50: oklch(0.985 0 0);
+  --zinc-100: oklch(0.967 0.001 286.375);
+  --zinc-150: oklch(0.948 0.002 286.32);
+  --zinc-200: oklch(0.92 0.004 286.32);
+  --zinc-300: oklch(0.871 0.006 286.286);
+  --zinc-400: oklch(0.705 0.015 286.067);
+  --zinc-500: oklch(0.552 0.016 285.938);
+  --zinc-600: oklch(0.442 0.017 285.786);
+  --zinc-700: oklch(0.37 0.013 285.805);
+  --zinc-900: oklch(0.21 0.006 285.885);
+  --zinc-950: oklch(0.141 0.005 285.823);
+  --emerald-50: oklch(0.979 0.021 166.113);
+  --emerald-700: oklch(0.508 0.118 165.612);
+  --amber-50: oklch(0.987 0.022 95.277);
+  --amber-200: oklch(0.924 0.12 95.746);
+  --amber-800: oklch(0.473 0.137 46.201);
+  --sky-50: oklch(0.977 0.013 236.62);
+  --sky-200: oklch(0.901 0.058 230.902);
+  --sky-800: oklch(0.443 0.11 240.79);
+  --violet-50: oklch(0.969 0.016 293.756);
+  --violet-700: oklch(0.491 0.27 292.581);
+  --red-600: oklch(0.577 0.245 27.325);
+
+  /* Tier 2: semantic (shadcn names) */
+  --background: var(--zinc-100);
+  --foreground: var(--zinc-950);
+  --card: #fff;
+  --card-foreground: var(--zinc-950);
+  --popover: #fff;
+  --primary: var(--zinc-900);
+  --primary-foreground: var(--zinc-50);
+  --secondary: var(--zinc-100);
+  --secondary-foreground: var(--zinc-900);
+  --muted: var(--zinc-150);
+  --muted-foreground: var(--zinc-600);
+  --accent: var(--zinc-100);
+  --accent-foreground: var(--zinc-900);
+  --destructive: var(--red-600);
+  --border: var(--zinc-200);
+  --input: var(--zinc-300);
+  --ring: var(--zinc-400);
+  --success: var(--emerald-700);
+  --success-surface: var(--emerald-50);
+  --warning: var(--amber-800);
+  --warning-surface: var(--amber-50);
+  --warning-border: var(--amber-200);
+  --info: var(--sky-800);
+  --info-surface: var(--sky-50);
+  --info-border: var(--sky-200);
+  /* Design notes and prototype controls: clearly not GSA */
+  --meta: var(--violet-700);
+  --meta-surface: var(--violet-50);
+
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Comfortable density: Milan. Compact: Jelena. */
+  --control-h: 44px;
+  --control-h-lg: 52px;
+  --topbar-h: 56px;
+}
+
+[data-density='compact'] {
+  --control-h: 32px;
+  --control-h-lg: 36px;
+}

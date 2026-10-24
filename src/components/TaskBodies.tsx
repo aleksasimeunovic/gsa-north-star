@@ -15,7 +15,7 @@ import { Note } from '../ui/Note'
 import { RadioGroup } from '../ui/RadioGroup'
 import { useApp, type AppCtx } from './AppContext'
 import { SendToJelena } from './SendToJelena'
-import { MeasureBody, MeasuresBody, measureSummary, needsLine } from './MeasureBodies'
+import { MeasureBody, MeasuresBody, measureSummary } from './MeasureBodies'
 
 // Maps load only when one is shown.
 export const FarmMap = lazy(() => import('./map/FarmMap'))
@@ -228,6 +228,17 @@ export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upp
   return null
 }
 
+/** What GSA reads in the river field's satellite photo, so the dotted area means something to him. */
+export function RiverInsight() {
+  return (
+    <ul className="insight">
+      {tasks.river.insight.map((line) => (
+        <li key={line}>{line}</li>
+      ))}
+    </ul>
+  )
+}
+
 /** What GSA found, said in one line, before he answers. */
 export const mapContext = (id: 'field_river' | 'field_road' | 'field_upper') =>
   id === 'field_river' ? tasks.river.context : id === 'field_road' ? tasks.road.context : tasks.upper.context
@@ -271,6 +282,7 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
           </figcaption>
         )}
       </figure>
+      {unanswered && id === 'field_river' && <RiverInsight />}
       {unanswered && <MapFacts id={id} />}
       {item.status === 'awaiting_verification' && (
         <Text variant="secondary">
@@ -486,34 +498,6 @@ function MeadowBody() {
   )
 }
 
-/**
- * A measure GSA thinks may fit, with the evidence it found, what it pays, why it fits and what it would
- * need from him. One question; yes puts it among his measures.
- */
-function SuggestionBody({ id }: { id: ItemId }) {
-  const { derived, state, dispatch } = useApp()
-  const g = derived.scenario.suggestions.find((x) => `suggest_${x.measureId}` === id)!
-  const measure = derived.scenario.measures.find((m) => m.id === g.measureId)!
-  const answer = state.answers.suggestions[g.measureId] ?? null
-  const t = tasks.suggest
-  return (
-    <Stack gap="sm">
-      <Text>{g.evidence === 'green_all_winter' ? t.green_cover : t.insemination(g.count ?? 0)}</Text>
-      <ul className="facts">
-        <li>{tasks.measures.pays[g.measureId]}</li>
-        {g.fields && <li>{t.filled(g.fields.map((f) => en.fields[f].toLowerCase()).join(' and '))}</li>}
-        <li>{needsLine(measure, g.fields ? ['fields'] : [])}</li>
-      </ul>
-      <Question
-        legend={t.question[g.measureId]}
-        value={answer}
-        answer={answer === 'yes' ? t.answerYes : t.answerNo}
-        onAnswer={(a) => dispatch({ type: 'answer_suggestion', measureId: g.measureId, answer: a })}
-      />
-    </Stack>
-  )
-}
-
 /** A receipt GSA couldn't read: what's wrong with it and a new photo, nothing else. */
 function UnreadableBody() {
   const { derived, dispatch } = useApp()
@@ -532,7 +516,6 @@ function UnreadableBody() {
 export function TaskBody({ task }: { task: Task }) {
   const id = task.id
   if (id.startsWith('measure_')) return <MeasureBody taskId={id} />
-  if (id.startsWith('suggest_')) return <SuggestionBody id={id as ItemId} />
   if (isMapChange(id)) return <MapChangeCard id={id} />
   switch (id) {
     case 'renewal':
@@ -573,12 +556,6 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
   const item = itemOf(d, id)
   const done = item.status === 'complete'
   const g = s.generalData
-  if (id.startsWith('suggest_')) {
-    const sug = s.suggestions.find((x) => `suggest_${x.measureId}` === id)!
-    if (item.detail === 'suggestion_added') return tasks.suggest.added
-    if (item.detail === 'suggestion_declined') return tasks.suggest.declined
-    return sug.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(sug.count ?? 0)
-  }
   switch (id) {
     case 'bank':
       if (item.detail === 'bank_new') return tasks.bank.paidTo(g.account!.newEnding)

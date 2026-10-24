@@ -4,7 +4,7 @@ import type { FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { SplitControls, useSplitDraft } from '../components/SplitTool'
-import { FarmMap, MapFacts, MapFallback, mapContext, taskSummary } from '../components/TaskBodies'
+import { FarmMap, MapFacts, MapFallback, RiverInsight, mapContext, taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
 import { Button } from '../ui/Button'
@@ -31,7 +31,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.querySelector<HTMLElement>('main h1')?.focus({ preventScroll: true })
+    document.getElementById('review-title')?.focus({ preventScroll: true })
   }, [id])
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
     <Stack gap="md">
       <header className="review-head">
         <p className="next-kind">{home.kind.change}</p>
-        <h1 tabIndex={-1}>{en.fields[fieldId]}</h1>
+        <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
         <Text>{item.status === 'action_required' ? mapContext(id) : taskSummary(id, derived, state)}</Text>
       </header>
       <Body onAnswer={onAnswer} />
@@ -121,6 +121,7 @@ function RiverReview({ onAnswer }: BodyProps) {
           split={a.answer === 'yes' && !asking ? { field, d: draft, interactive: splitting } : undefined}
         />
       </Suspense>
+      {asking && <RiverInsight />}
       {asking && <Source id="field_river" />}
       {asking ? (
         <ChoiceButtons legend={tasks.river.question} hint={tasks.river.hint} options={options(tasks.river.yes, tasks.river.no)} onChoose={answer} />

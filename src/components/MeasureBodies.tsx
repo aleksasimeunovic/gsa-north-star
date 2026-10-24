@@ -42,63 +42,78 @@ export const needsLine = (m: Measure, filledFor: Requirement['kind'][] = []) => 
 }
 
 /**
- * Choosing measures: all ten that fit his farm, each with what it pays, why it fits and what it would
- * need from him, so he can see the work before he takes it on. Last year's are ticked.
+ * Choosing measures, in the order that helps him decide: last year's (ticked), then the ones GSA found
+ * evidence for on his farm (with that evidence), then the rest that fit, counted but closed. What a measure
+ * would need from him shows once he ticks it, so the work is clear before he takes it on.
  */
 export function MeasuresBody() {
   const { derived, state, dispatch } = useApp()
   const s = derived.scenario
   const stored = state.answers.measures
   const fit = fitting(s)
+  const suggested = s.suggestions.filter((g) => fit.some((m) => m.id === g.measureId))
+  const isSuggested = (id: MeasureId) => suggested.some((g) => g.measureId === id)
+  const last = fit.filter((m) => m.lastYear)
+  const ofSuggestions = suggested.map((g) => fit.find((m) => m.id === g.measureId)!)
+  const more = fit.filter((m) => !m.lastYear && !isSuggested(m.id))
   const others = s.measures.filter((m) => !m.fits)
   const [chosen, setChosen] = useState<MeasureId[]>(stored.chosen)
   const [error, setError] = useState<string | undefined>()
   const changed = !stored.confirmed || chosen.length !== stored.chosen.length || chosen.some((id) => !stored.chosen.includes(id))
 
+  const option = (m: Measure) => {
+    const on = chosen.includes(m.id)
+    const g = suggested.find((x) => x.measureId === m.id)
+    return (
+      <li key={m.id} className="measure" data-chosen={on || undefined}>
+        <Checkbox
+          label={en.measures[m.id]}
+          checked={on}
+          onChange={(v) => {
+            setError(undefined)
+            setChosen(v ? [...chosen, m.id] : chosen.filter((x) => x !== m.id))
+          }}
+          hint={
+            <>
+              {g && <span className="measure-line" data-strong>{g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}</span>}
+              <span className="measure-line">{amountLine(m, derived)}</span>
+              {!g && <span className="measure-line">{t.why[m.id]}</span>}
+              {on && <span className="measure-line" data-strong>{needsLine(m, g?.fields ? ['fields'] : [])}</span>}
+            </>
+          }
+        />
+      </li>
+    )
+  }
+
   return (
-    <Stack gap="sm">
-      <div>
-        <Text variant="strong">{t.lead(fit.length)}</Text>
-        <Text variant="small">{t.leadHint(s.measures.filter((m) => m.lastYear).length)}</Text>
-      </div>
+    <Stack gap="md">
+      <Text>{t.lead(fit.length)}</Text>
       {error && (
         <Text>
           <span className="error" role="alert">{error}</span>
         </Text>
       )}
-      <ul className="measure-list">
-        {fit.map((m) => (
-          <li key={m.id} className="measure" data-chosen={chosen.includes(m.id) || undefined}>
-            <Checkbox
-              label={en.measures[m.id]}
-              checked={chosen.includes(m.id)}
-              onChange={(on) => {
-                setError(undefined)
-                setChosen(on ? [...chosen, m.id] : chosen.filter((x) => x !== m.id))
-              }}
-              hint={
-                <>
-                  <span className="measure-line">{amountLine(m, derived)}</span>
-                  <span className="measure-line">
-                    {t.why[m.id]}
-                    {m.lastYear && `, ${t.lastYear.toLowerCase()}`}
-                  </span>
-                  <span className="measure-line" data-strong>{needsLine(m)}</span>
-                </>
-              }
-            />
-          </li>
-        ))}
-      </ul>
-      {others.length > 0 && (
-        <Disclosure label={t.others(others.length)}>
-          <ul className="plain-list">
-            {others.map((m) => (
-              <li key={m.id}>
-                <strong>{en.measures[m.id]}</strong> <span className="hint">{t.why[m.id]}</span>
-              </li>
-            ))}
-          </ul>
+      <section className="measure-group" aria-labelledby="m-last">
+        <h4 id="m-last" className="group-title">{t.groupLast}</h4>
+        <ul className="measure-list">{last.map(option)}</ul>
+      </section>
+      {ofSuggestions.length > 0 && (
+        <section className="measure-group" data-suggested aria-labelledby="m-suggested">
+          <h4 id="m-suggested" className="group-title">{t.groupSuggested(ofSuggestions.length)}</h4>
+          <ul className="measure-list">{ofSuggestions.map(option)}</ul>
+        </section>
+      )}
+      {more.length > 0 && (
+        <Disclosure label={t.groupMore(more.length)}>
+          <Stack gap="sm">
+            <ul className="measure-list">{more.map(option)}</ul>
+            {others.length > 0 && (
+              <Text variant="small">
+                {t.others(others.map((m) => `${en.measures[m.id].toLowerCase()} (${t.why[m.id].toLowerCase()})`).join(', '))}
+              </Text>
+            )}
+          </Stack>
         </Disclosure>
       )}
       {changed && (

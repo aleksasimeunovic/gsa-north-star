@@ -7,14 +7,14 @@ describe('application state', () => {
   it('action required until every task is done', () => {
     const r = run('second_year').readiness
     expect(r.state).toBe('action_required')
-    expect(r.counts.action_required).toBe(16)
+    expect(r.counts.action_required).toBe(14)
     expect(r.canSubmit).toBe(false)
   })
 
   it('counts every thing left, across the parts', () => {
-    expect(run('second_year').list.todo).toHaveLength(16)
+    expect(run('second_year').list.todo).toHaveLength(14)
     // Missing receipts replace the unreadable one and the confirmation.
-    expect(run('missing_document').list.todo).toHaveLength(15)
+    expect(run('missing_document').list.todo).toHaveLength(13)
   })
 
   it('ready to submit once nothing needs his action', () => {

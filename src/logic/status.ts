@@ -13,7 +13,6 @@ export type ItemId =
   | 'calvings'
   | `field_${FieldId}`
   | 'fields_other'
-  | `suggest_${MeasureId}`
   | 'measures'
   | `measure_${MeasureId}`
   | 'receipt_unreadable'
@@ -41,9 +40,6 @@ export type ItemDetail =
   | 'meadow_unanswered'
   | 'meadow_kept'
   | 'meadow_out'
-  | 'suggestion_unanswered'
-  | 'suggestion_added'
-  | 'suggestion_declined'
   | 'receipt_unreadable'
   | 'receipt_replaced'
   | 'herd_unanswered'
@@ -247,18 +243,6 @@ function calvingsItem(s: Scenario, a: Answers): Item | null {
   return confirmedItem('calvings', a.confirmed.includes('calvings'), 'calvings_to_confirm', 'calvings_confirmed')
 }
 
-/** A measure GSA suggests from evidence: one question; yes puts it among his measures. */
-function suggestionItems(s: Scenario, a: Answers): Item[] {
-  return s.suggestions
-    .filter((g) => s.measures.find((m) => m.id === g.measureId)?.fits)
-    .map((g) => {
-      const id = `suggest_${g.measureId}` as const
-      const answer = a.suggestions[g.measureId]
-      if (!answer) return { id, status: 'action_required', detail: 'suggestion_unanswered' }
-      return { id, status: 'complete', detail: answer === 'yes' ? 'suggestion_added' : 'suggestion_declined' }
-    })
-}
-
 function confirmedItem(id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDetail): Item {
   return done ? { id, status: 'complete', detail: ok } : { id, status: 'action_required', detail: todo }
 }
@@ -291,7 +275,8 @@ export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = 
   if (s.fields.some((f) => !f.signal)) add(confirmedItem('fields_other', a.confirmed.includes('fields_other'), 'fields_same', 'fields_confirmed'))
 
   // Measures
-  items.push(...suggestionItems(s, a), ...measureItems(s, a))
+  // GSA's suggestions sit at the top of choosing measures, so he sees them with the rest.
+  items.push(...measureItems(s, a))
 
   // Documents
   const missing = s.documents.some((d) => !d.attached && !a.attachedDocuments.includes(d.id))

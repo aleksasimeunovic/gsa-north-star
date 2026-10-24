@@ -1,4 +1,5 @@
-import { advisor, en } from './copy/en'
+import { advisor, en, home } from './copy/en'
+import { daysLeft } from './logic/readiness'
 import { AppContext } from './components/AppContext'
 import { PrototypeControls } from './components/PrototypeControls'
 import { derive } from './logic/derive'
@@ -9,13 +10,14 @@ import { Renewal } from './screens/Renewal'
 import { useHashScreen } from './state/useHashScreen'
 import { useStore } from './state/store'
 import { DensityContext } from './ui/Density'
-import { NotesContext } from './ui/Note'
+import { Note, NotesContext } from './ui/Note'
 
 export function App() {
   const { state, dispatch, savedAt } = useStore()
   const { screen, target, go } = useHashScreen()
   const derived = derive(state)
   const submitted = !!state.answers.submittedAt
+  const left = daysLeft(derived.scenario.today, derived.scenario.window.closes)
 
   const main =
     screen === 'queue' ? (
@@ -41,6 +43,11 @@ export function App() {
           <div className="page" data-screen={screen}>
             <header className="topbar">
               <a href="#/welcome" className="brand">{en.appName}</a>
+              {state.role === 'farmer' && !submitted && (
+                <span className="deadline" title={home.deadline(left, derived.scenario.window.closes)}>
+                  {home.daysLeft(left)} <Note kind="eu_mandate" />
+                </span>
+              )}
               {state.role === 'advisor' && (
                 <nav aria-label="Advisor" className="advisor-nav">
                   <a href="#/queue" aria-current={screen === 'queue' ? 'page' : undefined}>{advisor.nav.queue}</a>

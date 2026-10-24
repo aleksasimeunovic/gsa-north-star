@@ -31,8 +31,6 @@ export interface Answers {
   household: { answer: YesNo | null }
   /** Yes: he will mow or graze it. No: the meadow is left out this year. */
   meadow: { answer: YesNo | null }
-  /** His answer to each measure GSA suggested. */
-  suggestions: Partial<Record<MeasureId, YesNo>>
   /** Chosen measures and what each needs, keyed `${measureId}.${requirementId}`. */
   measures: { chosen: MeasureId[]; confirmed: boolean; inputs: Record<string, MeasureValue> }
   confirmed: Confirmable[]
@@ -100,7 +98,6 @@ export type Action =
   | { type: 'set_bank_account'; account: string }
   | { type: 'answer_household'; answer: YesNo }
   | { type: 'answer_meadow'; answer: YesNo }
-  | { type: 'answer_suggestion'; measureId: MeasureId; answer: YesNo }
   | { type: 'choose_measures'; chosen: MeasureId[] }
   | { type: 'save_measure'; measureId: MeasureId; inputs: Record<string, MeasureValue> }
   | { type: 'reply_to_jelena'; note: string }

@@ -1,5 +1,6 @@
 import { home } from '../copy/en'
 import { KINDS } from '../logic/application'
+import { Icon } from '../ui/Icon'
 import { StatusBadge } from '../ui/StatusBadge'
 import type { Flow } from './useApplicationFlow'
 
@@ -10,17 +11,17 @@ import type { Flow } from './useApplicationFlow'
 export function StepOutline({ flow }: { flow: Flow }) {
   const { tasks } = flow.step
   if (!tasks.length) return null
-  const done = tasks.filter((t) => t.status !== 'action_required').length
+  const count = (status: string) => tasks.filter((t) => t.status === status).length
   return (
     <section className="outline" aria-labelledby="outline-title">
-      <h3 id="outline-title" className="group-title">{home.outline(done, tasks.length)}</h3>
+      <h3 id="outline-title" className="group-title">{home.outline(count('action_required'), count('complete'), count('awaiting_verification'))}</h3>
       {KINDS.map((kind) => {
         const ofKind = tasks.filter((t) => t.kind === kind)
         if (!ofKind.length) return null
         return (
           <div key={kind} className="outline-group" data-kind={kind}>
             <p className="outline-kind">
-              <span aria-hidden="true" className="kind-mark" />
+              <Icon name={kind} size="sm" />
               {home.kind[kind]}
             </p>
             <ul className="outline-list">
@@ -29,7 +30,9 @@ export function StepOutline({ flow }: { flow: Flow }) {
                 return (
                   <li key={t.id} data-status={t.status} data-now={now || undefined}>
                     {t.status === 'action_required' ? (
-                      <span className="outline-mark" aria-hidden="true">{now ? '→' : '○'}</span>
+                      <span className="outline-mark">
+                        <Icon name={now ? 'now' : 'todo'} size="sm" />
+                      </span>
                     ) : (
                       <StatusBadge status={t.status} iconOnly />
                     )}

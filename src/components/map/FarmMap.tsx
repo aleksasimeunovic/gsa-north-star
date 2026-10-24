@@ -64,7 +64,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, dra
               </Button>
             )}
             <Button variant="link" onClick={() => fm?.fitFarm()}>{copy.wholeFarm}</Button>
-            <Button variant="link" aria-pressed={large} onClick={() => setLarge(!large)}>{copy.larger}</Button>
+            <Button variant="link" onClick={() => setLarge(!large)}>{large ? copy.smaller : copy.larger}</Button>
           </div>
         </>
       )}

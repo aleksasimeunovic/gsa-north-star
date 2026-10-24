@@ -75,12 +75,12 @@ export function stepOf(id: TaskId): StepId {
   if (id === 'renewal' || id === 'bank' || id === 'household' || id === 'details') return 'details'
   if (id === 'herd' || id === 'pigs' || id === 'calvings') return 'animals'
   if (id.startsWith('field_') || id === 'fields_other') return 'land'
-  if (id === 'measures' || id.startsWith('measure_') || id.startsWith('suggest_')) return 'measures'
+  if (id === 'measures' || id.startsWith('measure_')) return 'measures'
   return 'documents'
 }
 
 function kindOf(id: TaskId, item: Item | undefined): TaskKind {
-  if (CHANGE_TASKS.includes(id) || id.startsWith('field_') || id.startsWith('suggest_')) return 'change'
+  if (CHANGE_TASKS.includes(id) || id.startsWith('field_')) return 'change'
   if (item && CONFIRMABLE.has(item.detail)) return 'same'
   // A correction asked for on something he was confirming stays where it was.
   if (id === 'details' || id === 'calvings') return 'same'

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { en, home, tasks } from '../copy/en'
+import { en, home, steps, tasks } from '../copy/en'
 import { allTasks, newlyRemoved, stepOf, type ApplicationList, type StepId, type TaskId, type Work } from '../logic/application'
 import { useApp } from './AppContext'
 
@@ -53,8 +53,17 @@ export function useApplicationFlow(target: string | null) {
   const stepTodo = current.tasks.filter((t) => t.status === 'action_required')
   const focus: Focus = submitted ? null : current.id === 'submit' ? 'submit' : inStep(held) ? held : inStep(open) ? open : (stepTodo[0]?.id ?? null)
   const focusTask = all.find((t) => t.id === focus)
-  const nextStep = list.steps[index + 1]
   const prevStep = index > 0 ? list.steps[index - 1] : undefined
+  /** The next part that still needs him, coming back round to one he skipped, then check and submit. */
+  const stepAfter = (i: number) =>
+    [...list.steps.slice(i + 1), ...list.steps.slice(0, i)].find((s) => s.left > 0) ?? list.steps.find((s) => s.id === 'submit')
+  const nextStep = stepAfter(index)
+  /** The next task in this part after the one in front of him, in order, coming round to the start. */
+  const todoAfter = (id: Focus) => {
+    const order = current.tasks.map((t) => t.id)
+    const at = id ? order.indexOf(id as TaskId) : -1
+    return [...current.tasks.slice(at + 1), ...current.tasks.slice(0, Math.max(0, at))].find((t) => t.status === 'action_required' && t.id !== id)
+  }
 
   const shown = useRef<Focus>(focus)
   const before = useRef<ApplicationList>(list)
@@ -78,7 +87,7 @@ export function useApplicationFlow(target: string | null) {
   }
   const back = prevStep ? () => goStep(prevStep.id) : undefined
 
-  const nextInStep = stepTodo.find((t) => t.id !== focus)
+  const nextInStep = todoAfter(focus)
   const forward: Forward = current.id === 'submit' ? null : nextInStep ? { task: nextInStep.id } : nextStep ? { step: nextStep.id } : null
   // Primary only when nothing in the top slot is waiting for his answer (a held task); a finished part has its own button.
   const forwardIsPrimary = !!focusTask && focusTask.status !== 'action_required'
@@ -117,11 +126,16 @@ export function useApplicationFlow(target: string | null) {
     if (prevFocus && prevFocus !== 'submit' && was.get(prevFocus) === 'action_required') {
       const now = all.find((t) => t.id === prevFocus)?.status
       if (now === 'complete' || now === undefined) {
-        const next = current.tasks.find((t) => t.status === 'action_required' && t.id !== prevFocus)
+        // On to the next task in this part; once the part is finished, straight on to the next part that needs him.
+        const next = todoAfter(prevFocus)
+        const onward = next ? null : stepAfter(index)
         if (next) words.push(home.announce.next(title(next.id)))
-        setOpen(null)
+        else if (onward) words.push(home.announce.next(steps.name[onward.id]))
+        if (onward) setStep(onward.id)
+        setOpen(next?.id ?? null)
         setHeld(null)
         setBring((n) => n + 1)
+        // Something he did himself (sending a problem on, asking for a check) stays in front of him until he carries on.
       } else if (now === 'awaiting_verification') setHeld(prevFocus)
     }
     if (words.length) setAnnounce(words.join(' '))

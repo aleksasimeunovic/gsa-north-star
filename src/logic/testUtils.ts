@@ -31,8 +31,6 @@ export const ready: Action[] = [
   { type: 'answer_upper', answer: 'yes' },
   { type: 'answer_meadow', answer: 'yes' },
   { type: 'confirm', what: 'fields_other' },
-  { type: 'answer_suggestion', measureId: 'green_cover', answer: 'no' },
-  { type: 'answer_suggestion', measureId: 'insemination', answer: 'no' },
   { type: 'choose_measures', chosen: ['plant_production', 'cows_raising_calves'] },
   { type: 'attach_document', documentId: 'unreadable_receipt' },
   { type: 'confirm', what: 'receipts' },
