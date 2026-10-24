@@ -59,7 +59,6 @@ export function MeasuresBody() {
   const more = fit.filter((m) => !m.lastYear && !isSuggested(m.id))
   const others = s.measures.filter((m) => !m.fits)
   const [chosen, setChosen] = useState<MeasureId[]>(stored.chosen)
-  const [error, setError] = useState<string | undefined>()
   const changed = !stored.confirmed || chosen.length !== stored.chosen.length || chosen.some((id) => !stored.chosen.includes(id))
 
   const option = (m: Measure) => {
@@ -72,7 +71,6 @@ export function MeasuresBody() {
           label={en.measures[m.id]}
           checked={on}
           onChange={(v) => {
-            setError(undefined)
             setChosen(v ? [...chosen, m.id] : chosen.filter((x) => x !== m.id))
           }}
           hint={
@@ -93,11 +91,6 @@ export function MeasuresBody() {
   return (
     <Stack gap="md">
       <Text>{t.lead(fit.length)}</Text>
-      {error && (
-        <Text>
-          <span className="error" role="alert">{error}</span>
-        </Text>
-      )}
       <section className="measure-group" aria-labelledby="m-last">
         <h4 id="m-last" className="group-title">{t.groupLast}</h4>
         <ul className="measure-list">{last.map(option)}</ul>
@@ -126,7 +119,8 @@ export function MeasuresBody() {
         <div>
           <Button
             variant="primary"
-            onClick={() => (chosen.length ? dispatch({ type: 'choose_measures', chosen: fit.map((m) => m.id).filter((id) => chosen.includes(id)) }) : setError(t.noneError))}
+            disabled={chosen.length === 0}
+            onClick={() => dispatch({ type: 'choose_measures', chosen: fit.map((m) => m.id).filter((id) => chosen.includes(id)) })}
           >
             {t.confirm(chosen.length)}
           </Button>

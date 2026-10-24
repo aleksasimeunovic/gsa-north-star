@@ -103,7 +103,7 @@ export const home = {
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   daysLeft: (n: number) => (n === 1 ? '1 day left to apply' : `${n} days left to apply`),
   activeFarmer: "You're an active farmer for this year",
-  kind: { change: 'Changes GSA found', choice: 'Your choices', same: 'To confirm' } satisfies Record<TaskKind, string>,
+  kind: { choice: 'Your choices', same: 'To confirm' } satisfies Record<Exclude<TaskKind, 'change'>, string>,
   stepDone: (step: string) => `Nothing left to do in ${step.toLowerCase()}`,
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check, and you can still submit' : `${n} things wait for a check, and you can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
@@ -230,7 +230,6 @@ export const tasks = {
 
   meadow: {
     context: 'The satellite photos show no mowing or grazing on the meadow last summer',
-    source: 'Source: satellite photos',
     question: 'Will you mow or graze the meadow this year?',
     hint: 'A meadow needs mowing or grazing at least once a year to get support',
     answerYes: 'Yes, I will',
@@ -300,7 +299,6 @@ export const tasks = {
       "This year it's greening later than the wheat above it",
       'That usually means another crop was sown there after the water went down',
     ],
-    source: 'Source: satellite photo',
     question: 'Are you growing two crops in the river field?',
     hint: "The photo can't see what you planted, so you decide",
     yes: 'Yes, two crops',
@@ -314,7 +312,6 @@ export const tasks = {
 
   road: {
     context: 'The land map now marks a strip of this field as road',
-    source: 'Source: the land map',
     area: (from: string, to: string) => `${from} becomes ${to}`,
     payment: (about: string) => `About ${about} less`,
     question: 'Did the road take part of this field?',
@@ -326,7 +323,6 @@ export const tasks = {
 
   upper: {
     context: 'Your neighbour declared a strip along the bottom of this field this year',
-    source: "Source: this year's applications",
     overlap: (ha: string) => `${ha} is declared by both of you, and only one of you can get support for it`,
     question: "Should we move your edge back to your neighbour's line?",
     yes: 'Yes, move my edge',
@@ -376,7 +372,6 @@ export const tasks = {
     youAdd: (list: string) => `You add: ${list}`,
     others: (list: string) => `Not for your farm: ${list}`,
     confirm: (n: number) => (n === 1 ? 'Apply for 1 measure' : `Apply for ${n} measures`),
-    noneError: 'Choose at least one measure to apply for',
     pays: {
       fertiliser: 'Part of the cost of mineral fertiliser',
       diesel: 'Part of the cost of diesel for field work',
@@ -516,7 +511,6 @@ export const split = {
   partArea: (part: string, area: string) => `${part}: ${area}`,
   cropFor: (part: string, area: string) => `Crop in the ${part.toLowerCase()} (${area})`,
   choose: 'Choose a crop',
-  chooseError: 'Choose a crop for this part',
   sameError: 'Choose a different crop from the other part',
   undo: 'Undo',
   confirm: 'Confirm the split',
@@ -527,7 +521,6 @@ export const finish = {
     title: 'Sign and submit',
     readyTitle: 'Ready to submit. The state still checks:',
     blockedTitle: 'Before you submit',
-    allAnswered: 'Everything is answered',
     goTo: (what: string) => `Go to: ${what}`,
     awaitingTitle: 'Waiting for a check',
     awaitingNote: 'You can still submit',
@@ -538,7 +531,6 @@ export const finish = {
       payment: 'The final amount, which may differ from the estimate',
     },
     declarationTitle: 'Declaration',
-    signError: 'Tick the box to confirm the declaration, then you can submit',
     declaration: 'I confirm under full criminal and material liability that the information in this application is true.',
     button: 'Submit application',
     back: 'Back to your application',
@@ -549,6 +541,8 @@ export const finish = {
     when: (d: string) => `Submitted on ${d}`,
     reference: 'Reference number',
     referenceNote: 'Keep this number',
+    copy: 'Copy the reference number',
+    copied: 'Copied',
     nextTitle: 'What happens next',
     next: [
       'The state checks your application against its records',
@@ -649,15 +643,6 @@ export const advisor = {
     asked_farmer: 'Asked the farmer',
     resolved: 'Marked as resolved',
   } as Record<string, string>,
-}
-
-export const readinessCopy = {
-  needs: (n: number) => `Needs you (${n})`,
-  waiting: (n: number) => `Waiting for a check (${n})`,
-  waitingNote: "These don't stop you submitting",
-  done: (n: number) => `Done (${n})`,
-  open: 'Open',
-  change: 'Change',
 }
 
 /** The parts of his application. */

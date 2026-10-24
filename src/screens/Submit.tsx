@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { bar, finish } from '../copy/en'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
@@ -24,13 +23,12 @@ export function SubmitStep({ flow }: { flow: Flow }) {
   const { readiness } = derived
   const signed = state.answers.declarationsSigned
   const check = submitCheck(readiness, signed)
-  const [tried, setTried] = useState(false)
   const left = derived.list.todo.map((t) => t.id)
   const goTo = (id: (typeof left)[number]) => (id === 'renewal' ? go('renewal') : flow.show(id))
 
   return (
     <Stack gap="lg">
-      <StepReview flow={flow} title={left.length ? finish.submit.blockedTitle : finish.submit.allAnswered} />
+      {left.length > 0 && <StepReview flow={flow} title={finish.submit.blockedTitle} />}
 
       <div className="submit-picture">
         <FarmPicture detailed />
@@ -38,15 +36,19 @@ export function SubmitStep({ flow }: { flow: Flow }) {
       </div>
 
       {readiness.awaiting.length > 0 && (
-        <section aria-labelledby="awaiting-title">
+        <section className="status-section" aria-labelledby="awaiting-title">
           <h3 id="awaiting-title">{finish.submit.awaitingTitle}</h3>
           <Text variant="secondary">
             {finish.submit.awaitingNote} <Note kind="assumption" />
           </Text>
-          <ul className="plain-list">
+          <ul className="status-list">
             {readiness.awaiting.map((i) => (
               <li key={i.id}>
-                <StatusBadge status={i.status} iconOnly /> <strong>{flow.title(i.id)}</strong>: {taskSummary(i.id, derived, state)}
+                <StatusBadge status={i.status} iconOnly />
+                <span>
+                  <strong>{flow.title(i.id)}</strong>
+                  <span className="hint">{taskSummary(i.id, derived, state)}</span>
+                </span>
               </li>
             ))}
           </ul>
@@ -56,23 +58,18 @@ export function SubmitStep({ flow }: { flow: Flow }) {
       {left.length === 0 && (
         <>
           {/* Ready is not approved: what the state still checks, in the same heading. */}
-          <section aria-labelledby="checks-title">
+          <section className="status-section" aria-labelledby="checks-title">
             <h3 id="checks-title">{finish.submit.readyTitle}</h3>
-            <ul className="check-list">
+            <ul className="status-list">
               {STATE_CHECKS.map((c) => (
                 <li key={c}>
-                  <Icon name="same" /> {finish.submit.checks[c]}
+                  <Icon name="complete" />
+                  <span>{finish.submit.checks[c]}</span>
                 </li>
               ))}
             </ul>
           </section>
           <Card title={finish.submit.declarationTitle} headingLevel={3}>
-            <span id="declaration" tabIndex={-1} />
-            {tried && !signed && (
-              <Text variant="strong" as="p">
-                <span className="error" role="alert">{finish.submit.signError}</span>
-              </Text>
-            )}
             <Checkbox label={finish.submit.declaration} checked={signed} onChange={(v) => dispatch({ type: 'sign_declarations', signed: v })} />
           </Card>
         </>
@@ -86,12 +83,8 @@ export function SubmitStep({ flow }: { flow: Flow }) {
             ? { label: finish.submit.goTo(flow.title(left[0])), onClick: () => goTo(left[0]) }
             : {
                 label: finish.submit.button,
+                disabled: !check.canSubmit,
                 onClick: () => {
-                  if (!check.canSubmit) {
-                    setTried(true)
-                    document.getElementById('declaration')?.focus()
-                    return
-                  }
                   dispatch({ type: 'submit' })
                   go('receipt')
                 },

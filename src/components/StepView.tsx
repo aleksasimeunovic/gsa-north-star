@@ -6,7 +6,6 @@ import { Note } from '../ui/Note'
 import { Icon } from '../ui/Icon'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
-import { taskIcon } from './taskIcon'
 import { TaskBody, taskSummary } from './TaskBodies'
 import type { Flow } from './useApplicationFlow'
 
@@ -35,11 +34,8 @@ function NextAction({ flow }: { flow: Flow }) {
   return (
     <section id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
       <div className="next-top">
-        <span className="task-icon"><Icon name={taskIcon(task.id)} size="lg" /></span>
         <div className="next-titles">
-          <p className="next-kind">
-            {home.kind[task.kind]} {task.kind === 'change' && <Note kind="ai" />}
-          </p>
+          {task.kind === 'change' ? <Note kind="ai" /> : <p className="next-kind">{home.kind[task.kind]}</p>}
           <div className="next-head">
             <h3 id="next-title" tabIndex={-1}>{heading}</h3>
             {!needsHim && <StatusBadge status={task.status} />}

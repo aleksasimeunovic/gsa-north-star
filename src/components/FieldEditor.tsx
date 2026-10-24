@@ -10,7 +10,7 @@ import type { FieldId, Polygon, Scenario } from '../data/scenarios'
 import { bounds, drawingProblems, overlapHa, polygonAreaHa, roundHa } from '../logic/geometry'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
-import { Inline, Stack, Text, VisuallyHidden } from '../ui/Layout'
+import { Inline, Stack, Text } from '../ui/Layout'
 import { labelStyle, mapStyle, vertexStyle } from '../ui/mapStyles'
 import { createFarmMap, landOf } from './map/olFarm'
 
@@ -39,7 +39,6 @@ export default function FieldEditor({ scenario, fieldId, start, onSave }: Props)
   const [poly, setPoly] = useState<Polygon>(start)
   const [past, setPast] = useState<Polygon[]>([])
   const [slider, setSlider] = useState(false)
-  const [tried, setTried] = useState(false)
 
   const problems = useMemo(
     () => drawingProblems(poly, land, neighbour, others.map((o) => o.polygon)),
@@ -157,19 +156,8 @@ export default function FieldEditor({ scenario, fieldId, start, onSave }: Props)
         )}
         {JSON.stringify(poly) !== JSON.stringify(field.polygon) && <Button variant="link" onClick={() => set(field.polygon)}>{copy.reset}</Button>}
       </Inline>
-      {tried && hard.length > 0 && <VisuallyHidden>{copy.problem[hard[0]]}</VisuallyHidden>}
       <div>
-        <Button
-          variant="primary"
-          onClick={() => {
-            if (hard.length) {
-              setTried(true)
-              document.getElementById('draw-status')?.scrollIntoView({ block: 'center' })
-              return
-            }
-            onSave(poly)
-          }}
-        >
+        <Button variant="primary" disabled={hard.length > 0} onClick={() => onSave(poly)}>
           {copy.save}
         </Button>
       </div>

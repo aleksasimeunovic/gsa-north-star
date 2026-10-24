@@ -137,3 +137,12 @@ One line per decision: what was chosen, the alternative rejected, why.
 111. **Check and submit opens with one row per part and where it stands, each opening that part**, after HoneyBook and Square, rather than a long list of every open task.
 112. **The receipt is a centred card with a large tick, the reference number in its own tile and a numbered "what happens next"**, so it can't be mistaken for anything else.
 113. **Cut:** "why it fits" on last year's measures, "Nothing to add" when there's nothing to add, the separate kind icon on the task card. `src/copy/en.ts`: 4,283 to 4,288 words (subtitle and two labels added).
+114. **Round 8 cuts (Aleksa):** no brand mark beside "GSA", no task icon on the open task, no "Source:" line under maps, no "Changes GSA found" label (changes come first anyway), no "Everything is answered" list on Check and submit. Each said nothing he needed to act on.
+115. **Spacing and radii on a 4 px scale (2, 4, 8, 12, 16, 20, 24...)**, rather than the mixed 6, 10, 14 and 18 px values, so the rhythm is even. Icons 16, 20 and 24 px.
+116. **Success and warning icons are filled, warning is bright orange** (a deeper orange for warning text, for contrast), rather than outlined wheat, so a state reads at a glance.
+117. **Hover is neutral (stone) on every control except semantic ones** (primary green), rather than a green tint on outline, ghost and secondary buttons, so colour keeps meaning.
+118. **Map tools sit above the map as outline buttons with icons**, rather than links under it, so they don't move with the map and read as controls.
+119. **The "things left" drawer lists only what needs him, each row one button with a hover**; its title and close stay pinned at the top. Done and waiting work left out: it asks nothing of him.
+120. **No measure starts ticked, last year's included**, rather than pre-choosing last year's two, so he chooses every measure himself. The estimate counts measures once chosen.
+121. **Buttons are disabled until they can act** (submit until the declaration is ticked, saves until something is typed, confirm measures until one is chosen, split until both crops are chosen, a drawing until it's inside his land), rather than an error after pressing.
+122. **The reference number on the receipt copies with one tap** (and selects whole as a fallback). `src/copy/en.ts`: 4,288 to 4,204 words.

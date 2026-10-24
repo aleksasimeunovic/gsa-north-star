@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { en, finish, home, map, tasks } from '../copy/en'
+import { en, finish, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
@@ -46,9 +46,11 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
   return (
     <Stack gap="md">
       <header className="review-head">
-        <p className="next-kind">{home.kind.change}</p>
         <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
-        <Text>{item.status === 'action_required' ? mapContext(id) : taskSummary(id, derived, state)}</Text>
+        <Text>
+          {item.status === 'action_required' ? mapContext(id) : taskSummary(id, derived, state)}{' '}
+          {item.status === 'action_required' && <Note kind="ai" />}
+        </Text>
       </header>
       <Body onAnswer={onAnswer} />
       <ActionBar
@@ -81,17 +83,6 @@ const options = (yes: string, no: string) => [
   { value: 'no' as const, label: no },
 ]
 
-function Source({ id }: { id: MapTask }) {
-  if (id === 'field_river') {
-    return (
-      <Text variant="small">
-        {tasks.river.source} <Note kind="eu_mandate" /> <Note kind="ai" />
-      </Text>
-    )
-  }
-  return <Text variant="small">{id === 'field_road' ? tasks.road.source : tasks.upper.source}</Text>
-}
-
 type BodyProps = { onAnswer: () => void }
 
 /** The satellite flags, Milan decides. Two crops: GSA's line where the photo changes, which he accepts or moves. */
@@ -122,7 +113,6 @@ function RiverReview({ onAnswer }: BodyProps) {
         />
       </Suspense>
       {asking && <RiverInsight />}
-      {asking && <Source id="field_river" />}
       {asking ? (
         <ChoiceButtons legend={tasks.river.question} hint={tasks.river.hint} options={options(tasks.river.yes, tasks.river.no)} onChoose={answer} />
       ) : (
@@ -160,7 +150,6 @@ function RoadReview({ onAnswer }: BodyProps) {
       <Suspense fallback={<MapFallback mode="explore" />}>
         <FarmMap scenario={derived.scenario} focus="road" mode="explore" label={`${map.title}: ${en.fields.road}. ${tasks.road.context}`} />
       </Suspense>
-      {asking && <Source id="field_road" />}
       <MapFacts id="field_road" />
       {asking ? (
         <ChoiceButtons
@@ -211,7 +200,6 @@ function UpperReview({ onAnswer }: BodyProps) {
           <FarmMap scenario={s} focus="upper" mode="explore" drawn={a.answer === 'no' ? a.drawn : null} label={`${map.title}: ${en.fields.upper}. ${tasks.upper.context}`} />
         </Suspense>
       )}
-      {asking && <Source id="field_upper" />}
       {asking && <MapFacts id="field_upper" />}
       {asking ? (
         <ChoiceButtons

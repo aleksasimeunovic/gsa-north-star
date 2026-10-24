@@ -44,7 +44,6 @@ export function App() {
           <div className="page" data-screen={screen}>
             <header className="topbar">
               <a href="#/welcome" className="brand">
-                <span className="brand-mark"><Icon name="meadow" /></span>
                 {en.appName} <span className="brand-sub">{en.appSub}</span>
               </a>
               {state.role === 'farmer' && !submitted && (

@@ -217,7 +217,7 @@ const HERD: Herd = {
 
 const PIGS: Pigs = { lastYearDeclared: 0, registryCount: 3 }
 
-// Ten fit his farm, two don't. Fitting ones first; the two he applied for last year are chosen already.
+// Ten fit his farm, two don't. Fitting ones first, the two he applied for last year at the top.
 const MEASURES: Measure[] = [
   {
     id: 'plant_production',

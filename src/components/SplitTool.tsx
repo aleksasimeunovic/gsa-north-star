@@ -100,7 +100,6 @@ export function splitMoves(field: Field, d: SplitDraft) {
 /** Controls under the map: live areas, the guardrail in place, crops, undo, slider alternative, confirm. */
 export function SplitControls({ field, d, onConfirm }: { field: Field; d: SplitDraft; onConfirm: (s: Split) => void }) {
   const [slider, setSlider] = useState(false)
-  const [tried, setTried] = useState(false)
   const { draft, result } = d
   const names = result ? partNames(result.parts) : null
   const same = !!draft.crops[0] && draft.crops[0] === draft.crops[1]
@@ -108,8 +107,7 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: SplitD
   const label = (i: 0 | 1) => (names ? copy.part[names[i]] : '')
   // Show the parts as they sit on the map: top before bottom, left before right.
   const order: (0 | 1)[] = names && (names[0] === 'bottom' || names[0] === 'right') ? [1, 0] : [0, 1]
-  const cropError = (i: 0 | 1) =>
-    !tried ? undefined : !draft.crops[i] ? copy.chooseError : same && i === order[1] ? copy.sameError : undefined
+  const cropError = (i: 0 | 1) => (same && i === order[1] ? copy.sameError : undefined)
   const options = CROPS.map((c) => ({ value: c, label: en.crops[c] }))
 
   return (
@@ -163,14 +161,7 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: SplitD
         ))}
       <Inline>
         {d.canUndo && <Button onClick={d.undo}>{copy.undo}</Button>}
-        <Button
-          variant="primary"
-          onClick={() => {
-            if (complete) return onConfirm(draft)
-            setTried(true)
-            requestAnimationFrame(() => document.querySelector<HTMLElement>('main [aria-invalid]')?.focus())
-          }}
-        >
+        <Button variant="primary" disabled={!complete} onClick={() => onConfirm(draft)}>
           {copy.confirm}
         </Button>
       </Inline>

@@ -40,11 +40,11 @@ export function Drawer({ open, title, onClose, returnFocusTo, children, variant 
       aria-modal="false"
       aria-labelledby={titleId}
       className={cn(
-        'fixed inset-y-0 right-0 z-40 flex w-[min(440px,100vw)] flex-col gap-4 overflow-y-auto border-l bg-popover p-6 pb-32 shadow-2xl',
+        'fixed inset-y-0 right-0 z-40 flex w-[min(440px,100vw)] flex-col gap-4 overflow-y-auto border-l bg-popover px-6 pb-32 shadow-2xl',
         variant === 'prototype' && 'border-l-2 border-dashed border-meta',
       )}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="sticky top-0 z-10 -mx-6 flex items-center justify-between gap-2 border-b bg-popover px-6 py-4">
         <h2 id={titleId} ref={headingRef} tabIndex={-1} className="text-xl">{title}</h2>
         <Button variant="ghost" onClick={onClose} aria-label={en.close}>
           <Icon name="close" />

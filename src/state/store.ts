@@ -34,13 +34,8 @@ export const initialState = (): AppState => ({
   history: [],
 })
 
-/** Measures he applied for last year start chosen. */
-export const startingAnswers = (s: Scenario): Answers => ({
-  ...emptyAnswers(),
-  measures: { chosen: s.measures.filter((m) => m.fits && m.lastYear).map((m) => m.id), confirmed: false, inputs: {} },
-})
 
-export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(), scenarioId, answers: startingAnswers(SCENARIOS[scenarioId]) })
+export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(), scenarioId, answers: emptyAnswers() })
 
 /** Answers that can be taken back with Undo. Prototype, advisor and submit actions can't. */
 const UNDOABLE = new Set<Action['type']>([

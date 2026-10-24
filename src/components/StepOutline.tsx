@@ -24,10 +24,12 @@ export function StepOutline({ flow }: { flow: Flow }) {
         if (!ofKind.length) return null
         return (
           <div key={kind} className="outline-group" data-kind={kind}>
-            <p className="outline-kind">
-              <Icon name={kind} size="sm" />
-              {home.kind[kind]}
-            </p>
+            {kind !== 'change' && (
+              <p className="outline-kind">
+                <Icon name={kind} size="sm" />
+                {home.kind[kind]}
+              </p>
+            )}
             <ul className="outline-list">
               {ofKind.map((t) => {
                 const now = t.id === flow.focus

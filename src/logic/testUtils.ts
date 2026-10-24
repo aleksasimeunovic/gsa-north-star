@@ -11,6 +11,9 @@ export function play(scenarioId: ScenarioId, ...actions: Action[]): AppState {
 
 export const run = (scenarioId: ScenarioId, ...actions: Action[]) => derive(play(scenarioId, ...actions))
 
+/** Last year's two measures, chosen again. */
+export const lastYear: Action = { type: 'choose_measures', chosen: ['plant_production', 'cows_raising_calves'] }
+
 /** Split the river field across the middle, as Milan would. */
 export const halfSplit = (crops: [Crop | null, Crop | null] = ['sunflower', 'wheat']): Action => ({
   type: 'set_split',

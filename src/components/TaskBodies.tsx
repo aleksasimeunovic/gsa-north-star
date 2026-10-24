@@ -92,7 +92,7 @@ function HerdBody() {
 
   const save = () => {
     const n = Number(count)
-    if (count.trim() === '' || !Number.isInteger(n) || n < 0) return setError(tasks.herd.countError)
+    if (!Number.isInteger(n) || n < 0) return setError(tasks.herd.countError)
     setError(undefined)
     dispatch({ type: 'set_herd_count', count: n })
   }
@@ -131,7 +131,7 @@ function HerdBody() {
           <Stack gap="sm">
             <Field label={tasks.herd.countLabel} hint={tasks.herd.countHint} error={error} inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
             <div>
-              <Button type="submit" variant="primary">{tasks.herd.countSave}</Button>
+              <Button type="submit" variant="primary" disabled={count.trim() === ''}>{tasks.herd.countSave}</Button>
             </div>
           </Stack>
         </form>
@@ -256,7 +256,14 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
 
   return (
     <Stack gap="sm">
-      <Text>{unanswered ? mapContext(id) : taskSummary(id, derived, state)}</Text>
+      <Text>
+        {unanswered ? mapContext(id) : taskSummary(id, derived, state)}{' '}
+        {unanswered && id === 'field_river' && (
+          <>
+            <Note kind="eu_mandate" /> <Note kind="ai" />
+          </>
+        )}
+      </Text>
       <figure className="map-figure">
         <div className="map-link" onClick={review}>
           <Suspense fallback={<MapFallback mode="preview" />}>
@@ -269,16 +276,6 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
             />
           </Suspense>
         </div>
-        {unanswered && (
-          <figcaption className="hint">
-            {id === 'field_river' ? tasks.river.source : id === 'field_upper' ? tasks.upper.source : tasks.road.source}{' '}
-            {id === 'field_river' && (
-              <>
-                <Note kind="eu_mandate" /> <Note kind="ai" />
-              </>
-            )}
-          </figcaption>
-        )}
       </figure>
       {unanswered && id === 'field_river' && <RiverInsight />}
       {unanswered && <MapFacts id={id} />}
@@ -415,7 +412,7 @@ function BankBody() {
           <Stack gap="sm">
             <Field label={b.label} hint={b.hint} error={error} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} />
             <div>
-              <Button type="submit" variant="primary">{b.save}</Button>
+              <Button type="submit" variant="primary" disabled={value.trim() === ''}>{b.save}</Button>
             </div>
           </Stack>
         </form>
@@ -474,16 +471,15 @@ function MeadowBody() {
   const m = tasks.meadow
   return (
     <Stack gap="sm">
-      {a.answer === null && <Text>{m.context}</Text>}
+      {a.answer === null && (
+        <Text>
+          {m.context} <Note kind="ai" />
+        </Text>
+      )}
       <figure className="map-figure">
         <Suspense fallback={<MapFallback mode="preview" />}>
           <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}. ${m.context}`} />
         </Suspense>
-        {a.answer === null && (
-          <figcaption className="hint">
-            {m.source} <Note kind="ai" />
-          </figcaption>
-        )}
       </figure>
       <Question
         legend={m.question}

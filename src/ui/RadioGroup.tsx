@@ -35,7 +35,7 @@ export function RadioGroup<T extends string>({ legend, hint, options, value, onC
             htmlFor={`${id}-${o.value}`}
             className={cn(
               'flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40',
-              compact ? 'min-h-9 py-1.5' : 'min-h-14 py-3',
+              compact ? 'min-h-9 py-2' : 'min-h-14 py-3',
             )}
           >
             <RadioGroupItem id={`${id}-${o.value}`} value={o.value} />

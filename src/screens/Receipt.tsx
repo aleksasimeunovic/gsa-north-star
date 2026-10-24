@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { finish, formatDateYear, formatTime } from '../copy/en'
 import { useApp } from '../components/AppContext'
 import { taskSummary } from '../components/TaskBodies'
@@ -14,6 +15,21 @@ export function Receipt() {
   const { derived, state, dispatch, go } = useApp()
   const at = state.answers.submittedAt!
   const awaiting = derived.readiness.awaiting
+  const ref = referenceNumber(at)
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(ref)
+      setCopied(true)
+    } catch {
+      // Older browsers: copy from a hidden field instead.
+      const field = Object.assign(document.createElement('textarea'), { value: ref })
+      document.body.append(field)
+      field.select()
+      setCopied(document.execCommand('copy'))
+      field.remove()
+    }
+  }
 
   return (
     <div className="receipt">
@@ -23,9 +39,14 @@ export function Receipt() {
         <p className="receipt-when">{finish.receipt.when(`${formatDateYear(derived.scenario.today)}, ${formatTime(at)}`)}</p>
         <dl className="receipt-ref">
           <dt>{finish.receipt.reference}</dt>
-          <dd>{referenceNumber(at)}</dd>
+          <dd className="receipt-ref-row">
+            <span>{ref}</span>
+            <Button variant="ghost" onClick={copy} aria-label={finish.receipt.copy}>
+              <Icon name={copied ? 'check' : 'copy'} />
+            </Button>
+          </dd>
         </dl>
-        <p className="hint">{finish.receipt.referenceNote}</p>
+        <p className="hint" aria-live="polite">{copied ? finish.receipt.copied : finish.receipt.referenceNote}</p>
       </section>
 
       <section className="receipt-section" aria-labelledby="next-title">
@@ -42,9 +63,9 @@ export function Receipt() {
       {awaiting.length > 0 && (
         <section className="receipt-section" aria-labelledby="still-title">
           <h2 id="still-title">{finish.submit.awaitingTitle}</h2>
-          <ul className="plain-list">
+          <ul className="status-list">
             {awaiting.map((i) => (
-              <li key={i.id} className="receipt-waiting">
+              <li key={i.id}>
                 <StatusBadge status={i.status} iconOnly />
                 <span>
                   <strong>{taskTitle(i.id)}</strong>

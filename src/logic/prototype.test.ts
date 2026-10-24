@@ -33,7 +33,7 @@ describe('prototype controls (reducer)', () => {
     expect(t.answers.herd.answer).toBeNull()
   })
 
-  it("starts with last year's measures chosen", () => {
-    expect(play('second_year').answers.measures.chosen).toEqual(['plant_production', 'cows_raising_calves'])
+  it('starts with no measures chosen, last year\'s included', () => {
+    expect(play('second_year').answers.measures.chosen).toEqual([])
   })
 })

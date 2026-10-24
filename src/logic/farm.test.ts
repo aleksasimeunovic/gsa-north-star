@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { halfSplit, run } from './testUtils'
 
 describe('farm picture', () => {
-  it("starts from the records: 9.00 ha in 5 fields, 38 cattle, 3 pigs, 2 of 10 measures, nothing confirmed yet", () => {
+  it("starts from the records: 9.00 ha in 5 fields, 38 cattle, 3 pigs, 0 of 10 measures, nothing confirmed yet", () => {
     const f = run('second_year').farm
     expect(f.fields).toMatchObject({ totalHa: 9, count: 5, source: 'records', confirmed: 0 })
     expect(f.fields.crops).toEqual([
@@ -12,7 +12,7 @@ describe('farm picture', () => {
     ])
     expect(f.cattle).toEqual({ count: 38, registry: 38, source: 'records' })
     expect(f.pigs).toEqual({ count: 3, household: null, source: 'records' })
-    expect(f.measures).toEqual({ chosen: 2, fitting: 10, source: 'records' })
+    expect(f.measures).toEqual({ chosen: 0, fitting: 10, source: 'records' })
   })
 
   it('every answer changes it: the road, the split, his own cattle count', () => {

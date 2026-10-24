@@ -9,6 +9,7 @@ import { ReadinessDrawer } from './ReadinessDrawer'
 interface Step {
   label: string
   onClick: () => void
+  disabled?: boolean
 }
 
 /**
@@ -24,7 +25,7 @@ export function ActionBar({ back, forward, forwardIsPrimary, onPick }: { back?: 
         label={bar.label}
         start={back && <Button onClick={back.onClick}>{back.label}</Button>}
         middle={<ReadinessBar ref={opener} expanded={open} onOpen={() => setOpen(true)} />}
-        end={forward && <Button variant={forwardIsPrimary ? 'primary' : 'secondary'} onClick={forward.onClick}>{forward.label}</Button>}
+        end={forward && <Button variant={forwardIsPrimary ? 'primary' : 'secondary'} onClick={forward.onClick} disabled={forward.disabled}>{forward.label}</Button>}
       />
       <ReadinessDrawer
         open={open}

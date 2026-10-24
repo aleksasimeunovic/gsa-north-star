@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { en, map as copy } from '../../copy/en'
 import type { Field, FieldId, Polygon, Scenario } from '../../data/scenarios'
 import { Button } from '../../ui/Button'
+import { Icon } from '../../ui/Icon'
 import { VisuallyHidden } from '../../ui/Layout'
 import type { SplitDraft } from '../SplitTool'
 import { createFarmMap, type FarmMap as Handle } from './olFarm'
@@ -44,6 +45,25 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, dra
 
   return (
     <div className="map-frame" data-mode={mode} data-size={large ? 'large' : undefined}>
+      {/* Above the map, so they stay put while the map moves. */}
+      {explore && (
+        <div className="map-tools">
+          {(focus || only) && (
+            <Button onClick={() => fm?.fitHome()}>
+              <Icon name="land" />
+              {focus ? copy.backTo(en.fields[focus]) : copy.backToFields}
+            </Button>
+          )}
+          <Button onClick={() => fm?.fitFarm()}>
+            <Icon name="map" />
+            {copy.wholeFarm}
+          </Button>
+          <Button onClick={() => setLarge(!large)}>
+            <Icon name={large ? 'smaller' : 'larger'} />
+            {large ? copy.smaller : copy.larger}
+          </Button>
+        </div>
+      )}
       <div
         ref={el}
         className="farm-map"
@@ -53,20 +73,9 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, dra
         tabIndex={explore ? 0 : undefined}
       />
       {explore && (
-        <>
-          <VisuallyHidden>
-            <span id={keysId}>{copy.keys}</span>
-          </VisuallyHidden>
-          <div className="map-tools">
-            {(focus || only) && (
-              <Button variant="link" onClick={() => fm?.fitHome()}>
-                {focus ? copy.backTo(en.fields[focus]) : copy.backToFields}
-              </Button>
-            )}
-            <Button variant="link" onClick={() => fm?.fitFarm()}>{copy.wholeFarm}</Button>
-            <Button variant="link" onClick={() => setLarge(!large)}>{large ? copy.smaller : copy.larger}</Button>
-          </div>
-        </>
+        <VisuallyHidden>
+          <span id={keysId}>{copy.keys}</span>
+        </VisuallyHidden>
       )}
       {split && fm && <SplitOnMap fm={fm} {...split} />}
     </div>
