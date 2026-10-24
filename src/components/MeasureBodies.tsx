@@ -12,6 +12,7 @@ import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Stack, Text } from '../ui/Layout'
 import { RadioGroup } from '../ui/RadioGroup'
+import { Icon } from '../ui/Icon'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp, type AppCtx } from './AppContext'
 
@@ -65,8 +66,9 @@ export function MeasuresBody() {
     const on = chosen.includes(m.id)
     const g = suggested.find((x) => x.measureId === m.id)
     return (
-      <li key={m.id} className="measure" data-chosen={on || undefined}>
+      <li key={m.id}>
         <Checkbox
+          card
           label={en.measures[m.id]}
           checked={on}
           onChange={(v) => {
@@ -77,8 +79,10 @@ export function MeasuresBody() {
             <>
               {g && <span className="measure-line" data-strong>{g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}</span>}
               <span className="measure-line">{amountLine(m, derived)}</span>
-              {!g && <span className="measure-line">{t.why[m.id]}</span>}
-              {on && <span className="measure-line" data-strong>{needsLine(m, g?.fields ? ['fields'] : [])}</span>}
+              {!g && !m.lastYear && <span className="measure-line">{t.why[m.id]}</span>}
+              {on && needsLine(m, g?.fields ? ['fields'] : []) !== t.fromRecords && (
+                <span className="measure-line" data-strong>{needsLine(m, g?.fields ? ['fields'] : [])}</span>
+              )}
             </>
           }
         />
@@ -100,7 +104,9 @@ export function MeasuresBody() {
       </section>
       {ofSuggestions.length > 0 && (
         <section className="measure-group" data-suggested aria-labelledby="m-suggested">
-          <h4 id="m-suggested" className="group-title">{t.groupSuggested(ofSuggestions.length)}</h4>
+          <h4 id="m-suggested" className="group-title">
+            <Icon name="change" /> {t.groupSuggested(ofSuggestions.length)}
+          </h4>
           <ul className="measure-list">{ofSuggestions.map(option)}</ul>
         </section>
       )}

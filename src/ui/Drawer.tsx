@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
 import { en } from '../copy/en'
+import { cn } from '../lib/utils'
 import { Button } from './Button'
+import { Icon } from './Icon'
 
 interface Props {
   open: boolean
@@ -12,7 +14,7 @@ interface Props {
   variant?: 'default' | 'prototype'
 }
 
-// Non-modal: no focus trap. Esc closes and focus returns to the opener.
+// A sheet from the right. Non-modal: no focus trap. Esc closes and focus returns to the opener.
 export function Drawer({ open, title, onClose, returnFocusTo, children, variant = 'default' }: Props) {
   const titleId = useId()
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -33,10 +35,20 @@ export function Drawer({ open, title, onClose, returnFocusTo, children, variant 
 
   if (!open) return null
   return (
-    <section className="drawer" data-variant={variant} role="dialog" aria-modal="false" aria-labelledby={titleId}>
-      <div className="drawer-head">
-        <h2 id={titleId} ref={headingRef} tabIndex={-1}>{title}</h2>
-        <Button onClick={onClose}>{en.close}</Button>
+    <section
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={titleId}
+      className={cn(
+        'fixed inset-y-0 right-0 z-40 flex w-[min(440px,100vw)] flex-col gap-4 overflow-y-auto border-l bg-popover p-6 pb-32 shadow-2xl',
+        variant === 'prototype' && 'border-l-2 border-dashed border-meta',
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h2 id={titleId} ref={headingRef} tabIndex={-1} className="text-xl">{title}</h2>
+        <Button variant="ghost" onClick={onClose} aria-label={en.close}>
+          <Icon name="close" />
+        </Button>
       </div>
       {children}
     </section>

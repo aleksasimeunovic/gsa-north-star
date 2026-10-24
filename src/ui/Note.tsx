@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import { Badge } from './shadcn/badge'
 
 // Design note tags. Shown only when design notes are on (prototype controls).
 // Everything is North Star, so only real distinctions are tagged. 'ai' shows Earl where AI works; Milan never sees it.
@@ -16,9 +17,9 @@ export const NotesContext = createContext(false)
 export function Note({ kind }: { kind: NoteKind }) {
   if (!useContext(NotesContext)) return null
   return (
-    <span className="note" data-kind={kind}>
-      <span className="visually-hidden">Design note: </span>
+    <Badge variant="meta" className="mx-1 align-middle">
+      <span className="sr-only">Design note: </span>
       {LABEL[kind]}
-    </span>
+    </Badge>
   )
 }

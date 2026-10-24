@@ -1,4 +1,6 @@
 import { useId, type SelectHTMLAttributes } from 'react'
+import { NativeSelect } from './shadcn/input'
+import { Label } from './shadcn/label'
 
 type Props = SelectHTMLAttributes<HTMLSelectElement> & {
   label: string
@@ -10,15 +12,15 @@ type Props = SelectHTMLAttributes<HTMLSelectElement> & {
 export function Select({ label, options, placeholder, error, ...rest }: Props) {
   const id = useId()
   return (
-    <div className="field">
-      <label htmlFor={id} className="field-label">{label}</label>
-      {error && <span id={`${id}-error`} className="error" role="alert">{error}</span>}
-      <select id={id} aria-invalid={!!error || undefined} aria-describedby={error ? `${id}-error` : undefined} {...rest}>
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id} className="text-base">{label}</Label>
+      {error && <span id={`${id}-error`} className="text-sm font-medium text-destructive" role="alert">{error}</span>}
+      <NativeSelect id={id} aria-invalid={!!error || undefined} aria-describedby={error ? `${id}-error` : undefined} {...rest}>
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
-      </select>
+      </NativeSelect>
     </div>
   )
 }

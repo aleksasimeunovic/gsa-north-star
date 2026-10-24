@@ -1,43 +1,48 @@
 import type { ElementType, ReactNode } from 'react'
+import { cn } from '../lib/utils'
+
+const GAP = { sm: 'gap-2', md: 'gap-4', lg: 'gap-8' }
 
 export function Stack({ gap = 'md', as: As = 'div', children }: { gap?: 'sm' | 'md' | 'lg'; as?: ElementType; children: ReactNode }) {
-  return <As className="stack" data-gap={gap}>{children}</As>
+  return <As className={cn('flex flex-col', GAP[gap])}>{children}</As>
 }
 
 export function Inline({ children }: { children: ReactNode }) {
-  return <div className="inline">{children}</div>
+  return <div className="flex flex-wrap items-center gap-2">{children}</div>
 }
 
+const TEXT = { body: '', secondary: 'text-muted-foreground', small: 'text-sm text-muted-foreground', strong: 'font-semibold' }
+
 export function Text({ variant = 'body', as: As = 'p', children }: { variant?: 'body' | 'secondary' | 'small' | 'strong'; as?: ElementType; children: ReactNode }) {
-  return <As className="text" data-variant={variant}>{children}</As>
+  return <As className={TEXT[variant]}>{children}</As>
 }
 
 export function VisuallyHidden({ as: As = 'span', children }: { as?: ElementType; children: ReactNode }) {
-  return <As className="visually-hidden">{children}</As>
+  return <As className="sr-only">{children}</As>
 }
 
 /** Two values side by side, both kept (record vs his answer). */
 export function Compare({ items }: { items: { label: string; value: ReactNode }[] }) {
   return (
-    <dl className="compare">
+    <dl className="grid grid-cols-2 gap-2">
       {items.map((i) => (
-        <div key={i.label}>
-          <dt>{i.label}</dt>
-          <dd>{i.value}</dd>
+        <div key={i.label} className="rounded-xl bg-muted px-4 py-3">
+          <dt className="text-sm text-muted-foreground">{i.label}</dt>
+          <dd className="text-2xl font-semibold tracking-tight [&_p]:text-sm [&_p]:font-normal">{i.value}</dd>
         </div>
       ))}
     </dl>
   )
 }
 
-/** Facts as label and value pairs. */
+/** Facts as label and value rows, like a confirmation card. */
 export function KeyValues({ items }: { items: { label: string; value: ReactNode }[] }) {
   return (
-    <dl className="records">
+    <dl className="divide-y rounded-xl border">
       {items.map((i) => (
-        <div key={i.label} className="records-row">
-          <dt>{i.label}</dt>
-          <dd>{i.value}</dd>
+        <div key={i.label} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 px-4 py-3">
+          <dt className="text-sm text-muted-foreground">{i.label}</dt>
+          <dd className="font-medium">{i.value}</dd>
         </div>
       ))}
     </dl>

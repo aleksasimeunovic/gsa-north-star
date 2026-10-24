@@ -6,6 +6,7 @@ import { Note } from '../ui/Note'
 import { Icon } from '../ui/Icon'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
+import { taskIcon } from './taskIcon'
 import { TaskBody, taskSummary } from './TaskBodies'
 import type { Flow } from './useApplicationFlow'
 
@@ -33,12 +34,17 @@ function NextAction({ flow }: { flow: Flow }) {
 
   return (
     <section id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
-      <p className="next-kind">
-        <Icon name={task.kind} size="sm" /> {home.kind[task.kind]} {task.kind === 'change' && <Note kind="ai" />}
-      </p>
-      <div className="next-head">
-        <h3 id="next-title" tabIndex={-1}>{heading}</h3>
-        {!needsHim && <StatusBadge status={task.status} />}
+      <div className="next-top">
+        <span className="task-icon"><Icon name={taskIcon(task.id)} size="lg" /></span>
+        <div className="next-titles">
+          <p className="next-kind">
+            {home.kind[task.kind]} {task.kind === 'change' && <Note kind="ai" />}
+          </p>
+          <div className="next-head">
+            <h3 id="next-title" tabIndex={-1}>{heading}</h3>
+            {!needsHim && <StatusBadge status={task.status} />}
+          </div>
+        </div>
       </div>
       <TaskBody task={task} />
     </section>
@@ -84,7 +90,9 @@ function AfterAnswerPanel({ flow }: { flow: Flow }) {
   return (
     <section className="after" aria-labelledby="after-title" data-has-change>
       <div className="after-head">
-        <h3 id="after-title" className="group-title">{copy.title}</h3>
+        <h3 id="after-title" className="group-title">
+          <Icon name="complete" /> {copy.title}
+        </h3>
         {state.past.length > 0 && (
           <Button variant="link" onClick={() => dispatch({ type: 'undo' })} aria-label={copy.undoLabel}>
             {copy.undo}

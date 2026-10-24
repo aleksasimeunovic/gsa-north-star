@@ -2,6 +2,7 @@ import { steps as copy } from '../copy/en'
 import { Icon } from '../ui/Icon'
 import { Progress } from '../ui/Progress'
 import { useApp } from './AppContext'
+import { stepIcon } from './taskIcon'
 import type { Flow } from './useApplicationFlow'
 
 /**
@@ -17,7 +18,9 @@ export function Stepper({ flow }: { flow: Flow }) {
       <p className="stepper-compact" aria-hidden="true">
         <span>{copy.of(at, list.length)}</span> <strong>{copy.name[flow.step.id]}</strong>
       </p>
-      <Progress value={at} max={list.length} />
+      <div className="stepper-bar">
+        <Progress value={at} max={list.length} />
+      </div>
       <ol>
         {list.map((s, i) => {
           const current = s.id === flow.step.id
@@ -26,7 +29,8 @@ export function Stepper({ flow }: { flow: Flow }) {
           return (
             <li key={s.id} data-state={current ? 'current' : done ? 'done' : 'todo'}>
               <button type="button" aria-current={current ? 'step' : undefined} onClick={() => flow.goStep(s.id)}>
-                <span className="step-mark" aria-hidden="true">{done ? <Icon name="check" size="sm" /> : i + 1}</span>
+                <span className="step-mark" aria-hidden="true">{done ? <Icon name="check" /> : <Icon name={stepIcon(s.id)} />}
+                  <span className="sr-only">{i + 1}</span></span>
                 <span className="step-text">
                   <span className="step-name">{copy.name[s.id]}</span>
                   {status && <span className="step-status">{status}</span>}

@@ -10,6 +10,7 @@ import { Renewal } from './screens/Renewal'
 import { useHashScreen } from './state/useHashScreen'
 import { useStore } from './state/store'
 import { DensityContext } from './ui/Density'
+import { Icon } from './ui/Icon'
 import { Note, NotesContext } from './ui/Note'
 
 export function App() {
@@ -42,10 +43,13 @@ export function App() {
         <NotesContext.Provider value={state.prototype.showNotes}>
           <div className="page" data-screen={screen}>
             <header className="topbar">
-              <a href="#/welcome" className="brand">{en.appName}</a>
+              <a href="#/welcome" className="brand">
+                <span className="brand-mark"><Icon name="meadow" /></span>
+                {en.appName} <span className="brand-sub">{en.appSub}</span>
+              </a>
               {state.role === 'farmer' && !submitted && (
                 <span className="deadline" title={home.deadline(left, derived.scenario.window.closes)}>
-                  {home.daysLeft(left)} <Note kind="eu_mandate" />
+                  <Icon name="deadline" size="sm" /> {home.daysLeft(left)} <Note kind="eu_mandate" />
                 </span>
               )}
               {state.role === 'advisor' && (
@@ -54,7 +58,11 @@ export function App() {
                   <a href="#/welcome" aria-current={screen !== 'queue' ? 'page' : undefined}>{advisor.nav.milan}</a>
                 </nav>
               )}
-              {savedAt && <span className="saved">{en.saved}</span>}
+              {savedAt && (
+                <span className="saved">
+                  <Icon name="check" size="sm" /> {en.saved}
+                </span>
+              )}
               <PrototypeControls />
             </header>
             <main className="main">{main}</main>

@@ -20,6 +20,7 @@ export const formatTime = (iso: string) => timeFmt.format(new Date(iso))
 
 export const en = {
   appName: 'GSA',
+  appSub: 'Subsidies 2026',
   saved: 'Saved',
   yes: 'Yes',
   no: 'No',
@@ -525,7 +526,8 @@ export const finish = {
   submit: {
     title: 'Sign and submit',
     readyTitle: 'Ready to submit. The state still checks:',
-    blockedTitle: 'Before you submit:',
+    blockedTitle: 'Before you submit',
+    allAnswered: 'Everything is answered',
     goTo: (what: string) => `Go to: ${what}`,
     awaitingTitle: 'Waiting for a check',
     awaitingNote: 'You can still submit',
@@ -673,7 +675,7 @@ export const steps = {
   left: (n: number) => (n === 1 ? '1 thing left' : `${n} things left`),
   done: 'Done',
   /** Under each part's name in the stepper. */
-  status: (left: number, waiting: number) => (left ? `${left} to do` : waiting ? 'Done, waiting for a check' : 'Done'),
+  status: (left: number, waiting: number) => (left ? `${left} to do` : waiting ? `Done, ${waiting} waiting` : 'Done'),
 }
 
 export const bar = {

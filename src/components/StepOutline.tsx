@@ -1,6 +1,7 @@
 import { home } from '../copy/en'
 import { KINDS } from '../logic/application'
 import { Icon } from '../ui/Icon'
+import { Progress } from '../ui/Progress'
 import { StatusBadge } from '../ui/StatusBadge'
 import type { Flow } from './useApplicationFlow'
 
@@ -13,8 +14,11 @@ export function StepOutline({ flow }: { flow: Flow }) {
   if (!tasks.length) return null
   const count = (status: string) => tasks.filter((t) => t.status === status).length
   return (
-    <section className="outline" aria-labelledby="outline-title">
-      <h3 id="outline-title" className="group-title">{home.outline(count('action_required'), count('complete'), count('awaiting_verification'))}</h3>
+    <section className="step-outline" aria-labelledby="outline-title">
+      <div className="outline-head">
+        <h3 id="outline-title" className="group-title">{home.outline(count('action_required'), count('complete'), count('awaiting_verification'))}</h3>
+        <Progress value={tasks.length - count('action_required')} max={tasks.length} />
+      </div>
       {KINDS.map((kind) => {
         const ofKind = tasks.filter((t) => t.kind === kind)
         if (!ofKind.length) return null

@@ -12,7 +12,7 @@ import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Compare, KeyValues, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Note } from '../ui/Note'
-import { RadioGroup } from '../ui/RadioGroup'
+import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { useApp, type AppCtx } from './AppContext'
 import { SendToJelena } from './SendToJelena'
 import { MeasureBody, MeasuresBody, measureSummary } from './MeasureBodies'
@@ -50,13 +50,11 @@ function Question({ legend, hint, value, answer, onAnswer }: { legend: string; h
     )
   }
   return (
-    <RadioGroup
-      inline
+    <ChoiceButtons
       legend={legend}
       hint={hint}
       options={YES_NO}
-      value={value}
-      onChange={(a) => {
+      onChoose={(a) => {
         onAnswer(a)
         setEditing(false)
         requestAnimationFrame(() => line.current?.focus())
@@ -272,7 +270,7 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
           </Suspense>
         </div>
         {unanswered && (
-          <figcaption className="text" data-variant="small">
+          <figcaption className="hint">
             {id === 'field_river' ? tasks.river.source : id === 'field_upper' ? tasks.upper.source : tasks.road.source}{' '}
             {id === 'field_river' && (
               <>
@@ -482,7 +480,7 @@ function MeadowBody() {
           <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}. ${m.context}`} />
         </Suspense>
         {a.answer === null && (
-          <figcaption className="text" data-variant="small">
+          <figcaption className="hint">
             {m.source} <Note kind="ai" />
           </figcaption>
         )}

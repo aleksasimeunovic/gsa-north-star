@@ -17,7 +17,7 @@ This file is the single source of truth. Read it fully before planning. If somet
 
 **No AI interface.** AI works behind the scenes (detecting changes, matching records, plain-language explanations). Eligibility, money, official records and declarations stay predictable and auditable. Milan never has to care what uses AI.
 
-**Look (round 6, Aleksa):** a modern light theme after shadcn/ui: a light grey page, white cards, Geist, lucide icons, zinc neutrals, status colours always paired with text and an icon shape. Hierarchy: the next action is the most visible thing on every screen. Spend most effort on flow, states, copy, logic, accessibility and edge behaviour. **Maps are real:** every map is an OpenLayers map on the real satellite photo near Bečanj that Milan can pan and zoom, because the photo is the evidence and he recognises his land on it.
+**Look (round 7, Aleksa):** clean, modern and sleek, with little on screen, built on shadcn/ui (Tailwind + Radix) in natural colours: warm stone page, white cards, forest green for action, wheat for attention, sky for "waiting for someone else". Every task and part has its own lucide icon. Status colours are always paired with text and an icon shape. Hierarchy: the next action is the most visible thing on every screen. **Maps are real:** every map is an OpenLayers map on the real satellite photo near Bečanj that Milan can pan and zoom, because the photo is the evidence and he recognises his land on it.
 
 **Less cognitive effort, not fewer steps (Earl, 23 Oct call).** Welcome back must feel like a guided experience, not a dashboard of problems. At any moment the screen answers three questions in this order: what to do next, what is already done, what can wait.
 
@@ -26,8 +26,8 @@ This file is the single source of truth. Read it fully before planning. If somet
 - Work **one phase at a time** (section 10). For a round of feedback, decide and build; don't ask Aleksa to approve plans. Recommend when a design question comes up, log it in `docs/decisions.md`.
 - Keep chat output short: no long explanations, no recaps of code you wrote. At the end of a phase, list what to click to check it, in under 10 lines.
 - Don't re-read files you just wrote. Make small, targeted edits.
-- Ask before adding any dependency beyond those in section 9 (OpenLayers and lucide-react are approved).
-- CSS in three files: `src/ui/theme/tokens.css` (tokens), `src/ui/theme/primitives.css` (primitives), `src/styles.css` (layout and composed pieces). No CSS frameworks.
+- Ask before adding any dependency beyond those in section 9 (OpenLayers, lucide-react, Tailwind, shadcn/ui's Radix packages, class-variance-authority, clsx and tailwind-merge are approved).
+- Styling: `src/index.css` (Tailwind and the shadcn theme tokens), shadcn components in `src/ui/shadcn/`, our primitives in `src/ui/` (Tailwind classes), composed pieces and page layout in `src/styles.css` (plain CSS on the same tokens).
 - Tests: only unit tests for the pure logic in `src/logic/`. No UI tests. Update the tests when a rule changes.
 - Commit at the end of each phase with a one-line message.
 - When Aleksa links a doc, board or email, use it to understand intent. Don't copy its text into the UI or into this file.
@@ -261,7 +261,7 @@ Prototype controls (floating "Prototype" button, clearly separated panel, "Not p
 
 ## 11. Design system
 
-Tokens follow shadcn/ui's semantic names (`--background`, `--card`, `--primary`, `--muted-foreground`, `--border`, `--ring`, `--radius`, plus `--success`, `--warning`, `--info`, `--meta` for status and design notes) in two tiers: primitives, then semantic. Components only use the semantic tier, so a theme is one file. Icons come from lucide (shadcn's set) through `src/ui/Icon.tsx`, by meaning. So:
+shadcn/ui components live in `src/ui/shadcn/` and our semantic primitives in `src/ui/` wrap them. Tokens follow shadcn/ui's semantic names (`--background`, `--card`, `--primary`, `--muted-foreground`, `--border`, `--ring`, `--radius`, plus `--success`, `--warning`, `--info`, `--meta` for status and design notes) in two tiers: primitives, then semantic. Components only use the semantic tier, so a theme is one file. Icons come from lucide (shadcn's set) through `src/ui/Icon.tsx`, by meaning. So:
 - Components outside `src/ui/` never contain styling decisions; they compose primitives.
 - Primitives use semantic props (`variant="primary"`, `status="awaiting_verification"`, `density="comfortable" | "compact"`), not visual ones.
 - Density is a context: Milan = comfortable (larger targets), Jelena = compact. Same components.

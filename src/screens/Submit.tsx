@@ -3,12 +3,12 @@ import { bar, finish } from '../copy/en'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
+import { StepReview } from '../components/StepReview'
 import { FarmPicture } from '../components/FarmPicture'
 import { taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
-import { Banner } from '../ui/Banner'
-import { Button } from '../ui/Button'
+import { Icon } from '../ui/Icon'
 import { Card } from '../ui/Card'
 import { Checkbox } from '../ui/Checkbox'
 import { Stack, Text } from '../ui/Layout'
@@ -30,20 +30,7 @@ export function SubmitStep({ flow }: { flow: Flow }) {
 
   return (
     <Stack gap="lg">
-      {left.length > 0 && (
-        <Banner tone="attention">
-          <Stack gap="sm">
-            <Text variant="strong">{finish.submit.blockedTitle}</Text>
-            <ul className="plain-list">
-              {left.map((id) => (
-                <li key={id}>
-                  <Button variant="link" onClick={() => goTo(id)}>{flow.title(id)}</Button>
-                </li>
-              ))}
-            </ul>
-          </Stack>
-        </Banner>
-      )}
+      <StepReview flow={flow} title={left.length ? finish.submit.blockedTitle : finish.submit.allAnswered} />
 
       <div className="submit-picture">
         <FarmPicture detailed />
@@ -71,9 +58,11 @@ export function SubmitStep({ flow }: { flow: Flow }) {
           {/* Ready is not approved: what the state still checks, in the same heading. */}
           <section aria-labelledby="checks-title">
             <h3 id="checks-title">{finish.submit.readyTitle}</h3>
-            <ul>
+            <ul className="check-list">
               {STATE_CHECKS.map((c) => (
-                <li key={c}>{finish.submit.checks[c]}</li>
+                <li key={c}>
+                  <Icon name="same" /> {finish.submit.checks[c]}
+                </li>
               ))}
             </ul>
           </section>
