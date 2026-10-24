@@ -124,12 +124,13 @@ The application is one list of named tasks. It is also the readiness view.
 | A possible change is detected | Its own task, opening on the evidence and the question |
 | An answer makes work unnecessary | That work leaves the list with a one-line reason |
 | A task is done | It collapses to one line with its outcome |
-| Something hasn't changed | One task, "Same as last year": each thing named (his other fields, details, measures, receipts) with a one-line summary, openable, confirmed in one tap. Never a miscellaneous bucket. Anything he changes leaves it as its own task |
+| Something GSA already has | A named confirmation in its own part ("To confirm"): your details, cows that calved, your other fields, your input receipts, each shown and confirmed in one tap. Never a miscellaneous bucket. A correction asked for waits for a check where it is |
 | Something needs attention | Its own named task, e.g. "Upload your input receipts" |
 | A rule doesn't apply to his farm | Left out |
 | Choosing measures | Ones that fit come first, with the reason; full list stays |
-| Always | Exactly one next action, at the top, open, the most visible thing on screen. Below it what's done ("Waiting for a check (n)", "Done (n)" collapsed), then what can wait, quieter and collapsed |
-| What can wait | Three kinds of work, each its own section, label and visual treatment, changes first because they shape the rest: **Changes GSA found** (something may differ from the records; he verifies it), **Your choices this year** (decided every year regardless of changes, e.g. measures and what they need), **Same as last year** (existing information he confirms is still true) |
+| Parts | The application comes in parts, in order: Your details, Animals, Land, Measures, Documents, Check and submit. Every task belongs to the part it is about. A part his farm has nothing for is left out (no animals, no Animals part). The point is not fewer steps; it is less effort per step and better, more personal questions |
+| Always | Inside the open part, exactly one next action, open, the most visible thing on screen. Once the part is done, "Continue: <next part>" is the primary action |
+| Kinds of work | Within each part, three kinds, each with its own label and mark, changes first because they shape the rest: **Changes GSA found** (something may differ from the records; he verifies it), **Your choices** (decided every year regardless of changes, e.g. measures and what they need), **To confirm** (what GSA already has; he confirms it is still right) |
 | Advisor signs in | Same list, denser, what needs action first |
 
 Structure by what Milan has to accomplish, not by the smallest step count. There is no target number of steps.
@@ -154,6 +155,12 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Estimate:** 9.00 × 18,000 + 14 × 20,000 = 442,000. After the road: 8.88 × 18,000 + 280,000 = 439,840, shown as "about 440,000", with "The road took 0.12 ha. About 2,200 dinars less." Splitting the river field doesn't change the estimate (same rate per hectare). Label: "Estimated subsidy based on current information", covers only this application, assumptions visible on request (rates, eligible area, cows that calved), "The payment still depends on inspection and final eligibility."
 - **Jelena:** PSSS advisor in Čačak, about 20 applications a day, studied agronomy.
 - **Neighbour (advisor mode only):** has a parcel still in his late father's name; he sent just that problem to Jelena. Referring it to the land registry means waiting for that office, not handled.
+- **Added in round 5 at Aleksa's request (more problems per part):**
+  - Your details: the bank closed the farm account ending 0417 on 3 March 2026 and reported a new one in his name ending 2291 (Yes: paid there; No: he types the 18-digit account). The population register shows his grandson Luka Dragović now living at his address (member of the farm household? Doesn't change the estimate).
+  - Animals: the 14 cows that calved come from the animal registry; he confirms them, seeing they pay about 280,000 dinars, or asks the registry to check.
+  - Land: satellite photos saw no mowing or grazing on the meadow last summer. Yes, he will mow or graze it; No leaves the meadow out (1.50 ha, about 27,000 dinars less).
+  - Measures: GSA suggests green cover over winter (satellite: the wheat fields, river and upper, stayed green all winter; those fields are filled in for him) and artificial insemination (registry: 9 inseminations by his vet since last April). Never a rate.
+  - Documents: Diesel receipt.jpg is too blurry to read the amount; he sends a new photo.
 
 ## 8. Milan's journey (one connected flow)
 
@@ -161,14 +168,17 @@ Earl: one connected experience, not separate features. How the application chang
 
 **Flow:** welcome back → changes → land → readiness → submit → receipt. All of it reads as one application list that shrinks to what's left.
 
-### Welcome back: one obvious next action
-- Greeting, deadline and days left. Active farmer status only when it needs renewing.
-- Leads with a single primary action, open at the top: the first is "Start with your herd". Everything else stays reachable but doesn't compete: what's done below it (one closed line, "Done (n), n waiting for a check"), then "Later" with one closed line per kind of work (Changes GSA found, Your choices this year, Same as last year, each with a count). Opened, a line names its tasks; picking one moves it to the top slot.
-- **Progressive disclosure:** on arrival the screen shows only the deadline, the next action, the closed lines, a one-line farm summary and the estimate's amount. Detail appears when it becomes relevant (what an answer changed, what's done) or when he asks for it (each kind's tasks, each part of his farm, how the estimate is worked out).
+### Welcome back: a stepper, and one obvious next action in each part
+- Greeting, deadline and days left, then the **stepper**: every part of his application, which one is open, which are done, how much is left in each (numbers only on a phone, with the open part named underneath). Any part can be opened.
+- Inside a part: the one next task on the left, full width of its column ("Start with your account for payments" first); on the right, where "Your farm" used to be, the part at a glance: done ✓, now →, later ○, grouped by kind. On a phone it sits below. A finished part says so, with "Continue: <next part>".
+- Back in the action bar goes to the previous part; forward is the next task in the part, then the next part.
+- **Progressive disclosure:** only the open part is shown; what an answer changed appears after the answer; detail opens on request.
+- **More problems, asked as GSA's best guess** (at Aleksa's request): each part has several, and each is asked from a record so the usual answer is one tap; work appears only on No (see section 7).
 - After each decision, the next action takes the top slot, done work collapses, and work that isn't needed leaves with a one-line reason ("After your answer", with Undo). The application visibly changing after each answer is the defining interaction.
 - A short transition may explain each change (respect `prefers-reduced-motion`). Changes are announced with `aria-live`.
-- **"Your farm this year"** is one line (land, cattle, pigs) with how much he has confirmed ("From government records", "2 of 4 confirmed by you", "Confirmed by you"); "See each part" shows, per item, "From government records", "Confirmed by you" or "Waiting for a check", and the labels change as he confirms.
-- The estimate stays a separate block at body size, never mixed with status: the amount, then, while anything that could change it is unanswered, that it is provisional and what it waits for. What changed it and how it is worked out open on request. On desktop, the farm and the estimate sit in a sticky right column.
+- **"Your farm this year" and the estimate are on the last part, Check and submit**, beside what waits for a check, what the state still checks and the declaration. The farm shows every part and where it comes from ("From government records", "Confirmed by you", "Waiting for a check").
+- The estimate stays a separate block at body size, never mixed with status: the amount, then, while anything that could change it is unanswered, that it is provisional and what it waits for. What changed it and how it is worked out open on request.
+- The page is light grey and every element on it white, so cards, the outline and the stepper stand out.
 
 ### Change cards: evidence before the question
 A card is one line of context (what GSA found, and where), the evidence, the question and the actions. The changes are different kinds of decision, so the cards differ:
@@ -190,8 +200,8 @@ Paths:
 - **Split:** GSA proposes the line along the area the satellite flagged. Milan accepts it or nudges it: large handles, drag the whole line. No precise point placement with a finger. Keep the guardrail (line clipped to eligible land), live areas (on the map and in the crop labels), undo (shown once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
 
 ### Readiness through submit
-- Readiness is the application list itself, with a one-line summary on every screen ("4 things left before you can submit" / "Ready to submit"), text plus icon shape, announced politely. "Same as last year" counts as one.
-- Unchanged things sit in "Same as last year": his details (records, read-only, incl. active farmer, "Records wrong? Ask for a correction"), his measures (fitting ones first, each with the amount worked out, *your part*, why it fits), his receipts (the files listed). Missing receipts become their own task, "Upload your input receipts".
+- Readiness is the application list itself, with a one-line summary on every screen ("16 things left before you can submit" / "Ready to submit"), text plus icon shape, announced politely; the stepper shows what's left per part.
+- Confirmations sit in their part: his details (records, read-only, incl. active farmer, "Records wrong? Ask for a correction"), cows that calved, his other fields, his receipts (the files listed). Measures are chosen in Measures (fitting ones first, each with the amount worked out, *your part*, why it fits). Missing receipts become their own task, "Upload your input receipts".
 - **Submit:** what's complete, what's awaiting verification and that it doesn't block (assumption), what the state will still check, declaration signed once ("I confirm under full criminal and material liability..."), one clear Submit button. If blocked: say exactly what's left, linked, and make that the primary action.
 - **Receipt:** "Your application is submitted." Date, reference number, what happens next, what's still awaiting verification, how to amend until the national deadline. Never ambiguous.
 - Renewal gate (scenario): first screen says renewal is needed, links to it (mock), lets him prepare but not submit; after renewal: "You're an active farmer. Next: your application."
@@ -243,6 +253,8 @@ Round 1 (foundation, four moments, prototype controls, advisor mode, deploy) and
 
 Round 4 (Aleksa, 23 Oct): no stepper; an "After your answer" panel with Undo, a readiness drawer, a sticky action bar (Back, readiness, forward), GSA's next-step line, "Your farm this year", pigs and the neighbour overlap, OpenLayers drawing, 10 measures with their own inputs, Jelena's question and Milan's reply. See `docs/decisions.md` 55 to 68.
 
+Round 5, third pass (Aleksa, decisions 88 onwards): a stepper with the parts of the application, each part with its own problems and confirmations, the part's outline on the right, "Your farm this year" and the estimate on the last part, a grey page with white elements, more problems per part.
+
 Round 5 (Earl, 23 Oct call; decisions 69 onwards): one obvious next action at the top of Welcome back; three kinds of work kept apart (changes, choices, confirmations); map changes show the place with "Review this boundary"; real OpenLayers maps on the satellite photo everywhere; records vs confirmed in "Your farm this year"; a provisional estimate.
 
 Prototype controls (floating "Prototype" button, clearly separated panel, "Not part of GSA"): scenario, sign in as Milan or Jelena, show design notes, reset. No new scenarios.
@@ -288,6 +300,7 @@ Aleksa will later apply a design system based on Untitled UI (React, Tailwind, R
 - [ ] Every problem P1 to P12 is answered somewhere in the flow.
 - [ ] `src/copy/en.ts` is shorter than at the start of the round.
 - [ ] Welcome back leads with one obvious next action; the screen answers what to do next, what's done, what can wait, in that order, and discloses the rest progressively.
+- [ ] A stepper shows the parts of his application, generated around his farm; each part has its own problems, asked so the usual answer is one tap; his farm and the estimate are on the last part.
 - [ ] Changes GSA found, your choices and same-as-last-year are separate sections with their own labels and treatment.
 - [ ] River, road and upper field cards show the place on the satellite photo; "Review this boundary" opens a map he can pan and zoom.
 - [ ] "Your farm this year" says per item what comes from records and what he confirmed; the estimate says when it is provisional.

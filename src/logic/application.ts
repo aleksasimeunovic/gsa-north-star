@@ -3,16 +3,15 @@ import type { Answers, Role } from '../state/actions'
 import { isRenewed } from './readiness'
 import type { Item, ItemDetail, ItemId, Status } from './status'
 
-/** "Same as last year": one task for the unchanged things, confirmed in one tap. */
-export type TaskId = 'renewal' | 'same' | ItemId
+export type TaskId = 'renewal' | ItemId
 
 /**
  * Work a change could still need. It starts as possible; his answer makes it needed or
  * removes it with a reason. This is what makes the application shrink as he answers.
  */
-export type WorkId = 'river_split' | 'road_redraw' | 'upper_redraw' | 'pigs_declare'
+export type WorkId = 'river_split' | 'road_redraw' | 'upper_redraw' | 'pigs_declare' | 'bank_enter'
 export type WorkState = 'possible' | 'needed' | 'done' | 'removed'
-export type RemovalReason = 'one_crop' | 'edge_moved' | 'kept_until_checked' | 'neighbour_line' | 'household'
+export type RemovalReason = 'one_crop' | 'edge_moved' | 'kept_until_checked' | 'neighbour_line' | 'household' | 'bank_sent'
 
 export interface Work {
   id: WorkId
@@ -20,39 +19,71 @@ export interface Work {
   reason?: RemovalReason
 }
 
+/**
+ * Three kinds of work, kept apart because they ask different things of him:
+ * - change: GSA found something that may differ from the records, and he verifies it
+ * - choice: what he decides or adds for this year regardless of changes (measures, what they need)
+ * - same: what GSA already has and he confirms is still right
+ */
+export type TaskKind = 'change' | 'choice' | 'same'
+export const KINDS: TaskKind[] = ['change', 'choice', 'same']
+
+/**
+ * The parts of his application, in the order he goes through them. A part his farm has nothing for
+ * is left out; "check and submit" is always last.
+ */
+export type StepId = 'details' | 'animals' | 'land' | 'measures' | 'documents' | 'submit'
+export const STEPS: StepId[] = ['details', 'animals', 'land', 'measures', 'documents', 'submit']
+
 export interface Task {
   id: TaskId
   status: Status
+  kind: TaskKind
+  step: StepId
   work: Work[]
-  /** For the "same as last year" task: the things it confirms. */
-  members?: ItemId[]
+}
+
+export interface Step {
+  id: StepId
+  tasks: Task[]
+  /** How many tasks in this part still need him. */
+  left: number
+  waiting: number
 }
 
 export interface ApplicationList {
-  /** What needs him, in order: renewal, the changes, anything needing attention, then "same as last year". */
+  /** What needs him, in order: by part, then changes, choices and confirmations. */
   todo: Task[]
   /** His answer differs from a record; only that part waits. */
   waiting: Task[]
   done: Task[]
   /** The one next action. 'submit' once nothing needs his action; null once submitted. */
   next: TaskId | 'submit' | null
+  steps: Step[]
   density: 'comfortable' | 'compact'
 }
 
-export const CHANGE_TASKS: TaskId[] = ['herd', 'pigs', 'field_river', 'field_road', 'field_upper']
+export const CHANGE_TASKS: TaskId[] = ['bank', 'household', 'herd', 'pigs', 'receipt_unreadable']
 
-/**
- * Three kinds of work, kept apart because they ask different things of him:
- * - change: GSA found something that may differ from the records, and he verifies it
- * - choice: what he decides or adds for this year regardless of changes (measures, what they need)
- * - same: what he confirms is still true
- */
-export type TaskKind = 'change' | 'choice' | 'same'
-export const KINDS: TaskKind[] = ['change', 'choice', 'same']
+/** Things GSA already has; he confirms them while they only need confirming. */
+const CONFIRMABLE = new Set<ItemDetail>([
+  'fields_same', 'fields_confirmed', 'details_to_confirm', 'details_confirmed',
+  'receipts_to_confirm', 'receipts_confirmed', 'calvings_to_confirm', 'calvings_confirmed',
+])
 
-export function taskKind(id: TaskId): TaskKind {
-  if (CHANGE_TASKS.includes(id)) return 'change'
-  if (id === 'same') return 'same'
+export function stepOf(id: TaskId): StepId {
+  if (id === 'renewal' || id === 'bank' || id === 'household' || id === 'details') return 'details'
+  if (id === 'herd' || id === 'pigs' || id === 'calvings') return 'animals'
+  if (id.startsWith('field_') || id === 'fields_other') return 'land'
+  if (id === 'measures' || id.startsWith('measure_') || id.startsWith('suggest_')) return 'measures'
+  return 'documents'
+}
+
+function kindOf(id: TaskId, item: Item | undefined): TaskKind {
+  if (CHANGE_TASKS.includes(id) || id.startsWith('field_') || id.startsWith('suggest_')) return 'change'
+  if (item && CONFIRMABLE.has(item.detail)) return 'same'
+  // A correction asked for on something he was confirming stays where it was.
+  if (id === 'details' || id === 'calvings') return 'same'
   return 'choice'
 }
 
@@ -60,28 +91,13 @@ export function taskKind(id: TaskId): TaskKind {
 export const isMapChange = (id: TaskId): id is 'field_river' | 'field_road' | 'field_upper' =>
   id === 'field_river' || id === 'field_road' || id === 'field_upper'
 
-/**
- * What can wait: everything that still needs him apart from the one in front of him, by kind,
- * changes first because they shape the rest.
- */
-export function laterByKind(list: ApplicationList, focus: TaskId | 'submit' | null): Record<TaskKind, Task[]> {
-  const later = list.todo.filter((t) => t.id !== focus)
-  return {
-    change: later.filter((t) => taskKind(t.id) === 'change'),
-    choice: later.filter((t) => taskKind(t.id) === 'choice'),
-    same: later.filter((t) => taskKind(t.id) === 'same'),
-  }
-}
-
-/** Unchanged things go in "same as last year" while they only need confirming. */
-const CONFIRMABLE = new Set<ItemDetail>([
-  'fields_same', 'fields_confirmed', 'details_to_confirm', 'details_confirmed',
-  'receipts_to_confirm', 'receipts_confirmed',
-])
-
 const removed = (id: WorkId, reason: RemovalReason): Work => ({ id, state: 'removed', reason })
 
 function workFor(id: TaskId, a: Answers, item: Item | undefined): Work[] {
+  if (id === 'bank') {
+    if (a.bank.answer === 'yes') return [removed('bank_enter', 'bank_sent')]
+    return [{ id: 'bank_enter', state: a.bank.answer === 'no' ? (item?.status === 'complete' ? 'done' : 'needed') : 'possible' }]
+  }
   if (id === 'pigs') {
     if (a.pigs.answer === 'yes') return [removed('pigs_declare', 'household')]
     return [{ id: 'pigs_declare', state: a.pigs.answer === 'no' ? 'done' : 'possible' }]
@@ -104,33 +120,42 @@ function workFor(id: TaskId, a: Answers, item: Item | undefined): Work[] {
   return []
 }
 
+// Renewal is a gate, so it comes first; then by part, then changes, choices and confirmations.
+const order = (t: Task) => (t.id === 'renewal' ? -1 : STEPS.indexOf(t.step) * 10 + KINDS.indexOf(t.kind))
+
 /**
- * The application is one list of named tasks, generated around the farm. It is also the readiness view:
- * what needs him first, then what waits for a check, then what's done.
- * - Nothing on the farm for a task: not in the list (no animals, no herd task).
+ * The application is generated around the farm, in parts. It is also the readiness view.
+ * - Nothing on the farm for a task: not in the list (no animals, no herd task, no animals part).
  * - A detected change: its own task, with the work it could still need.
- * - Unchanged things: one named "same as last year" task, each thing listed. Anything needing attention: its own task.
+ * - What GSA already has: a confirmation in its own part. Anything needing attention: its own task.
+ * - Within a part: changes first, then choices, then confirmations.
  * - Exactly one next action: the first task that needs him, then submit.
  * - Advisor: same list, denser.
  */
 export function applicationList(s: Scenario, a: Answers, items: Item[], role: Role): ApplicationList {
   const all: Task[] = []
-  if (!s.renewed) all.push({ id: 'renewal', status: isRenewed(s, a) ? 'complete' : 'action_required', work: [] })
-  const same = items.filter((i) => CONFIRMABLE.has(i.detail))
-  const own = items.filter((i) => !CONFIRMABLE.has(i.detail))
-  for (const item of own) all.push({ id: item.id, status: item.status, work: workFor(item.id, a, item) })
-  if (same.length) {
-    const open = same.some((i) => i.status === 'action_required')
-    all.push({ id: 'same', status: open ? 'action_required' : 'complete', work: [], members: same.map((i) => i.id) })
-  }
+  if (!s.renewed) all.push({ id: 'renewal', status: isRenewed(s, a) ? 'complete' : 'action_required', kind: 'choice', step: 'details', work: [] })
+  for (const item of items) all.push({ id: item.id, status: item.status, kind: kindOf(item.id, item), step: stepOf(item.id), work: workFor(item.id, a, item) })
+  // Stable sort: by part, then by kind, keeping the order within each.
+  const sorted = all.map((t, i) => [t, i] as const).sort(([x, i], [y, j]) => order(x) - order(y) || i - j).map(([t]) => t)
 
-  const todo = all.filter((t) => t.status === 'action_required')
+  const todo = sorted.filter((t) => t.status === 'action_required')
   const next = a.submittedAt ? null : (todo[0]?.id ?? 'submit')
+  const steps: Step[] = STEPS.map((id) => {
+    const tasks = sorted.filter((t) => t.step === id)
+    return {
+      id,
+      tasks,
+      left: tasks.filter((t) => t.status === 'action_required').length,
+      waiting: tasks.filter((t) => t.status === 'awaiting_verification').length,
+    }
+  }).filter((st) => st.tasks.length > 0 || st.id === 'submit')
   return {
     todo,
-    waiting: all.filter((t) => t.status === 'awaiting_verification'),
-    done: all.filter((t) => t.status === 'complete'),
+    waiting: sorted.filter((t) => t.status === 'awaiting_verification'),
+    done: sorted.filter((t) => t.status === 'complete'),
     next,
+    steps,
     density: role === 'advisor' ? 'compact' : 'comfortable',
   }
 }

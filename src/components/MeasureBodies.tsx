@@ -34,9 +34,10 @@ function amountLine(m: Measure, d: Derived): string {
 }
 
 /** Before he chooses: whether a measure adds work, and what. */
-const needsLine = (m: Measure) => {
+export const needsLine = (m: Measure, filledFor: Requirement['kind'][] = []) => {
   // Only what's always asked; a follow-up question appears once an answer makes it needed.
-  const always = userReqs(m).filter((r) => !r.when)
+  // What GSA fills in for him (the fields the satellite saw) isn't his to add.
+  const always = userReqs(m).filter((r) => !r.when && !filledFor.includes(r.kind))
   return always.length ? t.youAdd(always.map((r) => req(r).short).join(', ')) : t.fromRecords
 }
 

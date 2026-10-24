@@ -1,7 +1,7 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
 import type { Crop, FieldId, MeasureId, Office, ScenarioId } from '../data/scenarios'
 import type { DrawingProblem } from '../logic/geometry'
-import type { RemovalReason, TaskKind, WorkId } from '../logic/application'
+import type { RemovalReason, StepId, TaskKind, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
 import type { ApplicationState } from '../logic/readiness'
@@ -72,13 +72,14 @@ export const en = {
     overlap_removed: (ha: string, about: string) => `Your neighbour's line took ${ha}, about ${about} less`,
     redrawn: (ha: string, about: string) => `Your new line takes ${ha} off the field, about ${about} less`,
     overlap_pending: (ha: string, about: string) => `Until the line is checked, ${ha} doesn't count, about ${about} less`,
+    meadow_out: (ha: string, about: string) => `The meadow is left out this year: ${ha}, about ${about} less`,
   } satisfies Record<ImpactReason, (ha: string, about: string) => string>,
 
   estimate: {
     title: 'Estimated subsidy',
     basis: "Based on what you've told us",
     provisional: (what: string) => `Provisional until you've checked ${what}`,
-    pending: { field_road: 'the road field', field_upper: 'the upper field', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
+    pending: { field_road: 'the road field', field_upper: 'the upper field', field_meadow: 'the meadow', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
     about: (d: string) => `About ${d}`,
     unpriced: (n: number) => (n === 1 ? 'Plus 1 more measure, worked out after checks' : `Plus ${n} more measures, worked out after checks`),
     caveat: 'The payment still depends on inspection and final eligibility.',
@@ -100,10 +101,13 @@ export const home = {
   deadline: (n: number, closes: string) =>
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   activeFarmer: "You're an active farmer for this year",
-  kind: { change: 'Changes GSA found', choice: 'Your choices this year', same: 'Same as last year' } satisfies Record<TaskKind, string>,
-  later: 'Later',
-  handled: (done: number, waiting: number) =>
-    done && waiting ? `Done (${done}), ${waiting} waiting for a check` : done ? `Done (${done})` : `Waiting for a check (${waiting})`,
+  kind: { change: 'Changes GSA found', choice: 'Your choices', same: 'To confirm' } satisfies Record<TaskKind, string>,
+  stepDone: (step: string) => `${step}: done`,
+  stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check, and you can still submit' : `${n} things wait for a check, and you can still submit`),
+  continueTo: (step: string) => `Continue: ${step}`,
+  now: 'Now',
+  todo: 'To do',
+  outline: (done: number, total: number) => `${done} of ${total} done`,
   submitted: 'Your application is submitted.',
   seeReceipt: 'See your receipt',
   // Said to screen readers when the list changes.
@@ -129,7 +133,13 @@ export const after = {
 export const tasks = {
   title: {
     renewal: 'Renew your active farmer status',
-    same: 'Same as last year',
+    bank: 'Account for payments',
+    household: 'Your household',
+    calvings: 'Cows that calved',
+    field_meadow: 'Meadow',
+    suggest_green_cover: 'Green cover over winter',
+    suggest_insemination: 'Artificial insemination',
+    receipt_unreadable: 'Diesel receipt',
     herd: 'Your herd',
     pigs: 'Your pigs',
     field_river: 'River field',
@@ -143,18 +153,28 @@ export const tasks = {
   } as Record<string, string>,
   receiptsMissingTitle: 'Upload your input receipts',
   /** The one next action, said as what to do. */
-  start: { herd: 'Start with your herd', renewal: 'Start by renewing your active farmer status' } as Record<string, string>,
+  start: { bank: 'Start with your account for payments', renewal: 'Start by renewing your active farmer status' } as Record<string, string>,
   action: {
     renewal: 'Renew your active farmer status',
+    bank: 'Check your account for payments',
+    household: 'Check your household',
+    details: 'Confirm your details',
+    calvings: 'Confirm your cows that calved',
+    field_meadow: 'Check the meadow',
+    fields_other: 'Confirm your other fields',
+    suggest_green_cover: 'Green cover may fit your farm',
+    suggest_insemination: 'Insemination support may fit your farm',
+    receipt_unreadable: 'Send a clearer diesel receipt',
     herd: 'Check your herd',
     pigs: 'Tell us about your pigs',
     field_river: 'Check the river field',
     field_road: 'Check the road field',
     field_upper: 'Check the upper field',
     measures: 'Choose your measures',
-    receipts: 'Upload your input receipts',
-    same: "Confirm what's the same as last year",
+    receipts: 'Confirm your input receipts',
   } as Record<string, string>,
+  /** A confirmation's one button. */
+  confirm: "Yes, that's right",
   measureAction: (name: string) => `${name}: add what it needs`,
   review: 'Review this boundary',
   reviewSplit: 'Split the field on the map',
@@ -165,6 +185,7 @@ export const tasks = {
     road_redraw: 'Redraw the field',
     upper_redraw: 'Redraw the field',
     pigs_declare: 'Declare your pigs',
+    bank_enter: 'Type in your account number',
   } satisfies Record<WorkId, string>,
   reason: {
     one_crop: 'one crop in the whole field (the state may still check it)',
@@ -172,7 +193,69 @@ export const tasks = {
     kept_until_checked: 'we asked for a correction instead',
     neighbour_line: "GSA moved your edge to your neighbour's line",
     household: "household pigs don't need declaring",
+    bank_sent: 'your bank sent the new one',
   } satisfies Record<RemovalReason, string>,
+
+  bank: {
+    context: (date: string) => `Your bank closed the account payments went to on ${date}`,
+    registered: 'In the farm register',
+    fromBank: 'New account from your bank',
+    ending: (n: string) => `…${n}`,
+    closed: 'Closed',
+    question: (n: string) => `Should your subsidy be paid into the account ending ${n}?`,
+    answerYes: 'Yes, the new account',
+    answerNo: 'No, another account',
+    label: 'Account number for payments',
+    hint: '18 digits, for example 160-0000000123456-78',
+    error: 'Enter the 18 digits of the account number',
+    save: 'Save the account',
+    paidTo: (n: string) => `Paid into the account ending ${n}`,
+  },
+
+  household: {
+    context: (relation: string, name: string) => `The population register shows your ${relation} ${name} now lives at your address`,
+    question: (first: string) => `Is ${first} a member of your farm household?`,
+    hint: "It doesn't change your estimate",
+    added: (name: string) => `${name} added to your household`,
+    notMember: 'Not a member of your farm household',
+  },
+
+  calvings: {
+    lead: (n: number) => `${n} cows calved between 1 April 2025 and 31 March 2026`,
+    source: 'From the animal registry',
+    wrong: 'Not right? Ask the registry to check',
+    asked: (n: number) => `The registry will check, and ${n} counts until then`,
+    done: (n: number) => `${n} cows calved`,
+  },
+
+  meadow: {
+    context: 'The satellite photos show no mowing or grazing on the meadow last summer',
+    source: 'Source: satellite photos',
+    question: 'Will you mow or graze the meadow this year?',
+    hint: 'A meadow needs mowing or grazing at least once a year to get support',
+    answerYes: 'Yes, I will',
+    answerNo: 'No, not this year',
+    kept: "You'll mow or graze it, the state may check it",
+    out: (ha: string) => `Left out this year, ${ha} less`,
+  },
+
+  suggest: {
+    green_cover: 'The satellite photos show your wheat fields stayed green all winter',
+    insemination: (n: number) => `The animal registry shows ${n} inseminations by your vet since last April`,
+    question: { green_cover: 'Add green cover to your measures?', insemination: 'Add artificial insemination to your measures?' } as Record<string, string>,
+    filled: (fields: string) => `We'll fill in ${fields} for you`,
+    answerYes: 'Yes, add it',
+    answerNo: 'No, leave it out',
+    added: 'Added to your measures',
+    declined: 'Left out',
+  },
+
+  unreadable: {
+    context: (name: string) => `${name} is too blurry to read the amount`,
+    hint: 'Take a new photo in good light, with the whole receipt in it',
+    upload: 'Choose a new photo',
+    done: (name: string) => `New photo of ${name} attached`,
+  },
 
   renewal: {
     body: 'You need it to submit, and you can prepare everything else first',
@@ -270,9 +353,6 @@ export const tasks = {
     row: (area: string, crop: string) => `${area}, ${crop}`,
   },
 
-  same: {
-    confirm: 'Yes, all the same as last year',
-  },
 
   details: {
     holder: 'Holder',
@@ -376,14 +456,12 @@ export const tasks = {
     files: (n: number) => `${n} files attached`,
   },
 
-  submit: {
-    go: 'Sign and submit',
-  },
 }
 
 export const map = {
   title: 'Map of your fields',
   flag: 'Looks different',
+  notMown: 'No mowing seen',
   strip: (ha: string) => `${ha} now road`,
   edge: "The line stops at your field's edge, because land outside it can't get support",
   neighbour: "Neighbour's field",
@@ -553,7 +631,11 @@ export const advisor = {
     undo: 'Undid his last answer',
     farmer_replied: 'Farmer replied',
     confirm: 'Confirmed part of the application',
-    confirm_same: 'Confirmed what is the same as last year',
+    answer_bank: 'Answered the account question',
+    set_bank_account: 'Gave his account for payments',
+    answer_household: 'Answered the household question',
+    answer_meadow: 'Answered the meadow question',
+    answer_suggestion: 'Answered a suggested measure',
     attach_document: 'Attached a document',
     renew: 'Renewed active farmer status',
     sign_declarations: 'Signed the declaration',
@@ -575,11 +657,26 @@ export const readinessCopy = {
   change: 'Change',
 }
 
+/** The parts of his application. */
+export const steps = {
+  label: 'Parts of your application',
+  name: {
+    details: 'Your details',
+    animals: 'Animals',
+    land: 'Land',
+    measures: 'Measures',
+    documents: 'Documents',
+    submit: 'Check and submit',
+  } satisfies Record<StepId, string>,
+  of: (i: number, n: number) => `Step ${i} of ${n}`,
+  left: (n: number) => (n === 1 ? '1 thing left' : `${n} things left`),
+  done: 'Done',
+}
+
 export const bar = {
   label: 'Application',
   back: 'Back',
   next: (task: string) => `Next: ${task}`,
-  toSubmit: 'Sign and submit',
 }
 
 /** His farm as GSA knows it now, updated by every answer. */

@@ -98,6 +98,10 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     const b = bounds(signal.flagPolygon)
     label(notes, { x: (b.minX + b.maxX) / 2, y: b.maxY - 4 }, copy.flag, { above: true, size: 14 })
   }
+  if (signal?.kind === 'not_mown' && focused) {
+    shape(focused.polygon, 'flag')
+    label(notes, centroid(focused.polygon), copy.notMown)
+  }
   if (signal?.kind === 'road_strip' && !opts.editing) {
     shape(signal.stripPolygon, 'strip')
     const b = bounds(signal.stripPolygon)

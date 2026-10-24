@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { finish } from '../copy/en'
+import { bar, finish } from '../copy/en'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
+import { EstimateBlock } from '../components/EstimateBlock'
+import { FarmPicture } from '../components/FarmPicture'
 import { taskSummary } from '../components/TaskBodies'
-import { taskTitle } from '../components/useApplicationFlow'
+import type { Flow } from '../components/useApplicationFlow'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
@@ -13,58 +15,51 @@ import { Stack, Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
 
-/** Unambiguous submission: what's left or what waits, what the state checks, one primary action. */
-export function Submit() {
+/**
+ * The last part: his farm as he is about to declare it and the estimate, then an unambiguous submission:
+ * what's left or what waits, what the state still checks, the declaration, one primary action.
+ */
+export function SubmitStep({ flow }: { flow: Flow }) {
   const { derived, state, dispatch, go } = useApp()
   const { readiness } = derived
   const signed = state.answers.declarationsSigned
   const check = submitCheck(readiness, signed)
   const [tried, setTried] = useState(false)
-  const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
   const left = derived.list.todo.map((t) => t.id)
-  const goTo = (id: string) => (id === 'renewal' ? go('renewal') : go('welcome', `task-${id}`))
+  const goTo = (id: (typeof left)[number]) => (id === 'renewal' ? go('renewal') : flow.show(id))
 
   return (
     <Stack gap="lg">
-      <h1 tabIndex={-1}>{finish.submit.title}</h1>
-
-      {left.length > 0 ? (
-        <>
-          <Banner tone="attention">
-            <Stack gap="sm">
-              <Text variant="strong">{finish.submit.blockedTitle}</Text>
-              <ul className="plain-list">
-                {left.map((id) => (
-                  <li key={id}>
-                    <Button variant="link" onClick={() => goTo(id)}>{taskTitle(id, receiptsMissing)}</Button>
-                  </li>
-                ))}
-              </ul>
-            </Stack>
-          </Banner>
-        </>
-      ) : (
-        // Ready is not approved: what the state still checks, in the same heading.
-        <section aria-labelledby="checks-title">
-          <h2 id="checks-title">{finish.submit.readyTitle}</h2>
-          <ul>
-            {STATE_CHECKS.map((c) => (
-              <li key={c}>{finish.submit.checks[c]}</li>
-            ))}
-          </ul>
-        </section>
+      {left.length > 0 && (
+        <Banner tone="attention">
+          <Stack gap="sm">
+            <Text variant="strong">{finish.submit.blockedTitle}</Text>
+            <ul className="plain-list">
+              {left.map((id) => (
+                <li key={id}>
+                  <Button variant="link" onClick={() => goTo(id)}>{flow.title(id)}</Button>
+                </li>
+              ))}
+            </ul>
+          </Stack>
+        </Banner>
       )}
+
+      <div className="submit-picture">
+        <FarmPicture detailed />
+        <EstimateBlock />
+      </div>
 
       {readiness.awaiting.length > 0 && (
         <section aria-labelledby="awaiting-title">
-          <h2 id="awaiting-title">{finish.submit.awaitingTitle}</h2>
+          <h3 id="awaiting-title">{finish.submit.awaitingTitle}</h3>
           <Text variant="secondary">
             {finish.submit.awaitingNote} <Note kind="assumption" />
           </Text>
           <ul className="plain-list">
             {readiness.awaiting.map((i) => (
               <li key={i.id}>
-                <StatusBadge status={i.status} iconOnly /> <strong>{taskTitle(i.id)}</strong>: {taskSummary(i.id, derived, state)}
+                <StatusBadge status={i.status} iconOnly /> <strong>{flow.title(i.id)}</strong>: {taskSummary(i.id, derived, state)}
               </li>
             ))}
           </ul>
@@ -73,7 +68,16 @@ export function Submit() {
 
       {left.length === 0 && (
         <>
-          <Card title={finish.submit.declarationTitle} headingLevel={2}>
+          {/* Ready is not approved: what the state still checks, in the same heading. */}
+          <section aria-labelledby="checks-title">
+            <h3 id="checks-title">{finish.submit.readyTitle}</h3>
+            <ul>
+              {STATE_CHECKS.map((c) => (
+                <li key={c}>{finish.submit.checks[c]}</li>
+              ))}
+            </ul>
+          </section>
+          <Card title={finish.submit.declarationTitle} headingLevel={3}>
             <span id="declaration" tabIndex={-1} />
             {tried && !signed && (
               <Text variant="strong" as="p">
@@ -87,10 +91,10 @@ export function Submit() {
 
       {/* One primary action: submit when nothing is left, otherwise the first thing that is. */}
       <ActionBar
-        back={{ label: finish.submit.back, onClick: () => go('welcome') }}
+        back={flow.back && { label: bar.back, onClick: flow.back }}
         forward={
           left.length > 0
-            ? { label: finish.submit.goTo(taskTitle(left[0], receiptsMissing)), onClick: () => goTo(left[0]) }
+            ? { label: finish.submit.goTo(flow.title(left[0])), onClick: () => goTo(left[0]) }
             : {
                 label: finish.submit.button,
                 onClick: () => {
@@ -105,7 +109,7 @@ export function Submit() {
               }
         }
         forwardIsPrimary
-        onPick={(id) => goTo(id)}
+        onPick={(id) => flow.show(id)}
       />
     </Stack>
   )

@@ -4,13 +4,14 @@ Where each problem and each item in CLAUDE.md section 13 can be checked. Start f
 
 ## A five-minute path for Earl
 
-1. **Arrival:** one task at the top, open: "Start with your herd" (41 last year, 38 in the registry). Below it, "Later" with three closed lines: ◆ Changes GSA found (4), ■ Your choices this year (1), = Same as last year (3); open one to see its tasks, pick one to move it to the top. "Your farm this year" is one line, "From government records" ("See each part" for the detail); the estimate shows its amount and says it is provisional until the road field, the upper field and the measures are checked.
-2. **Your herd:** Yes moves the herd into "Done" and puts the pigs in the top slot. Or No, enter 41: registry 38 | you 41, waiting for a check, the herd stays on top with "Next: Your pigs" as the primary button, and the farm says "41 cattle, the registry shows 38 · Waiting for a check". Undo takes the answer back.
-3. **River field:** the card shows the satellite photo with the lower part dotted, "Looks different". "Review this boundary" opens a map he can drag, zoom, see the whole farm on and enlarge. Yes, two crops: GSA's line where the photo changes, with large handles on the photo; pick sunflowers for the bottom, confirm. Back on Welcome back, "After your answer" shows the two crops and the road field is on top.
-4. **Road field:** the card shows the hatched 0.12 ha strip along the real road, "1.80 ha becomes 1.68 ha" and "About 2,200 dinars less" before anything is asked. On the review map: "Yes, it's road now" or "No, it's still my field".
-5. **Upper field:** the neighbour's field and the 0.10 ha both of you declared. "No, the strip is mine" opens drawing on the same photo: drag a corner, the dashed farmland line stops it and says why, Undo, Save.
-6. **Choose your measures, then Same as last year** (your other fields on a map he can move, details, receipts) → "Ready to submit" on top → Sign and submit → receipt. Every line of the farm now says "Confirmed by you"; the estimate is no longer provisional.
-7. **Jelena (Prototype → Jelena):** grouped by state; on Milan's case the primary button is "Ask the animal registry to check"; Milan's herd then says "Jelena asked the animal registry to check."
+1. **Arrival:** greeting, deadline, then the stepper: Your details, Animals, Land, Measures, Documents, Check and submit. Your details is open: "Start with your account for payments" (the bank closed …0417 and sent …2291). On the right, the part at a glance: ◆ Account for payments (now), Your household; = Your details. The page is grey, everything on it white.
+2. **Your details:** Yes, the new account: "After your answer" says typing in an account number is no longer needed. Your household (grandson Luka, doesn't change the estimate), then Your details, "Yes, that's right". "Your details: done", Continue: Animals.
+3. **Animals:** Your herd (41 last year, 38 in the registry; No, 41 keeps both and the herd waits for a check), your pigs, then the 14 cows that calved with what they pay, confirmed in one tap.
+4. **Land:** each field change shows the place on the satellite photo. "Review this boundary" opens a map he can move: the river field (two crops: GSA's line where the photo changes), the road strip (0.12 ha, about 2,200 dinars less), the upper field (the neighbour's line, or drawing his own). The meadow: no mowing seen; Yes, he will mow or graze it. Then his other field, confirmed.
+5. **Measures:** green cover may fit (the wheat fields stayed green all winter, those fields filled in for him), insemination may fit (9 inseminations in the registry), then choose your measures; a measure he adds asks only for what's still missing.
+6. **Documents:** the diesel receipt is too blurry, send a new photo; then the receipts, confirmed.
+7. **Check and submit:** "Your farm this year" with every part "Confirmed by you", the estimate, what the state still checks, the declaration, Submit application → receipt.
+8. **Jelena (Prototype → Jelena):** grouped by state; on Milan's case the primary button is "Ask the animal registry to check"; Milan's herd then says "Jelena asked the animal registry to check."
 
 ## Problems P1 to P12
 
@@ -24,7 +25,7 @@ Where each problem and each item in CLAUDE.md section 13 can be checked. Start f
 | P6 | River field: GSA proposes the split line from the satellite flag; Milan nudges it or uses the slider. |
 | P7 | "Changes GSA found", each with its evidence (numbers, or the place on the photo) before the question. |
 | P8 | Herd disagreement → "Send this to Jelena". His item then shows Jelena's state. |
-| P9 | One next action always on top, what's done and what can wait below; autosave with "Saved". |
+| P9 | A stepper with the parts of his application, one next action in each, the part's outline beside it; autosave with "Saved". |
 | P10 | Status by section (needs you / waiting for a check / done), payment impact apart, "Ready to submit", what the state still checks. |
 | P11 | The whole flow can be finished alone, from Welcome back to the receipt. |
 | P12 | Jelena: only escalated problems, grouped by who acts next, likely next step primary. |

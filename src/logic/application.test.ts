@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
 import { startingAnswers } from '../state/store'
-import { allTasks, applicationList, laterByKind, newlyRemoved, taskKind, type WorkId } from './application'
+import { allTasks, applicationList, newlyRemoved, stepOf, type WorkId } from './application'
 import { deriveItems } from './status'
 import { halfSplit, ready, run } from './testUtils'
 
@@ -10,14 +10,19 @@ const work = (r: R, id: WorkId) => allTasks(r.list).flatMap((t) => t.work).find(
 const ids = (tasks: { id: string }[]) => tasks.map((t) => t.id)
 
 describe('application list', () => {
-  it('opens on the five changes, choosing measures, then "same as last year" as one named task', () => {
-    const r = run('second_year')
-    expect(ids(r.list.todo)).toEqual(['herd', 'pigs', 'field_river', 'field_road', 'field_upper', 'measures', 'same'])
-    expect(r.list.todo[6].members).toEqual(['fields_other', 'details', 'receipts'])
+  it('opens on every part in order: details, animals, land, measures, documents; changes first in each', () => {
+    expect(ids(run('second_year').list.todo)).toEqual([
+      'bank', 'household', 'details',
+      'herd', 'pigs', 'calvings',
+      'field_river', 'field_road', 'field_upper', 'field_meadow', 'fields_other',
+      'suggest_green_cover', 'suggest_insemination', 'measures',
+      'receipt_unreadable', 'receipts',
+    ])
   })
 
   it('starts from the full set of possible work', () => {
     expect(allTasks(run('second_year').list).flatMap((t) => t.work).map((w) => [w.id, w.state])).toEqual([
+      ['bank_enter', 'possible'],
       ['pigs_declare', 'possible'],
       ['river_split', 'possible'],
       ['road_redraw', 'possible'],
@@ -25,16 +30,21 @@ describe('application list', () => {
     ])
   })
 
+  it('bank: the new account from the bank removes typing one in, with a reason', () => {
+    expect(work(run('second_year', { type: 'answer_bank', answer: 'yes' }), 'bank_enter')).toEqual({ id: 'bank_enter', state: 'removed', reason: 'bank_sent' })
+    expect(work(run('second_year', { type: 'answer_bank', answer: 'no' }), 'bank_enter').state).toBe('needed')
+  })
+
   it('ordered by status: what needs him, then waiting for a check, then done', () => {
     const r = run('second_year', { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }, { type: 'answer_road', answer: 'yes' })
-    expect(ids(r.list.todo)).toEqual(['pigs', 'field_river', 'field_upper', 'measures', 'same'])
+    expect(ids(r.list.todo)).not.toContain('herd')
     expect(ids(r.list.waiting)).toEqual(['herd'])
     expect(ids(r.list.done)).toEqual(['field_road'])
   })
 
   it('the first task that needs him is the one next action', () => {
-    expect(run('second_year').list.next).toBe('herd')
-    expect(run('second_year', { type: 'answer_herd', answer: 'yes' }).list.next).toBe('pigs')
+    expect(run('second_year').list.next).toBe('bank')
+    expect(run('second_year', { type: 'answer_bank', answer: 'yes' }).list.next).toBe('household')
   })
 
   it('pigs: household only removes declaring them, with a reason', () => {
@@ -70,10 +80,10 @@ describe('application list', () => {
     expect(ids(allTasks(r.list))).not.toContain('measure_plant_production')
   })
 
-  it('a correction to his details takes it out of "same as last year" into its own task', () => {
+  it('a correction to his details waits for a check and stays among the confirmations', () => {
     const r = run('second_year', { type: 'ask_record_check', itemId: 'details' })
-    expect(r.list.todo.find((t) => t.id === 'same')!.members).toEqual(['fields_other', 'receipts'])
     expect(ids(r.list.waiting)).toEqual(['details'])
+    expect(r.list.waiting[0].kind).toBe('same')
   })
 
   it('submit is next once nothing needs his action; nothing is next once submitted', () => {
@@ -87,18 +97,19 @@ describe('application list', () => {
     expect(ids(run('second_year_not_renewed', { type: 'renew' }).list.done)).toEqual(['renewal'])
   })
 
-  it('missing receipts are their own task, outside "same as last year"', () => {
+  it('missing receipts are something to do, not a confirmation, and there is no unreadable one', () => {
     const r = run('missing_document')
-    expect(ids(r.list.todo)).toContain('receipts')
-    expect(r.list.todo.find((t) => t.id === 'same')!.members).not.toContain('receipts')
+    expect(r.list.todo.find((t) => t.id === 'receipts')!.kind).toBe('choice')
+    expect(ids(allTasks(r.list))).not.toContain('receipt_unreadable')
   })
 
-  it('no animals: no herd or pigs task', () => {
+  it('no animals: no herd, pigs or calvings task, and no animals part', () => {
     const s = { ...SCENARIOS.second_year, herd: null, pigs: null }
     const a = startingAnswers(s)
-    const todo = ids(applicationList(s, a, deriveItems(s, a), 'farmer').todo)
-    expect(todo).not.toContain('herd')
-    expect(todo).not.toContain('pigs')
+    const list = applicationList(s, a, deriveItems(s, a), 'farmer')
+    expect(ids(list.todo)).not.toContain('herd')
+    expect(ids(list.todo)).not.toContain('calvings')
+    expect(list.steps.map((st) => st.id)).toEqual(['details', 'land', 'measures', 'documents', 'submit'])
   })
 
   it('advisor: same list, denser', () => {
@@ -115,24 +126,35 @@ describe('application list', () => {
   })
 })
 
-describe('three kinds of work', () => {
-  it('keeps changes GSA found, his choices this year and what is the same as last year apart', () => {
-    expect(['herd', 'pigs', 'field_river', 'field_road', 'field_upper'].map((id) => taskKind(id as never))).toEqual(Array(5).fill('change'))
-    expect(taskKind('measures')).toBe('choice')
-    expect(taskKind('measure_certified_seed')).toBe('choice')
-    expect(taskKind('same')).toBe('same')
+describe('parts and kinds of work', () => {
+  it('six parts, each with what is left in it; check and submit is always last', () => {
+    const steps = run('second_year').list.steps
+    expect(steps.map((st) => [st.id, st.left])).toEqual([
+      ['details', 3],
+      ['animals', 3],
+      ['land', 5],
+      ['measures', 3],
+      ['documents', 2],
+      ['submit', 0],
+    ])
   })
 
-  it('what can wait leaves out the task in front of him, changes first', () => {
-    const r = run('second_year')
-    const later = laterByKind(r.list, r.list.next)
-    expect(ids(later.change)).toEqual(['pigs', 'field_river', 'field_road', 'field_upper'])
-    expect(ids(later.choice)).toEqual(['measures'])
-    expect(ids(later.same)).toEqual(['same'])
+  it('every task belongs to the part it is about', () => {
+    expect(['bank', 'household', 'details', 'renewal'].map((id) => stepOf(id as never))).toEqual(Array(4).fill('details'))
+    expect(['herd', 'pigs', 'calvings'].map((id) => stepOf(id as never))).toEqual(Array(3).fill('animals'))
+    expect(['field_meadow', 'fields_other'].map((id) => stepOf(id as never))).toEqual(['land', 'land'])
+    expect(['suggest_green_cover', 'measures', 'measure_diesel'].map((id) => stepOf(id as never))).toEqual(Array(3).fill('measures'))
+    expect(['receipt_unreadable', 'receipts'].map((id) => stepOf(id as never))).toEqual(['documents', 'documents'])
   })
 
-  it('missing receipts are something to do this year, not a confirmation', () => {
-    const r = run('missing_document')
-    expect(ids(laterByKind(r.list, r.list.next).choice)).toEqual(['measures', 'receipts'])
+  it('keeps changes GSA found, his choices and what he confirms apart, changes first in each part', () => {
+    const kinds = Object.fromEntries(allTasks(run('second_year').list).map((t) => [t.id, t.kind]))
+    expect(kinds).toMatchObject({
+      bank: 'change', household: 'change', details: 'same',
+      herd: 'change', pigs: 'change', calvings: 'same',
+      field_meadow: 'change', fields_other: 'same',
+      suggest_insemination: 'change', measures: 'choice',
+      receipt_unreadable: 'change', receipts: 'same',
+    })
   })
 })

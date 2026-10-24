@@ -6,7 +6,6 @@ import { AdvisorQueue } from './screens/AdvisorQueue'
 import { Application } from './screens/Application'
 import { Receipt } from './screens/Receipt'
 import { Renewal } from './screens/Renewal'
-import { Submit } from './screens/Submit'
 import { useHashScreen } from './state/useHashScreen'
 import { useStore } from './state/store'
 import { DensityContext } from './ui/Density'
@@ -25,11 +24,14 @@ export function App() {
       <Renewal />
     ) : (screen === 'receipt' || screen === 'submit') && submitted ? (
       <Receipt />
-    ) : screen === 'submit' ? (
-      <Submit />
     ) : (
-      // Reviewing a boundary is part of the application screen, so what his answer changed is there when he returns.
-      <Application key={state.scenarioId} target={screen === 'review' ? null : target} review={screen === 'review' ? target : null} />
+      // Reviewing a boundary and the last part (check and submit) belong to the application screen,
+      // so what his answer changed is there when he returns.
+      <Application
+        key={state.scenarioId}
+        target={screen === 'submit' ? 'step-submit' : screen === 'review' ? null : target}
+        review={screen === 'review' ? target : null}
+      />
     )
 
   return (

@@ -16,7 +16,7 @@ export function EstimateBlock() {
   const provisional = e.pending.length > 0
 
   return (
-    <Card id="estimate" title={en.estimate.title} headingLevel={2} emphasis="low">
+    <Card id="estimate" title={en.estimate.title} headingLevel={3} emphasis="low">
       <Stack gap="sm">
         <Text variant="strong">
           <span aria-live="polite">{en.estimate.about(formatDinars(e.aboutDinars))}</span>

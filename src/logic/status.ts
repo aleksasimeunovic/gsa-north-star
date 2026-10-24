@@ -4,10 +4,23 @@ import type { CaseState } from './advisor'
 import { overlapHa, polygonAreaHa, roundHa, splitPolygon } from './geometry'
 
 export type Status = 'complete' | 'action_required' | 'awaiting_verification'
-export type ItemId = 'herd' | 'pigs' | `field_${FieldId}` | 'fields_other' | 'details' | 'measures' | `measure_${MeasureId}` | 'receipts'
+export type ItemId =
+  | 'bank'
+  | 'household'
+  | 'details'
+  | 'herd'
+  | 'pigs'
+  | 'calvings'
+  | `field_${FieldId}`
+  | 'fields_other'
+  | `suggest_${MeasureId}`
+  | 'measures'
+  | `measure_${MeasureId}`
+  | 'receipt_unreadable'
+  | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
-export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'redrawn' | 'overlap_pending'
+export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'redrawn' | 'overlap_pending' | 'meadow_out'
 export interface PaymentImpact {
   amountDinars: number // negative = less payment
   areaHa: number
@@ -15,6 +28,24 @@ export interface PaymentImpact {
 }
 
 export type ItemDetail =
+  | 'bank_unanswered'
+  | 'bank_needs_account'
+  | 'bank_new' // payments go to the new account the bank reported
+  | 'bank_own' // he gave the account himself
+  | 'household_unanswered'
+  | 'household_added'
+  | 'household_not_member'
+  | 'calvings_to_confirm'
+  | 'calvings_confirmed'
+  | 'calvings_check' // he asked the registry to check
+  | 'meadow_unanswered'
+  | 'meadow_kept'
+  | 'meadow_out'
+  | 'suggestion_unanswered'
+  | 'suggestion_added'
+  | 'suggestion_declined'
+  | 'receipt_unreadable'
+  | 'receipt_replaced'
   | 'herd_unanswered'
   | 'herd_needs_count'
   | 'herd_confirmed'
@@ -133,6 +164,12 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
       conflict: { record: roundHa(field.areaHa - signal.stripHa), his: field.areaHa, owner: 'land_map' },
     }
   }
+  if (signal?.kind === 'not_mown') {
+    // Satellite only flags; he says whether he will look after it. No leaves the meadow out, with its payment.
+    if (a.meadow.answer === null) return { id: itemId, status: 'action_required', detail: 'meadow_unanswered' }
+    if (a.meadow.answer === 'yes') return { id: itemId, status: 'complete', detail: 'meadow_kept' }
+    return { id: itemId, status: 'complete', detail: 'meadow_out', paymentImpact: impactOf(s, field.areaHa, 'meadow_out') }
+  }
   if (signal?.kind === 'overlap') {
     const u = a.upper
     if (u.answer === null) return { id: itemId, status: 'action_required', detail: 'upper_unanswered' }
@@ -188,32 +225,85 @@ function measureItems(s: Scenario, a: Answers): Item[] {
   return items
 }
 
-const confirmedItem = (id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDetail): Item =>
-  done ? { id, status: 'complete', detail: ok } : { id, status: 'action_required', detail: todo }
+/** The bank closed the account payments go to and reported a new one: one question, his own account only if No. */
+function bankItem(s: Scenario, a: Answers): Item | null {
+  if (!s.generalData.account) return null
+  const { answer, account } = a.bank
+  if (answer === null) return { id: 'bank', status: 'action_required', detail: 'bank_unanswered' }
+  if (answer === 'yes') return { id: 'bank', status: 'complete', detail: 'bank_new' }
+  return account ? { id: 'bank', status: 'complete', detail: 'bank_own' } : { id: 'bank', status: 'action_required', detail: 'bank_needs_account' }
+}
+
+function householdItem(s: Scenario, a: Answers): Item | null {
+  if (!s.generalData.resident) return null
+  if (a.household.answer === null) return { id: 'household', status: 'action_required', detail: 'household_unanswered' }
+  return { id: 'household', status: 'complete', detail: a.household.answer === 'yes' ? 'household_added' : 'household_not_member' }
+}
+
+/** The calvings the cow payment is worked out on, from the registry: confirmed, or checked by the registry. */
+function calvingsItem(s: Scenario, a: Answers): Item | null {
+  if (!s.herd) return null
+  if (a.requests.some((r) => r.kind === 'record_check' && r.itemId === 'calvings')) return { id: 'calvings', status: 'awaiting_verification', detail: 'calvings_check' }
+  return confirmedItem('calvings', a.confirmed.includes('calvings'), 'calvings_to_confirm', 'calvings_confirmed')
+}
+
+/** A measure GSA suggests from evidence: one question; yes puts it among his measures. */
+function suggestionItems(s: Scenario, a: Answers): Item[] {
+  return s.suggestions
+    .filter((g) => s.measures.find((m) => m.id === g.measureId)?.fits)
+    .map((g) => {
+      const id = `suggest_${g.measureId}` as const
+      const answer = a.suggestions[g.measureId]
+      if (!answer) return { id, status: 'action_required', detail: 'suggestion_unanswered' }
+      return { id, status: 'complete', detail: answer === 'yes' ? 'suggestion_added' : 'suggestion_declined' }
+    })
+}
+
+function confirmedItem(id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDetail): Item {
+  return done ? { id, status: 'complete', detail: ok } : { id, status: 'action_required', detail: todo }
+}
 
 /**
  * Every item gets a status. Pure: derived from scenario + answers, never stored.
  * Unchanged things are named confirmations, not complete by default: he hasn't seen them yet.
  */
 export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = null): Item[] {
-  const herd = herdItem(s, a, jelena)
-  const pigs = pigsItem(s, a)
-  const changed = s.fields.flatMap((f) => changedFieldItem(s, a, f.id) ?? [])
-  const unchanged = s.fields.filter((f) => !f.signal)
-  const items: Item[] = [...(herd ? [herd] : []), ...(pigs ? [pigs] : []), ...changed]
+  const items: Item[] = []
+  const add = (i: Item | null) => i && items.push(i)
 
-  if (unchanged.length) items.push(confirmedItem('fields_other', a.confirmed.includes('fields_other'), 'fields_same', 'fields_confirmed'))
-
+  // Your details
+  add(bankItem(s, a))
+  add(householdItem(s, a))
   const correction = a.requests.some((r) => r.kind === 'record_check' && r.itemId === 'details')
-  items.push(
+  add(
     correction
       ? { id: 'details', status: 'awaiting_verification', detail: 'details_correction' }
       : confirmedItem('details', a.confirmed.includes('details'), 'details_to_confirm', 'details_confirmed'),
   )
-  items.push(...measureItems(s, a))
 
+  // Animals
+  add(herdItem(s, a, jelena))
+  add(pigsItem(s, a))
+  add(calvingsItem(s, a))
+
+  // Land
+  s.fields.forEach((f) => add(changedFieldItem(s, a, f.id)))
+  if (s.fields.some((f) => !f.signal)) add(confirmedItem('fields_other', a.confirmed.includes('fields_other'), 'fields_same', 'fields_confirmed'))
+
+  // Measures
+  items.push(...suggestionItems(s, a), ...measureItems(s, a))
+
+  // Documents
   const missing = s.documents.some((d) => !d.attached && !a.attachedDocuments.includes(d.id))
-  items.push(
+  const unreadable = s.documents.find((d) => d.attached && d.unreadable)
+  if (unreadable) {
+    add(
+      a.attachedDocuments.includes('unreadable_receipt')
+        ? { id: 'receipt_unreadable', status: 'complete', detail: 'receipt_replaced' }
+        : { id: 'receipt_unreadable', status: 'action_required', detail: 'receipt_unreadable' },
+    )
+  }
+  add(
     missing
       ? { id: 'receipts', status: 'action_required', detail: 'receipts_missing' }
       : confirmedItem('receipts', a.confirmed.includes('receipts'), 'receipts_to_confirm', 'receipts_confirmed'),

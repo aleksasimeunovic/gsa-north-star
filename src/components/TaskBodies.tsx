@@ -1,5 +1,5 @@
 import { lazy, Suspense, useRef, useState } from 'react'
-import { draw, en, finish, formatDate, formatDinars, formatHa, home, map, tasks } from '../copy/en'
+import { draw, en, finish, formatDate, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
 import { milanCaseState } from '../logic/advisor'
 import { isMapChange, type Task, type TaskId } from '../logic/application'
@@ -8,7 +8,6 @@ import { impactOf, type Item, type ItemId } from '../logic/status'
 import type { Confirmable, YesNo } from '../state/actions'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
-import { Disclosure } from '../ui/Disclosure'
 import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Compare, KeyValues, Stack, Text, VisuallyHidden } from '../ui/Layout'
@@ -16,7 +15,7 @@ import { Note } from '../ui/Note'
 import { RadioGroup } from '../ui/RadioGroup'
 import { useApp, type AppCtx } from './AppContext'
 import { SendToJelena } from './SendToJelena'
-import { MeasureBody, MeasuresBody, measureSummary } from './MeasureBodies'
+import { MeasureBody, MeasuresBody, measureSummary, needsLine } from './MeasureBodies'
 
 // Maps load only when one is shown.
 export const FarmMap = lazy(() => import('./map/FarmMap'))
@@ -288,6 +287,14 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
   )
 }
 
+/** Confirming something GSA already has: one button, gone once confirmed. */
+function ConfirmButton({ id, what }: { id: ItemId; what: Confirmable }) {
+  const { derived, dispatch } = useApp()
+  if (itemOf(derived, id).status !== 'action_required') return null
+  return <Primary onClick={() => dispatch({ type: 'confirm', what })}>{tasks.confirm}</Primary>
+}
+
+/** Fields with nothing new: on the map he can move around, named, confirmed in one tap. */
 function FieldsBody() {
   const { derived } = useApp()
   const s = derived.scenario
@@ -304,6 +311,7 @@ function FieldsBody() {
           </li>
         ))}
       </ul>
+      <ConfirmButton id="fields_other" what="fields_other" />
     </Stack>
   )
 }
@@ -321,6 +329,7 @@ function DetailsBody() {
           { label: tasks.details.active, value: tasks.details.activeYes },
         ]}
       />
+      <ConfirmButton id="details" what="details" />
       {asked ? (
         <Text>{tasks.details.asked}</Text>
       ) : (
@@ -345,66 +354,209 @@ function ReceiptsBody() {
   }
   const files = derived.scenario.documents.flatMap((d) => d.files)
   return (
-    <ul className="plain-list">
-      {files.map((f) => (
-        <li key={f.name}>
-          <strong>{f.name}</strong> {formatDate(f.date)}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-/** Everything that hasn't changed, each thing named and openable, confirmed in one tap. */
-function SameBody({ task }: { task: Task }) {
-  const { derived, state, dispatch } = useApp()
-  const members = task.members ?? []
-  const toConfirm = members.filter((id) => itemOf(derived, id).status === 'action_required')
-  return (
     <Stack gap="sm">
-      <ul className="same-list">
-        {members.map((id) => (
-          <li key={id}>
-            <Disclosure label={tasks.title[id]}>
-              <MemberBody id={id} />
-            </Disclosure>
-            <p className="task-summary">{taskSummary(id, derived, state)}</p>
+      <ul className="plain-list">
+        {files.map((f) => (
+          <li key={f.name}>
+            <strong>{f.name}</strong> {formatDate(f.date)}
           </li>
         ))}
       </ul>
-      {toConfirm.length > 0 && (
-        <Primary onClick={() => dispatch({ type: 'confirm_same', what: toConfirm as Confirmable[] })}>{tasks.same.confirm}</Primary>
+      <ConfirmButton id="receipts" what="receipts" />
+    </Stack>
+  )
+}
+
+/** The bank closed the account payments went to and sent the new one: one question instead of typing a number. */
+function BankBody() {
+  const { derived, state, dispatch } = useApp()
+  const acc = derived.scenario.generalData.account!
+  const a = state.answers.bank
+  const b = tasks.bank
+  const [value, setValue] = useState(a.account ?? '')
+  const [error, setError] = useState<string | undefined>()
+  const save = () => {
+    const digits = value.replace(/\D/g, '')
+    if (digits.length !== 18) return setError(b.error)
+    setError(undefined)
+    dispatch({ type: 'set_bank_account', account: digits })
+  }
+  return (
+    <Stack gap="sm">
+      <Compare
+        items={[
+          { label: b.registered, value: <>{b.ending(acc.ending)} <Text variant="small" as="span">{b.closed}</Text></> },
+          { label: b.fromBank, value: b.ending(acc.newEnding) },
+        ]}
+      />
+      <Question
+        legend={b.question(acc.newEnding)}
+        value={a.answer}
+        answer={a.answer === 'yes' ? b.answerYes : b.answerNo}
+        onAnswer={(answer) => dispatch({ type: 'answer_bank', answer })}
+      />
+      {a.answer === 'no' && a.account === null && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            save()
+          }}
+        >
+          <Stack gap="sm">
+            <Field label={b.label} hint={b.hint} error={error} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} />
+            <div>
+              <Button type="submit" variant="primary">{b.save}</Button>
+            </div>
+          </Stack>
+        </form>
       )}
     </Stack>
   )
 }
 
-function MemberBody({ id }: { id: ItemId }) {
-  if (id === 'fields_other') return <FieldsBody />
-  if (id === 'details') return <DetailsBody />
-  return <ReceiptsBody />
+/** Someone the population register now shows at his address: one question. */
+function HouseholdBody() {
+  const { derived, state, dispatch } = useApp()
+  const r = derived.scenario.generalData.resident!
+  const a = state.answers.household
+  return (
+    <Stack gap="sm">
+      <Text>{tasks.household.context(r.relation, r.name)}</Text>
+      <Question
+        legend={tasks.household.question(r.name.split(' ')[0])}
+        hint={tasks.household.hint}
+        value={a.answer}
+        onAnswer={(answer) => dispatch({ type: 'answer_household', answer })}
+      />
+    </Stack>
+  )
+}
+
+/** The calvings the cow payment is worked out on: the registry's number and what it pays, confirmed in one tap. */
+function CalvingsBody() {
+  const { derived, dispatch } = useApp()
+  const herd = derived.scenario.herd!
+  const item = itemOf(derived, 'calvings')
+  const rate = derived.scenario.measures.find((m) => m.id === 'cows_raising_calves')?.rateDinars ?? 0
+  return (
+    <Stack gap="sm">
+      <Compare items={[{ label: tasks.calvings.source, value: herd.cowsCalved }]} />
+      <Text>{tasks.calvings.lead(herd.cowsCalved)}</Text>
+      <Text variant="small">{tasks.measures.cows(herd.cowsCalved, formatNumber(rate), formatDinars(herd.cowsCalved * rate))}</Text>
+      <ConfirmButton id="calvings" what="calvings" />
+      {item.status === 'awaiting_verification' ? (
+        <Text>{tasks.calvings.asked(herd.cowsCalved)}</Text>
+      ) : (
+        item.status === 'action_required' && (
+          <div>
+            <Button variant="link" onClick={() => dispatch({ type: 'ask_record_check', itemId: 'calvings' })}>{tasks.calvings.wrong}</Button>
+          </div>
+        )
+      )}
+    </Stack>
+  )
+}
+
+/** The satellite saw no mowing or grazing: the place, the rule in one line, and whether he will look after it. */
+function MeadowBody() {
+  const { derived, state, dispatch } = useApp()
+  const a = state.answers.meadow
+  const m = tasks.meadow
+  return (
+    <Stack gap="sm">
+      {a.answer === null && <Text>{m.context}</Text>}
+      <figure className="map-figure">
+        <Suspense fallback={<MapFallback mode="preview" />}>
+          <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}. ${m.context}`} />
+        </Suspense>
+        {a.answer === null && (
+          <figcaption className="text" data-variant="small">
+            {m.source} <Note kind="ai" />
+          </figcaption>
+        )}
+      </figure>
+      <Question
+        legend={m.question}
+        hint={m.hint}
+        value={a.answer}
+        answer={a.answer === 'yes' ? m.answerYes : m.answerNo}
+        onAnswer={(answer) => dispatch({ type: 'answer_meadow', answer })}
+      />
+    </Stack>
+  )
+}
+
+/**
+ * A measure GSA thinks may fit, with the evidence it found, what it pays, why it fits and what it would
+ * need from him. One question; yes puts it among his measures.
+ */
+function SuggestionBody({ id }: { id: ItemId }) {
+  const { derived, state, dispatch } = useApp()
+  const g = derived.scenario.suggestions.find((x) => `suggest_${x.measureId}` === id)!
+  const measure = derived.scenario.measures.find((m) => m.id === g.measureId)!
+  const answer = state.answers.suggestions[g.measureId] ?? null
+  const t = tasks.suggest
+  return (
+    <Stack gap="sm">
+      <Text>{g.evidence === 'green_all_winter' ? t.green_cover : t.insemination(g.count ?? 0)}</Text>
+      <ul className="facts">
+        <li>{tasks.measures.pays[g.measureId]}</li>
+        {g.fields && <li>{t.filled(g.fields.map((f) => en.fields[f].toLowerCase()).join(' and '))}</li>}
+        <li>{needsLine(measure, g.fields ? ['fields'] : [])}</li>
+      </ul>
+      <Question
+        legend={t.question[g.measureId]}
+        value={answer}
+        answer={answer === 'yes' ? t.answerYes : t.answerNo}
+        onAnswer={(a) => dispatch({ type: 'answer_suggestion', measureId: g.measureId, answer: a })}
+      />
+    </Stack>
+  )
+}
+
+/** A receipt GSA couldn't read: what's wrong with it and a new photo, nothing else. */
+function UnreadableBody() {
+  const { derived, dispatch } = useApp()
+  const name = derived.scenario.documents.find((d) => d.unreadable)?.unreadable ?? ''
+  const done = itemOf(derived, 'receipt_unreadable').status === 'complete'
+  if (done) return <Text>{tasks.unreadable.done(name)}</Text>
+  return (
+    <Stack gap="sm">
+      <Text>{tasks.unreadable.context(name)}</Text>
+      <FileInput label={tasks.unreadable.upload} hint={tasks.unreadable.hint} onFile={() => dispatch({ type: 'attach_document', documentId: 'unreadable_receipt' })} />
+    </Stack>
+  )
 }
 
 // Each kind of decision gets its own body: a number, a map, a drawing, a choice of measures, a form.
 export function TaskBody({ task }: { task: Task }) {
   const id = task.id
   if (id.startsWith('measure_')) return <MeasureBody taskId={id} />
+  if (id.startsWith('suggest_')) return <SuggestionBody id={id as ItemId} />
   if (isMapChange(id)) return <MapChangeCard id={id} />
   switch (id) {
-    case 'same':
-      return <SameBody task={task} />
     case 'renewal':
       return <RenewalBody />
+    case 'bank':
+      return <BankBody />
+    case 'household':
+      return <HouseholdBody />
+    case 'details':
+      return <DetailsBody />
     case 'herd':
       return <HerdBody />
     case 'pigs':
       return <PigsBody />
+    case 'calvings':
+      return <CalvingsBody />
+    case 'field_meadow':
+      return <MeadowBody />
     case 'fields_other':
       return <FieldsBody />
-    case 'details':
-      return <DetailsBody />
     case 'measures':
       return <MeasuresBody />
+    case 'receipt_unreadable':
+      return <UnreadableBody />
     case 'receipts':
       return <ReceiptsBody />
     default:
@@ -417,11 +569,36 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
   const s = d.scenario
   const jelena = milanCaseState(state)
   if (id === 'renewal') return d.list.todo.some((t) => t.id === 'renewal') ? tasks.renewal.body : home.activeFarmer
-  if (id === 'same') return d.list.done.concat(d.list.todo).find((t) => t.id === 'same')?.members?.map((m) => tasks.title[m]).join(', ') ?? ''
   if (id.startsWith('measure_') || id === 'measures') return measureSummary(id, d)
   const item = itemOf(d, id)
   const done = item.status === 'complete'
+  const g = s.generalData
+  if (id.startsWith('suggest_')) {
+    const sug = s.suggestions.find((x) => `suggest_${x.measureId}` === id)!
+    if (item.detail === 'suggestion_added') return tasks.suggest.added
+    if (item.detail === 'suggestion_declined') return tasks.suggest.declined
+    return sug.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(sug.count ?? 0)
+  }
   switch (id) {
+    case 'bank':
+      if (item.detail === 'bank_new') return tasks.bank.paidTo(g.account!.newEnding)
+      if (item.detail === 'bank_own') return tasks.bank.paidTo((state.answers.bank.account ?? '').slice(-4))
+      if (item.detail === 'bank_needs_account') return tasks.bank.label
+      return tasks.bank.context(formatDate(g.account!.closedOn))
+    case 'household':
+      if (item.detail === 'household_added') return tasks.household.added(g.resident!.name)
+      if (item.detail === 'household_not_member') return tasks.household.notMember
+      return tasks.household.context(g.resident!.relation, g.resident!.name)
+    case 'calvings':
+      return item.status === 'awaiting_verification' ? tasks.calvings.asked(s.herd!.cowsCalved) : tasks.calvings.done(s.herd!.cowsCalved)
+    case 'field_meadow':
+      if (item.detail === 'meadow_kept') return tasks.meadow.kept
+      if (item.detail === 'meadow_out') return tasks.meadow.out(formatHa(item.paymentImpact?.areaHa ?? 0))
+      return tasks.meadow.context
+    case 'receipt_unreadable': {
+      const name = s.documents.find((x) => x.unreadable)?.unreadable ?? ''
+      return item.status === 'complete' ? tasks.unreadable.done(name) : tasks.unreadable.context(name)
+    }
     case 'herd': {
       const h = s.herd!
       if (item.conflict) return `${tasks.herd.differs(item.conflict.his, item.conflict.record)}, ${jelena ? tasks.jelena.state[jelena].toLowerCase() : tasks.herd.willCheck}`

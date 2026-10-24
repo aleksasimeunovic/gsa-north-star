@@ -42,12 +42,16 @@ describe('estimate', () => {
   })
 
   it('is provisional while the road, the upper field or the measures are unanswered, and says which', () => {
-    expect(run('second_year').estimate.pending).toEqual(['field_road', 'field_upper', 'measures'])
-    const e = run('second_year', { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }, { type: 'choose_measures', chosen: ['plant_production'] }).estimate
+    expect(run('second_year').estimate.pending).toEqual(['field_road', 'field_upper', 'field_meadow', 'measures'])
+    const e = run('second_year', { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }, { type: 'answer_meadow', answer: 'yes' }, { type: 'choose_measures', chosen: ['plant_production'] }).estimate
     expect(e.pending).toEqual([])
   })
 
   it('missing receipts keep it provisional too', () => {
     expect(run('missing_document').estimate.pending).toContain('receipts')
+  })
+
+  it('leaving the meadow out takes 1.50 ha: 7.50 ha × 18,000 + 280,000 = 415,000', () => {
+    expect(run('second_year', { type: 'answer_meadow', answer: 'no' }).estimate.totalDinars).toBe(415_000)
   })
 })

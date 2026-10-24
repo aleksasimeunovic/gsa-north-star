@@ -16,6 +16,8 @@ export type FieldSignal =
   | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number }
   /** Last year's drawing runs into a neighbour's declared field. */
   | { kind: 'overlap'; neighbourPolygon: Polygon; overlapPolygon: Polygon; overlapHa: number }
+  /** Satellite photos saw no mowing or grazing on grassland last summer. */
+  | { kind: 'not_mown' }
 
 export interface Field {
   id: FieldId
@@ -77,6 +79,20 @@ export interface Document {
   attached: boolean
   /** Placeholder names and dates, so he can see what he confirms. */
   files: { name: string; date: string }[]
+  /** A file GSA couldn't read, so he sends a clearer one. */
+  unreadable?: string
+}
+
+/**
+ * A measure GSA thinks may fit, from evidence he would otherwise have to know about:
+ * the satellite saw winter cover, the animal registry has his vet's inseminations.
+ */
+export interface Suggestion {
+  measureId: MeasureId
+  evidence: 'green_all_winter' | 'inseminations'
+  /** Fields the evidence is about, filled in for him if he says yes. */
+  fields?: FieldId[]
+  count?: number
 }
 
 /** Other animals in the registry that weren't declared last year. */
@@ -96,6 +112,10 @@ export interface Herd {
 export interface GeneralData {
   holder: string
   place: string
+  /** The farm account payments go to. The bank reported it closed and a new one open in his name. */
+  account: { ending: string; closedOn: string; newEnding: string } | null
+  /** Someone the population register shows at his address who isn't in the household on the farm register. */
+  resident: { name: string; relation: string } | null
 }
 
 export type ScenarioId = 'second_year' | 'second_year_not_renewed' | 'missing_document'
@@ -117,6 +137,7 @@ export interface Scenario {
   /** Land register plots (cadastral parcels). Reference only, hidden by default. */
   parcels: LandShape[]
   measures: Measure[]
+  suggestions: Suggestion[]
   documents: Document[]
 }
 
@@ -157,7 +178,7 @@ const FIELDS: Field[] = [
     // The neighbour's new declaration starts 5 m inside last year's drawing.
     signal: { kind: 'overlap', neighbourPolygon: rect(0, 235, 200, 55), overlapPolygon: rect(0, 235, 200, 5), overlapHa: 0.1 },
   },
-  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100) },
+  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100), signal: { kind: 'not_mown' } },
   { id: 'house', name: 'House field', areaHa: 1.3, cropLastYear: 'maize', arable: true, polygon: rect(390, 0, 130, 100) },
 ]
 
@@ -273,7 +294,12 @@ const BASE: Scenario = {
   renewed: true,
   window: { opens: '2026-04-10', closes: '2026-05-26' },
   today: '2026-04-28',
-  generalData: { holder: 'Milan Dragović', place: 'Bečanj, near Čačak' },
+  generalData: {
+    holder: 'Milan Dragović',
+    place: 'Bečanj, near Čačak',
+    account: { ending: '0417', closedOn: '2026-03-03', newEnding: '2291' },
+    resident: { name: 'Luka Dragović', relation: 'grandson' },
+  },
   place: { lon: 20.55172, lat: 43.86748, rotationDeg: 12.5 },
   herd: HERD,
   pigs: PIGS,
@@ -281,7 +307,11 @@ const BASE: Scenario = {
   blocks: BLOCKS,
   parcels: PARCELS,
   measures: MEASURES,
-  documents: [{ id: 'input_receipts', attached: true, files: RECEIPTS }],
+  suggestions: [
+    { measureId: 'green_cover', evidence: 'green_all_winter', fields: ['river', 'upper'] },
+    { measureId: 'insemination', evidence: 'inseminations', count: 9 },
+  ],
+  documents: [{ id: 'input_receipts', attached: true, files: RECEIPTS, unreadable: 'Diesel receipt.jpg' }],
 }
 
 export const SCENARIOS: Record<ScenarioId, Scenario> = {

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { en, home, tasks } from '../copy/en'
-import { allTasks, newlyRemoved, type ApplicationList, type TaskId, type Work } from '../logic/application'
+import { allTasks, newlyRemoved, stepOf, type ApplicationList, type StepId, type TaskId, type Work } from '../logic/application'
 import { useApp } from './AppContext'
 
-/** What is in the top slot: the task in front of him, "ready to submit", or nothing once submitted. */
+/** What is in the top slot: a task in this part, "check and submit", or nothing (this part is done, or submitted). */
 export type Focus = TaskId | 'submit' | null
 
 /** What his last answer changed in the application: shown at the top until his next answer. */
@@ -15,6 +15,9 @@ export interface AfterAnswer {
   added: TaskId[]
 }
 
+/** Forward: the next task in this part, or the next part once this one is done. */
+export type Forward = { task: TaskId } | { step: StepId } | null
+
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 export function taskTitle(id: TaskId | 'submit', receiptsMissing = false) {
@@ -24,9 +27,10 @@ export function taskTitle(id: TaskId | 'submit', receiptsMissing = false) {
 }
 
 /**
- * One obvious next action. The top slot shows the next task unless he picked another one; after an
- * answer the finished task leaves it, work no longer needed is named with its reason, and the next
- * action takes its place. A task that turned into "waiting for a check" stays until he carries on.
+ * The application in parts, one part at a time, and one obvious next action inside it. The top slot shows
+ * the next task in this part unless he picked another one; after an answer the finished task leaves it,
+ * work no longer needed is named with its reason, and the next task in the part takes its place. Once the
+ * part is done, he continues to the next. A task that turned into "waiting for a check" stays until he carries on.
  */
 export function useApplicationFlow(target: string | null) {
   const { derived, state } = useApp()
@@ -35,41 +39,49 @@ export function useApplicationFlow(target: string | null) {
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
   const title = (id: TaskId | 'submit') => taskTitle(id, receiptsMissing)
   const all = allTasks(list)
-  const exists = (id: TaskId | null) => !!id && all.some((t) => t.id === id)
 
+  const [step, setStep] = useState<StepId>(() => (list.next && list.next !== 'submit' ? stepOf(list.next) : 'submit'))
   const [open, setOpen] = useState<TaskId | null>(null)
   const [held, setHeld] = useState<TaskId | null>(null)
-  const [visited, setVisited] = useState<TaskId[]>([])
   const [after, setAfter] = useState<AfterAnswer | null>(null)
-  const [showDone, setShowDone] = useState(false)
   const [announce, setAnnounce] = useState('')
   const [bring, setBring] = useState(0)
 
-  const focus: Focus = submitted ? null : exists(held) ? held : exists(open) ? open : list.next
+  const index = Math.max(0, list.steps.findIndex((s) => s.id === step))
+  const current = list.steps[index]
+  const inStep = (id: TaskId | null) => !!id && current.tasks.some((t) => t.id === id)
+  const stepTodo = current.tasks.filter((t) => t.status === 'action_required')
+  const focus: Focus = submitted ? null : current.id === 'submit' ? 'submit' : inStep(held) ? held : inStep(open) ? open : (stepTodo[0]?.id ?? null)
   const focusTask = all.find((t) => t.id === focus)
+  const nextStep = list.steps[index + 1]
+  const prevStep = index > 0 ? list.steps[index - 1] : undefined
+
   const shown = useRef<Focus>(focus)
   const before = useRef<ApplicationList>(list)
   const pastLength = useRef(state.past.length)
-  const key = JSON.stringify(all.map((t) => [t.id, t.status, t.work, t.members]))
+  const key = JSON.stringify(all.map((t) => [t.id, t.status, t.work]))
 
-  /** Put a task in the top slot and bring it into view. */
-  const show = (next: TaskId, remember = true) => {
-    if (remember && focus && focus !== 'submit' && focus !== next) setVisited((v) => [...v, focus])
+  /** Put a task in the top slot, in its own part, and bring it into view. */
+  const show = (id: TaskId) => {
+    setStep(stepOf(id))
     setHeld(null)
-    setOpen(next === list.next ? null : next)
+    setOpen(id)
     setBring((n) => n + 1)
   }
-  const back = visited.length
-    ? () => {
-        const prev = visited[visited.length - 1]
-        setVisited(visited.slice(0, -1))
-        show(prev, false)
-      }
-    : undefined
+  /** Open a part: its next task takes the top slot. */
+  const goStep = (id: StepId) => {
+    setStep(id)
+    setOpen(null)
+    setHeld(null)
+    setAfter(null)
+    setBring((n) => n + 1)
+  }
+  const back = prevStep ? () => goStep(prevStep.id) : undefined
 
-  /** Forward: the next task that needs him other than the one in front of him, then submit. */
-  const forward: TaskId | 'submit' = list.todo.find((t) => t.id !== focus)?.id ?? 'submit'
-  const forwardIsPrimary = !focusTask || focusTask.status !== 'action_required'
+  const nextInStep = stepTodo.find((t) => t.id !== focus)
+  const forward: Forward = current.id === 'submit' ? null : nextInStep ? { task: nextInStep.id } : nextStep ? { step: nextStep.id } : null
+  // Primary only when nothing in the top slot is waiting for his answer (a held task); a finished part has its own button.
+  const forwardIsPrimary = !!focusTask && focusTask.status !== 'action_required'
 
   // React to each answer: what finished, what is no longer needed, what's new, what's next.
   useEffect(() => {
@@ -84,7 +96,7 @@ export function useApplicationFlow(target: string | null) {
       const reopened = all.find((t) => t.status !== was.get(t.id))
       setAfter(null)
       setAnnounce(home.announce.undone)
-      if (reopened) show(reopened.id, false)
+      if (reopened) show(reopened.id)
       return
     }
     const change: AfterAnswer = {
@@ -105,8 +117,8 @@ export function useApplicationFlow(target: string | null) {
     if (prevFocus && prevFocus !== 'submit' && was.get(prevFocus) === 'action_required') {
       const now = all.find((t) => t.id === prevFocus)?.status
       if (now === 'complete' || now === undefined) {
-        if (list.next) words.push(home.announce.next(title(list.next)))
-        setVisited((v) => [...v, prevFocus])
+        const next = current.tasks.find((t) => t.status === 'action_required' && t.id !== prevFocus)
+        if (next) words.push(home.announce.next(title(next.id)))
         setOpen(null)
         setHeld(null)
         setBring((n) => n + 1)
@@ -120,12 +132,11 @@ export function useApplicationFlow(target: string | null) {
     shown.current = focus
   })
 
-  // Arriving from elsewhere (the readiness drawer, Submit) puts the task asked for in the top slot.
+  // Arriving from elsewhere (the readiness drawer, the receipt) opens the task or part asked for.
   useEffect(() => {
-    if (target?.startsWith('task-') && !submitted) {
-      const id = target.slice(5)
-      if (id !== 'submit') show(id as TaskId)
-    }
+    if (!target || submitted) return
+    if (target.startsWith('task-')) show(target.slice(5) as TaskId)
+    if (target.startsWith('step-')) goStep(target.slice(5) as StepId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, submitted])
 
@@ -135,12 +146,12 @@ export function useApplicationFlow(target: string | null) {
     requestAnimationFrame(() => {
       const next = document.getElementById('next-title')
       const panel = document.querySelector<HTMLElement>('.after[data-has-change]')
-      ;(panel ?? document.getElementById('next'))?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
+      ;(panel ?? document.getElementById('step'))?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
       next?.focus({ preventScroll: true })
     })
   }, [bring])
 
-  return { focus, focusTask, held, after, announce, showDone, setShowDone, show, back, forward, forwardIsPrimary, title }
+  return { step: current, index, nextStep, focus, focusTask, held, after, announce, show, goStep, back, forward, forwardIsPrimary, title }
 }
 
 export type Flow = ReturnType<typeof useApplicationFlow>

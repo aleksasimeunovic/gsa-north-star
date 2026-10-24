@@ -17,14 +17,23 @@ export const halfSplit = (crops: [Crop | null, Crop | null] = ['sunflower', 'whe
   split: { line: [{ x: 0, y: 60 }, { x: 200, y: 60 }], crops },
 })
 
-/** Every change answered the simple way and the rest confirmed: nothing left before submitting. */
+/** Every part answered the simple way and the rest confirmed: nothing left before submitting. */
 export const ready: Action[] = [
+  { type: 'answer_bank', answer: 'yes' },
+  { type: 'answer_household', answer: 'no' },
+  { type: 'confirm', what: 'details' },
   { type: 'answer_herd', answer: 'yes' },
   { type: 'answer_pigs', answer: 'yes' },
+  { type: 'confirm', what: 'calvings' },
   { type: 'answer_river', answer: 'yes' },
   halfSplit(),
   { type: 'answer_road', answer: 'yes' },
   { type: 'answer_upper', answer: 'yes' },
+  { type: 'answer_meadow', answer: 'yes' },
+  { type: 'confirm', what: 'fields_other' },
+  { type: 'answer_suggestion', measureId: 'green_cover', answer: 'no' },
+  { type: 'answer_suggestion', measureId: 'insemination', answer: 'no' },
   { type: 'choose_measures', chosen: ['plant_production', 'cows_raising_calves'] },
-  { type: 'confirm_same', what: ['fields_other', 'details', 'receipts'] },
+  { type: 'attach_document', documentId: 'unreadable_receipt' },
+  { type: 'confirm', what: 'receipts' },
 ]

@@ -1,30 +1,74 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
 import { measureGaps, orderMeasures } from './status'
-import { halfSplit, run } from './testUtils'
+import { halfSplit, play, run } from './testUtils'
 
 const item = (r: ReturnType<typeof run>, id: string) => r.items.find((i) => i.id === id)!
 const split = halfSplit()
 
 describe('status per item', () => {
-  it('starts with the five changes, the named confirmations and measures needing action; nothing is complete before he sees it', () => {
+  it('starts with every part needing action, in step order; nothing is complete before he sees it', () => {
     const r = run('second_year')
     expect(r.items.map((i) => [i.id, i.status])).toEqual([
+      ['bank', 'action_required'],
+      ['household', 'action_required'],
+      ['details', 'action_required'],
       ['herd', 'action_required'],
       ['pigs', 'action_required'],
+      ['calvings', 'action_required'],
       ['field_river', 'action_required'],
       ['field_road', 'action_required'],
       ['field_upper', 'action_required'],
+      ['field_meadow', 'action_required'],
       ['fields_other', 'action_required'],
-      ['details', 'action_required'],
+      ['suggest_green_cover', 'action_required'],
+      ['suggest_insemination', 'action_required'],
       ['measures', 'action_required'],
+      ['receipt_unreadable', 'action_required'],
       ['receipts', 'action_required'],
     ])
   })
 
-  it('"yes, all the same" confirms every unchanged thing at once', () => {
-    const r = run('second_year', { type: 'confirm_same', what: ['fields_other', 'details', 'receipts'] })
-    expect(r.items.filter((i) => i.status === 'complete').map((i) => i.id)).toEqual(['fields_other', 'details', 'receipts'])
+  it('bank: yes pays into the new account; no asks for his account, then it is done', () => {
+    expect(item(run('second_year', { type: 'answer_bank', answer: 'yes' }), 'bank')).toEqual({ id: 'bank', status: 'complete', detail: 'bank_new' })
+    expect(item(run('second_year', { type: 'answer_bank', answer: 'no' }), 'bank').detail).toBe('bank_needs_account')
+    expect(item(run('second_year', { type: 'answer_bank', answer: 'no' }, { type: 'set_bank_account', account: '160000000012345678' }), 'bank').status).toBe('complete')
+  })
+
+  it('household: one question, either answer completes it', () => {
+    expect(item(run('second_year', { type: 'answer_household', answer: 'yes' }), 'household').detail).toBe('household_added')
+    expect(item(run('second_year', { type: 'answer_household', answer: 'no' }), 'household').status).toBe('complete')
+  })
+
+  it('cows that calved: confirmed, or checked by the registry without blocking', () => {
+    expect(item(run('second_year', { type: 'confirm', what: 'calvings' }), 'calvings').status).toBe('complete')
+    expect(item(run('second_year', { type: 'ask_record_check', itemId: 'calvings' }), 'calvings').status).toBe('awaiting_verification')
+  })
+
+  it('meadow: yes keeps it; no leaves it out, complete but 1.50 ha less', () => {
+    expect(item(run('second_year', { type: 'answer_meadow', answer: 'yes' }), 'field_meadow').detail).toBe('meadow_kept')
+    const out = item(run('second_year', { type: 'answer_meadow', answer: 'no' }), 'field_meadow')
+    expect(out.status).toBe('complete')
+    expect(out.paymentImpact).toEqual({ amountDinars: -27_000, areaHa: 1.5, reason: 'meadow_out' })
+  })
+
+  it('a suggested measure: yes puts it among his measures, no leaves it out', () => {
+    const yes = run('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' })
+    expect(item(yes, 'suggest_green_cover').detail).toBe('suggestion_added')
+    const added = play('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' }).answers.measures
+    expect(added.chosen).toContain('green_cover')
+    // The fields the satellite saw are filled in for him; only his promise is left.
+    expect(added.inputs['green_cover.cover_fields']).toEqual(['river', 'upper'])
+    const r = run('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' }, { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] })
+    expect(item(r, 'measure_green_cover').missing).toEqual(['cover_promise'])
+    const no = play('second_year', { type: 'answer_suggestion', measureId: 'green_cover', answer: 'yes' }, { type: 'answer_suggestion', measureId: 'green_cover', answer: 'no' })
+    expect(no.answers.measures.chosen).not.toContain('green_cover')
+  })
+
+  it('an unreadable receipt needs a new photo; sending it does not confirm the other receipts', () => {
+    const r = run('second_year', { type: 'attach_document', documentId: 'unreadable_receipt' })
+    expect(item(r, 'receipt_unreadable').status).toBe('complete')
+    expect(item(r, 'receipts').status).toBe('action_required')
   })
 
   it('confirming an unchanged thing completes it', () => {

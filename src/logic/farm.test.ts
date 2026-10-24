@@ -34,7 +34,8 @@ describe('farm picture', () => {
       { type: 'answer_road', answer: 'yes' },
       { type: 'answer_river', answer: 'no' },
       { type: 'answer_upper', answer: 'yes' },
-      { type: 'confirm_same', what: ['fields_other'] },
+      { type: 'answer_meadow', answer: 'yes' },
+      { type: 'confirm', what: 'fields_other' },
       { type: 'choose_measures', chosen: ['plant_production'] },
     ).farm
     expect(all.fields).toMatchObject({ source: 'confirmed', confirmed: 5 })

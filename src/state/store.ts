@@ -11,6 +11,10 @@ export const emptyAnswers = (): Answers => ({
   road: { answer: null },
   upper: { answer: null, drawn: null },
   pigs: { answer: null },
+  bank: { answer: null, account: null },
+  household: { answer: null },
+  meadow: { answer: null },
+  suggestions: {},
   measures: { chosen: [], confirmed: false, inputs: {} },
   confirmed: [],
   requests: [],
@@ -21,7 +25,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 7,
+  version: 8,
   scenarioId: 'second_year',
   role: 'farmer',
   prototype: { showNotes: false },
@@ -42,13 +46,14 @@ export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(),
 /** Answers that can be taken back with Undo. Prototype, advisor and submit actions can't. */
 const UNDOABLE = new Set<Action['type']>([
   'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper', 'set_upper_drawing',
-  'answer_pigs', 'confirm', 'confirm_same', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
+  'answer_pigs', 'confirm', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
+  'answer_bank', 'set_bank_account', 'answer_household', 'answer_meadow', 'answer_suggestion',
 ])
 const PAST_LIMIT = 20
 
 const addUnique = <T,>(list: T[], item: T) => (list.includes(item) ? list : [...list, item])
 
-function reduceAnswers(a: Answers, action: Action, at: string): Answers {
+function reduceAnswers(a: Answers, action: Action, at: string, s: Scenario): Answers {
   switch (action.type) {
     case 'answer_herd':
       // "No" always asks for his own number afresh.
@@ -73,6 +78,29 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, upper: { ...a.upper, drawn: action.polygon } }
     case 'answer_pigs':
       return { ...a, pigs: { answer: action.answer } }
+    case 'answer_bank':
+      // "No" always asks for the account afresh.
+      return { ...a, bank: { answer: action.answer, account: action.answer === 'no' ? null : a.bank.account } }
+    case 'set_bank_account':
+      return { ...a, bank: { ...a.bank, account: action.account } }
+    case 'answer_household':
+      return { ...a, household: { answer: action.answer } }
+    case 'answer_meadow':
+      return { ...a, meadow: { answer: action.answer } }
+    case 'answer_suggestion': {
+      // Yes puts the measure among his chosen ones, with the fields the evidence was about filled in;
+      // no takes it out again.
+      const chosen = a.measures.chosen.filter((id) => id !== action.measureId)
+      const g = s.suggestions.find((x) => x.measureId === action.measureId)
+      const pick = s.measures.find((m) => m.id === action.measureId)?.requirements.find((r) => r.kind === 'fields')
+      const key = pick && `${action.measureId}.${pick.id}`
+      const fill = action.answer === 'yes' && g?.fields && key && a.measures.inputs[key] === undefined ? { [key]: g.fields } : {}
+      return {
+        ...a,
+        suggestions: { ...a.suggestions, [action.measureId]: action.answer },
+        measures: { ...a.measures, chosen: action.answer === 'yes' ? [...chosen, action.measureId] : chosen, inputs: { ...a.measures.inputs, ...fill } },
+      }
+    }
     case 'choose_measures':
       return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true } }
     case 'save_measure':
@@ -81,11 +109,13 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return a
     case 'confirm':
       return { ...a, confirmed: addUnique(a.confirmed, action.what) }
-    case 'confirm_same':
-      return { ...a, confirmed: action.what.reduce((list, w) => addUnique(list, w), a.confirmed) }
     case 'attach_document':
       // Uploading them is confirming them.
-      return { ...a, attachedDocuments: addUnique(a.attachedDocuments, action.documentId), confirmed: addUnique(a.confirmed, 'receipts') }
+      return {
+        ...a,
+        attachedDocuments: addUnique(a.attachedDocuments, action.documentId),
+        confirmed: action.documentId === 'input_receipts' ? addUnique(a.confirmed, 'receipts') : a.confirmed,
+      }
     case 'renew':
       return { ...a, renewed: true }
     case 'sign_declarations':
@@ -130,7 +160,7 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
     if (!submitCheck(d.readiness, state.answers.declarationsSigned).canSubmit) return state
   }
   const actor: Actor = state.role === 'advisor' ? 'Jelena' : 'Milan'
-  const answers = reduceAnswers(state.answers, action, at)
+  const answers = reduceAnswers(state.answers, action, at, SCENARIOS[state.scenarioId])
   return {
     ...state,
     answers,

@@ -4,8 +4,8 @@ export type YesNo = 'yes' | 'no'
 export type Role = 'farmer' | 'advisor'
 export type Actor = 'Milan' | 'Jelena' | 'GSA'
 
-/** Things that haven't changed, confirmed by name. */
-export type Confirmable = 'fields_other' | 'details' | 'receipts'
+/** Things GSA already has, confirmed by name. */
+export type Confirmable = 'fields_other' | 'details' | 'receipts' | 'calvings'
 
 /** A measure input: text or a number as text, a choice, a list of fields, a ticked promise, or a file name. */
 export type MeasureValue = string | string[] | boolean
@@ -25,6 +25,14 @@ export interface Answers {
   upper: { answer: YesNo | null; drawn: Polygon | null }
   /** Yes: household only, nothing to declare. */
   pigs: { answer: YesNo | null }
+  /** Yes: payments go to the new account the bank reported. No: he gives the account. */
+  bank: { answer: YesNo | null; account: string | null }
+  /** Whether the person now living at his address is a member of the farm household. */
+  household: { answer: YesNo | null }
+  /** Yes: he will mow or graze it. No: the meadow is left out this year. */
+  meadow: { answer: YesNo | null }
+  /** His answer to each measure GSA suggested. */
+  suggestions: Partial<Record<MeasureId, YesNo>>
   /** Chosen measures and what each needs, keyed `${measureId}.${requirementId}`. */
   measures: { chosen: MeasureId[]; confirmed: boolean; inputs: Record<string, MeasureValue> }
   confirmed: Confirmable[]
@@ -60,7 +68,7 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 7
+  version: 8
   scenarioId: ScenarioId
   role: Role
   /** Prototype only, not part of GSA. */
@@ -88,13 +96,16 @@ export type Action =
   | { type: 'answer_upper'; answer: YesNo }
   | { type: 'set_upper_drawing'; polygon: Polygon | null }
   | { type: 'answer_pigs'; answer: YesNo }
+  | { type: 'answer_bank'; answer: YesNo }
+  | { type: 'set_bank_account'; account: string }
+  | { type: 'answer_household'; answer: YesNo }
+  | { type: 'answer_meadow'; answer: YesNo }
+  | { type: 'answer_suggestion'; measureId: MeasureId; answer: YesNo }
   | { type: 'choose_measures'; chosen: MeasureId[] }
   | { type: 'save_measure'; measureId: MeasureId; inputs: Record<string, MeasureValue> }
   | { type: 'reply_to_jelena'; note: string }
   | { type: 'undo' }
   | { type: 'confirm'; what: Confirmable }
-  /** "Yes, all the same as last year": confirms every unchanged thing still to confirm. */
-  | { type: 'confirm_same'; what: Confirmable[] }
   | { type: 'attach_document'; documentId: string }
   | { type: 'renew' }
   | { type: 'sign_declarations'; signed: boolean }

@@ -31,8 +31,8 @@ export interface Estimate {
 
 const round = (n: number, to: number) => Math.round(n / to) * to
 
-/** What can change the estimate: area (road, the neighbour's line), the measures chosen, the receipts that justify them. */
-const CAN_CHANGE: ItemId[] = ['field_road', 'field_upper', 'measures', 'receipts']
+/** What can change the estimate: area (road, the neighbour's line, the meadow), the measures chosen, the receipts that justify them. */
+const CAN_CHANGE: ItemId[] = ['field_road', 'field_upper', 'field_meadow', 'measures', 'receipts']
 
 /**
  * Estimated subsidy based on current information, for this application only.

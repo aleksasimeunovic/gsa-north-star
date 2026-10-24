@@ -11,7 +11,7 @@ import { useApp } from './AppContext'
  * changes it. Each part and where it comes from (government records, confirmed by you, waiting for a check)
  * opens on request, so nothing looks settled before it is and nothing competes with the next action.
  */
-export function FarmPicture() {
+export function FarmPicture({ detailed = false }: { detailed?: boolean }) {
   const { derived } = useApp()
   const f = derived.farm
   const fieldSource =
@@ -40,27 +40,36 @@ export function FarmPicture() {
     f.pigs && copy.pigs(f.pigs.count),
   ].filter(Boolean).join(', ')
 
-  return (
-    <Card id="farm" title={copy.title} headingLevel={2} emphasis="low">
-      <div aria-live="polite" className="farm-summary">
-        <Text>{summary}</Text>
-        <SourceTag source={overall}>{overallTag}</SourceTag>
-      </div>
-      <Disclosure label={copy.details}>
-        <dl className="farm">
-          {rows.map((r) => (
-            <div key={r.label} className="farm-row" data-source={r.source}>
-              <dt>{r.label}</dt>
-              {r.lines.map((l) => (
-                <dd key={l}>{l}</dd>
-              ))}
-              <dd>
-                <SourceTag source={r.source}>{r.tag}</SourceTag>
-              </dd>
-            </div>
+  const parts = (
+    <dl className="farm">
+      {rows.map((r) => (
+        <div key={r.label} className="farm-row" data-source={r.source}>
+          <dt>{r.label}</dt>
+          {r.lines.map((l) => (
+            <dd key={l}>{l}</dd>
           ))}
-        </dl>
-      </Disclosure>
+          <dd>
+            <SourceTag source={r.source}>{r.tag}</SourceTag>
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
+
+  // Before submitting he sees every part and where it comes from; elsewhere one line, the rest on request.
+  return (
+    <Card id="farm" title={copy.title} headingLevel={3} emphasis="low">
+      {detailed ? (
+        <div aria-live="polite">{parts}</div>
+      ) : (
+        <>
+          <div aria-live="polite" className="farm-summary">
+            <Text>{summary}</Text>
+            <SourceTag source={overall}>{overallTag}</SourceTag>
+          </div>
+          <Disclosure label={copy.details}>{parts}</Disclosure>
+        </>
+      )}
     </Card>
   )
 }

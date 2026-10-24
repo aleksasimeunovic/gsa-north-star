@@ -1,7 +1,7 @@
 import type { Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
 
-export type ChangeId = 'herd' | 'pigs' | 'river' | 'road' | 'upper'
+export type ChangeId = 'herd' | 'pigs' | 'river' | 'road' | 'upper' | 'meadow'
 
 /** What may have changed since last year, found from records and signals. */
 export function detectChanges(s: Scenario): ChangeId[] {
@@ -12,6 +12,7 @@ export function detectChanges(s: Scenario): ChangeId[] {
     if (f.signal?.kind === 'satellite_difference') changes.push('river')
     if (f.signal?.kind === 'road_strip') changes.push('road')
     if (f.signal?.kind === 'overlap') changes.push('upper')
+    if (f.signal?.kind === 'not_mown') changes.push('meadow')
   }
   return changes
 }

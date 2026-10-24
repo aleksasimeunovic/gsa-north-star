@@ -277,11 +277,10 @@ h1, h2, h3 { margin: 0 0 8px; }
 .next h2, .review-head h1 { margin: 0; font-size: 1.5rem; }
 .review-head { display: flex; flex-direction: column; gap: 4px; }
 /* Each kind of work has its own mark: text plus shape, never colour alone */
-[data-kind='change'] > .next-kind::before, .later[data-kind='change'] .kind-mark::before { content: '◆ '; }
-[data-kind='choice'] > .next-kind::before, .later[data-kind='choice'] .kind-mark::before { content: '■ '; }
-[data-kind='same'] > .next-kind::before, .later[data-kind='same'] .kind-mark::before { content: '= '; }
+[data-kind='change'] > .next-kind::before, [data-kind='change'] .kind-mark::before { content: '◆ '; }
+[data-kind='choice'] > .next-kind::before, [data-kind='choice'] .kind-mark::before { content: '■ '; }
+[data-kind='same'] > .next-kind::before, [data-kind='same'] .kind-mark::before { content: '= '; }
 .review-head .next-kind::before { content: '◆ '; }
-.rows-group, .later { display: flex; flex-direction: column; gap: 4px; }
 .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .row { display: flex; gap: 8px; align-items: flex-start; padding: 2px 0 6px; border-bottom: 1px solid var(--soft); }
 .row .status { margin-top: 10px; }
@@ -289,12 +288,6 @@ h1, h2, h3 { margin: 0 0 8px; }
 .row-title { font: inherit; font-weight: 600; background: none; border: 0; padding: 0; min-height: 44px; color: var(--fg); cursor: pointer; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
 span.row-title { display: inline-flex; align-items: center; }
 .row-summary { color: var(--muted); font-size: 0.9375rem; margin-top: -8px; }
-.later .rows { gap: 6px; }
-.later .row { flex-direction: column; gap: 0; padding: 0 0 0 12px; margin-left: 1.6em; border-bottom: 0; }
-.later[data-kind='change'] .row { border-left: 4px solid var(--fg); }
-.later[data-kind='choice'] .row { border-left: 4px double var(--fg); }
-.later[data-kind='same'] .row { border-left: 2px dotted var(--fg); }
-.later .row-title { font-weight: 400; }
 .count { font-weight: 400; color: var(--muted); }
 
 /* Answers that move him on: one large button per answer */
@@ -335,10 +328,47 @@ span.row-title { display: inline-flex; align-items: center; }
 .estimate-basis[data-provisional] { border-left: 3px dashed var(--fg); padding-left: 10px; }
 [hidden] { display: none !important; }
 
-/* Progressive disclosure: what's done and what can wait are closed lines until he opens them */
-.later-all { display: flex; flex-direction: column; gap: 0; }
-.later-all > .group-title { margin-bottom: 0; color: var(--muted); font-weight: 600; }
-.later-title { margin: 0; font-size: 1rem; }
-.later-title .group-toggle { font-weight: 400; }
-.later .rows { margin-bottom: 8px; }
 .farm-summary { display: flex; flex-direction: column; gap: 2px; }
+
+/* Round 5, third pass: parts of the application, white elements on a grey page */
+:root { --page: #ececec; }
+body, .topbar { background: var(--page); }
+.next, .after, .outline, .card, .banner, .compare, .stepper button, .farm-map[data-loading] { background: var(--bg); }
+.after[data-has-change] { border-color: var(--fg); }
+.step { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 80px; }
+.step-title { margin: 0; font-size: 1.375rem; }
+.step-of { display: block; font-size: 0.875rem; font-weight: 400; color: var(--muted); }
+.next h3 { margin: 0; font-size: 1.5rem; }
+.app-layout { gap: 24px; }
+@media (min-width: 1024px) {
+  .app-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
+  .app-side { top: 80px; }
+}
+
+/* Stepper: every part of his application, where he is, what's done */
+.stepper ol { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+.stepper button { width: 100%; min-height: 44px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border: 1px solid var(--line); font: inherit; color: var(--fg); cursor: pointer; }
+.stepper li[data-state='current'] button { border: 3px solid var(--fg); padding: 6px 2px; }
+.stepper li[data-state='done'] .step-name { color: var(--muted); }
+.step-mark { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--fg); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; }
+.stepper li[data-state='current'] .step-mark { background: var(--fg); color: var(--bg); }
+.stepper li[data-state='done'] .step-mark { border-color: var(--line); }
+.step-name { font-size: 0.8125rem; text-align: center; line-height: 1.2; }
+.stepper li[data-state='current'] .step-name { font-weight: 700; }
+@media (max-width: 599px) { .step-name { display: none; } }
+
+/* This part at a glance: done, now, later, by kind */
+.outline { border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.outline > .group-title { margin: 0; }
+.outline-kind { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+.outline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.outline-list li { display: flex; gap: 8px; align-items: center; }
+.outline-list .row-title { font-weight: 400; min-height: 40px; }
+.outline-list li[data-now] .row-title { font-weight: 700; text-decoration: none; }
+.outline-list li[data-status='complete'] .row-title { color: var(--muted); }
+.outline-mark { display: inline-block; min-width: 1.6em; text-align: center; font-weight: 700; }
+.next[data-done] { border-style: solid; }
+
+/* The last part: his farm and the estimate side by side on a desk */
+.submit-picture { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 768px) { .submit-picture { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; } }
