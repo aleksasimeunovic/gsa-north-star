@@ -215,7 +215,6 @@ function UpperReview({ onAnswer }: BodyProps) {
       {asking ? (
         <ChoiceButtons
           legend={tasks.upper.question}
-          hint={tasks.upper.hint}
           options={options(tasks.upper.yes, tasks.upper.no)}
           onChoose={(v) => {
             onAnswer()

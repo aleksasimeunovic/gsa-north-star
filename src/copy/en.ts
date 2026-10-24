@@ -100,10 +100,10 @@ export const home = {
   deadline: (n: number, closes: string) =>
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   activeFarmer: "You're an active farmer for this year",
-  listTitle: 'Your application',
   kind: { change: 'Changes GSA found', choice: 'Your choices this year', same: 'Same as last year' } satisfies Record<TaskKind, string>,
-  waiting: (n: number) => `Waiting for a check (${n})`,
-  done: (n: number) => `Done (${n})`,
+  later: 'Later',
+  handled: (done: number, waiting: number) =>
+    done && waiting ? `Done (${done}), ${waiting} waiting for a check` : done ? `Done (${done})` : `Waiting for a check (${waiting})`,
   submitted: 'Your application is submitted.',
   seeReceipt: 'See your receipt',
   // Said to screen readers when the list changes.
@@ -166,7 +166,6 @@ export const tasks = {
     upper_redraw: 'Redraw the field',
     pigs_declare: 'Declare your pigs',
   } satisfies Record<WorkId, string>,
-  mightNeed: (work: string) => `Might also need: ${work.toLowerCase()}`,
   reason: {
     one_crop: 'one crop in the whole field (the state may still check it)',
     edge_moved: 'GSA moved the edge to the road for you',
@@ -247,7 +246,6 @@ export const tasks = {
     source: "Source: this year's applications",
     overlap: (ha: string) => `${ha} is declared by both of you, and only one of you can get support for it`,
     question: "Should we move your edge back to your neighbour's line?",
-    hint: 'Choose No if the strip is yours, then show where your field ends',
     yes: 'Yes, move my edge',
     no: 'No, the strip is mine',
     answerYes: "Moved to the neighbour's line",
@@ -287,7 +285,7 @@ export const tasks = {
 
   measures: {
     lead: (fit: number) => `You can apply for ${fit} measures`,
-    leadHint: (last: number) => `The ${last} you had last year are ticked. Each one says what it needs from you`,
+    leadHint: (last: number) => `The ${last} you had last year are ticked`,
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
     lastYear: 'You had it last year',
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
@@ -404,7 +402,7 @@ export const map = {
 /** Drawing where a field ends, on a real map. */
 export const draw = {
   label: (field: string) => `Map: drag the corners of the ${field.toLowerCase()} to where it ends`,
-  how: 'Drag a corner, or drag an edge to add a corner. Corners stick to the lines nearby',
+  how: 'Drag a corner, or drag an edge to add one',
   area: (ha: string) => `Your field: ${ha}`,
   loading: 'Loading the map',
   problem: {
@@ -526,7 +524,6 @@ export const advisor = {
     herd_discrepancy: 'Herd differs from the animal registry',
     inherited_parcel: "Parcel still in a late parent's name",
   },
-  sent: (d: string) => `Sent ${d}`,
   note: "Farmer's note",
   noNote: 'No note',
   record: 'Animal registry',
@@ -601,4 +598,5 @@ export const farm = {
   measuresValue: (n: number, fit: number) => `${n} of ${fit} you can apply for`,
   source: { records: 'From government records', confirmed: 'Confirmed by you', checking: 'Waiting for a check' } satisfies Record<Source, string>,
   partly: (n: number, of: number) => `${n} of ${of} confirmed by you`,
+  details: 'See each part',
 }

@@ -163,11 +163,12 @@ Earl: one connected experience, not separate features. How the application chang
 
 ### Welcome back: one obvious next action
 - Greeting, deadline and days left. Active farmer status only when it needs renewing.
-- Leads with a single primary action, open at the top: the first is "Start with your herd". Everything else stays reachable but doesn't compete: what's done below it (collapsed), then what can wait in its three sections (Changes GSA found, Your choices this year, Same as last year), quiet one-line rows that open in the top slot.
+- Leads with a single primary action, open at the top: the first is "Start with your herd". Everything else stays reachable but doesn't compete: what's done below it (one closed line, "Done (n), n waiting for a check"), then "Later" with one closed line per kind of work (Changes GSA found, Your choices this year, Same as last year, each with a count). Opened, a line names its tasks; picking one moves it to the top slot.
+- **Progressive disclosure:** on arrival the screen shows only the deadline, the next action, the closed lines, a one-line farm summary and the estimate's amount. Detail appears when it becomes relevant (what an answer changed, what's done) or when he asks for it (each kind's tasks, each part of his farm, how the estimate is worked out).
 - After each decision, the next action takes the top slot, done work collapses, and work that isn't needed leaves with a one-line reason ("After your answer", with Undo). The application visibly changing after each answer is the defining interaction.
 - A short transition may explain each change (respect `prefers-reduced-motion`). Changes are announced with `aria-live`.
-- **"Your farm this year"** shows, per item, whether it is "From government records", "Confirmed by you" or "Waiting for a check", and the label changes as he confirms.
-- The estimate stays a separate block at body size, never mixed with status. While anything that could change it is unanswered, it says it is provisional and names what it waits for. On desktop, the farm and the estimate sit in a sticky right column.
+- **"Your farm this year"** is one line (land, cattle, pigs) with how much he has confirmed ("From government records", "2 of 4 confirmed by you", "Confirmed by you"); "See each part" shows, per item, "From government records", "Confirmed by you" or "Waiting for a check", and the labels change as he confirms.
+- The estimate stays a separate block at body size, never mixed with status: the amount, then, while anything that could change it is unanswered, that it is provisional and what it waits for. What changed it and how it is worked out open on request. On desktop, the farm and the estimate sit in a sticky right column.
 
 ### Change cards: evidence before the question
 A card is one line of context (what GSA found, and where), the evidence, the question and the actions. The changes are different kinds of decision, so the cards differ:
@@ -286,7 +287,7 @@ Aleksa will later apply a design system based on Untitled UI (React, Tailwind, R
 - [ ] Tested, mandate and assumptions are distinguishable (design notes, off by default).
 - [ ] Every problem P1 to P12 is answered somewhere in the flow.
 - [ ] `src/copy/en.ts` is shorter than at the start of the round.
-- [ ] Welcome back leads with one obvious next action; the screen answers what to do next, what's done, what can wait, in that order.
+- [ ] Welcome back leads with one obvious next action; the screen answers what to do next, what's done, what can wait, in that order, and discloses the rest progressively.
 - [ ] Changes GSA found, your choices and same-as-last-year are separate sections with their own labels and treatment.
 - [ ] River, road and upper field cards show the place on the satellite photo; "Review this boundary" opens a map he can pan and zoom.
 - [ ] "Your farm this year" says per item what comes from records and what he confirmed; the estimate says when it is provisional.
