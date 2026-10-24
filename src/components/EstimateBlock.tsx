@@ -4,15 +4,25 @@ import { Disclosure } from '../ui/Disclosure'
 import { Stack, Text } from '../ui/Layout'
 import { useApp } from './AppContext'
 
-/** Separate from status. An estimate, with its assumptions on request. Never the hero. */
+const list = (parts: string[]) => (parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`)
+
+/**
+ * Separate from status. An estimate, with its assumptions on request. Never the hero.
+ * While something that could change it is unanswered, it says it is provisional and what it waits for.
+ */
 export function EstimateBlock() {
   const { derived } = useApp()
   const e = derived.estimate
+  const provisional = e.pending.length > 0
 
   return (
     <Card id="estimate" title={en.estimate.title} headingLevel={2} emphasis="low">
       <Stack gap="sm">
-        <Text variant="small">{en.estimate.basis}</Text>
+        <div aria-live="polite" className="estimate-basis" data-provisional={provisional || undefined}>
+          <Text variant={provisional ? 'body' : 'small'}>
+            {provisional ? en.estimate.provisional(list(e.pending.map((id) => en.estimate.pending[id]))) : en.estimate.basis}
+          </Text>
+        </div>
         <Text variant="strong">
           <span aria-live="polite">{en.estimate.about(formatDinars(e.aboutDinars))}</span>
         </Text>

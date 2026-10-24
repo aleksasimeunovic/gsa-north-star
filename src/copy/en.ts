@@ -1,8 +1,9 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
 import type { Crop, FieldId, MeasureId, Office, ScenarioId } from '../data/scenarios'
 import type { DrawingProblem } from '../logic/geometry'
-import type { RemovalReason, WorkId } from '../logic/application'
+import type { RemovalReason, TaskKind, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
+import type { Source } from '../logic/farm'
 import type { ApplicationState } from '../logic/readiness'
 import type { ImpactReason, Status } from '../logic/status'
 
@@ -75,7 +76,9 @@ export const en = {
 
   estimate: {
     title: 'Estimated subsidy',
-    basis: "Based on what you've told us so far",
+    basis: "Based on what you've told us",
+    provisional: (what: string) => `Provisional until you've checked ${what}`,
+    pending: { field_road: 'the road field', field_upper: 'the upper field', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
     about: (d: string) => `About ${d}`,
     unpriced: (n: number) => (n === 1 ? 'Plus 1 more measure, worked out after checks' : `Plus ${n} more measures, worked out after checks`),
     caveat: 'The payment still depends on inspection and final eligibility.',
@@ -98,7 +101,7 @@ export const home = {
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   activeFarmer: "You're an active farmer for this year",
   listTitle: 'Your application',
-  changes: (n: number) => (n === 1 ? '1 thing looks different from last year' : `${n} things look different from last year`),
+  kind: { change: 'Changes GSA found', choice: 'Your choices this year', same: 'Same as last year' } satisfies Record<TaskKind, string>,
   waiting: (n: number) => `Waiting for a check (${n})`,
   done: (n: number) => `Done (${n})`,
   submitted: 'Your application is submitted.',
@@ -110,29 +113,6 @@ export const home = {
     removed: (work: string) => `No longer needed: ${work}.`,
     next: (task: string) => `Next: ${task}.`,
     undone: 'Your last answer is undone.',
-  },
-}
-
-/** GSA's one line on what to do next and why, in his own numbers. */
-export const nudge = {
-  label: 'What to do next',
-  line: {
-    herd_unanswered: (reg: number, last: number) => `Start with your herd: the animal registry shows ${reg} cattle and you declared ${last} last year`,
-    herd_needs_count: "Tell us how many cattle you have today, and we'll keep your number next to the registry's",
-    herd_jelena_asks: 'Jelena needs more from you about your herd, so answer her question',
-    pigs_unanswered: (n: number) => `The registry shows ${n} pigs you didn't declare last year, so tell us what they're for`,
-    river_unanswered: 'The satellite photo shows the lower part of the river field looks different, so tell us what you planted',
-    river_needs_split: "We drew a line where the photo changes. Move it if it's not quite right and pick a crop for each part",
-    road_unanswered: 'The land map now marks a strip of the road field as road, so check it before it changes your area',
-    upper_unanswered: 'Your neighbour declared a strip of your upper field this year, and only one of you can get support for it',
-    upper_needs_drawing: 'Show where your upper field really ends by dragging its corners on the map',
-    measures_to_choose: (fit: number, last: number) => `You can apply for ${fit} measures this year, and we've ticked the ${last} you had last year`,
-    measure_needs_input: (name: string, n: number) => `${name} needs ${n === 1 ? 'one more thing' : `${n} more things`} from you`,
-    measure_ruled_out: (name: string) => `${name} can't be paid on your answer, so leave it out or change the answer`,
-    receipts_missing: 'Plant production support needs your input receipts, and a photo is enough',
-    same: 'The rest is the same as last year, so have a look and confirm it in one go',
-    renewal: 'Renew your active farmer status first. You can prepare everything else meanwhile',
-    submit: 'Everything is filled in, so sign the declaration and submit',
   },
 }
 
@@ -162,6 +142,23 @@ export const tasks = {
     submit: 'Sign and submit',
   } as Record<string, string>,
   receiptsMissingTitle: 'Upload your input receipts',
+  /** The one next action, said as what to do. */
+  start: { herd: 'Start with your herd', renewal: 'Start by renewing your active farmer status' } as Record<string, string>,
+  action: {
+    renewal: 'Renew your active farmer status',
+    herd: 'Check your herd',
+    pigs: 'Tell us about your pigs',
+    field_river: 'Check the river field',
+    field_road: 'Check the road field',
+    field_upper: 'Check the upper field',
+    measures: 'Choose your measures',
+    receipts: 'Upload your input receipts',
+    same: "Confirm what's the same as last year",
+  } as Record<string, string>,
+  measureAction: (name: string) => `${name}: add what it needs`,
+  review: 'Review this boundary',
+  reviewSplit: 'Split the field on the map',
+  reviewDraw: 'Draw where your field ends',
 
   work: {
     river_split: 'Split the field',
@@ -224,6 +221,8 @@ export const tasks = {
     source: 'Source: satellite photo',
     question: 'Are you growing two crops in the river field?',
     hint: "The photo can't see what you planted, so you decide",
+    yes: 'Yes, two crops',
+    no: 'No, one crop',
     answerYes: 'Two crops',
     answerNo: 'One crop',
     mayCheck: 'the state may still check it',
@@ -233,9 +232,12 @@ export const tasks = {
 
   road: {
     context: 'The land map now marks a strip of this field as road',
+    source: 'Source: the land map',
     area: (from: string, to: string) => `${from} becomes ${to}`,
     payment: (about: string) => `About ${about} less`,
     question: 'Did the road take part of this field?',
+    yes: "Yes, it's road now",
+    no: "No, it's still my field",
     done: (left: string) => `Now ${left}`,
     correctionAsked: "Correction asked for, and until it's checked the land map's area counts",
   },
@@ -246,6 +248,8 @@ export const tasks = {
     overlap: (ha: string) => `${ha} is declared by both of you, and only one of you can get support for it`,
     question: "Should we move your edge back to your neighbour's line?",
     hint: 'Choose No if the strip is yours, then show where your field ends',
+    yes: 'Yes, move my edge',
+    no: 'No, the strip is mine',
     answerYes: "Moved to the neighbour's line",
     answerNo: 'The strip is mine',
     moved: (ha: string) => `Now ${ha}`,
@@ -381,10 +385,20 @@ export const tasks = {
 
 export const map = {
   title: 'Map of your fields',
-  strip: (ha: string) => `${ha} road`,
+  flag: 'Looks different',
+  strip: (ha: string) => `${ha} now road`,
   edge: "The line stops at your field's edge, because land outside it can't get support",
-  neighbour: 'Neighbour',
-  both: (ha: string) => `${ha} both`,
+  neighbour: "Neighbour's field",
+  both: (ha: string) => `${ha} declared by both`,
+  imagery: 'Imagery © Esri',
+  keys: 'Drag or use the arrow keys to move the map, and plus or minus to zoom',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  backTo: (field: string) => `Back to the ${field.toLowerCase()}`,
+  backToFields: 'Back to your fields',
+  wholeFarm: 'Whole farm',
+  larger: 'Larger map',
+  back: 'Back to your application',
 }
 
 /** Drawing where a field ends, on a real map. */
@@ -574,15 +588,17 @@ export const bar = {
 /** His farm as GSA knows it now, updated by every answer. */
 export const farm = {
   title: 'Your farm this year',
-  land: 'Land',
-  crops: 'Crops',
-  animals: 'Animals',
+  fields: 'Fields',
+  cattleLabel: 'Cattle',
+  pigsLabel: 'Pigs',
   measures: 'Measures',
   landValue: (ha: string, n: number) => `${ha} in ${n} fields`,
   crop: (crop: string, ha: string) => `${crop} ${ha}`,
   cattle: (n: number) => `${n} cattle`,
-  cattleChecking: (his: number, reg: number) => `${his} cattle (registry ${reg}, being checked)`,
+  cattleChecking: (his: number, reg: number) => `${his} cattle, the registry shows ${reg}`,
   pigs: (n: number) => `${n} pigs`,
   pigsHousehold: (n: number) => `${n} pigs for the household`,
   measuresValue: (n: number, fit: number) => `${n} of ${fit} you can apply for`,
+  source: { records: 'From government records', confirmed: 'Confirmed by you', checking: 'Waiting for a check' } satisfies Record<Source, string>,
+  partly: (n: number, of: number) => `${n} of ${of} confirmed by you`,
 }

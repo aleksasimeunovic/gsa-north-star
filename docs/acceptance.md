@@ -1,16 +1,16 @@
-# Acceptance pass (round 3)
+# Acceptance pass (round 5)
 
-Where each problem and each item in CLAUDE.md section 13 can be checked. Start fresh with Prototype → Reset this scenario. Checked at 360 px and 1280 px.
+Where each problem and each item in CLAUDE.md section 13 can be checked. Start fresh with Prototype → Reset this scenario. Checked at 375 px and 1280 px.
 
 ## A five-minute path for Earl
 
-1. **Arrival:** one line, "We've filled in your application from last year and the state's records. Check 3 changes and confirm the rest." Readiness: "4 things left before you can submit". The list opens on "3 changes since last year", then "Same as last year".
-2. **Your herd:** last year 41, registry 38. Answer No, enter 41: registry 38 | you, today 41, "This doesn't change your estimate.", awaiting verification. "Update each animal by ear tag" is struck through at the top with its reason. Continue: the herd moves to "Waiting for a check (1)".
-3. **River field:** zoomed map, neighbours faint, the flagged lower part, "Source: satellite photo". Yes: the line sits on the satellite edge, top part prefilled with wheat; pick sunflowers, confirm. No instead: done at once, "One crop. The state may still check it." Estimate unchanged.
-4. **Road field:** strip, "1.80 ha becomes 1.68 ha", "About 2,200 dinars less" before the question. Yes: done. No instead: "Correction asked for. Until it's checked, the land map's area counts." in one step.
-5. **Same as last year:** your other fields, details, measures (with amounts), input receipts (files listed), each openable. "Yes, all the same as last year".
-6. **"Ready to submit" sits at the top → Sign and submit → "Ready to submit. The state still checks:" → declaration → Submit application → receipt.**
-7. **Jelena (Prototype → Jelena):** grouped by state. On Milan's case the primary button is "Ask the animal registry to check"; after it the case moves to "Waiting for another office" and Milan's herd says "Jelena asked the animal registry to check."
+1. **Arrival:** one task at the top, open: "Start with your herd" (41 last year, 38 in the registry). Below it, quieter rows: ◆ Changes GSA found (4), ■ Your choices this year (1), = Same as last year (3). "Your farm this year" says "From government records" on every line; the estimate says it is provisional until the road field, the upper field and the measures are checked.
+2. **Your herd:** Yes moves the herd into "Done" and puts the pigs in the top slot. Or No, enter 41: registry 38 | you 41, waiting for a check, the herd stays on top with "Next: Your pigs" as the primary button, and the farm says "41 cattle, the registry shows 38 · Waiting for a check". Undo takes the answer back.
+3. **River field:** the card shows the satellite photo with the lower part dotted, "Looks different". "Review this boundary" opens a map he can drag, zoom, see the whole farm on and enlarge. Yes, two crops: GSA's line where the photo changes, with large handles on the photo; pick sunflowers for the bottom, confirm. Back on Welcome back, "After your answer" shows the two crops and the road field is on top.
+4. **Road field:** the card shows the hatched 0.12 ha strip along the real road, "1.80 ha becomes 1.68 ha" and "About 2,200 dinars less" before anything is asked. On the review map: "Yes, it's road now" or "No, it's still my field".
+5. **Upper field:** the neighbour's field and the 0.10 ha both of you declared. "No, the strip is mine" opens drawing on the same photo: drag a corner, the dashed farmland line stops it and says why, Undo, Save.
+6. **Choose your measures, then Same as last year** (your other fields on a map he can move, details, receipts) → "Ready to submit" on top → Sign and submit → receipt. Every line of the farm now says "Confirmed by you"; the estimate is no longer provisional.
+7. **Jelena (Prototype → Jelena):** grouped by state; on Milan's case the primary button is "Ask the animal registry to check"; Milan's herd then says "Jelena asked the animal registry to check."
 
 ## Problems P1 to P12
 
@@ -19,12 +19,12 @@ Where each problem and each item in CLAUDE.md section 13 can be checked. Start f
 | P1 | Welcome back: "Submit by 26 May. 29 days left." (design note: EU mandate). |
 | P2 | Scenario "Second year, not renewed": renewal is the first task; readiness says "Renew your status to submit"; after renewing, "You're an active farmer. Next: your application." The receipt is unmistakable. |
 | P3 | Every change brings the record in (registry count, satellite photo, land map); receipts and records are listed in the app. |
-| P4 | Maps in plain words; no key, no plots; neighbours faint; the line explains itself at the field's edge. |
+| P4 | Real satellite maps in plain words; no key, no plots; neighbours faint; the line explains itself at the field's edge. |
 | P5 | "Do you have 38 cattle now?" |
 | P6 | River field: GSA proposes the split line from the satellite flag; Milan nudges it or uses the slider. |
-| P7 | "3 changes since last year", each with its evidence before the question. |
+| P7 | "Changes GSA found", each with its evidence (numbers, or the place on the photo) before the question. |
 | P8 | Herd disagreement → "Send this to Jelena". His item then shows Jelena's state. |
-| P9 | One list, next action always on top; autosave with "Saved". |
+| P9 | One next action always on top, what's done and what can wait below; autosave with "Saved". |
 | P10 | Status by section (needs you / waiting for a check / done), payment impact apart, "Ready to submit", what the state still checks. |
 | P11 | The whole flow can be finished alone, from Welcome back to the receipt. |
 | P12 | Jelena: only escalated problems, grouped by who acts next, likely next step primary. |

@@ -25,7 +25,7 @@ const userReqs = (m: Measure) => m.requirements.filter((r) => r.kind !== 'auto')
 
 /** What the measure pays, worked out on his own numbers where the rate is known. */
 function amountLine(m: Measure, d: Derived): string {
-  if (m.rateDinars && m.unit === 'ha') return t.plant(formatHa(d.farm.totalHa), formatNumber(m.rateDinars), aboutThousand(d.farm.totalHa * m.rateDinars))
+  if (m.rateDinars && m.unit === 'ha') return t.plant(formatHa(d.farm.fields.totalHa), formatNumber(m.rateDinars), aboutThousand(d.farm.fields.totalHa * m.rateDinars))
   if (m.rateDinars && m.unit === 'cow_calved' && d.scenario.herd) {
     const n = d.scenario.herd.cowsCalved
     return t.cows(n, formatNumber(m.rateDinars), aboutThousand(n * m.rateDinars))
@@ -120,7 +120,7 @@ function AutoLine({ m, r, d }: { m: Measure; r: Requirement; d: Derived }) {
   const receipts = d.items.find((i) => i.id === 'receipts')
   const value =
     r.id === 'land'
-      ? a.land(formatHa(d.farm.totalHa), d.farm.fieldCount)
+      ? a.land(formatHa(d.farm.fields.totalHa), d.farm.fields.count)
       : r.id === 'receipts'
         ? receipts?.detail === 'receipts_missing'
           ? a.receiptsMissing

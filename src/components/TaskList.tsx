@@ -1,181 +1,92 @@
 import { after as copy, en, home, tasks } from '../copy/en'
-import { CHANGE_TASKS, type Task } from '../logic/application'
+import { KINDS, laterByKind, taskKind, type Task, type TaskId, type TaskKind } from '../logic/application'
 import { Button } from '../ui/Button'
 import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
-import { NudgeLine } from './NudgeLine'
 import { TaskBody, taskSummary } from './TaskBodies'
 import type { Flow } from './useApplicationFlow'
 
 /**
- * His application as one list, ordered by status: what needs him first, then what waits for a check,
- * then what's done (collapsed). At the top, GSA says what his last answer changed and what's next.
+ * His application, answering three questions in order: what to do next (one task, open, at the top),
+ * what's already done, and what can wait (quiet rows by kind: changes GSA found, his choices this year,
+ * what's the same as last year).
  */
 export function TaskList({ flow }: { flow: Flow }) {
-  const { derived, state, go } = useApp()
+  const { derived, state } = useApp()
   const { list } = derived
   const submitted = !!state.answers.submittedAt
-  const { open, held, title } = flow
-  const all = [...list.todo, ...list.waiting, ...list.done]
-
-  const heldTask = held ? all.find((t) => t.id === held && t.status !== 'action_required') : undefined
-  const todo = heldTask ? [heldTask, ...list.todo] : list.todo
-  const changes = todo.filter((t) => CHANGE_TASKS.includes(t.id))
-  const renewal = todo.filter((t) => t.id === 'renewal')
-  const rest = todo.filter((t) => t.id !== 'renewal' && !CHANGE_TASKS.includes(t.id))
-  const waiting = list.waiting.filter((t) => t !== heldTask)
-  const doneOpen = flow.showDone || list.done.some((t) => t.id === open)
-
-  const row = (t: Task) => (
-    <TaskRow
-      key={t.id}
-      task={t}
-      title={title(t.id)}
-      summary={taskSummary(t.id, derived, state)}
-      open={open === t.id}
-      isNext={list.next === t.id}
-      readOnly={submitted}
-      onToggle={() => flow.toggle(t.id)}
-    />
-  )
+  const later = laterByKind(list, flow.focus)
+  const waiting = list.waiting.filter((t) => t.id !== flow.focus)
+  const done = list.done.filter((t) => t.id !== flow.focus)
+  const doneOpen = flow.showDone || submitted
 
   return (
-    <section aria-labelledby="list-title" className="task-section">
-      <h2 id="list-title" className="visually-hidden">{home.listTitle}</h2>
+    <div className="flow">
       <p aria-live="polite" className="visually-hidden">{flow.announce}</p>
-
       {!submitted && <AfterAnswerPanel flow={flow} />}
-
-      {!submitted && list.next === 'submit' && (
-        <div id="task-submit" tabIndex={-1} className="task" data-next>
-          <h3 className="task-title">{en.readiness.headline.ready_to_submit}</h3>
-          <div className="task-go">
-            <Button variant="link" onClick={() => go('submit')}>{tasks.submit.go}</Button>
-          </div>
-        </div>
-      )}
-
-      {renewal.length > 0 && <ol className="tasks">{renewal.map(row)}</ol>}
-
-      {changes.length > 0 && (
-        <div className="task-group">
-          <h3 className="group-title">
-            {home.changes(changes.length)} <Note kind="ai" />
-          </h3>
-          <ol className="tasks">{changes.map(row)}</ol>
-        </div>
-      )}
-
-      {rest.length > 0 && <ol className="tasks">{rest.map(row)}</ol>}
+      {!submitted && <NextAction flow={flow} />}
 
       {waiting.length > 0 && (
-        <div className="task-group">
-          <h3 className="group-title">{home.waiting(waiting.length)}</h3>
-          <ol className="tasks">{waiting.map(row)}</ol>
-        </div>
+        <section className="rows-group" aria-labelledby="waiting-title">
+          <h2 id="waiting-title" className="group-title">{home.waiting(waiting.length)}</h2>
+          <ul className="rows">{waiting.map((t) => <Row key={t.id} task={t} flow={flow} />)}</ul>
+        </section>
       )}
 
-      {list.done.length > 0 && (
-        <div className="task-group">
-          <h3 className="group-title">
+      {done.length > 0 && (
+        <section className="rows-group" aria-labelledby="done-title">
+          <h2 id="done-title" className="group-title">
             <button type="button" className="group-toggle" aria-expanded={doneOpen} aria-controls="done-list" onClick={() => flow.setShowDone(!doneOpen)}>
-              <span aria-hidden="true">{doneOpen ? '−' : '+'}</span> {home.done(list.done.length)}
+              <span aria-hidden="true">{doneOpen ? '−' : '+'}</span> {home.done(done.length)}
             </button>
-          </h3>
-          <ol id="done-list" className="tasks" hidden={!doneOpen}>
-            {list.done.map(row)}
-          </ol>
-        </div>
-      )}
-    </section>
-  )
-}
-
-/**
- * The defining moment: his answer, then what it did to the application. What's done, what is no longer
- * needed and why, what was added, with Undo in case it was a mistake, then the one next step.
- */
-function AfterAnswerPanel({ flow }: { flow: Flow }) {
-  const { derived, state, dispatch } = useApp()
-  const a = flow.after
-  const outcome = (id: Parameters<typeof taskSummary>[0]) => taskSummary(id, derived, state)
-  return (
-    <section className="after" aria-label={a ? copy.title : undefined} data-has-change={a ? true : undefined}>
-      {a && (
-        <>
-          <div className="after-head">
-            <h3 className="group-title">{copy.title}</h3>
-            {state.past.length > 0 && (
-              <Button variant="link" onClick={() => dispatch({ type: 'undo' })} aria-label={copy.undoLabel}>
-                {copy.undo}
-              </Button>
-            )}
-          </div>
-          <ul className="after-list">
-            {a.done.map((id) => (
-              <li key={id} data-kind="done">
-                <StatusBadge status="complete" iconOnly /> {copy.done(flow.title(id), outcome(id))}
-              </li>
-            ))}
-            {a.waiting.map((id) => (
-              <li key={id} data-kind="waiting">
-                <StatusBadge status="awaiting_verification" iconOnly /> {copy.waiting(flow.title(id))} <Note kind="assumption" />
-              </li>
-            ))}
-            {a.removed.map(({ work }) => (
-              <li key={work.id} data-kind="removed">
-                <span aria-hidden="true" className="after-icon">−</span> {copy.removed(tasks.work[work.id], tasks.reason[work.reason!])}
-              </li>
-            ))}
-            {a.added.map((id) => (
-              <li key={id} data-kind="added">
-                <span aria-hidden="true" className="after-icon">+</span> {flow.title(id)}: {outcome(id)}
-              </li>
-            ))}
+          </h2>
+          <ul id="done-list" className="rows" hidden={!doneOpen}>
+            {done.map((t) => <Row key={t.id} task={t} flow={flow} />)}
           </ul>
-        </>
+        </section>
       )}
-      <NudgeLine />
-    </section>
+
+      {KINDS.map((kind) => later[kind].length > 0 && <Later key={kind} kind={kind} tasks={later[kind]} flow={flow} />)}
+    </div>
   )
 }
 
-interface RowProps {
-  task: Task
-  title: string
-  summary: string
-  open: boolean
-  isNext: boolean
-  readOnly: boolean
-  onToggle: () => void
-}
+/** The one next action: what kind of work it is, what to do, and the task itself, open. */
+function NextAction({ flow }: { flow: Flow }) {
+  const { derived, go } = useApp()
+  const { list } = derived
+  const task = flow.focusTask
 
-function TaskRow({ task, title, summary, open, isNext, readOnly, onToggle }: RowProps) {
-  const bodyId = `task-${task.id}-body`
+  if (flow.focus === 'submit') {
+    return (
+      <section id="next" className="next" aria-labelledby="next-title">
+        <h2 id="next-title" tabIndex={-1}>{en.readiness.headline.ready_to_submit}</h2>
+        <div>
+          <Button variant="primary" onClick={() => go('submit')}>{tasks.submit.go}</Button>
+        </div>
+      </section>
+    )
+  }
+  if (!task) return null
+
+  const kind = taskKind(task.id)
+  const needsHim = task.status === 'action_required'
+  const first = list.done.length === 0 && list.waiting.length === 0 && task.id === list.next
+  const heading = needsHim ? (first && tasks.start[task.id]) || actionTitle(task.id, flow) : flow.title(task.id)
   // Before he answers, the work a change could still need is named, so he sees it go.
   const possible = task.work.filter((w) => w.state === 'possible')
+
   return (
-    <li id={`task-${task.id}`} tabIndex={-1} className="task" data-status={task.status} data-open={open || undefined} data-next={isNext || undefined}>
-      <div className="task-head">
-        <h3 className="task-title">
-          {readOnly ? (
-            title
-          ) : (
-            <button type="button" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
-              {title}
-            </button>
-          )}
-        </h3>
-        <StatusBadge status={task.status} iconOnly={task.status !== 'awaiting_verification'} />
+    <section id="next" className="next" data-kind={kind} aria-labelledby="next-title">
+      <p className="next-kind">
+        {home.kind[kind]} {kind === 'change' && <Note kind="ai" />}
+      </p>
+      <div className="next-head">
+        <h2 id="next-title" tabIndex={-1}>{heading}</h2>
+        {!needsHim && <StatusBadge status={task.status} />}
       </div>
-      {open ? (
-        <div id={bodyId} className="task-body">
-          <TaskBody task={task} />
-        </div>
-      ) : (
-        <p className="task-summary">{summary}</p>
-      )}
+      <TaskBody task={task} />
       {possible.length > 0 && (
         <ul className="work-list">
           {possible.map((w) => (
@@ -185,6 +96,104 @@ function TaskRow({ task, title, summary, open, isNext, readOnly, onToggle }: Row
           ))}
         </ul>
       )}
+    </section>
+  )
+}
+
+function actionTitle(id: TaskId, flow: Flow) {
+  if (id.startsWith('measure_')) return tasks.measureAction(flow.title(id))
+  if (id === 'receipts') return tasks.action.receipts
+  return tasks.action[id] ?? flow.title(id)
+}
+
+/** What can wait, by kind. Quiet rows; any of them opens in the top slot. */
+function Later({ kind, tasks: list, flow }: { kind: TaskKind; tasks: Task[]; flow: Flow }) {
+  const { derived, state } = useApp()
+  const titleId = `later-${kind}`
+  // "Same as last year" is one confirmation; its rows name each thing it covers.
+  const rows = list.flatMap((t) =>
+    t.id === 'same' && t.members
+      ? t.members.map((m) => ({ key: m, open: t.id, title: tasks.title[m], summary: taskSummary(m, derived, state) }))
+      : [{ key: t.id, open: t.id, title: flow.title(t.id), summary: taskSummary(t.id, derived, state) }],
+  )
+  return (
+    <section className="later" data-kind={kind} aria-labelledby={titleId}>
+      <h2 id={titleId} className="group-title">
+        {home.kind[kind]} <span className="count">({rows.length})</span>
+      </h2>
+      <ul className="rows">
+        {rows.map((r) => (
+          <li key={r.key} className="row">
+            <button type="button" className="row-title" onClick={() => flow.show(r.open)}>{r.title}</button>
+            <span className="row-summary">{r.summary}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/** A task that is done or waiting for a check: one line with its outcome, opens in the top slot. */
+function Row({ task, flow }: { task: Task; flow: Flow }) {
+  const { derived, state } = useApp()
+  const submitted = !!state.answers.submittedAt
+  const title = flow.title(task.id)
+  return (
+    <li className="row" data-status={task.status}>
+      <StatusBadge status={task.status} iconOnly />
+      <div className="row-text">
+        {submitted ? (
+          <span className="row-title">{title}</span>
+        ) : (
+          <button type="button" className="row-title" onClick={() => flow.show(task.id)}>{title}</button>
+        )}
+        <span className="row-summary">{taskSummary(task.id, derived, state)}</span>
+      </div>
     </li>
+  )
+}
+
+/**
+ * The defining moment: his answer, then what it did to the application. What's done, what is no longer
+ * needed and why, what was added, with Undo in case it was a mistake. The next action follows right under it.
+ */
+function AfterAnswerPanel({ flow }: { flow: Flow }) {
+  const { derived, state, dispatch } = useApp()
+  const a = flow.after
+  if (!a) return null
+  const outcome = (id: TaskId) => taskSummary(id, derived, state)
+  return (
+    <section className="after" aria-labelledby="after-title" data-has-change>
+      <div className="after-head">
+        <h2 id="after-title" className="group-title">{copy.title}</h2>
+        {state.past.length > 0 && (
+          <Button variant="link" onClick={() => dispatch({ type: 'undo' })} aria-label={copy.undoLabel}>
+            {copy.undo}
+          </Button>
+        )}
+      </div>
+      <ul className="after-list">
+        {a.done.map((id) => (
+          <li key={id} data-kind="done">
+            <StatusBadge status="complete" iconOnly /> {copy.done(flow.title(id), outcome(id))}
+          </li>
+        ))}
+        {a.waiting.map((id) => (
+          <li key={id} data-kind="waiting">
+            <StatusBadge status="awaiting_verification" iconOnly /> {copy.waiting(flow.title(id))} <Note kind="assumption" />
+          </li>
+        ))}
+        {a.removed.map(({ work }) => (
+          <li key={work.id} data-kind="removed">
+            <span aria-hidden="true" className="after-icon">−</span> {copy.removed(tasks.work[work.id], tasks.reason[work.reason!])}
+          </li>
+        ))}
+        {a.added.map((id) => (
+          <li key={id} data-kind="added">
+            <span aria-hidden="true" className="after-icon">+</span> {flow.title(id)}: {outcome(id)}
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

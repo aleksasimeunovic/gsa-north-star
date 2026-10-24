@@ -41,6 +41,38 @@ export interface ApplicationList {
 
 export const CHANGE_TASKS: TaskId[] = ['herd', 'pigs', 'field_river', 'field_road', 'field_upper']
 
+/**
+ * Three kinds of work, kept apart because they ask different things of him:
+ * - change: GSA found something that may differ from the records, and he verifies it
+ * - choice: what he decides or adds for this year regardless of changes (measures, what they need)
+ * - same: what he confirms is still true
+ */
+export type TaskKind = 'change' | 'choice' | 'same'
+export const KINDS: TaskKind[] = ['change', 'choice', 'same']
+
+export function taskKind(id: TaskId): TaskKind {
+  if (CHANGE_TASKS.includes(id)) return 'change'
+  if (id === 'same') return 'same'
+  return 'choice'
+}
+
+/** Whether a map shows this change: he reviews the boundary on the map, not from a description. */
+export const isMapChange = (id: TaskId): id is 'field_river' | 'field_road' | 'field_upper' =>
+  id === 'field_river' || id === 'field_road' || id === 'field_upper'
+
+/**
+ * What can wait: everything that still needs him apart from the one in front of him, by kind,
+ * changes first because they shape the rest.
+ */
+export function laterByKind(list: ApplicationList, focus: TaskId | 'submit' | null): Record<TaskKind, Task[]> {
+  const later = list.todo.filter((t) => t.id !== focus)
+  return {
+    change: later.filter((t) => taskKind(t.id) === 'change'),
+    choice: later.filter((t) => taskKind(t.id) === 'choice'),
+    same: later.filter((t) => taskKind(t.id) === 'same'),
+  }
+}
+
 /** Unchanged things go in "same as last year" while they only need confirming. */
 const CONFIRMABLE = new Set<ItemDetail>([
   'fields_same', 'fields_confirmed', 'details_to_confirm', 'details_confirmed',

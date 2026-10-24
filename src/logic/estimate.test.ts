@@ -40,4 +40,14 @@ describe('estimate', () => {
     const e = run('second_year', { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }).estimate
     expect(e.totalDinars).toBe(442_000)
   })
+
+  it('is provisional while the road, the upper field or the measures are unanswered, and says which', () => {
+    expect(run('second_year').estimate.pending).toEqual(['field_road', 'field_upper', 'measures'])
+    const e = run('second_year', { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }, { type: 'choose_measures', chosen: ['plant_production'] }).estimate
+    expect(e.pending).toEqual([])
+  })
+
+  it('missing receipts keep it provisional too', () => {
+    expect(run('missing_document').estimate.pending).toContain('receipts')
+  })
 })

@@ -1,5 +1,7 @@
 // All scenario facts (CLAUDE.md section 7). Components never hardcode these.
 
+import type { Placement } from '../logic/geo'
+
 export type Point = { x: number; y: number }
 // Coordinates are metres in a local grid, so area in m² / 10,000 = hectares.
 export type Polygon = Point[]
@@ -105,6 +107,8 @@ export interface Scenario {
   // Prototype clock (assumption), so "days left" means something.
   today: string
   generalData: GeneralData
+  /** Where the fields sit on the satellite photo: north of a real road west of Bečanj (prototype placement). */
+  place: Placement
   herd: Herd | null
   pigs: Pigs | null
   fields: Field[]
@@ -270,6 +274,7 @@ const BASE: Scenario = {
   window: { opens: '2026-04-10', closes: '2026-05-26' },
   today: '2026-04-28',
   generalData: { holder: 'Milan Dragović', place: 'Bečanj, near Čačak' },
+  place: { lon: 20.55172, lat: 43.86748, rotationDeg: 12.5 },
   herd: HERD,
   pigs: PIGS,
   fields: FIELDS,

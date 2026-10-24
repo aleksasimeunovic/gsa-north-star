@@ -1,32 +1,18 @@
-import 'ol/ol.css'
 import Feature from 'ol/Feature'
-import OlMap from 'ol/Map'
-import View from 'ol/View'
-import { defaults as defaultControls } from 'ol/control/defaults'
 import OlPolygon from 'ol/geom/Polygon'
 import Modify from 'ol/interaction/Modify'
 import Snap from 'ol/interaction/Snap'
 import VectorLayer from 'ol/layer/Vector'
-import Projection from 'ol/proj/Projection'
 import VectorSource from 'ol/source/Vector'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { draw as copy, en, formatHa, map as mapCopy } from '../copy/en'
-import type { FieldId, Point, Polygon, Scenario } from '../data/scenarios'
-import { bounds, centroid, drawingProblems, overlapHa, polygonAreaHa, roundHa } from '../logic/geometry'
+import { draw as copy, en, formatHa } from '../copy/en'
+import type { FieldId, Polygon, Scenario } from '../data/scenarios'
+import { bounds, drawingProblems, overlapHa, polygonAreaHa, roundHa } from '../logic/geometry'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Inline, Stack, Text, VisuallyHidden } from '../ui/Layout'
-import { mapStyle, vertexStyle } from '../ui/mapStyles'
-
-// Scenario coordinates are metres with y pointing down; the map's y points up.
-const toMap = (p: Polygon) => [[...p.map((q) => [q.x, -q.y]), [p[0].x, -p[0].y]]]
-const fromMap = (rings: number[][][]): Polygon => rings[0].slice(0, -1).map(([x, y]) => ({ x: Math.round(x * 10) / 10, y: Math.round(-y * 10) / 10 }))
-const projection = new Projection({ code: 'gsa-local', units: 'm', extent: [-200, -500, 800, 200] })
-
-const inside = (p: Point, poly: Polygon) => {
-  const b = bounds(poly)
-  return p.x >= b.minX && p.x <= b.maxX && p.y >= b.minY && p.y <= b.maxY
-}
+import { labelStyle, mapStyle, vertexStyle } from '../ui/mapStyles'
+import { createFarmMap, landOf } from './map/olFarm'
 
 interface Props {
   scenario: Scenario
@@ -37,14 +23,15 @@ interface Props {
 }
 
 /**
- * Drawing where a field really ends, on a real map. He drags corners (or an edge to add one); corners
- * stick to the neighbour's line and the registered land nearby. Area and problems update as he drags,
- * and each problem is explained where it stops him. A slider is the alternative to dragging.
+ * Drawing where a field really ends, on the satellite photo. He drags corners (or an edge to add one);
+ * corners stick to the neighbour's line and the registered land nearby. Dragging anywhere else moves the map.
+ * Area and problems update as he drags, and each problem is explained where it stops him.
+ * A slider is the alternative to dragging.
  */
 export default function FieldEditor({ scenario, fieldId, start, onSave }: Props) {
   const field = scenario.fields.find((f) => f.id === fieldId)!
   const neighbour = field.signal?.kind === 'overlap' ? field.signal.neighbourPolygon : null
-  const land = scenario.blocks.find((b) => inside(centroid(field.polygon), b.polygon))?.polygon ?? field.polygon
+  const land = landOf(scenario, field)
   const others = scenario.fields.filter((f) => f.id !== fieldId)
 
   const el = useRef<HTMLDivElement>(null)
@@ -63,54 +50,40 @@ export default function FieldEditor({ scenario, fieldId, start, onSave }: Props)
   const area = roundHa(polygonAreaHa(poly))
 
   // Build the map once; the field's shape is pushed in from state below.
+  const toLocal = useRef<(rings: number[][][]) => Polygon>(() => [])
+  const toRings = useRef<(p: Polygon) => number[][][]>(() => [])
   useEffect(() => {
     if (!el.current) return
-    const ref = new VectorSource()
-    const add = (p: Polygon, role: Parameters<typeof mapStyle>[0], text?: string) => {
-      const f = new Feature(new OlPolygon(toMap(p)))
-      f.setStyle(mapStyle(role, text))
-      ref.addFeature(f)
-    }
-    add(land, 'land')
-    others.forEach((o) => add(o.polygon, 'other'))
-    if (neighbour) add(neighbour, 'neighbour', mapCopy.neighbour)
+    const fm = createFarmMap(el.current, scenario, { interactive: true, focus: fieldId, editing: true })
+    toRings.current = fm.ring
+    toLocal.current = (rings) => rings[0].slice(0, -1).map((c) => {
+      const p = fm.point(c)
+      return { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 }
+    })
 
     const own = new VectorSource()
-    const feature = new Feature(new OlPolygon(toMap(start)))
+    const feature = new Feature(new OlPolygon(fm.ring(start)))
     mine.current = feature
     own.addFeature(feature)
-
-    const shown = [...field.polygon, ...(neighbour ?? [])]
-    const b = bounds(shown)
-    const map = new OlMap({
-      target: el.current,
-      controls: defaultControls({ rotate: false, attribution: false }),
-      // No panning or wheel zoom: dragging on the map always means moving his line.
-      interactions: [],
-      layers: [new VectorLayer({ source: ref }), new VectorLayer({ source: own })],
-      view: new View({ projection, extent: [b.minX - 120, -b.maxY - 120, b.maxX + 120, -b.minY + 120], constrainOnlyCenter: true }),
-    })
-    map.getView().fit([b.minX, -b.maxY, b.maxX, -b.minY], { padding: [24, 24, 24, 24] })
+    fm.map.getLayers().insertAt(2, new VectorLayer({ source: own }))
 
     const modify = new Modify({ source: own, pixelTolerance: 24, style: vertexStyle })
     // Undo goes back to the shape before the drag, not each step of it.
     let before: Polygon | null = null
-    modify.on('modifystart', () => (before = fromMap(feature.getGeometry()!.getCoordinates())))
+    modify.on('modifystart', () => (before = toLocal.current(feature.getGeometry()!.getCoordinates())))
     modify.on('modifyend', () => {
       const snapshot = before
       if (snapshot) setPast((p) => [...p, snapshot])
       before = null
     })
-    map.addInteraction(modify)
+    fm.map.addInteraction(modify)
     // Snap goes last so it sees the moves of the modify interaction.
-    map.addInteraction(new Snap({ source: ref, pixelTolerance: 14 }))
-    map.addInteraction(new Snap({ source: own, pixelTolerance: 14 }))
+    fm.map.addInteraction(new Snap({ source: fm.shapes, pixelTolerance: 14 }))
+    fm.map.addInteraction(new Snap({ source: own, pixelTolerance: 14 }))
 
-    const live = () => setPoly(fromMap(feature.getGeometry()!.getCoordinates()))
+    const live = () => setPoly(toLocal.current(feature.getGeometry()!.getCoordinates()))
     feature.getGeometry()!.on('change', live)
-    return () => {
-      map.setTarget(undefined)
-    }
+    return () => fm.destroy()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -119,9 +92,9 @@ export default function FieldEditor({ scenario, fieldId, start, onSave }: Props)
     const f = mine.current
     if (!f) return
     const geom = f.getGeometry()!
-    const now = JSON.stringify(fromMap(geom.getCoordinates()))
-    if (now !== JSON.stringify(poly)) geom.setCoordinates(toMap(poly))
-    f.setStyle(mapStyle(hard.length ? 'mine_problem' : 'mine', `${en.fields[fieldId]} ${formatHa(area)}`))
+    const now = JSON.stringify(toLocal.current(geom.getCoordinates()))
+    if (now !== JSON.stringify(poly)) geom.setCoordinates(toRings.current(poly))
+    f.setStyle([...mapStyle(hard.length ? 'mine_problem' : 'mine'), labelStyle(`${en.fields[fieldId]} ${formatHa(area)}`)])
   }, [poly, hard.length, area, fieldId])
 
   const set = (next: Polygon) => {
@@ -135,7 +108,7 @@ export default function FieldEditor({ scenario, fieldId, start, onSave }: Props)
   return (
     <Stack gap="sm">
       <Text variant="small">{copy.how}</Text>
-      <div ref={el} className="draw-map" role="application" aria-label={copy.label(en.fields[fieldId])} aria-describedby="draw-status" />
+      <div ref={el} className="farm-map" data-mode="draw" tabIndex={0} role="application" aria-label={copy.label(en.fields[fieldId])} aria-describedby="draw-status" />
       <div id="draw-status" aria-live="polite">
         <Text variant="strong">{copy.area(formatHa(area))}</Text>
         {hard.map((p) => (

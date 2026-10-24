@@ -1,6 +1,6 @@
 import type { MeasureId, Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import type { Item, ImpactReason } from './status'
+import type { Item, ImpactReason, ItemId } from './status'
 
 export interface EstimateLine {
   measureId: 'plant_production' | 'cows_raising_calves'
@@ -24,10 +24,15 @@ export interface Estimate {
   changes: EstimateChange[]
   /** Chosen measures whose amount is only worked out after checks. */
   unpriced: MeasureId[]
+  /** Unanswered things that could still change it: while there are any, the estimate is provisional. */
+  pending: ItemId[]
   assumptions: { eligibleAreaHa: number; cowsCalved: number; rates: { perHa: number; perCow: number } }
 }
 
 const round = (n: number, to: number) => Math.round(n / to) * to
+
+/** What can change the estimate: area (road, the neighbour's line), the measures chosen, the receipts that justify them. */
+const CAN_CHANGE: ItemId[] = ['field_road', 'field_upper', 'measures', 'receipts']
 
 /**
  * Estimated subsidy based on current information, for this application only.
@@ -80,6 +85,10 @@ export function estimate(s: Scenario, a: Answers, items: Item[]): Estimate {
       aboutDinars: round(p.amountDinars, 100),
     })),
     unpriced: s.measures.filter((m) => m.fits && chosen(m.id) && m.rateDinars === undefined).map((m) => m.id),
+    // Receipts that are there only need confirming; missing ones put plant production in doubt.
+    pending: items
+      .filter((i) => CAN_CHANGE.includes(i.id) && i.status === 'action_required' && (i.id !== 'receipts' || i.detail === 'receipts_missing'))
+      .map((i) => i.id),
     assumptions: {
       eligibleAreaHa: eligibleCentiHa / 100,
       cowsCalved,

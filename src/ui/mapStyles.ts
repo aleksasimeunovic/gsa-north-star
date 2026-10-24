@@ -3,42 +3,109 @@ import MultiPoint from 'ol/geom/MultiPoint'
 import type Polygon from 'ol/geom/Polygon'
 import { Circle, Fill, Stroke, Style, Text } from 'ol/style'
 
-// Greyscale map styles for the drawing map. The design system replaces these later.
-const ink = '#111'
-const muted = '#777'
-const label = (text: string, bold = true) =>
-  new Text({ text, font: `${bold ? 600 : 400} 14px system-ui, sans-serif`, fill: new Fill({ color: ink }), stroke: new Stroke({ color: '#fff', width: 4 }), overflow: true })
+// Map styles on the satellite photo: white lines with a dark halo so they read on any field.
+// Greyscale like the rest of the prototype; the design system replaces these later.
+const white = '#fff'
+const halo = 'rgba(0,0,0,0.75)'
 
-export type MapRole = 'land' | 'neighbour' | 'other' | 'mine' | 'mine_problem'
+function pattern(size: number, draw: (ctx: CanvasRenderingContext2D) => void): CanvasPattern | string {
+  if (typeof document === 'undefined') return 'rgba(255,255,255,0.3)'
+  const c = document.createElement('canvas')
+  c.width = c.height = size
+  const ctx = c.getContext('2d')
+  if (!ctx) return 'rgba(255,255,255,0.3)'
+  draw(ctx)
+  return ctx.createPattern(c, 'repeat') ?? 'rgba(255,255,255,0.3)'
+}
 
-export function mapStyle(role: MapRole, text?: string): Style[] {
+let patterns: { hatch: CanvasPattern | string; dots: CanvasPattern | string } | null = null
+const fills = () =>
+  (patterns ??= {
+    // Hatched: land that changed hands (the road strip, the strip both of you declared).
+    hatch: pattern(12, (ctx) => {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'
+      ctx.fillRect(0, 0, 12, 12)
+      ctx.strokeStyle = white
+      ctx.lineWidth = 2.5
+      ctx.beginPath()
+      for (const o of [-12, 0, 12]) {
+        ctx.moveTo(o, 12)
+        ctx.lineTo(o + 12, 0)
+      }
+      ctx.stroke()
+    }),
+    // Dotted: what the satellite flagged.
+    dots: pattern(10, (ctx) => {
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'
+      ctx.fillRect(0, 0, 10, 10)
+      ctx.fillStyle = white
+      ctx.beginPath()
+      ctx.arc(5, 5, 1.8, 0, Math.PI * 2)
+      ctx.fill()
+    }),
+  })
+
+const line = (width: number, dash?: number[]) => [
+  new Style({ stroke: new Stroke({ color: halo, width: width + 3, lineDash: dash }) }),
+  new Style({ stroke: new Stroke({ color: white, width, lineDash: dash }) }),
+]
+
+export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left' | 'center'; size?: number; above?: boolean } = {}): Style {
+  const { strong = true, align = 'center', size = 15, above = false } = opts
+  return new Style({
+    text: new Text({
+      text,
+      font: `${strong ? 700 : 400} ${size}px system-ui, -apple-system, sans-serif`,
+      fill: new Fill({ color: white }),
+      stroke: new Stroke({ color: halo, width: 4 }),
+      textAlign: align,
+      textBaseline: above ? 'bottom' : align === 'left' ? 'top' : 'middle',
+      overflow: true,
+    }),
+  })
+}
+
+/**
+ * - field: his field in question, or every field on the whole-farm map
+ * - faint: his other fields, for orientation
+ * - land: land the government has registered as farmland (shown only when drawing)
+ * - neighbour: the neighbour's declared field
+ * - flag / strip / overlap: what changed, patterned so it never relies on colour
+ * - mine / mine_problem: the shape he is drawing
+ * - split: the line that splits a field
+ */
+export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'mine' | 'mine_problem' | 'split'
+
+export function mapStyle(role: MapRole): Style[] {
   switch (role) {
+    case 'field':
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.06)' }) }), ...line(3)]
+    case 'faint':
+      return line(1.5, [6, 5])
     case 'land':
-      return [new Style({ stroke: new Stroke({ color: ink, width: 2, lineDash: [10, 6] }) })]
+      return line(2, [14, 8])
     case 'neighbour':
-      return [new Style({ fill: new Fill({ color: 'rgba(0,0,0,0.12)' }), stroke: new Stroke({ color: muted, width: 1.5 }), text: text ? label(text, false) : undefined })]
-    case 'other':
-      return [new Style({ fill: new Fill({ color: '#fff' }), stroke: new Stroke({ color: muted, width: 1 }) })]
+      return [new Style({ fill: new Fill({ color: 'rgba(0,0,0,0.4)' }) }), ...line(1.5, [4, 4])]
+    case 'flag':
+      return [new Style({ fill: new Fill({ color: fills().dots }) }), ...line(2, [8, 5])]
+    case 'strip':
+    case 'overlap':
+      return [new Style({ fill: new Fill({ color: fills().hatch }) }), ...line(2)]
     case 'mine':
     case 'mine_problem':
-      return [
-        new Style({
-          fill: new Fill({ color: 'rgba(0,0,0,0.05)' }),
-          stroke: new Stroke({ color: ink, width: role === 'mine' ? 3 : 4, lineDash: role === 'mine' ? undefined : [6, 4] }),
-          text: text ? label(text) : undefined,
-        }),
-        corners,
-      ]
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.12)' }) }), ...line(role === 'mine' ? 3 : 4, role === 'mine' ? undefined : [8, 5]), corners]
+    case 'split':
+      return line(4)
   }
 }
 
 /** His field's corners, always shown, so he can see what to drag. */
 const corners = new Style({
-  image: new Circle({ radius: 9, fill: new Fill({ color: '#fff' }), stroke: new Stroke({ color: ink, width: 3 }) }),
+  image: new Circle({ radius: 9, fill: new Fill({ color: white }), stroke: new Stroke({ color: halo, width: 3 }) }),
   geometry: (f: FeatureLike) => new MultiPoint((f.getGeometry() as Polygon).getCoordinates()[0]),
 })
 
 /** The corner under his finger: large enough to grab. */
 export const vertexStyle = new Style({
-  image: new Circle({ radius: 11, fill: new Fill({ color: '#fff' }), stroke: new Stroke({ color: ink, width: 3 }) }),
+  image: new Circle({ radius: 12, fill: new Fill({ color: white }), stroke: new Stroke({ color: halo, width: 3 }) }),
 })

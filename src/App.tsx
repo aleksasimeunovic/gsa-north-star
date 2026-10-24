@@ -28,7 +28,8 @@ export function App() {
     ) : screen === 'submit' ? (
       <Submit />
     ) : (
-      <Application key={state.scenarioId} target={target} />
+      // Reviewing a boundary is part of the application screen, so what his answer changed is there when he returns.
+      <Application key={state.scenarioId} target={screen === 'review' ? null : target} review={screen === 'review' ? target : null} />
     )
 
   return (

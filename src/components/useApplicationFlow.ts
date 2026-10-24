@@ -3,7 +3,8 @@ import { en, home, tasks } from '../copy/en'
 import { allTasks, newlyRemoved, type ApplicationList, type TaskId, type Work } from '../logic/application'
 import { useApp } from './AppContext'
 
-export type Open = TaskId | 'submit' | null
+/** What is in the top slot: the task in front of him, "ready to submit", or nothing once submitted. */
+export type Focus = TaskId | 'submit' | null
 
 /** What his last answer changed in the application: shown at the top until his next answer. */
 export interface AfterAnswer {
@@ -23,9 +24,9 @@ export function taskTitle(id: TaskId | 'submit', receiptsMissing = false) {
 }
 
 /**
- * Which task is open, where Back goes, and what each answer changed.
- * After an answer the finished task leaves the top, work no longer needed is named with its reason,
- * and the next action opens and takes focus.
+ * One obvious next action. The top slot shows the next task unless he picked another one; after an
+ * answer the finished task leaves it, work no longer needed is named with its reason, and the next
+ * action takes its place. A task that turned into "waiting for a check" stays until he carries on.
  */
 export function useApplicationFlow(target: string | null) {
   const { derived, state } = useApp()
@@ -34,27 +35,30 @@ export function useApplicationFlow(target: string | null) {
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
   const title = (id: TaskId | 'submit') => taskTitle(id, receiptsMissing)
   const all = allTasks(list)
+  const exists = (id: TaskId | null) => !!id && all.some((t) => t.id === id)
 
-  const [open, setOpen] = useState<Open>(submitted || list.next === 'submit' ? null : list.next)
-  const [visited, setVisited] = useState<TaskId[]>([])
-  // A task that turned into "waiting for a check" while open stays in place until he carries on.
+  const [open, setOpen] = useState<TaskId | null>(null)
   const [held, setHeld] = useState<TaskId | null>(null)
+  const [visited, setVisited] = useState<TaskId[]>([])
   const [after, setAfter] = useState<AfterAnswer | null>(null)
   const [showDone, setShowDone] = useState(false)
   const [announce, setAnnounce] = useState('')
-  const [focusId, setFocusId] = useState<Open>(null)
+  const [bring, setBring] = useState(0)
+
+  const focus: Focus = submitted ? null : exists(held) ? held : exists(open) ? open : list.next
+  const focusTask = all.find((t) => t.id === focus)
+  const shown = useRef<Focus>(focus)
   const before = useRef<ApplicationList>(list)
   const pastLength = useRef(state.past.length)
   const key = JSON.stringify(all.map((t) => [t.id, t.status, t.work, t.members]))
 
-  const show = (next: Open, remember = true) => {
-    if (remember && open && open !== 'submit' && open !== next) setVisited((v) => [...v, open])
+  /** Put a task in the top slot and bring it into view. */
+  const show = (next: TaskId, remember = true) => {
+    if (remember && focus && focus !== 'submit' && focus !== next) setVisited((v) => [...v, focus])
     setHeld(null)
-    setOpen(next === 'submit' ? null : next)
-    if (next && list.done.some((t) => t.id === next)) setShowDone(true)
-    setFocusId(next)
+    setOpen(next === list.next ? null : next)
+    setBring((n) => n + 1)
   }
-  const toggle = (id: TaskId) => (open === id ? setOpen(null) : show(id))
   const back = visited.length
     ? () => {
         const prev = visited[visited.length - 1]
@@ -63,10 +67,9 @@ export function useApplicationFlow(target: string | null) {
       }
     : undefined
 
-  /** Forward: the next task that needs him other than the one he's in, then submit. */
-  const forward: TaskId | 'submit' = list.todo.find((t) => t.id !== open && t.id !== held)?.id ?? 'submit'
-  const openStatus = all.find((t) => t.id === open)?.status
-  const forwardIsPrimary = !open || openStatus !== 'action_required'
+  /** Forward: the next task that needs him other than the one in front of him, then submit. */
+  const forward: TaskId | 'submit' = list.todo.find((t) => t.id !== focus)?.id ?? 'submit'
+  const forwardIsPrimary = !focusTask || focusTask.status !== 'action_required'
 
   // React to each answer: what finished, what is no longer needed, what's new, what's next.
   useEffect(() => {
@@ -77,11 +80,11 @@ export function useApplicationFlow(target: string | null) {
     pastLength.current = state.past.length
     const was = new Map(allTasks(prev).map((t) => [t.id, t.status]))
     if (undone) {
-      // Back to the question he took back, open and ready to answer again.
+      // Back to the question he took back, in the top slot and ready to answer again.
       const reopened = all.find((t) => t.status !== was.get(t.id))
       setAfter(null)
       setAnnounce(home.announce.undone)
-      if (reopened) show(reopened.id)
+      if (reopened) show(reopened.id, false)
       return
     }
     const change: AfterAnswer = {
@@ -98,39 +101,46 @@ export function useApplicationFlow(target: string | null) {
       ...change.waiting.map((id) => home.announce.waiting(title(id))),
       ...change.removed.map((r) => home.announce.removed(tasks.work[r.work.id])),
     ]
-    if (open && open !== 'submit' && was.get(open) === 'action_required') {
-      const now = all.find((t) => t.id === open)?.status
+    const prevFocus = shown.current
+    if (prevFocus && prevFocus !== 'submit' && was.get(prevFocus) === 'action_required') {
+      const now = all.find((t) => t.id === prevFocus)?.status
       if (now === 'complete' || now === undefined) {
         if (list.next) words.push(home.announce.next(title(list.next)))
-        setVisited((v) => [...v, open])
-        setOpen(list.next === 'submit' ? null : list.next)
-        setFocusId(list.next)
-      } else if (now === 'awaiting_verification') setHeld(open)
+        setVisited((v) => [...v, prevFocus])
+        setOpen(null)
+        setHeld(null)
+        setBring((n) => n + 1)
+      } else if (now === 'awaiting_verification') setHeld(prevFocus)
     }
     if (words.length) setAnnounce(words.join(' '))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
-  // Arriving from elsewhere (the readiness drawer, Submit) opens the task asked for.
   useEffect(() => {
-    if (target?.startsWith('task-') && !submitted) show(target.slice(5) as TaskId | 'submit')
+    shown.current = focus
+  })
+
+  // Arriving from elsewhere (the readiness drawer, Submit) puts the task asked for in the top slot.
+  useEffect(() => {
+    if (target?.startsWith('task-') && !submitted) {
+      const id = target.slice(5)
+      if (id !== 'submit') show(id as TaskId)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, submitted])
 
+  // Bring what changed and the next action into view, and move focus to the next action.
   useEffect(() => {
-    if (!focusId) return
+    if (!bring) return
     requestAnimationFrame(() => {
-      const el = document.getElementById(`task-${focusId}`)
-      // After an answer, bring what it changed into view with the next task right under it.
+      const next = document.getElementById('next-title')
       const panel = document.querySelector<HTMLElement>('.after[data-has-change]')
-      const nextIsBelowPanel = panel && el && panel.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING
-      ;(nextIsBelowPanel ? panel : el)?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
-      el?.querySelector<HTMLElement>('.task-title button, .task-go button')?.focus({ preventScroll: true })
+      ;(panel ?? document.getElementById('next'))?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
+      next?.focus({ preventScroll: true })
     })
-    setFocusId(null)
-  }, [focusId])
+  }, [bring])
 
-  return { open, held, after, announce, showDone, setShowDone, show, toggle, back, forward, forwardIsPrimary, title }
+  return { focus, focusTask, held, after, announce, showDone, setShowDone, show, back, forward, forwardIsPrimary, title }
 }
 
 export type Flow = ReturnType<typeof useApplicationFlow>

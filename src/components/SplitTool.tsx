@@ -1,8 +1,7 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react'
+import { useState } from 'react'
 import { en, formatHa, map, split as copy } from '../copy/en'
 import { CROPS, type Crop, type Field, type Point } from '../data/scenarios'
 import {
-  centroid,
   clampToField,
   fractionOfLine,
   inArea,
@@ -20,6 +19,7 @@ import { Note } from '../ui/Note'
 import { Select } from '../ui/Select'
 
 const STEP_M = 5
+const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } }
 const flagOf = (field: Field) => (field.signal?.kind === 'satellite_difference' ? field.signal.flagPolygon : field.polygon)
 
 /** GSA's proposal: the line along the flagged area; the part outside it keeps last year's crop. */
@@ -52,29 +52,15 @@ export function useSplitDraft(field: Field, stored: Split | null) {
   return { draft, result, update, remember, undo, canUndo: past.length > 0, edgeHit }
 }
 
-type Draft = ReturnType<typeof useSplitDraft>
-
-function toSvgPoint(svg: SVGSVGElement, e: PointerEvent): Point {
-  const pt = svg.createSVGPoint()
-  pt.x = e.clientX
-  pt.y = e.clientY
-  const m = svg.getScreenCTM()
-  const p = m ? pt.matrixTransform(m.inverse()) : pt
-  return { x: Math.round(p.x), y: Math.round(p.y) }
-}
-
-const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } }
+export type SplitDraft = ReturnType<typeof useSplitDraft>
 
 /**
- * Drawn inside the FieldMap's SVG. No precise point placement: drag the whole line by its
- * grip (or anywhere on it), or tilt it by its large end handles.
+ * Moving the line, whatever drags it. No precise point placement: he moves the whole line, or tilts it
+ * by an end. A move that would leave a part with no land stops at the last good line before the edge,
+ * and the edge says why.
  */
-export function SplitOverlay({ field, d, svgRef, unit, interactive }: { field: Field; d: Draft; svgRef: RefObject<SVGSVGElement>; unit: number; interactive: boolean }) {
-  const drag = useRef<{ what: 0 | 1 | 'line'; from: Point; line: [Point, Point] } | null>(null)
-  const { draft, result } = d
-  const names = result ? partNames(result.parts) : null
-
-  // A move that would leave a part with no land stops at the last good line before the edge, and says why.
+export function splitMoves(field: Field, d: SplitDraft) {
+  const { draft } = d
   const valid = (line: [Point, Point]) => !!splitPolygon(field.polygon, line[0], line[1])
   const commit = (lineAt: (t: number) => { line: [Point, Point]; clamped: boolean }, record: boolean) => {
     const full = lineAt(1)
@@ -99,83 +85,20 @@ export function SplitOverlay({ field, d, svgRef, unit, interactive }: { field: F
   }
   const moveLine = (from: [Point, Point], dx: number, dy: number, record: boolean) =>
     commit((t) => translateLine(from, dx * t, dy * t, field.polygon), record)
-
-  const start = (what: 0 | 1 | 'line') => (e: PointerEvent<SVGElement>) => {
-    if (!svgRef.current) return
-    e.currentTarget.setPointerCapture(e.pointerId)
-    drag.current = { what, from: toSvgPoint(svgRef.current, e), line: draft.line }
-    d.remember()
-  }
-  const move = (e: PointerEvent<SVGElement>) => {
-    const g = drag.current
-    if (!g || !svgRef.current) return
-    const p = toSvgPoint(svgRef.current, e)
-    if (g.what === 'line') moveLine(g.line, p.x - g.from.x, p.y - g.from.y, false)
-    else moveEnd(g.what, p, false)
-  }
-  const end = () => (drag.current = null)
-  const key = (what: 0 | 1 | 'line') => (e: KeyboardEvent) => {
-    const a = ARROWS[e.key]
-    if (!a) return
-    e.preventDefault()
-    const step = e.shiftKey ? 1 : STEP_M
+  /** Arrow keys: 5 m a press, 1 m with Shift. */
+  const nudge = (what: 0 | 1 | 'line', key: string, fine: boolean) => {
+    const a = ARROWS[key]
+    if (!a) return false
+    const step = fine ? 1 : STEP_M
     if (what === 'line') moveLine(draft.line, a.x * step, a.y * step, true)
     else moveEnd(what, { x: draft.line[what].x + a.x * step, y: draft.line[what].y + a.y * step }, true)
+    return true
   }
-  const handlers = (what: 0 | 1 | 'line') => ({ onPointerDown: start(what), onPointerMove: move, onPointerUp: end, onPointerCancel: end, onKeyDown: key(what) })
-
-  const chord = result?.chord
-  const mid = chord ? { x: (chord[0].x + chord[1].x) / 2, y: (chord[0].y + chord[1].y) / 2 } : null
-
-  return (
-    <g className="split-overlay">
-      {result &&
-        result.parts.map((part, i) => {
-          const c = centroid(part)
-          return (
-            <text key={i} x={c.x} y={c.y + unit * 1.1} textAnchor="middle" className="map-label split-label">
-              {formatHa(result.areasHa[i])}
-            </text>
-          )
-        })}
-      {chord && <line x1={chord[0].x} y1={chord[0].y} x2={chord[1].x} y2={chord[1].y} className="split-line" style={{ strokeWidth: unit * 0.3 }} />}
-      {interactive && chord && mid && names && (
-        <>
-          <line
-            x1={chord[0].x}
-            y1={chord[0].y}
-            x2={chord[1].x}
-            y2={chord[1].y}
-            className="split-hit"
-            style={{ strokeWidth: unit * 2.4 }}
-            aria-hidden="true"
-            {...handlers('line')}
-          />
-          <g
-            role="button"
-            tabIndex={0}
-            aria-label={`${copy.moveLine}. ${copy.keys}`}
-            className="split-grip"
-            transform={`translate(${mid.x} ${mid.y})`}
-            {...handlers('line')}
-          >
-            <rect x={-unit * 1.6} y={-unit * 0.9} width={unit * 3.2} height={unit * 1.8} rx={unit * 0.9} />
-            <path d={`M0 ${-unit * 0.55} l${-unit * 0.4} ${unit * 0.35} h${unit * 0.8}z M0 ${unit * 0.55} l${-unit * 0.4} ${-unit * 0.35} h${unit * 0.8}z`} className="split-grip-icon" />
-          </g>
-          {([0, 1] as const).map((i) => (
-            <g key={i} role="button" tabIndex={0} aria-label={`${i === 0 ? copy.handleStart : copy.handleEnd}. ${copy.keys}`} className="split-handle" {...handlers(i)}>
-              <circle cx={draft.line[i].x} cy={draft.line[i].y} r={unit * 1.7} className="split-handle-hit" />
-              <circle cx={draft.line[i].x} cy={draft.line[i].y} r={unit * 0.8} className="split-handle-dot" />
-            </g>
-          ))}
-        </>
-      )}
-    </g>
-  )
+  return { moveEnd, moveLine, nudge }
 }
 
 /** Controls under the map: live areas, the guardrail in place, crops, undo, slider alternative, confirm. */
-export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft; onConfirm: (s: Split) => void }) {
+export function SplitControls({ field, d, onConfirm }: { field: Field; d: SplitDraft; onConfirm: (s: Split) => void }) {
   const [slider, setSlider] = useState(false)
   const [tried, setTried] = useState(false)
   const { draft, result } = d
@@ -245,7 +168,7 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: Draft;
           onClick={() => {
             if (complete) return onConfirm(draft)
             setTried(true)
-            requestAnimationFrame(() => document.querySelector<HTMLElement>('.task[data-open] [aria-invalid]')?.focus())
+            requestAnimationFrame(() => document.querySelector<HTMLElement>('main [aria-invalid]')?.focus())
           }}
         >
           {copy.confirm}

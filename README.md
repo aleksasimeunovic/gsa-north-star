@@ -23,6 +23,6 @@ The site is served at `https://<user>.github.io/gsa-north-star/`. Navigation use
 
 ## Structure
 
-`src/logic` holds the pure, tested rules (application list, status, readiness, estimate, geometry, submit, advisor queue). `src/ui` holds primitives with semantic props, ready for a design system. All text is in `src/copy/en.ts`; all scenario facts are in `src/data/scenarios.ts`. `CLAUDE.md` is the brief.
+`src/logic` holds the pure, tested rules (application list, status, readiness, estimate, geometry, map placement, submit, advisor queue). Maps are OpenLayers on Esri World Imagery satellite tiles (no key needed, attribution on the map), loaded only when a map is shown; `src/components/map` builds them. `src/ui` holds primitives with semantic props, ready for a design system. All text is in `src/copy/en.ts`; all scenario facts are in `src/data/scenarios.ts`. `CLAUDE.md` is the brief.
 
 See `docs/acceptance.md` for a five-minute path and where each problem and acceptance item is answered, and `docs/decisions.md` for the decision log.

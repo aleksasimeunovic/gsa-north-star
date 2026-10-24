@@ -17,7 +17,9 @@ This file is the single source of truth. Read it fully before planning. If somet
 
 **No AI interface.** AI works behind the scenes (detecting changes, matching records, plain-language explanations). Eligibility, money, official records and declarations stay predictable and auditable. Milan never has to care what uses AI.
 
-**Low fidelity means:** greyscale, system font, plain boxes and borders, no brand, no illustrations, no animation beyond a short transition that explains a change. Hierarchy still matters: the next action is the most visible thing on every screen. Spend effort on flow, states, copy, logic, accessibility and edge behaviour. A design system is applied later by Aleksa (section 11), so structure the code for that.
+**Low fidelity means:** greyscale, system font, plain boxes and borders, no brand, no illustrations, no animation beyond a short transition that explains a change. Hierarchy still matters: the next action is the most visible thing on every screen. Spend effort on flow, states, copy, logic, accessibility and edge behaviour. A design system is applied later by Aleksa (section 11), so structure the code for that. **One exception: maps are real.** Every map is an OpenLayers map on the real satellite photo near Bečanj that Milan can pan and zoom, because the photo is the evidence and he recognises his land on it. The UI around the map stays greyscale.
+
+**Less cognitive effort, not fewer steps (Earl, 23 Oct call).** Welcome back must feel like a guided experience, not a dashboard of problems. At any moment the screen answers three questions in this order: what to do next, what is already done, what can wait.
 
 ## 2. How to work (token budget matters)
 
@@ -126,7 +128,8 @@ The application is one list of named tasks. It is also the readiness view.
 | Something needs attention | Its own named task, e.g. "Upload your input receipts" |
 | A rule doesn't apply to his farm | Left out |
 | Choosing measures | Ones that fit come first, with the reason; full list stays |
-| Always | Ordered by status: what needs him, then "Waiting for a check (n)", then "Done (n)" collapsed. Exactly one next action, at the top, the most visible thing on screen |
+| Always | Exactly one next action, at the top, open, the most visible thing on screen. Below it what's done ("Waiting for a check (n)", "Done (n)" collapsed), then what can wait, quieter and collapsed |
+| What can wait | Three kinds of work, each its own section, label and visual treatment, changes first because they shape the rest: **Changes GSA found** (something may differ from the records; he verifies it), **Your choices this year** (decided every year regardless of changes, e.g. measures and what they need), **Same as last year** (existing information he confirms is still true) |
 | Advisor signs in | Same list, denser, what needs action first |
 
 Structure by what Milan has to accomplish, not by the smallest step count. There is no target number of steps.
@@ -158,18 +161,18 @@ Earl: one connected experience, not separate features. How the application chang
 
 **Flow:** welcome back → changes → land → readiness → submit → receipt. All of it reads as one application list that shrinks to what's left.
 
-### Welcome back: his application as one list
-- Greeting, deadline and days left, one line saying what GSA filled in and what's left. Active farmer status only when it needs renewing.
-- One list: **his application**. The change tasks and the rest of his application are the same list, not cards on top and an overview underneath.
-- It starts from the full set of possible work. As he confirms a change, GSA removes what isn't needed (one-line reason), collapses what's done, and the next meaningful action gets focus. One primary action at a time.
+### Welcome back: one obvious next action
+- Greeting, deadline and days left. Active farmer status only when it needs renewing.
+- Leads with a single primary action, open at the top: the first is "Start with your herd". Everything else stays reachable but doesn't compete: what's done below it (collapsed), then what can wait in its three sections (Changes GSA found, Your choices this year, Same as last year), quiet one-line rows that open in the top slot.
+- After each decision, the next action takes the top slot, done work collapses, and work that isn't needed leaves with a one-line reason ("After your answer", with Undo). The application visibly changing after each answer is the defining interaction.
 - A short transition may explain each change (respect `prefers-reduced-motion`). Changes are announced with `aria-live`.
-- The estimate stays a separate block at body size, never mixed with status. On desktop, readiness and the estimate sit in a sticky right column.
+- **"Your farm this year"** shows, per item, whether it is "From government records", "Confirmed by you" or "Waiting for a check", and the label changes as he confirms.
+- The estimate stays a separate block at body size, never mixed with status. While anything that could change it is unanswered, it says it is provisional and names what it waits for. On desktop, the farm and the estimate sit in a sticky right column.
 
 ### Change cards: evidence before the question
-A card is one line of context (what GSA found, and where), the evidence, the question and the actions. The three changes are different kinds of decision, so the cards differ:
-- **Herd:** last year 41, registry today 38, yes or no. No invented breakdown.
-- **River field:** small map preview (reuse FieldMap) with the flagged area highlighted and its source (satellite photo).
-- **Road:** map preview of the strip, its size (0.12 ha) and the payment impact (about 2,200 dinars less), all visible before he answers.
+A card is one line of context (what GSA found, and where), the evidence, the question and the actions. The changes are different kinds of decision, so the cards differ:
+- **Herd and pigs:** a number is easy to check, so the card stays a simple confirm. Last year 41, registry today 38, yes or no. No invented breakdown.
+- **Map changes (river field, road strip, upper field):** the card shows the place, not a description: a small preview on the satellite photo with the affected area highlighted. The road card shows the exact strip the government believes is no longer farmland, its size (0.12 ha) and the payment impact (about 2,200 dinars less). The primary action is **"Review this boundary"**, which opens the map at that area; he answers there, with the map in front of him, not from text. This shows that GSA already knows things he shouldn't have to reconstruct.
 - "Why am I seeing this?" only where it adds something the evidence doesn't already show.
 
 Paths:
@@ -179,8 +182,8 @@ Paths:
 - Herd disagreement also says "This doesn't change your estimate" (the estimate uses cows that calved).
 - Answers stay editable; changing one re-runs the list rules.
 
-### Land: plain-language map and suggested split
-- Fields on an SVG map (no tiles). The one exception: drawing where a field ends uses OpenLayers (corners, snapping, live area, guardrails, slider alternative), loaded only when needed. Card maps zoom to one field with neighbours faint and unlabelled; "Your other fields" draws only those fields. Maps capped at 300 px tall.
+### Land: real maps in plain language, and the suggested split
+- Every map is OpenLayers on the real satellite photo (loaded only when a map is shown). He can pan, zoom (buttons, pinch, wheel once the map has focus, keyboard), go back to the field or see the whole farm, and enlarge the map. Previews on cards are still pictures of the same map; the review map is the one he moves around. The split line and drawing where a field ends sit on that same satellite map. Card previews stay small; the review map is large but leaves the question in view.
 - Plain labels and clearly different boundary styles, e.g. "Land the government has registered" vs "Draw the area you actually farm". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
 - When a boundary stops an action, explain why at that moment, in place.
 - **Split:** GSA proposes the line along the area the satellite flagged. Milan accepts it or nudges it: large handles, drag the whole line. No precise point placement with a finger. Keep the guardrail (line clipped to eligible land), live areas (on the map and in the crop labels), undo (shown once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
@@ -208,7 +211,7 @@ Paths:
 - Autosave the store to `localStorage` wrapped in try/catch; the app must work without it. Show a quiet "Saved" indicator.
 - Data in `src/data/scenarios.ts` (all facts from section 7, nothing hardcoded in components).
 - Deploy: GitHub Actions workflow to GitHub Pages; Vite `base` is the repo name. README with run and deploy steps (short).
-- No backend, no real APIs, no analytics. OpenLayers (`ol`) only for the drawing map.
+- No backend, no real APIs, no analytics. OpenLayers (`ol`) for every map, with satellite tiles from Esri World Imagery (no key, attribution shown). The scenario's local metre grid is placed on the photo by one origin and rotation in `scenarios.ts`; all areas and rules stay in local metres (`src/logic/geo.ts` converts).
 
 ### Content rules
 - All UI text in `src/copy/en.ts` (English for Earl; Serbian later). British spelling, plain language, short sentences, no em dashes, no jargon. Field and place names may stay local.
@@ -238,6 +241,8 @@ Round 1 (foundation, four moments, prototype controls, advisor mode, deploy) and
 4. **Readiness through submit, Jelena's states and priority, scenario cuts, final content pass, `docs/acceptance.md`, deploy.**
 
 Round 4 (Aleksa, 23 Oct): no stepper; an "After your answer" panel with Undo, a readiness drawer, a sticky action bar (Back, readiness, forward), GSA's next-step line, "Your farm this year", pigs and the neighbour overlap, OpenLayers drawing, 10 measures with their own inputs, Jelena's question and Milan's reply. See `docs/decisions.md` 55 to 68.
+
+Round 5 (Earl, 23 Oct call; decisions 69 onwards): one obvious next action at the top of Welcome back; three kinds of work kept apart (changes, choices, confirmations); map changes show the place with "Review this boundary"; real OpenLayers maps on the satellite photo everywhere; records vs confirmed in "Your farm this year"; a provisional estimate.
 
 Prototype controls (floating "Prototype" button, clearly separated panel, "Not part of GSA"): scenario, sign in as Milan or Jelena, show design notes, reset. No new scenarios.
 
@@ -281,3 +286,7 @@ Aleksa will later apply a design system based on Untitled UI (React, Tailwind, R
 - [ ] Tested, mandate and assumptions are distinguishable (design notes, off by default).
 - [ ] Every problem P1 to P12 is answered somewhere in the flow.
 - [ ] `src/copy/en.ts` is shorter than at the start of the round.
+- [ ] Welcome back leads with one obvious next action; the screen answers what to do next, what's done, what can wait, in that order.
+- [ ] Changes GSA found, your choices and same-as-last-year are separate sections with their own labels and treatment.
+- [ ] River, road and upper field cards show the place on the satellite photo; "Review this boundary" opens a map he can pan and zoom.
+- [ ] "Your farm this year" says per item what comes from records and what he confirmed; the estimate says when it is provisional.

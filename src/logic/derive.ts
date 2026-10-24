@@ -7,7 +7,6 @@ import { deriveItems } from './status'
 import { milanCaseState } from './advisor'
 import { detectChanges } from './changes'
 import { farmPicture } from './farm'
-import { nudge } from './nudge'
 
 /** Everything the UI shows, derived from the store in one place. */
 export function derive(state: AppState) {
@@ -22,6 +21,5 @@ export function derive(state: AppState) {
     readiness: readiness(scenario, state.answers, items),
     estimate: estimate(scenario, state.answers, items),
     farm: farmPicture(scenario, state.answers, items),
-    nudge: nudge(list, items),
   }
 }

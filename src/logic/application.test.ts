@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
 import { startingAnswers } from '../state/store'
-import { allTasks, applicationList, newlyRemoved, type WorkId } from './application'
+import { allTasks, applicationList, laterByKind, newlyRemoved, taskKind, type WorkId } from './application'
 import { deriveItems } from './status'
 import { halfSplit, ready, run } from './testUtils'
 
@@ -112,5 +112,27 @@ describe('application list', () => {
     const before = run('second_year', { type: 'answer_herd', answer: 'yes' })
     const after = run('second_year', { type: 'answer_herd', answer: 'yes' }, { type: 'answer_road', answer: 'yes' })
     expect(newlyRemoved(before.list, after.list).map((x) => [x.taskId, x.work.id])).toEqual([['field_road', 'road_redraw']])
+  })
+})
+
+describe('three kinds of work', () => {
+  it('keeps changes GSA found, his choices this year and what is the same as last year apart', () => {
+    expect(['herd', 'pigs', 'field_river', 'field_road', 'field_upper'].map((id) => taskKind(id as never))).toEqual(Array(5).fill('change'))
+    expect(taskKind('measures')).toBe('choice')
+    expect(taskKind('measure_certified_seed')).toBe('choice')
+    expect(taskKind('same')).toBe('same')
+  })
+
+  it('what can wait leaves out the task in front of him, changes first', () => {
+    const r = run('second_year')
+    const later = laterByKind(r.list, r.list.next)
+    expect(ids(later.change)).toEqual(['pigs', 'field_river', 'field_road', 'field_upper'])
+    expect(ids(later.choice)).toEqual(['measures'])
+    expect(ids(later.same)).toEqual(['same'])
+  })
+
+  it('missing receipts are something to do this year, not a confirmation', () => {
+    const r = run('missing_document')
+    expect(ids(laterByKind(r.list, r.list.next).choice)).toEqual(['measures', 'receipts'])
   })
 })

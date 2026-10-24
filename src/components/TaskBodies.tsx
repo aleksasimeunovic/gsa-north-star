@@ -1,7 +1,8 @@
 import { lazy, Suspense, useRef, useState } from 'react'
-import { draw, en, formatDate, formatDinars, formatHa, home, map, tasks } from '../copy/en'
+import { draw, en, finish, formatDate, formatDinars, formatHa, home, map, tasks } from '../copy/en'
+import type { FieldId } from '../data/scenarios'
 import { milanCaseState } from '../logic/advisor'
-import type { Task, TaskId } from '../logic/application'
+import { isMapChange, type Task, type TaskId } from '../logic/application'
 import { partNames, polygonAreaHa, roundHa, splitPolygon } from '../logic/geometry'
 import { impactOf, type Item, type ItemId } from '../logic/status'
 import type { Confirmable, YesNo } from '../state/actions'
@@ -14,17 +15,20 @@ import { Compare, KeyValues, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { RadioGroup } from '../ui/RadioGroup'
 import { useApp, type AppCtx } from './AppContext'
-import { FieldMap } from './FieldMap'
 import { SendToJelena } from './SendToJelena'
 import { MeasureBody, MeasuresBody, measureSummary } from './MeasureBodies'
-import { SplitControls, SplitOverlay, useSplitDraft } from './SplitTool'
 
-// The drawing map loads only when he needs it.
-const FieldEditor = lazy(() => import('./FieldEditor'))
+// Maps load only when one is shown.
+export const FarmMap = lazy(() => import('./map/FarmMap'))
+export const MapFallback = ({ mode }: { mode: 'preview' | 'explore' }) => (
+  <div className="map-frame" data-mode={mode}>
+    <div className="farm-map" data-loading>{draw.loading}</div>
+  </div>
+)
 
 type Derived = AppCtx['derived']
 
-const itemOf = (d: Derived, id: string) => d.items.find((i) => i.id === id) as Item
+export const itemOf = (d: Derived, id: string) => d.items.find((i) => i.id === id) as Item
 const about = (n: number) => formatDinars(Math.abs(Math.round(n / 100) * 100))
 const YES_NO = [
   { value: 'yes' as const, label: en.yes },
@@ -200,140 +204,86 @@ function PigsBody() {
   )
 }
 
-/**
- * A drawing that runs into the neighbour's field: the evidence on the map first, then one question.
- * Yes: GSA moves his edge. No: he shows where his field ends on the drawing map.
- */
-function UpperBody() {
-  const { derived, state, dispatch } = useApp()
+/** The facts a map change needs before he answers: the size of the strip and what it does to the payment. */
+export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upper' }) {
+  const { derived, state } = useApp()
   const s = derived.scenario
-  const field = s.fields.find((f) => f.id === 'upper')!
-  const signal = field.signal?.kind === 'overlap' ? field.signal : null
-  const item = itemOf(derived, 'field_upper')
-  const a = state.answers.upper
-  const [editing, setEditing] = useState(false)
-  if (!signal) return null
-  const drawing = a.answer === 'no' && (!a.drawn || editing)
-
-  return (
-    <Stack gap="sm">
-      {drawing ? (
-        <Suspense fallback={<Text>{draw.loading}</Text>}>
-          <FieldEditor
-            scenario={s}
-            fieldId="upper"
-            start={a.drawn ?? field.polygon}
-            onSave={(polygon) => {
-              dispatch({ type: 'set_upper_drawing', polygon })
-              setEditing(false)
-            }}
-          />
-        </Suspense>
-      ) : (
-        <figure className="map-figure">
-          <FieldMap scenario={s} focus="upper" label={`${map.title}: ${en.fields.upper}`} />
-          {a.answer === null && <figcaption className="text" data-variant="small">{tasks.upper.source}</figcaption>}
-        </figure>
-      )}
-      {a.answer === null && (
-        <ul className="facts">
-          <li>{tasks.upper.overlap(formatHa(signal.overlapHa))}</li>
-          <li>{tasks.road.payment(about(impactOf(s, signal.overlapHa, 'overlap_removed').amountDinars))}</li>
-        </ul>
-      )}
-      <Question
-        legend={tasks.upper.question}
-        hint={tasks.upper.hint}
-        value={a.answer}
-        answer={a.answer === 'yes' ? tasks.upper.answerYes : tasks.upper.answerNo}
-        onAnswer={(answer) => dispatch({ type: 'answer_upper', answer })}
-      />
-      {item.status === 'awaiting_verification' && (
-        <Text variant="secondary">
-          {tasks.upper.drawnOverlaps}. {tasks.herd.canSubmit} <Note kind="assumption" />
-        </Text>
-      )}
-      {a.answer === 'no' && a.drawn && !editing && (
-        <div>
-          <Button variant="link" onClick={() => setEditing(true)}>{tasks.upper.redraw}</Button>
-        </div>
-      )}
-    </Stack>
-  )
+  const field = s.fields.find((f) => `field_${f.id}` === id)!
+  const signal = field.signal
+  if (signal?.kind === 'road_strip') {
+    return (
+      <ul className="facts">
+        <li>{tasks.road.area(formatHa(field.areaHa), formatHa(roundHa(field.areaHa - signal.stripHa)))}</li>
+        <li>{tasks.road.payment(about(impactOf(s, signal.stripHa, 'road_took_area').amountDinars))}</li>
+      </ul>
+    )
+  }
+  if (signal?.kind === 'overlap' && state.answers.upper.answer === null) {
+    return (
+      <ul className="facts">
+        <li>{tasks.upper.overlap(formatHa(signal.overlapHa))}</li>
+        <li>{tasks.road.payment(about(impactOf(s, signal.overlapHa, 'overlap_removed').amountDinars))}</li>
+      </ul>
+    )
+  }
+  return null
 }
 
-function RiverBody() {
-  const { derived, state, dispatch } = useApp()
-  const field = derived.scenario.fields.find((f) => f.id === 'river')!
-  const item = itemOf(derived, 'field_river')
-  const a = state.answers.river
-  const svgRef = useRef<SVGSVGElement>(null)
-  const draft = useSplitDraft(field, a.split)
-  const [editingSplit, setEditingSplit] = useState(false)
-  const splitting = a.answer === 'yes' && (item.status === 'action_required' || editingSplit)
+/** What GSA found, said in one line, before he answers. */
+export const mapContext = (id: 'field_river' | 'field_road' | 'field_upper') =>
+  id === 'field_river' ? tasks.river.context : id === 'field_road' ? tasks.road.context : tasks.upper.context
+
+/**
+ * A change on the land shows the place, not a description: a still picture of the satellite photo with
+ * what changed highlighted, the facts, and one way in: review the boundary on the map.
+ */
+function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper' }) {
+  const { derived, state, go } = useApp()
+  const fieldId = id.slice(6) as FieldId
+  const item = itemOf(derived, id)
+  const unanswered = item.detail.endsWith('_unanswered')
+  const review = () => go('review', id)
+  const action =
+    item.detail === 'river_needs_split' ? tasks.reviewSplit : item.detail === 'upper_needs_drawing' ? tasks.reviewDraw : tasks.review
 
   return (
     <Stack gap="sm">
-      {a.answer === null && <Text>{tasks.river.context}</Text>}
+      <Text>{unanswered ? mapContext(id) : taskSummary(id, derived, state)}</Text>
       <figure className="map-figure">
-        <FieldMap
-          scenario={derived.scenario}
-          focus="river"
-          svgRef={svgRef}
-          label={`${map.title}: ${en.fields.river}`}
-          overlay={a.answer === 'yes' ? (unit) => <SplitOverlay field={field} d={draft} svgRef={svgRef} unit={unit} interactive={splitting} /> : undefined}
-        />
-        {a.answer === null && (
+        <div className="map-link" onClick={review}>
+          <Suspense fallback={<MapFallback mode="preview" />}>
+            <FarmMap
+              scenario={derived.scenario}
+              focus={fieldId}
+              mode="preview"
+              drawn={id === 'field_upper' ? state.answers.upper.drawn : null}
+              label={`${map.title}: ${en.fields[fieldId]}. ${mapContext(id)}`}
+            />
+          </Suspense>
+        </div>
+        {unanswered && (
           <figcaption className="text" data-variant="small">
-            {tasks.river.source} <Note kind="eu_mandate" /> <Note kind="ai" />
+            {id === 'field_river' ? tasks.river.source : id === 'field_upper' ? tasks.upper.source : tasks.road.source}{' '}
+            {id === 'field_river' && (
+              <>
+                <Note kind="eu_mandate" /> <Note kind="ai" />
+              </>
+            )}
           </figcaption>
         )}
       </figure>
-      <Question
-        legend={tasks.river.question}
-        hint={tasks.river.hint}
-        value={a.answer}
-        answer={a.answer === 'yes' ? tasks.river.answerYes : tasks.river.answerNo}
-        onAnswer={(answer) => dispatch({ type: 'answer_river', answer })}
-      />
-      {a.answer === 'yes' &&
-        (splitting ? (
-          <SplitControls
-            field={field}
-            d={draft}
-            onConfirm={(split) => {
-              dispatch({ type: 'set_split', split })
-              setEditingSplit(false)
-            }}
-          />
-        ) : (
-          <div>
-            <Button variant="link" onClick={() => setEditingSplit(true)}>{en.change}</Button>
-          </div>
-        ))}
-    </Stack>
-  )
-}
-
-function RoadBody() {
-  const { derived, state, dispatch } = useApp()
-  const s = derived.scenario
-  const field = s.fields.find((f) => f.id === 'road')!
-  const strip = field.signal?.kind === 'road_strip' ? field.signal.stripHa : 0
-  const a = state.answers.road
-  const item = itemOf(derived, 'field_road')
-
-  return (
-    <Stack gap="sm">
-      {a.answer === null && <Text>{tasks.road.context}</Text>}
-      <FieldMap scenario={s} focus="road" label={`${map.title}: ${en.fields.road}`} />
-      {/* Size and payment impact, before he answers. */}
-      <ul className="facts">
-        <li>{tasks.road.area(formatHa(field.areaHa), formatHa(roundHa(field.areaHa - strip)))}</li>
-        <li>{tasks.road.payment(about(impactOf(s, strip, 'road_took_area').amountDinars))}</li>
-      </ul>
-      <Question legend={tasks.road.question} value={a.answer} onAnswer={(answer) => dispatch({ type: 'answer_road', answer })} />
-      {item.status === 'awaiting_verification' && <Text>{tasks.road.correctionAsked}</Text>}
+      {unanswered && <MapFacts id={id} />}
+      {item.status === 'awaiting_verification' && (
+        <Text variant="secondary">
+          {finish.submit.awaitingNote} <Note kind="assumption" />
+        </Text>
+      )}
+      <div>
+        <Button variant={item.status === 'action_required' ? 'primary' : 'secondary'} onClick={review}>
+          {item.status === 'action_required' ? action : en.change}
+          <VisuallyHidden>: {en.fields[fieldId]}</VisuallyHidden>
+        </Button>
+      </div>
     </Stack>
   )
 }
@@ -344,7 +294,9 @@ function FieldsBody() {
   const same = s.fields.filter((f) => !f.signal)
   return (
     <Stack gap="sm">
-      <FieldMap scenario={s} only={same.map((f) => f.id)} label={map.title} />
+      <Suspense fallback={<MapFallback mode="explore" />}>
+        <FarmMap scenario={s} only={same.map((f) => f.id)} mode="explore" label={map.title} />
+      </Suspense>
       <ul className="plain-list">
         {same.map((f) => (
           <li key={f.id}>
@@ -437,6 +389,7 @@ function MemberBody({ id }: { id: ItemId }) {
 export function TaskBody({ task }: { task: Task }) {
   const id = task.id
   if (id.startsWith('measure_')) return <MeasureBody taskId={id} />
+  if (isMapChange(id)) return <MapChangeCard id={id} />
   switch (id) {
     case 'same':
       return <SameBody task={task} />
@@ -446,12 +399,6 @@ export function TaskBody({ task }: { task: Task }) {
       return <HerdBody />
     case 'pigs':
       return <PigsBody />
-    case 'field_river':
-      return <RiverBody />
-    case 'field_road':
-      return <RoadBody />
-    case 'field_upper':
-      return <UpperBody />
     case 'fields_other':
       return <FieldsBody />
     case 'details':

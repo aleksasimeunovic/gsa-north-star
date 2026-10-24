@@ -1,4 +1,5 @@
 import { bar, home } from '../copy/en'
+import { isMapChange } from '../logic/application'
 import { daysLeft } from '../logic/readiness'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
@@ -10,13 +11,19 @@ import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Stack, Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
+import { Review } from './Review'
 
-/** Welcome back: opens with what GSA knows, his application as one list, and the way forward always in reach. */
-export function Application({ target }: { target: string | null }) {
+/**
+ * Welcome back: one obvious next action, what's done, what can wait, and the way forward always in reach.
+ * Reviewing a boundary on the map happens here too, so what his answer changed is waiting when he comes back.
+ */
+export function Application({ target, review }: { target: string | null; review?: string | null }) {
   const { derived, state, go } = useApp()
   const { scenario } = derived
   const flow = useApplicationFlow(target)
   const submitted = !!state.answers.submittedAt
+
+  if (review && isMapChange(review as never) && !submitted) return <Review id={review as never} flow={flow} />
 
   return (
     <Stack gap="lg">
