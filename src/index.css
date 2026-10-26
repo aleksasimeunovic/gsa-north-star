@@ -81,6 +81,8 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-10: 40px;
+  /* A title and the body it introduces */
+  --gap-pair: var(--space-2);
   --gap-item: var(--space-3);
   --gap-group: var(--space-6);
   --gap-section: var(--space-10);
