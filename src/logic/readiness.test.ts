@@ -55,3 +55,39 @@ describe('application state', () => {
     expect(daysLeft('2026-06-01', '2026-05-26')).toBe(0)
   })
 })
+
+describe('readiness verdict', () => {
+  it("anything that needs him is an error: he can't submit", () => {
+    const r = run('second_year').report
+    expect(r.verdict).toBe('blocked')
+    expect(r.errors).toHaveLength(14)
+  })
+
+  it('no renewal comes first', () => {
+    expect(run('second_year_not_renewed').report.verdict).toBe('renewal')
+  })
+
+  it('the road and the neighbour line lower the payment: ready, with two things to look at', () => {
+    const r = run('second_year', ...ready).report
+    expect(r.verdict).toBe('ready_with_warnings')
+    expect(r.warnings.map((w) => w.id)).toEqual(['field_road', 'field_upper'])
+  })
+
+  it('warnings never stop him submitting: a check and a lower payment', () => {
+    const r = run(
+      'second_year',
+      ...ready,
+      { type: 'answer_herd', answer: 'no' },
+      { type: 'set_herd_count', count: 41 },
+      { type: 'answer_road', answer: 'yes' },
+    ).report
+    expect(r.verdict).toBe('ready_with_warnings')
+    expect(r.errors).toEqual([])
+    expect(r.warnings).toEqual(expect.arrayContaining([{ id: 'herd', why: 'waiting' }, { id: 'field_road', why: 'payment' }]))
+  })
+
+  it('a measure without a rate is good to know, not a warning', () => {
+    const r = run('second_year', ...ready, { type: 'choose_measures', chosen: ['plant_production', 'fertiliser'] }).report
+    expect(r.info).toContain('unpriced')
+  })
+})

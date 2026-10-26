@@ -18,15 +18,13 @@ import { SubmitStep } from './Submit'
  * estimate before he signs.
  */
 export function Application({ target, review }: { target: string | null; review?: string | null }) {
-  const { derived, state, go } = useApp()
+  const { state, go } = useApp()
   const flow = useApplicationFlow(target)
   const submitted = !!state.answers.submittedAt
   const reviewing = review && isMapChange(review as never) && !submitted ? (review as MapTask) : null
 
   const { step, forward } = flow
   const forwardLabel = !forward ? '' : 'task' in forward ? bar.next(flow.title(forward.task)) : home.continueTo(steps.name[forward.step])
-  // Until he has answered anything, the part opens with a greeting rather than a step number.
-  const fresh = derived.list.done.length === 0 && derived.list.waiting.length === 0
 
   if (submitted) {
     return (
@@ -43,23 +41,21 @@ export function Application({ target, review }: { target: string | null; review?
         <Stepper flow={flow} />
       </div>
       <section id="step" className="step" aria-labelledby="step-title">
-        <header className="step-head">
-          <p className="step-of" data-greeting={fresh || undefined}>
-            {fresh ? home.greeting : steps.of(flow.index + 1, derived.list.steps.length)}
-          </p>
-          <h1 id="step-title" tabIndex={-1}>{steps.name[step.id]}</h1>
-        </header>
+        {/* The stepper already names the part on screen; the heading stays for screen readers. */}
+        <h1 id="step-title" tabIndex={-1} className="sr-only">{steps.name[step.id]}</h1>
         {reviewing ? (
           <Review id={reviewing} flow={flow} />
         ) : step.id === 'submit' ? (
           <SubmitStep flow={flow} />
         ) : (
-          // Desktop: the part at a glance on the right. Mobile: below.
-          <div className="app-layout">
+          // A part with several things: the part at a glance on the right (below on a phone). One thing: full width.
+          <div className="app-layout" data-single={step.tasks.length < 2 || undefined}>
             <StepView flow={flow} />
-            <aside className="app-side">
-              <StepOutline flow={flow} />
-            </aside>
+            {step.tasks.length > 1 && (
+              <aside className="app-side">
+                <StepOutline flow={flow} />
+              </aside>
+            )}
           </div>
         )}
       </section>

@@ -89,7 +89,9 @@ function reduceAnswers(a: Answers, action: Action, at: string, s: Scenario): Ans
         const key = pick && `${g.measureId}.${pick.id}`
         if (key && g.fields && action.chosen.includes(g.measureId) && a.measures.inputs[key] === undefined) fill[key] = g.fields
       }
-      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true, inputs: { ...a.measures.inputs, ...fill } } }
+      const inputs = { ...a.measures.inputs, ...action.inputs }
+      for (const [k, v] of Object.entries(fill)) if (inputs[k] === undefined) inputs[k] = v
+      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true, inputs } }
     }
     case 'save_measure':
       return { ...a, measures: { ...a.measures, inputs: { ...a.measures.inputs, ...action.inputs } } }

@@ -1,6 +1,6 @@
 import {
   ArrowRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Copy, CircleAlert, CircleCheck,
-  CircleX, Clock, Database, FileText, FlaskConical, HandCoins, IdCard, Landmark, ListChecks, Map, Maximize2, Minimize2, Minus,
+  CircleX, Clock, Database, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, Map, Maximize2, Minimize2, Minus,
   PiggyBank, Plus, Receipt, Satellite, Send, Sprout, Undo2, Upload, Users, Wheat, X, type LucideIcon,
 } from 'lucide-react'
 import { useDensity } from './Density'
@@ -15,6 +15,9 @@ const ICONS = {
   action_required: CircleAlert,
   awaiting_verification: Clock,
   records: Database,
+  error: CircleX,
+  warning: CircleAlert,
+  info: Info,
   // Kinds of work
   change: Satellite,
   choice: ListChecks,
@@ -59,6 +62,10 @@ export type IconName = keyof typeof ICONS
 const FILLED: Partial<Record<IconName, string>> = {
   complete: 'm8.5 12.5 2.5 2.5 4.5-5',
   action_required: 'M12 7.5v5.5M12 16.5h.01',
+  // Readiness severities: a cross stops him, a mark asks him to look, an i is good to know.
+  error: 'm9 9 6 6M15 9l-6 6',
+  warning: 'M12 7.5v5.5M12 16.5h.01',
+  info: 'M12 11v5.5M12 7.5h.01',
 }
 
 export function Icon({ name, size, className }: { name: IconName; size?: 'sm' | 'md' | 'lg'; className?: string }) {

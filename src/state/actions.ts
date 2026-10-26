@@ -98,7 +98,8 @@ export type Action =
   | { type: 'set_bank_account'; account: string }
   | { type: 'answer_household'; answer: YesNo }
   | { type: 'answer_meadow'; answer: YesNo }
-  | { type: 'choose_measures'; chosen: MeasureId[] }
+  /** With what he already added for them, so choosing and filling in is one step. */
+  | { type: 'choose_measures'; chosen: MeasureId[]; inputs?: Record<string, MeasureValue> }
   | { type: 'save_measure'; measureId: MeasureId; inputs: Record<string, MeasureValue> }
   | { type: 'reply_to_jelena'; note: string }
   | { type: 'undo' }

@@ -13,19 +13,21 @@ export function Stepper({ flow }: { flow: Flow }) {
   const { derived } = useApp()
   const list = derived.list.steps
   const at = flow.index + 1
+  const part = flow.step
   return (
     <nav aria-label={copy.label} className="stepper">
+      {/* On a phone: the part he is in and how far along it he is. */}
       <p className="stepper-compact" aria-hidden="true">
-        <span>{copy.of(at, list.length)}</span> <strong>{copy.name[flow.step.id]}</strong>
+        <strong>{copy.name[part.id]}</strong> <span>{part.id === 'submit' ? copy.of(at, list.length) : copy.status(part.left)}</span>
       </p>
       <div className="stepper-bar">
-        <Progress value={at} max={list.length} />
+        {part.id === 'submit' ? <Progress value={at} max={list.length} /> : <Progress value={part.tasks.length - part.left} max={part.tasks.length} />}
       </div>
       <ol>
         {list.map((s, i) => {
           const current = s.id === flow.step.id
           const done = s.id !== 'submit' && s.left === 0
-          const status = s.id === 'submit' ? '' : copy.status(s.left, s.waiting)
+          const status = s.id === 'submit' ? '' : copy.status(s.left)
           return (
             <li key={s.id} data-state={current ? 'current' : done ? 'done' : 'todo'}>
               <button type="button" aria-current={current ? 'step' : undefined} onClick={() => flow.goStep(s.id)}>

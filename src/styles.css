@@ -44,20 +44,17 @@
 }
 
 /* One part of his application */
-.step { display: flex; flex-direction: column; gap: 20px; padding-top: 12px; scroll-margin-top: calc(var(--topbar-h) + 84px); }
-.step-head { display: flex; flex-direction: column; gap: 4px; }
-.step-of { font-size: 0.875rem; color: var(--muted-foreground); }
-@media (max-width: 1023px) { .step-of:not([data-greeting]) { display: none; } }
-.app-layout { display: flex; flex-direction: column; gap: 20px; }
+.step { display: flex; flex-direction: column; gap: var(--gap-group); padding-top: var(--space-2); scroll-margin-top: calc(var(--topbar-h) + 84px); }
+.app-layout { display: flex; flex-direction: column; gap: var(--gap-group); }
 @media (min-width: 1024px) {
-  .app-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+  .app-layout:not([data-single]) { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--gap-group); align-items: start; }
   .app-side { position: sticky; top: calc(var(--topbar-h) + 96px); }
 }
 .flow { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 /* The one next action: a white card, the most visible thing on screen */
-.next { background: var(--card); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow-card); padding: 28px; display: flex; flex-direction: column; gap: 20px; scroll-margin-top: calc(var(--topbar-h) + 100px); }
-@media (max-width: 639px) { .next { padding: 20px; border-radius: 20px; } }
+.next { background: var(--card); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow-card); padding: var(--space-8); display: flex; flex-direction: column; gap: var(--gap-group); scroll-margin-top: calc(var(--topbar-h) + 100px); }
+@media (max-width: 639px) { .next { padding: var(--space-5); border-radius: 20px; } }
 .next-top { display: flex; align-items: center; gap: 12px; }
 .task-icon { width: 44px; height: 44px; flex: none; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-foreground); }
 .next-kind { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 500; color: var(--muted-foreground); }
@@ -79,50 +76,77 @@
 .answer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 12px 16px; border-radius: 16px; background: var(--muted); }
 .answer strong { color: var(--foreground); }
 
-/* What his last answer changed, with Undo: like a toast that stays until the next answer */
-.after { display: flex; flex-direction: column; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 16px 20px; box-shadow: var(--shadow-card); scroll-margin-top: calc(var(--topbar-h) + 100px); }
-.after-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.after-head .group-title { display: inline-flex; align-items: center; gap: 8px; color: var(--success); }
-.after-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.875rem; }
-.after-list li { display: flex; gap: 8px; align-items: flex-start; }
-.after-list li[data-kind='removed'] { color: var(--muted-foreground); }
-.after-icon { display: inline-flex; color: var(--muted-foreground); margin-top: 2px; }
+/* What his last answer changed: a toast above the action bar, with Undo */
+.toast { position: fixed; z-index: 45; left: 50%; bottom: 88px; transform: translateX(-50%); width: min(520px, calc(100vw - 32px)); display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); border-radius: 16px; background: var(--foreground); color: #fff; box-shadow: 0 12px 32px -8px rgb(28 42 34 / 0.4); }
+@media (max-width: 639px) { .toast { bottom: 136px; } }
+.toast-icon { display: inline-flex; margin-top: 10px; color: var(--forest-100); }
+.toast-icon svg path { stroke: var(--foreground); }
+.toast-body { flex: 1; min-width: 0; padding: 10px 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.toast-title { font-size: 0.9375rem; font-weight: 500; }
+.toast-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.8125rem; color: color-mix(in oklch, #fff 72%, transparent); }
+.toast-actions { display: flex; align-items: center; gap: var(--space-1); flex: none; }
+.toast-actions button { color: #fff; }
+.toast-actions button:hover { background: color-mix(in oklch, #fff 12%, transparent); }
+.toast-actions [data-variant='link'], .toast-actions a { color: var(--forest-100); }
 @media (prefers-reduced-motion: no-preference) {
-  .after { animation: arrive 0.35s ease-out; }
-  @keyframes arrive { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .toast { animation: toast-in 0.25s ease-out; }
+  @keyframes toast-in { from { transform: translate(-50%, 12px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 }
 
 /* This part at a glance */
-.step-outline { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-card); }
+.step-outline { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); box-shadow: var(--shadow-card); }
 .outline-head { display: flex; flex-direction: column; gap: 12px; }
 .outline-group { display: flex; flex-direction: column; gap: 2px; }
 .outline-kind { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 2px; }
 .outline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.outline-list li { display: flex; gap: 12px; align-items: center; border-radius: 12px; padding: 0 12px; margin: 0 -12px; }
-.outline-list li[data-now] { background: var(--accent); }
-.outline-mark { display: inline-flex; width: 16px; justify-content: center; color: var(--input); }
-.outline-list li[data-now] .outline-mark { color: var(--accent-foreground); }
-.row-title { font: inherit; font-size: 0.875rem; background: none; border: 0; padding: 0; min-height: 40px; color: var(--foreground); cursor: pointer; text-align: left; flex: 1; }
-.row-title:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--input); }
+.outline-list { gap: 2px; }
+/* One button per row: the hover and the selected row cover the mark and the name together, edge to edge. */
+.outline-row { width: calc(100% + 16px); margin: 0 -8px; display: flex; gap: var(--space-3); align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 0.875rem; color: var(--foreground); cursor: pointer; text-align: left; transition: background-color 0.15s; }
+.outline-row:hover { background: var(--hover); }
+.outline-mark { display: inline-flex; width: 20px; height: 20px; flex: none; align-items: center; justify-content: center; border-radius: 1000px; color: var(--input); }
+.outline-list li[data-now] .outline-row { background: var(--accent); }
+.outline-list li[data-now] .outline-mark { background: var(--primary); color: var(--primary-foreground); }
+.outline-list li[data-now] .outline-mark svg { width: 14px; height: 14px; }
+.row-title { flex: 1; }
 .outline-list li[data-now] .row-title { font-weight: 600; color: var(--accent-foreground); }
-.outline-list li[data-status='complete'] .row-title { color: var(--muted-foreground); text-decoration: line-through; text-decoration-color: var(--input); }
+.outline-list li[data-status='complete'] .row-title { color: var(--muted-foreground); }
 
 /* Readiness: answers "Is my application ready?" */
 .readiness-link { display: inline-flex; align-items: center; gap: 12px; font: inherit; font-size: 0.875rem; font-weight: 500; background: none; border: 0; padding: 8px 0; min-height: 44px; color: var(--foreground); cursor: pointer; text-align: left; }
 .readiness-text { text-decoration: underline; text-decoration-color: color-mix(in oklch, currentColor 30%, transparent); text-underline-offset: 4px; }
-.readiness-icon { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 1000px; background: var(--warning-surface); color: var(--warning); }
-.readiness[data-state='ready_to_submit'] .readiness-icon, .readiness[data-state='submitted'] .readiness-icon { background: var(--success-surface); color: var(--success); }
-.drawer-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
-.drawer-list li + li { border-top: 1px solid var(--border); }
-.drawer-row { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 8px; margin: 4px 0; border: 0; border-radius: 12px; background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
-.drawer-row:hover { background: var(--hover); }
-.drawer-row > svg:last-child { color: var(--muted-foreground); }
+.readiness-icon { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 1000px; background: var(--error-surface); color: var(--error); }
+.readiness[data-verdict='ready_with_warnings'] .readiness-icon { background: var(--warning-surface); color: var(--warning); }
+.readiness[data-verdict='ready'] .readiness-icon, .readiness[data-verdict='submitted'] .readiness-icon { background: var(--success-surface); color: var(--success); }
+/* The drawer: errors, warnings and good to know, never mixed. No lines between rows: each row is its own hover. */
+.drawer-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.drawer-group + .drawer-group { margin-top: var(--space-4); }
+.drawer-group-title { font-size: 0.8125rem; font-weight: 600; color: var(--muted-foreground); }
+.drawer-list { list-style: none; padding: 0; margin: 0 -12px; display: flex; flex-direction: column; gap: 2px; }
+.drawer-row { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-3); align-items: start; padding: var(--space-3); border: 0; border-radius: 12px; background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
+.drawer-row[data-static] { cursor: default; grid-template-columns: auto 1fr; }
+button.drawer-row:hover { background: var(--hover); }
+.drawer-row > svg:last-child { align-self: center; color: var(--muted-foreground); }
+.drawer-row strong { font-weight: 500; }
+.drawer-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.drawer-mark { display: inline-flex; margin-top: 2px; }
+.drawer-mark[data-severity='error'] { color: var(--error); }
+.drawer-mark[data-severity='warning'] { color: var(--warning); }
+.drawer-mark[data-severity='info'] { color: var(--info); }
 .item-list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 12px; }
 
 /* Measures */
 .measure-group { display: flex; flex-direction: column; gap: 8px; }
-.measure-group[data-suggested] { padding: 16px; border-radius: 16px; background: var(--accent); }
-.measure-group[data-suggested] .group-title { display: inline-flex; align-items: center; gap: 8px; color: var(--accent-foreground); }
+.measure-group[data-suggested] .group-title { display: inline-flex; align-items: center; gap: 8px; }
+/* A chosen measure: selected, with what it needs from him right under it */
+.measure-option { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; background: var(--card); transition: border-color 0.15s, background-color 0.15s; }
+.measure-option:hover { border-color: var(--hover-border); }
+.measure-option[data-on] { border-color: var(--primary); background: var(--accent); }
+.measure-option > label { border: 0 !important; background: none !important; }
+.measure-fields { display: flex; flex-direction: column; gap: var(--space-4); margin: 0 var(--space-4) var(--space-4); padding: var(--space-4); border-radius: 12px; background: var(--card); }
+.measure-fields .auto-line { padding: 0; background: none; }
+.measure-state { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.875rem; font-weight: 500; }
+.measure-state[data-ready] { color: var(--success); }
+.measure-state:not([data-ready]) { color: var(--warning-text); }
 .measure-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .measure-line { display: block; }
 .measure-line[data-strong] { color: var(--foreground); }
@@ -180,7 +204,7 @@
 .review-list li + li { border-top: 1px solid var(--border); }
 .review-list button { width: 100%; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 8px 4px; background: none; border: 0; font: inherit; color: var(--foreground); cursor: pointer; text-align: left; border-radius: 12px; }
 .review-list button:hover { background: var(--hover); }
-.review-icon { width: 36px; height: 36px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--warning-surface); color: var(--warning); }
+.review-icon { width: 36px; height: 36px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--primary); color: var(--primary-foreground); }
 .review-list li[data-state='done'] .review-icon { background: var(--success-surface); color: var(--success); }
 .review-text { display: flex; flex-direction: column; flex: 1; }
 .review-name { font-weight: 500; }
@@ -208,4 +232,4 @@
 .receipt-section h2 { font-size: 1.0625rem; }
 .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .timeline li { display: flex; gap: 12px; align-items: center; }
-.timeline-dot { width: 28px; height: 28px; flex: none; border-radius: 1000px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-foreground); font-size: 0.8125rem; font-weight: 600; }
+.timeline-dot { width: 28px; height: 28px; flex: none; border-radius: 1000px; display: inline-flex; align-items: center; justify-content: center; background: var(--primary); color: var(--primary-foreground); font-size: 0.8125rem; font-weight: 600; }

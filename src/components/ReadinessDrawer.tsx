@@ -1,37 +1,79 @@
-import type { RefObject } from 'react'
-import type { Task, TaskId } from '../logic/application'
+import type { ReactNode, RefObject } from 'react'
+import { en } from '../copy/en'
+import type { TaskId } from '../logic/application'
+import type { Severity } from '../logic/readiness'
 import { Drawer } from '../ui/Drawer'
 import { Icon } from '../ui/Icon'
-import { StatusBadge } from '../ui/StatusBadge'
 import { useApp } from './AppContext'
 import { readinessHeadline } from './ReadinessBar'
 import { taskSummary } from './TaskBodies'
 import { taskTitle } from './useApplicationFlow'
 
 /**
- * Only what still needs him, each one a step away. Done work and work waiting for a check stay out:
- * they ask nothing of him.
+ * Whether he can submit, in three groups that never mix: what stops him, what he can submit with but
+ * should look at (a check, a lower payment), and what's good to know. Each row is one target.
  */
 export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open: boolean; onClose: () => void; onPick: (id: TaskId) => void; returnFocusTo: RefObject<HTMLElement> }) {
   const { derived, state } = useApp()
-  const { list } = derived
+  const r = derived.report
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
+  const title = (id: TaskId) => taskTitle(id, receiptsMissing)
+  const c = en.readiness
+  const unpriced = derived.scenario.measures.filter((m) => !m.rateDinars && state.answers.measures.chosen.includes(m.id)).length
   return (
-    <Drawer open={open} title={readinessHeadline(derived)} onClose={onClose} returnFocusTo={returnFocusTo}>
-      <ul className="drawer-list">
-        {list.todo.map((t: Task) => (
-          <li key={t.id}>
-            <button type="button" className="drawer-row" onClick={() => onPick(t.id)}>
-              <StatusBadge status={t.status} iconOnly />
-              <span>
-                <strong>{taskTitle(t.id, receiptsMissing)}</strong>
-                <span className="hint">{taskSummary(t.id, derived, state)}</span>
-              </span>
-              <Icon name="disclose" />
-            </button>
-          </li>
+    <Drawer open={open} title={readinessHeadline(r)} onClose={onClose} returnFocusTo={returnFocusTo}>
+      {r.errors.length > 0 && (
+        <Group severity="error">
+          {r.errors.map((id) => (
+            <Row key={id} severity="error" title={title(id)} hint={taskSummary(id, derived, state)} onClick={() => onPick(id)} />
+          ))}
+        </Group>
+      )}
+      {r.warnings.length > 0 && (
+        <Group severity="warning">
+          {r.warnings.map((w) => (
+            <Row
+              key={w.id}
+              severity="warning"
+              title={title(w.id)}
+              hint={w.why === 'waiting' ? c.waiting : taskSummary(w.id, derived, state)}
+              onClick={() => onPick(w.id)}
+            />
+          ))}
+        </Group>
+      )}
+      <Group severity="info">
+        {r.info.map((i) => (
+          <Row key={i} severity="info" title={i === 'unpriced' ? c.info.unpriced(unpriced) : c.info.state_checks} />
         ))}
-      </ul>
+      </Group>
     </Drawer>
   )
+}
+
+function Group({ severity, children }: { severity: Severity; children: ReactNode }) {
+  return (
+    <section className="drawer-group" data-severity={severity} aria-label={en.readiness.group[severity]}>
+      <h3 className="drawer-group-title">{en.readiness.group[severity]}</h3>
+      <ul className="drawer-list">{children}</ul>
+    </section>
+  )
+}
+
+/** One thing in the drawer. A row that leads somewhere is one button with one hover, edge to edge. */
+function Row({ severity, title, hint, onClick }: { severity: Severity; title: string; hint?: string; onClick?: () => void }) {
+  const body = (
+    <>
+      <span className="drawer-mark" data-severity={severity}>
+        <Icon name={severity} />
+        <span className="sr-only">{en.readiness.group[severity]}: </span>
+      </span>
+      <span className="drawer-text">
+        <strong>{title}</strong>
+        {hint && <span className="hint">{hint}</span>}
+      </span>
+      {onClick && <Icon name="disclose" />}
+    </>
+  )
+  return <li>{onClick ? <button type="button" className="drawer-row" onClick={onClick}>{body}</button> : <div className="drawer-row" data-static>{body}</div>}</li>
 }

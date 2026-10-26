@@ -72,7 +72,7 @@ const Primary = ({ onClick, children }: { onClick: () => void; children: string 
 function RenewalBody() {
   const { go } = useApp()
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Text>{tasks.renewal.body}</Text>
       <Primary onClick={() => go('renewal')}>{tasks.renewal.button}</Primary>
     </Stack>
@@ -98,7 +98,7 @@ function HerdBody() {
   }
 
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       {/* The same two boxes turn into the disagreement once he gives his own number. */}
       <div aria-live="polite">
         <Compare
@@ -164,7 +164,7 @@ function ReplyToJelena() {
   const { dispatch } = useApp()
   const [note, setNote] = useState('')
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Banner tone="attention">{tasks.jelena.asks}</Banner>
       <Field multiline label={tasks.jelena.replyLabel} value={note} rows={3} onChange={(e) => setNote(e.target.value)} />
       <Primary onClick={() => dispatch({ type: 'reply_to_jelena', note: note.trim() })}>{tasks.jelena.reply}</Primary>
@@ -178,7 +178,7 @@ function PigsBody() {
   const n = derived.scenario.pigs!.registryCount
   const a = state.answers.pigs
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Compare
         items={[
           { label: tasks.herd.lastYear, value: derived.scenario.pigs!.lastYearDeclared },
@@ -255,7 +255,7 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
     item.detail === 'river_needs_split' ? tasks.reviewSplit : item.detail === 'upper_needs_drawing' ? tasks.reviewDraw : tasks.review
 
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Text>
         {unanswered ? mapContext(id) : taskSummary(id, derived, state)}{' '}
         {unanswered && id === 'field_river' && (
@@ -307,7 +307,7 @@ function FieldsBody() {
   const s = derived.scenario
   const same = s.fields.filter((f) => !f.signal)
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Suspense fallback={<MapFallback mode="explore" />}>
         <FarmMap scenario={s} only={same.map((f) => f.id)} mode="explore" label={map.title} />
       </Suspense>
@@ -328,7 +328,7 @@ function DetailsBody() {
   const g = derived.scenario.generalData
   const asked = itemOf(derived, 'details').status === 'awaiting_verification'
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <KeyValues
         items={[
           { label: tasks.details.holder, value: g.holder },
@@ -361,7 +361,7 @@ function ReceiptsBody() {
   }
   const files = derived.scenario.documents.flatMap((d) => d.files)
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <ul className="plain-list">
         {files.map((f) => (
           <li key={f.name}>
@@ -389,7 +389,7 @@ function BankBody() {
     dispatch({ type: 'set_bank_account', account: digits })
   }
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Compare
         items={[
           { label: b.registered, value: <>{b.ending(acc.ending)} <Text variant="small" as="span">{b.closed}</Text></> },
@@ -427,7 +427,7 @@ function HouseholdBody() {
   const r = derived.scenario.generalData.resident!
   const a = state.answers.household
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Text>{tasks.household.context(r.relation, r.name)}</Text>
       <Question
         legend={tasks.household.question(r.name.split(' ')[0])}
@@ -446,7 +446,7 @@ function CalvingsBody() {
   const item = itemOf(derived, 'calvings')
   const rate = derived.scenario.measures.find((m) => m.id === 'cows_raising_calves')?.rateDinars ?? 0
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Compare items={[{ label: tasks.calvings.source, value: herd.cowsCalved }]} />
       <Text>{tasks.calvings.lead(herd.cowsCalved)}</Text>
       <Text variant="small">{tasks.measures.cows(herd.cowsCalved, formatNumber(rate), formatDinars(herd.cowsCalved * rate))}</Text>
@@ -470,7 +470,7 @@ function MeadowBody() {
   const a = state.answers.meadow
   const m = tasks.meadow
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       {a.answer === null && (
         <Text>
           {m.context} <Note kind="ai" />
@@ -499,7 +499,7 @@ function UnreadableBody() {
   const done = itemOf(derived, 'receipt_unreadable').status === 'complete'
   if (done) return <Text>{tasks.unreadable.done(name)}</Text>
   return (
-    <Stack gap="sm">
+    <Stack gap="section">
       <Text>{tasks.unreadable.context(name)}</Text>
       <FileInput label={tasks.unreadable.upload} hint={tasks.unreadable.hint} onFile={() => dispatch({ type: 'attach_document', documentId: 'unreadable_receipt' })} />
     </Stack>

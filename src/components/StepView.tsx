@@ -1,13 +1,14 @@
+import { useRef, useState } from 'react'
 import { after as copy, home, steps, tasks } from '../copy/en'
 import type { TaskId } from '../logic/application'
 import { Button } from '../ui/Button'
 import { Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
-import { Icon } from '../ui/Icon'
 import { StatusBadge } from '../ui/StatusBadge'
+import { Toast } from '../ui/Toast'
 import { useApp } from './AppContext'
 import { TaskBody, taskSummary } from './TaskBodies'
-import type { Flow } from './useApplicationFlow'
+import type { AfterAnswer, Flow } from './useApplicationFlow'
 
 /** One part of his application: what his last answer changed, then the one thing to do now in this part. */
 export function StepView({ flow }: { flow: Flow }) {
@@ -16,7 +17,7 @@ export function StepView({ flow }: { flow: Flow }) {
   return (
     <div className="flow">
       <p aria-live="polite" className="visually-hidden">{flow.announce}</p>
-      {!submitted && <AfterAnswerPanel flow={flow} />}
+      {!submitted && <AfterAnswerToast flow={flow} />}
       {!submitted && (flow.focusTask ? <NextAction flow={flow} /> : <StepDone flow={flow} />)}
     </div>
   )
@@ -75,48 +76,46 @@ function StepDone({ flow }: { flow: Flow }) {
 }
 
 /**
- * The defining moment: his answer, then what it did to the application. What's done, what is no longer
- * needed and why, what was added, with Undo in case it was a mistake. The next action follows right under it.
+ * The defining moment, said briefly: what his answer did to the application (done, no longer needed and
+ * why, added), as a toast with Undo. The next action has already taken the top slot under it.
  */
-function AfterAnswerPanel({ flow }: { flow: Flow }) {
+function AfterAnswerToast({ flow }: { flow: Flow }) {
   const { derived, state, dispatch } = useApp()
   const a = flow.after
-  if (!a) return null
+  const [seen, setSeen] = useState<AfterAnswer | null>(null)
+  const count = useRef(0)
+  const last = useRef<AfterAnswer | null>(null)
+  if (a !== last.current) {
+    last.current = a
+    count.current++
+  }
+  if (!a || a === seen) return null
   const outcome = (id: TaskId) => taskSummary(id, derived, state)
+  const lines = [
+    ...a.done.map((id) => copy.done(flow.title(id), outcome(id))),
+    ...a.waiting.map((id) => copy.waiting(flow.title(id))),
+    ...a.removed.map(({ work }) => copy.removed(tasks.work[work.id], tasks.reason[work.reason!])),
+    ...a.added.map((id) => `${flow.title(id)}: ${outcome(id)}`),
+  ]
+  const [title, ...rest] = lines
   return (
-    <section className="after" aria-labelledby="after-title" data-has-change>
-      <div className="after-head">
-        <h3 id="after-title" className="group-title">
-          <Icon name="complete" /> {copy.title}
-        </h3>
-        {state.past.length > 0 && (
+    <Toast
+      id={count.current}
+      title={title}
+      onClose={() => setSeen(a)}
+      action={
+        state.past.length > 0 && (
           <Button variant="link" onClick={() => dispatch({ type: 'undo' })} aria-label={copy.undoLabel}>
             {copy.undo}
           </Button>
-        )}
-      </div>
-      <ul className="after-list">
-        {a.done.map((id) => (
-          <li key={id} data-kind="done">
-            <StatusBadge status="complete" iconOnly /> {copy.done(flow.title(id), outcome(id))}
-          </li>
-        ))}
-        {a.waiting.map((id) => (
-          <li key={id} data-kind="waiting">
-            <StatusBadge status="awaiting_verification" iconOnly /> {copy.waiting(flow.title(id))} <Note kind="assumption" />
-          </li>
-        ))}
-        {a.removed.map(({ work }) => (
-          <li key={work.id} data-kind="removed">
-            <span className="after-icon"><Icon name="removed" size="sm" /></span> {copy.removed(tasks.work[work.id], tasks.reason[work.reason!])}
-          </li>
-        ))}
-        {a.added.map((id) => (
-          <li key={id} data-kind="added">
-            <span className="after-icon"><Icon name="added" size="sm" /></span> {flow.title(id)}: {outcome(id)}
-          </li>
-        ))}
-      </ul>
-    </section>
+        )
+      }
+    >
+      {rest.length > 0 && (
+        <ul className="toast-list">
+          {rest.map((l) => <li key={l}>{l}</li>)}
+        </ul>
+      )}
+    </Toast>
   )
 }

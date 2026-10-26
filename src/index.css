@@ -30,6 +30,7 @@
   --sky-700: oklch(0.45 0.08 235);
   --violet-50: oklch(0.969 0.016 293.756);
   --violet-700: oklch(0.491 0.27 292.581);
+  --red-50: oklch(0.971 0.013 17.38);
   --red-600: oklch(0.577 0.2 27);
 
   --background: var(--stone-100);
@@ -61,6 +62,9 @@
   --warning-text: var(--orange-700);
   --warning-surface: var(--orange-50);
   --warning-border: var(--orange-200);
+  /* Readiness: an error stops him submitting; a warning and info never do */
+  --error: var(--red-600);
+  --error-surface: var(--red-50);
   --info: var(--sky-700);
   --info-surface: var(--sky-50);
   --info-border: var(--sky-200);
@@ -68,13 +72,27 @@
   --meta: var(--violet-700);
   --meta-surface: var(--violet-50);
 
+  /* Spacing on a 4 px scale, then by role: items in a group, groups in a block, sections in a card or page */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --gap-item: var(--space-3);
+  --gap-group: var(--space-6);
+  --gap-section: var(--space-10);
+
   --radius: 0.75rem;
   --shadow-card: 0 1px 2px rgb(28 42 34 / 0.04), 0 4px 16px -8px rgb(28 42 34 / 0.08);
   --topbar-h: 64px;
   /* Comfortable density: Milan. Compact: Jelena. */
   --control-h: 48px;
 }
-[data-density='compact'] { --control-h: 34px; }
+[data-density='compact'] { --control-h: 34px; --gap-section: var(--space-6); }
+@media (max-width: 639px) { :root { --gap-section: var(--space-8); } }
 
 @theme inline {
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -105,6 +123,8 @@
   --color-warning-text: var(--warning-text);
   --color-warning-surface: var(--warning-surface);
   --color-warning-border: var(--warning-border);
+  --color-error: var(--error);
+  --color-error-surface: var(--error-surface);
   --color-info: var(--info);
   --color-info-surface: var(--info-surface);
   --color-info-border: var(--info-border);

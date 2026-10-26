@@ -18,7 +18,7 @@ export function StepReview({ flow, title }: { flow: Flow; title: string }) {
               <span className="review-icon"><Icon name={s.left ? stepIcon(s.id) : 'check'} /></span>
               <span className="review-text">
                 <span className="review-name">{copy.name[s.id]}</span>
-                <span className="review-status">{copy.status(s.left, s.waiting)}</span>
+                <span className="review-status">{copy.status(s.left)}</span>
               </span>
               <Icon name="disclose" />
             </button>

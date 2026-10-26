@@ -1,9 +1,10 @@
 import type { ElementType, ReactNode } from 'react'
 import { cn } from '../lib/utils'
 
-const GAP = { sm: 'gap-2', md: 'gap-4', lg: 'gap-8' }
+// sm and md for items, group for groups in a block, section for the parts of a task (map, what GSA reads, the action).
+const GAP = { sm: 'gap-2', md: 'gap-4', lg: 'gap-8', group: 'gap-[var(--gap-group)]', section: 'gap-[var(--gap-section)]' }
 
-export function Stack({ gap = 'md', as: As = 'div', children }: { gap?: 'sm' | 'md' | 'lg'; as?: ElementType; children: ReactNode }) {
+export function Stack({ gap = 'md', as: As = 'div', children }: { gap?: keyof typeof GAP; as?: ElementType; children: ReactNode }) {
   return <As className={cn('flex flex-col', GAP[gap])}>{children}</As>
 }
 

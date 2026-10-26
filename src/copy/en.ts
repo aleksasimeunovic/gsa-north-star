@@ -4,7 +4,7 @@ import type { DrawingProblem } from '../logic/geometry'
 import type { RemovalReason, StepId, TaskKind, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
-import type { ApplicationState } from '../logic/readiness'
+import type { Severity } from '../logic/readiness'
 import type { ImpactReason, Status } from '../logic/status'
 
 const num = new Intl.NumberFormat('en-GB')
@@ -34,12 +34,23 @@ export const en = {
   } satisfies Record<Status, string>,
 
   readiness: {
-    left: (n: number) => (n === 1 ? '1 thing left before you can submit' : `${n} things left before you can submit`),
     headline: {
-      waiting_for_renewal: 'Renew your status to submit',
-      ready_to_submit: 'Ready to submit',
+      renewal: 'Renew your status before you can submit',
+      blocked: (n: number) => (n === 1 ? "You can't submit yet: 1 thing to do" : `You can't submit yet: ${n} things to do`),
+      ready_with_warnings: (n: number) => (n === 1 ? 'Ready to submit, 1 thing to look at' : `Ready to submit, ${n} things to look at`),
+      ready: 'Ready to submit',
       submitted: 'Submitted',
-    } satisfies Record<Exclude<ApplicationState, 'action_required'>, string>,
+    },
+    group: {
+      error: 'Stops you submitting',
+      warning: "You can submit, but look at these",
+      info: 'Good to know',
+    } satisfies Record<Severity, string>,
+    waiting: 'Waits for a check, and you can still submit',
+    info: {
+      state_checks: 'The state still inspects your farm and checks eligibility before paying',
+      unpriced: (n: number) => (n === 1 ? '1 measure is worked out after checks' : `${n} measures are worked out after checks`),
+    },
   },
 
   fields: { river: 'River field', road: 'Road field', upper: 'Upper field', meadow: 'Meadow', house: 'House field' } satisfies Record<FieldId, string>,
@@ -98,7 +109,6 @@ export const en = {
 }
 
 export const home = {
-  greeting: 'Welcome back, Milan',
   deadline: (n: number, closes: string) =>
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   daysLeft: (n: number) => (n === 1 ? '1 day left to apply' : `${n} days left to apply`),
@@ -109,9 +119,8 @@ export const home = {
   continueTo: (step: string) => `Continue: ${step}`,
   now: 'Now',
   todo: 'To do',
-  /** Where this part stands, said as what's left, what's done and what waits for someone else. */
-  outline: (left: number, done: number, waiting: number) =>
-    [left ? `${left} to do` : 'Nothing left to do', done && `${done} done`, waiting && `${waiting} waiting for a check`].filter(Boolean).join(', '),
+  /** What's left in this part. */
+  outline: (left: number) => (left === 0 ? 'Nothing left to do' : left === 1 ? '1 thing to do' : `${left} things to do`),
   submitted: 'Your application is submitted.',
   seeReceipt: 'See your receipt',
   // Said to screen readers when the list changes.
@@ -126,7 +135,6 @@ export const home = {
 
 /** What his last answer changed in the application, shown until his next answer. */
 export const after = {
-  title: 'After your answer',
   done: (task: string, outcome: string) => `${task}: ${outcome}`,
   waiting: (task: string) => `${task} waits for a check, and you can still submit`,
   removed: (work: string, reason: string) => `No longer needed: ${work.toLowerCase()}, ${reason}`,
@@ -200,7 +208,7 @@ export const tasks = {
     context: (date: string) => `Your bank closed the account payments went to on ${date}`,
     registered: 'In the farm register',
     fromBank: 'New account from your bank',
-    ending: (n: string) => `…${n}`,
+    ending: (n: string) => `**** **** **** ${n}`,
     closed: 'Closed',
     question: (n: string) => `Should your subsidy be paid into the account ending ${n}?`,
     answerYes: 'Yes, the new account',
@@ -368,8 +376,6 @@ export const tasks = {
     lastYear: 'You had it last year',
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
-    fromRecords: 'Nothing to add, GSA has it from your records',
-    youAdd: (list: string) => `You add: ${list}`,
     others: (list: string) => `Not for your farm: ${list}`,
     confirm: (n: number) => (n === 1 ? 'Apply for 1 measure' : `Apply for ${n} measures`),
     pays: {
@@ -660,7 +666,7 @@ export const steps = {
   left: (n: number) => (n === 1 ? '1 thing left' : `${n} things left`),
   done: 'Done',
   /** Under each part's name in the stepper. */
-  status: (left: number, waiting: number) => (left ? `${left} to do` : waiting ? `Done, ${waiting} waiting` : 'Done'),
+  status: (left: number) => (left === 1 ? '1 thing to do' : left ? `${left} things to do` : 'Done'),
 }
 
 export const bar = {

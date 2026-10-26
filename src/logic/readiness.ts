@@ -1,6 +1,7 @@
 import type { Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import type { Item, Status } from './status'
+import type { TaskId } from './application'
+import type { Item, ItemId, Status } from './status'
 
 export type ApplicationState = 'waiting_for_renewal' | 'action_required' | 'ready_to_submit' | 'submitted'
 
@@ -38,6 +39,46 @@ export function readiness(s: Scenario, a: Answers, items: Item[]): Readiness {
   else state = 'ready_to_submit'
 
   return { state, counts, blockers, awaiting, renewalNeeded, canSubmit: state === 'ready_to_submit' }
+}
+
+/**
+ * How sure he can be about submitting, said as one verdict. Three severities, never mixed:
+ * - error: stops him submitting (anything that needs his action, or no renewal)
+ * - warning: he can submit, but something waits for a check or lowers his payment
+ * - info: good to know, nothing to do (what the state still checks)
+ * So three warnings still mean "ready to submit", and a single error means he can't.
+ */
+export type Severity = 'error' | 'warning' | 'info'
+export type Verdict = 'renewal' | 'blocked' | 'ready_with_warnings' | 'ready' | 'submitted'
+export interface Warning {
+  id: ItemId
+  why: 'waiting' | 'payment'
+}
+export type Info = 'state_checks' | 'unpriced'
+export interface Report {
+  verdict: Verdict
+  /** Tasks that stop him submitting, in the list's order. */
+  errors: TaskId[]
+  warnings: Warning[]
+  info: Info[]
+}
+
+export function readinessReport(s: Scenario, a: Answers, items: Item[], todo: TaskId[]): Report {
+  const warnings: Warning[] = items.flatMap((i): Warning[] =>
+    i.status === 'awaiting_verification' ? [{ id: i.id, why: 'waiting' }] : i.status === 'complete' && i.paymentImpact ? [{ id: i.id, why: 'payment' }] : [],
+  )
+  const unpriced = s.measures.some((m) => m.fits && !m.rateDinars && a.measures.chosen.includes(m.id))
+  const info: Info[] = ['state_checks', ...(unpriced ? (['unpriced'] as const) : [])]
+  const verdict: Verdict = a.submittedAt
+    ? 'submitted'
+    : !isRenewed(s, a)
+      ? 'renewal'
+      : todo.length
+        ? 'blocked'
+        : warnings.length
+          ? 'ready_with_warnings'
+          : 'ready'
+  return { verdict, errors: todo, warnings, info }
 }
 
 const DAY_MS = 86_400_000

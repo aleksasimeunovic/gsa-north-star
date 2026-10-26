@@ -16,7 +16,7 @@ export function StepOutline({ flow }: { flow: Flow }) {
   return (
     <section className="step-outline" aria-labelledby="outline-title">
       <div className="outline-head">
-        <h3 id="outline-title" className="group-title">{home.outline(count('action_required'), count('complete'), count('awaiting_verification'))}</h3>
+        <h3 id="outline-title" className="group-title">{home.outline(count('action_required'))}</h3>
         <Progress value={tasks.length - count('action_required')} max={tasks.length} />
       </div>
       {KINDS.map((kind) => {
@@ -35,15 +35,16 @@ export function StepOutline({ flow }: { flow: Flow }) {
                 const now = t.id === flow.focus
                 return (
                   <li key={t.id} data-status={t.status} data-now={now || undefined}>
-                    {t.status === 'action_required' ? (
-                      <span className="outline-mark">
-                        <Icon name={now ? 'now' : 'todo'} size="sm" />
-                      </span>
-                    ) : (
-                      <StatusBadge status={t.status} iconOnly />
-                    )}
-                    <button type="button" className="row-title" aria-current={now ? 'true' : undefined} onClick={() => flow.show(t.id)}>
-                      {flow.title(t.id)}
+                    {/* One button per row, so the hover covers the mark and the name together. */}
+                    <button type="button" className="outline-row" aria-current={now ? 'true' : undefined} onClick={() => flow.show(t.id)}>
+                      {t.status === 'action_required' ? (
+                        <span className="outline-mark">
+                          <Icon name={now ? 'now' : 'todo'} size="sm" />
+                        </span>
+                      ) : (
+                        <StatusBadge status={t.status} iconOnly />
+                      )}
+                      <span className="row-title">{flow.title(t.id)}</span>
                       {t.status === 'action_required' && <span className="visually-hidden">, {now ? home.now : home.todo}</span>}
                     </button>
                   </li>

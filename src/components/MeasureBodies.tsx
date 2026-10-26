@@ -34,18 +34,11 @@ function amountLine(m: Measure, d: Derived): string {
   return t.pays[m.id] ?? ''
 }
 
-/** Before he chooses: whether a measure adds work, and what. */
-export const needsLine = (m: Measure, filledFor: Requirement['kind'][] = []) => {
-  // Only what's always asked; a follow-up question appears once an answer makes it needed.
-  // What GSA fills in for him (the fields the satellite saw) isn't his to add.
-  const always = userReqs(m).filter((r) => !r.when && !filledFor.includes(r.kind))
-  return always.length ? t.youAdd(always.map((r) => req(r).short).join(', ')) : t.fromRecords
-}
-
 /**
- * Choosing measures, in the order that helps him decide: last year's (ticked), then the ones GSA found
- * evidence for on his farm (with that evidence), then the rest that fit, counted but closed. What a measure
- * would need from him shows once he ticks it, so the work is clear before he takes it on.
+ * Choosing measures, in the order that helps him decide: last year's, then the ones GSA found evidence for
+ * on his farm (with that evidence), then the rest that fit, counted but closed. Ticking a measure opens what
+ * it needs from him right under it, so choosing and filling in are one step; what GSA has is shown done.
+ * Anything he leaves empty becomes its own task after he applies, so nothing has to be finished here.
  */
 export function MeasuresBody() {
   const { derived, state, dispatch } = useApp()
@@ -59,37 +52,59 @@ export function MeasuresBody() {
   const more = fit.filter((m) => !m.lastYear && !isSuggested(m.id))
   const others = s.measures.filter((m) => !m.fits)
   const [chosen, setChosen] = useState<MeasureId[]>(stored.chosen)
-  const changed = !stored.confirmed || chosen.length !== stored.chosen.length || chosen.some((id) => !stored.chosen.includes(id))
+  const [draft, setDraft] = useState<Inputs>(stored.inputs)
+  const sameChoice = chosen.length === stored.chosen.length && chosen.every((id) => stored.chosen.includes(id))
+  const sameInputs = Object.keys(draft).every((k) => JSON.stringify(draft[k]) === JSON.stringify(stored.inputs[k]))
+  const changed = !stored.confirmed || !sameChoice || !sameInputs
+
+  const toggle = (m: Measure, on: boolean) => {
+    setChosen((c) => (on ? [...c.filter((x) => x !== m.id), m.id] : c.filter((x) => x !== m.id)))
+    // A suggested measure comes with the fields its evidence was about.
+    const g = suggested.find((x) => x.measureId === m.id)
+    const pick = m.requirements.find((r) => r.kind === 'fields')
+    const key = pick && `${m.id}.${pick.id}`
+    if (on && g?.fields && key) setDraft((d) => (d[key] === undefined ? { ...d, [key]: g.fields! } : d))
+  }
+
+  const apply = () => {
+    const ids = fit.map((m) => m.id).filter((id) => chosen.includes(id))
+    // Only what he can see is kept.
+    const inputs = Object.fromEntries(
+      Object.entries(draft).filter(([k]) => {
+        const [mid, rid] = k.split('.')
+        const m = fit.find((x) => x.id === mid)
+        const r = m?.requirements.find((x) => x.id === rid)
+        return !!m && !!r && ids.includes(m.id) && shown(m, r, draft)
+      }),
+    )
+    dispatch({ type: 'choose_measures', chosen: ids, inputs })
+  }
 
   const option = (m: Measure) => {
     const on = chosen.includes(m.id)
     const g = suggested.find((x) => x.measureId === m.id)
     return (
-      <li key={m.id}>
+      <li key={m.id} className="measure-option" data-on={on || undefined}>
         <Checkbox
           card
           label={en.measures[m.id]}
           checked={on}
-          onChange={(v) => {
-            setChosen(v ? [...chosen, m.id] : chosen.filter((x) => x !== m.id))
-          }}
+          onChange={(v) => toggle(m, v)}
           hint={
             <>
               {g && <span className="measure-line" data-strong>{g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}</span>}
               <span className="measure-line">{amountLine(m, derived)}</span>
               {!g && !m.lastYear && <span className="measure-line">{t.why[m.id]}</span>}
-              {on && needsLine(m, g?.fields ? ['fields'] : []) !== t.fromRecords && (
-                <span className="measure-line" data-strong>{needsLine(m, g?.fields ? ['fields'] : [])}</span>
-              )}
             </>
           }
         />
+        {on && <MeasureFields m={m} draft={draft} onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))} />}
       </li>
     )
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap="group">
       <Text>{t.lead(fit.length)}</Text>
       <section className="measure-group" aria-labelledby="m-last">
         <h4 id="m-last" className="group-title">{t.groupLast}</h4>
@@ -115,23 +130,49 @@ export function MeasuresBody() {
           </Stack>
         </Disclosure>
       )}
-      {changed && (
+      {/* Nothing to apply for until he ticks one; once applied, the button comes back only when he changes something. */}
+      {changed && chosen.length > 0 && (
         <div>
-          <Button
-            variant="primary"
-            disabled={chosen.length === 0}
-            onClick={() => dispatch({ type: 'choose_measures', chosen: fit.map((m) => m.id).filter((id) => chosen.includes(id)) })}
-          >
-            {t.confirm(chosen.length)}
-          </Button>
+          <Button variant="primary" onClick={apply}>{t.confirm(chosen.length)}</Button>
         </div>
       )}
     </Stack>
   )
 }
 
+/** Under a ticked measure: what GSA has (done) and what he adds, each in the form that fits it. */
+function MeasureFields({ m, draft, onChange }: { m: Measure; draft: Inputs; onChange: (key: string, v: MeasureValue) => void }) {
+  const { derived } = useApp()
+  const gaps = measureGaps(m, draft)
+  const ruledOut = m.requirements.find((r) => r.blocks !== undefined && draft[`${m.id}.${r.id}`] === r.blocks)
+  const own = userReqs(m)
+  return (
+    <div className="measure-fields">
+      {m.requirements
+        .filter((r) => shown(m, r, draft))
+        .map((r) =>
+          r.kind === 'auto' ? (
+            <AutoLine key={r.id} r={r} d={derived} />
+          ) : (
+            <RequirementInput key={r.id} r={r} value={draft[`${m.id}.${r.id}`]} onChange={(v) => onChange(`${m.id}.${r.id}`, v)} />
+          ),
+        )}
+      {ruledOut ? (
+        <Banner tone="attention">{req(ruledOut).ruledOut}</Banner>
+      ) : (
+        own.length > 0 && (
+          <p className="measure-state" data-ready={!gaps.missing.length || undefined}>
+            <Icon name={gaps.missing.length ? 'action_required' : 'complete'} size="sm" />
+            {gaps.missing.length ? t.needs(m.requirements.filter((r) => gaps.missing.includes(r.id)).map((r) => req(r).short).join(', ')) : t.ready}
+          </p>
+        )
+      )}
+    </div>
+  )
+}
+
 /** Something GSA already has: shown as done, with where it came from. */
-function AutoLine({ m, r, d }: { m: Measure; r: Requirement; d: Derived }) {
+function AutoLine({ r, d }: { r: Requirement; d: Derived }) {
   const a = tasks.auto
   const receipts = d.items.find((i) => i.id === 'receipts')
   const value =
@@ -146,7 +187,7 @@ function AutoLine({ m, r, d }: { m: Measure; r: Requirement; d: Derived }) {
           : a.fertiliser_receipt
   const missing = r.id === 'receipts' && receipts?.detail === 'receipts_missing'
   return (
-    <p className="auto-line" key={`${m.id}.${r.id}`}>
+    <p className="auto-line">
       <StatusBadge status={missing ? 'action_required' : 'complete'} iconOnly /> <strong>{req(r).label}</strong>: {value}
     </p>
   )
@@ -245,7 +286,7 @@ export function MeasureBody({ taskId }: { taskId: TaskId }) {
             .filter((r) => shown(m, r, draft))
             .map((r) =>
               r.kind === 'auto' ? (
-                <AutoLine key={r.id} m={m} r={r} d={derived} />
+                <AutoLine key={r.id} r={r} d={derived} />
               ) : (
                 <RequirementInput
                   key={r.id}
