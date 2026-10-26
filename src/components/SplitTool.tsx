@@ -16,6 +16,7 @@ import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Inline, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Note } from '../ui/Note'
+import { StageAction } from '../ui/MapStage'
 import { Select } from '../ui/Select'
 
 const STEP_M = 5
@@ -159,12 +160,14 @@ export function SplitControls({ field, d, onConfirm }: { field: Field; d: SplitD
             }}
           />
         ))}
-      <Inline>
-        {d.canUndo && <Button onClick={d.undo}>{copy.undo}</Button>}
-        <Button variant="primary" disabled={!complete} onClick={() => onConfirm(draft)}>
-          {copy.confirm}
-        </Button>
-      </Inline>
+      <StageAction>
+        <Inline>
+          {d.canUndo && <Button onClick={d.undo}>{copy.undo}</Button>}
+          <Button variant="primary" disabled={!complete} onClick={() => onConfirm(draft)}>
+            {copy.confirm}
+          </Button>
+        </Inline>
+      </StageAction>
     </Stack>
   )
 }

@@ -12,6 +12,7 @@ import { FileInput } from '../ui/FileInput'
 import { Stack, Text } from '../ui/Layout'
 import { RadioGroup } from '../ui/RadioGroup'
 import { Icon } from '../ui/Icon'
+import { StageAction } from '../ui/MapStage'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp, type AppCtx } from './AppContext'
 
@@ -143,9 +144,9 @@ export function MeasuresBody() {
       )}
       {/* Nothing to apply for until he ticks one; once applied, the button comes back only when he changes something. */}
       {changed && chosen.length > 0 && (
-        <div>
+        <StageAction>
           <Button variant="primary" onClick={apply}>{t.confirm(chosen.length)}</Button>
-        </div>
+        </StageAction>
       )}
     </Stack>
   )

@@ -177,6 +177,30 @@ button.drawer-row:hover { background: var(--hover); }
 .map-grip { min-width: 56px; height: 44px; padding: 0 12px; border-radius: 24px; background: var(--primary); color: #fff; border: 2px solid #fff; box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); font: 700 1.25rem/1 var(--font-sans, sans-serif); cursor: grab; touch-action: none; }
 .map-handle:focus-visible, .map-grip:focus-visible { outline: 3px dashed #fff; outline-offset: 3px; }
 
+/* A large map with the question built in: the map fills the screen between the stepper and the action bar */
+.map-stage { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: max(520px, calc(100dvh - var(--topbar-h) - var(--stepper-h) - var(--bar-h) - var(--space-6))); border-radius: 24px; overflow: hidden; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-card); }
+.map-stage-map { position: relative; min-height: 0; min-width: 0; }
+.map-stage-panel { display: flex; flex-direction: column; gap: var(--gap-group); min-height: 0; overflow-y: auto; padding: var(--space-6) var(--space-6) 0; border-left: 1px solid var(--border); }
+.map-stage-panel::after { content: ''; flex: none; height: var(--space-2); }
+/* Answers stacked in the narrow panel, so each reads in one line */
+.map-stage-panel [role='group'] > .grid { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1023px) {
+  /* Below the map on a phone: the map takes what the panel doesn't need, the panel at most half */
+  .map-stage { display: flex; flex-direction: column; }
+  .map-stage-map { flex: 1 1 auto; min-height: 240px; }
+  .map-stage-panel { flex: 0 1 auto; max-height: 50%; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--space-4); }
+}
+.map-frame[data-fill] { height: 100%; position: relative; }
+.map-frame[data-fill] .farm-map, .map-frame[data-fill] .farm-map[data-mode='draw'] { height: 100%; border-radius: 0; }
+/* On the map: its tools sit in the top right corner, over the photo */
+.map-frame[data-fill] .map-tools { position: absolute; z-index: 2; top: 12px; right: 12px; justify-content: flex-end; }
+.map-frame[data-fill] .map-tools button { box-shadow: var(--shadow-card); border-color: transparent; }
+@media (max-width: 639px) { .map-frame[data-fill] .map-tools button { font-size: 0; gap: 0; padding: 0 12px; } }
+/* The answer stays in view: pinned to the bottom of the panel (or of the task card, above the action bar) */
+.stage-action { position: sticky; bottom: 0; z-index: 1; margin-top: auto; padding: var(--space-4) 0 var(--space-4); background: var(--card); box-shadow: 0 -12px 12px -12px rgb(28 42 34 / 0.12); }
+.next .stage-action { bottom: var(--bar-h); margin: 0 calc(-1 * var(--space-8)); padding: var(--space-4) var(--space-8); }
+@media (max-width: 639px) { .next .stage-action { margin: 0 calc(-1 * var(--space-5)); padding: var(--space-4) var(--space-5); } }
+
 /* His farm and the estimate, on the last part */
 .farm { margin: 0; display: flex; flex-direction: column; gap: 12px; }
 .farm-row dt { font-weight: 500; }

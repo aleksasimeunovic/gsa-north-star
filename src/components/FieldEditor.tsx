@@ -4,13 +4,14 @@ import Modify from 'ol/interaction/Modify'
 import Snap from 'ol/interaction/Snap'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { draw as copy, en, formatHa } from '../copy/en'
 import type { FieldId, Polygon, Scenario } from '../data/scenarios'
 import { bounds, drawingProblems, overlapHa, polygonAreaHa, roundHa } from '../logic/geometry'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
-import { Inline, Stack, Text } from '../ui/Layout'
+import { Inline, Text } from '../ui/Layout'
+import { MapStage, StageAction } from '../ui/MapStage'
 import { labelStyle, mapStyle, vertexStyle } from '../ui/mapStyles'
 import { createFarmMap, landOf } from './map/olFarm'
 
@@ -20,6 +21,8 @@ interface Props {
   /** Where he starts: last year's line, or his own drawing. */
   start: Polygon
   onSave: (p: Polygon) => void
+  /** What sits at the top of the panel beside the map: the field and his answer. */
+  head?: ReactNode
 }
 
 /**
@@ -28,7 +31,7 @@ interface Props {
  * Area and problems update as he drags, and each problem is explained where it stops him.
  * A slider is the alternative to dragging.
  */
-export default function FieldEditor({ scenario, fieldId, start, onSave }: Props) {
+export default function FieldEditor({ scenario, fieldId, start, onSave, head }: Props) {
   const field = scenario.fields.find((f) => f.id === fieldId)!
   const neighbour = field.signal?.kind === 'overlap' ? field.signal.neighbourPolygon : null
   const land = landOf(scenario, field)
@@ -105,9 +108,16 @@ export default function FieldEditor({ scenario, fieldId, start, onSave }: Props)
   const bottom = Math.round(bounds(poly).maxY)
 
   return (
-    <Stack gap="sm">
+    <MapStage
+      label={en.fields[fieldId]}
+      map={
+        <div className="map-frame" data-fill>
+          <div ref={el} className="farm-map" data-mode="draw" tabIndex={0} role="application" aria-label={copy.label(en.fields[fieldId])} aria-describedby="draw-status" />
+        </div>
+      }
+    >
+      {head}
       <Text variant="small">{copy.how}</Text>
-      <div ref={el} className="farm-map" data-mode="draw" tabIndex={0} role="application" aria-label={copy.label(en.fields[fieldId])} aria-describedby="draw-status" />
       <div id="draw-status" aria-live="polite">
         <Text variant="strong">{copy.area(formatHa(area))}</Text>
         {hard.map((p) => (
@@ -156,11 +166,11 @@ export default function FieldEditor({ scenario, fieldId, start, onSave }: Props)
         )}
         {JSON.stringify(poly) !== JSON.stringify(field.polygon) && <Button variant="link" onClick={() => set(field.polygon)}>{copy.reset}</Button>}
       </Inline>
-      <div>
+      <StageAction>
         <Button variant="primary" disabled={hard.length > 0} onClick={() => onSave(poly)}>
           {copy.save}
         </Button>
-      </div>
-    </Stack>
+      </StageAction>
+    </MapStage>
   )
 }

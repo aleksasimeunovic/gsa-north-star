@@ -90,11 +90,15 @@
   --radius: 0.75rem;
   --shadow-card: 0 1px 2px rgb(28 42 34 / 0.04), 0 4px 16px -8px rgb(28 42 34 / 0.08);
   --topbar-h: 64px;
+  /* The sticky stepper under the header, and the action bar at the bottom, so a stage can fill what's between */
+  --stepper-h: 92px;
+  --bar-h: 70px;
   /* Comfortable density: Milan. Compact: Jelena. */
   --control-h: 48px;
 }
 [data-density='compact'] { --control-h: 34px; --gap-section: var(--space-6); }
-@media (max-width: 639px) { :root { --gap-section: var(--space-8); } }
+@media (max-width: 1023px) { :root { --stepper-h: 52px; } }
+@media (max-width: 639px) { :root { --gap-section: var(--space-8); --bar-h: 118px; } }
 
 @theme inline {
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;

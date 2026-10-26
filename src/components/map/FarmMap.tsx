@@ -19,10 +19,12 @@ interface Props {
   split?: { field: Field; d: SplitDraft; interactive: boolean }
   /** His own drawing of the field, once he has one. */
   drawn?: Polygon | null
+  /** Fills a map stage: as large as the screen allows, with its tools on the map. */
+  fill?: boolean
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, drawn }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, drawn, fill }: Props) {
   const el = useRef<HTMLDivElement>(null)
   const [fm, setFm] = useState<Handle | null>(null)
   const [large, setLarge] = useState(false)
@@ -44,8 +46,8 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, dra
   useEffect(() => fm?.map.updateSize(), [fm, large])
 
   return (
-    <div className="map-frame" data-mode={mode} data-size={large ? 'large' : undefined}>
-      {/* Above the map, so they stay put while the map moves. */}
+    <div className="map-frame" data-mode={mode} data-size={large ? 'large' : undefined} data-fill={fill || undefined}>
+      {/* Above the map (on it, when it fills a stage), so they stay put while the map moves. */}
       {explore && (
         <div className="map-tools">
           {(focus || only) && (
@@ -58,10 +60,12 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, dra
             <Icon name="map" />
             {copy.wholeFarm}
           </Button>
-          <Button onClick={() => setLarge(!large)}>
-            <Icon name={large ? 'smaller' : 'larger'} />
-            {large ? copy.smaller : copy.larger}
-          </Button>
+          {!fill && (
+            <Button onClick={() => setLarge(!large)}>
+              <Icon name={large ? 'smaller' : 'larger'} />
+              {large ? copy.smaller : copy.larger}
+            </Button>
+          )}
         </div>
       )}
       <div

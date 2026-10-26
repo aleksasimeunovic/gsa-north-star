@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { en, finish, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
@@ -9,7 +9,8 @@ import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
 import { Button } from '../ui/Button'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
-import { Stack, Text, VisuallyHidden } from '../ui/Layout'
+import { Text, VisuallyHidden } from '../ui/Layout'
+import { MapStage, StageAction } from '../ui/MapStage'
 import { Note } from '../ui/Note'
 
 // Drawing where a field ends loads only when he needs it.
@@ -42,17 +43,19 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
   if (!item) return null
   const onAnswer = () => (answered.current = true)
   const Body = id === 'field_river' ? RiverReview : id === 'field_road' ? RoadReview : UpperReview
+  const head = (
+    <header className="review-head">
+      <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
+      <Text>
+        {item.status === 'action_required' ? mapContext(id) : taskSummary(id, derived, state)}{' '}
+        {item.status === 'action_required' && <Note kind="ai" />}
+      </Text>
+    </header>
+  )
 
   return (
-    <Stack gap="md">
-      <header className="review-head">
-        <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
-        <Text>
-          {item.status === 'action_required' ? mapContext(id) : taskSummary(id, derived, state)}{' '}
-          {item.status === 'action_required' && <Note kind="ai" />}
-        </Text>
-      </header>
-      <Body onAnswer={onAnswer} />
+    <>
+      <Body onAnswer={onAnswer} head={head} />
       <ActionBar
         back={{ label: map.back, onClick: back }}
         forwardIsPrimary={false}
@@ -61,7 +64,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
           flow.show(task)
         }}
       />
-    </Stack>
+    </>
   )
 }
 
@@ -83,10 +86,10 @@ const options = (yes: string, no: string) => [
   { value: 'no' as const, label: no },
 ]
 
-type BodyProps = { onAnswer: () => void }
+type BodyProps = { onAnswer: () => void; head: ReactNode }
 
 /** The satellite flags, Milan decides. Two crops: GSA's line where the photo changes, which he accepts or moves. */
-function RiverReview({ onAnswer }: BodyProps) {
+function RiverReview({ onAnswer, head }: BodyProps) {
   const { derived, state, dispatch } = useApp()
   const field = derived.scenario.fields.find((f) => f.id === 'river')!
   const item = derived.items.find((i) => i.id === 'field_river')!
@@ -102,19 +105,27 @@ function RiverReview({ onAnswer }: BodyProps) {
   }
 
   return (
-    <Stack gap="sm">
-      <Suspense fallback={<MapFallback mode="explore" />}>
-        <FarmMap
-          scenario={derived.scenario}
-          focus="river"
-          mode="explore"
-          label={`${map.title}: ${en.fields.river}. ${tasks.river.context}`}
-          split={a.answer === 'yes' && !asking ? { field, d: draft, interactive: splitting } : undefined}
-        />
-      </Suspense>
+    <MapStage
+      label={en.fields.river}
+      map={
+        <Suspense fallback={<MapFallback mode="explore" fill />}>
+          <FarmMap
+            scenario={derived.scenario}
+            focus="river"
+            mode="explore"
+            fill
+            label={`${map.title}: ${en.fields.river}. ${tasks.river.context}`}
+            split={a.answer === 'yes' && !asking ? { field, d: draft, interactive: splitting } : undefined}
+          />
+        </Suspense>
+      }
+    >
+      {head}
       {asking && <RiverInsight />}
       {asking ? (
-        <ChoiceButtons legend={tasks.river.question} hint={tasks.river.hint} options={options(tasks.river.yes, tasks.river.no)} onChoose={answer} />
+        <StageAction>
+          <ChoiceButtons legend={tasks.river.question} hint={tasks.river.hint} options={options(tasks.river.yes, tasks.river.no)} onChoose={answer} />
+        </StageAction>
       ) : (
         <AnswerLine legend={tasks.river.question} answer={a.answer === 'yes' ? tasks.river.answerYes : tasks.river.answerNo} onChange={() => setAsking(true)} />
       )}
@@ -135,42 +146,49 @@ function RiverReview({ onAnswer }: BodyProps) {
             <Button variant="link" onClick={() => setEditingSplit(true)}>{tasks.reviewSplit}</Button>
           </div>
         ))}
-    </Stack>
+    </MapStage>
   )
 }
 
 /** The strip the land map now calls road: its size and what it does to the payment, on the map, before he answers. */
-function RoadReview({ onAnswer }: BodyProps) {
+function RoadReview({ onAnswer, head }: BodyProps) {
   const { derived, state, dispatch } = useApp()
   const a = state.answers.road
   const item = derived.items.find((i) => i.id === 'field_road')!
   const [asking, setAsking] = useState(a.answer === null)
   return (
-    <Stack gap="sm">
-      <Suspense fallback={<MapFallback mode="explore" />}>
-        <FarmMap scenario={derived.scenario} focus="road" mode="explore" label={`${map.title}: ${en.fields.road}. ${tasks.road.context}`} />
-      </Suspense>
+    <MapStage
+      label={en.fields.road}
+      map={
+        <Suspense fallback={<MapFallback mode="explore" fill />}>
+          <FarmMap scenario={derived.scenario} focus="road" mode="explore" fill label={`${map.title}: ${en.fields.road}. ${tasks.road.context}`} />
+        </Suspense>
+      }
+    >
+      {head}
       <MapFacts id="field_road" />
       {asking ? (
-        <ChoiceButtons
-          legend={tasks.road.question}
-          options={options(tasks.road.yes, tasks.road.no)}
-          onChoose={(v) => {
-            onAnswer()
-            setAsking(false)
-            dispatch({ type: 'answer_road', answer: v })
-          }}
-        />
+        <StageAction>
+          <ChoiceButtons
+            legend={tasks.road.question}
+            options={options(tasks.road.yes, tasks.road.no)}
+            onChoose={(v) => {
+              onAnswer()
+              setAsking(false)
+              dispatch({ type: 'answer_road', answer: v })
+            }}
+          />
+        </StageAction>
       ) : (
         <AnswerLine legend={tasks.road.question} answer={a.answer === 'yes' ? tasks.road.yes : tasks.road.no} onChange={() => setAsking(true)} />
       )}
       {item.status === 'awaiting_verification' && !asking && <Text>{tasks.road.correctionAsked}</Text>}
-    </Stack>
+    </MapStage>
   )
 }
 
 /** Last year's drawing runs into the neighbour's new one. Yes: GSA moves his edge. No: he draws where his field ends. */
-function UpperReview({ onAnswer }: BodyProps) {
+function UpperReview({ onAnswer, head }: BodyProps) {
   const { derived, state, dispatch } = useApp()
   const s = derived.scenario
   const field = s.fields.find((f) => f.id === 'upper')!
@@ -180,50 +198,68 @@ function UpperReview({ onAnswer }: BodyProps) {
   const [editing, setEditing] = useState(false)
   const drawing = a.answer === 'no' && !asking && (!a.drawn || editing)
 
-  return (
-    <Stack gap="sm">
-      {drawing ? (
-        <Suspense fallback={<MapFallback mode="explore" />}>
-          <FieldEditor
-            scenario={s}
-            fieldId="upper"
-            start={a.drawn ?? field.polygon}
-            onSave={(polygon) => {
-              onAnswer()
-              dispatch({ type: 'set_upper_drawing', polygon })
-              setEditing(false)
-            }}
-          />
-        </Suspense>
-      ) : (
-        <Suspense fallback={<MapFallback mode="explore" />}>
-          <FarmMap scenario={s} focus="upper" mode="explore" drawn={a.answer === 'no' ? a.drawn : null} label={`${map.title}: ${en.fields.upper}. ${tasks.upper.context}`} />
-        </Suspense>
-      )}
-      {asking && <MapFacts id="field_upper" />}
-      {asking ? (
-        <ChoiceButtons
-          legend={tasks.upper.question}
-          options={options(tasks.upper.yes, tasks.upper.no)}
-          onChoose={(v) => {
+  const question = asking ? (
+    <StageAction>
+      <ChoiceButtons
+        legend={tasks.upper.question}
+        options={options(tasks.upper.yes, tasks.upper.no)}
+        onChoose={(v) => {
+          onAnswer()
+          setAsking(false)
+          dispatch({ type: 'answer_upper', answer: v })
+        }}
+      />
+    </StageAction>
+  ) : (
+    <AnswerLine legend={tasks.upper.question} answer={a.answer === 'yes' ? tasks.upper.answerYes : tasks.upper.answerNo} onChange={() => setAsking(true)} />
+  )
+
+  // Drawing where the field ends brings its own map and tools; his answer stays at the top of the panel.
+  if (drawing) {
+    return (
+      <Suspense fallback={<MapFallback mode="explore" fill />}>
+        <FieldEditor
+          scenario={s}
+          fieldId="upper"
+          start={a.drawn ?? field.polygon}
+          head={
+            <>
+              {head}
+              {question}
+            </>
+          }
+          onSave={(polygon) => {
             onAnswer()
-            setAsking(false)
-            dispatch({ type: 'answer_upper', answer: v })
+            dispatch({ type: 'set_upper_drawing', polygon })
+            setEditing(false)
           }}
         />
-      ) : (
-        <AnswerLine legend={tasks.upper.question} answer={a.answer === 'yes' ? tasks.upper.answerYes : tasks.upper.answerNo} onChange={() => setAsking(true)} />
-      )}
+      </Suspense>
+    )
+  }
+
+  return (
+    <MapStage
+      label={en.fields.upper}
+      map={
+        <Suspense fallback={<MapFallback mode="explore" fill />}>
+          <FarmMap scenario={s} focus="upper" mode="explore" fill drawn={a.answer === 'no' ? a.drawn : null} label={`${map.title}: ${en.fields.upper}. ${tasks.upper.context}`} />
+        </Suspense>
+      }
+    >
+      {head}
+      {asking && <MapFacts id="field_upper" />}
+      {question}
       {item.status === 'awaiting_verification' && (
         <Text variant="secondary">
           {tasks.upper.drawnOverlaps}. {finish.submit.awaitingNote} <Note kind="assumption" />
         </Text>
       )}
-      {a.answer === 'no' && a.drawn && !editing && !asking && (
+      {a.answer === 'no' && a.drawn && !asking && (
         <div>
           <Button variant="link" onClick={() => setEditing(true)}>{tasks.upper.redraw}</Button>
         </div>
       )}
-    </Stack>
+    </MapStage>
   )
 }

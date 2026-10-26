@@ -12,6 +12,7 @@ import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Compare, KeyValues, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Note } from '../ui/Note'
+import { StageAction } from '../ui/MapStage'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { useApp, type AppCtx } from './AppContext'
 import { SendToJelena } from './SendToJelena'
@@ -19,8 +20,8 @@ import { MeasuresBody, measureSummary } from './MeasureBodies'
 
 // Maps load only when one is shown.
 export const FarmMap = lazy(() => import('./map/FarmMap'))
-export const MapFallback = ({ mode }: { mode: 'preview' | 'explore' }) => (
-  <div className="map-frame" data-mode={mode}>
+export const MapFallback = ({ mode, fill }: { mode: 'preview' | 'explore'; fill?: boolean }) => (
+  <div className="map-frame" data-mode={mode} data-fill={fill || undefined}>
     <div className="farm-map" data-loading>{draw.loading}</div>
   </div>
 )
@@ -63,10 +64,11 @@ function Question({ legend, hint, value, answer, onAnswer }: { legend: string; h
   )
 }
 
+// The action a task is for stays in view while he scrolls the card.
 const Primary = ({ onClick, children }: { onClick: () => void; children: string }) => (
-  <div>
+  <StageAction>
     <Button variant="primary" onClick={onClick}>{children}</Button>
-  </div>
+  </StageAction>
 )
 
 function RenewalBody() {
@@ -284,12 +286,12 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
           {finish.submit.awaitingNote} <Note kind="assumption" />
         </Text>
       )}
-      <div>
+      <StageAction>
         <Button variant={item.status === 'action_required' ? 'primary' : 'secondary'} onClick={review}>
           {item.status === 'action_required' ? action : en.change}
           <VisuallyHidden>: {en.fields[fieldId]}</VisuallyHidden>
         </Button>
-      </div>
+      </StageAction>
     </Stack>
   )
 }

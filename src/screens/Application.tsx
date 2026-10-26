@@ -19,7 +19,8 @@ import { SubmitStep } from './Submit'
  */
 export function Application({ target, review }: { target: string | null; review?: string | null }) {
   const { state, go } = useApp()
-  const flow = useApplicationFlow(target)
+  // Opening a boundary review straight from a link still puts the stepper on its part.
+  const flow = useApplicationFlow(target ?? (review ? `task-${review}` : null))
   const submitted = !!state.answers.submittedAt
   const reviewing = review && isMapChange(review as never) && !submitted ? (review as MapTask) : null
 
