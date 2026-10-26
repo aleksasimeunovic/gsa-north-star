@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
 import { emptyAnswers } from '../state/store'
-import { allTasks, applicationList, newlyRemoved, stepOf, type WorkId } from './application'
+import { allTasks, applicationList, newlyRemoved, stepMark, stepOf, type Step, type WorkId } from './application'
 import { deriveItems } from './status'
 import { halfSplit, ready, run } from './testUtils'
 
@@ -160,5 +160,22 @@ describe('parts and kinds of work', () => {
       measures: 'choice',
       receipt_unreadable: 'change', receipts: 'same',
     })
+  })
+})
+
+describe('step marks', () => {
+  const step = (id: Step['id'], left: number, waiting = 0): Step => ({ id, tasks: [], left, waiting })
+  it('keeps the part icon for the open part, for check and submit and for parts not opened yet', () => {
+    expect(stepMark(step('land', 3), 'land', new Set())).toBe('part')
+    expect(stepMark(step('submit', 0), 'land', new Set())).toBe('part')
+    expect(stepMark(step('animals', 2), 'land', new Set())).toBe('part')
+  })
+  it('warns about a part he left with things to do, and makes it an error once he is on check and submit', () => {
+    expect(stepMark(step('animals', 2), 'land', new Set(['animals']))).toBe('warning')
+    expect(stepMark(step('animals', 2), 'submit', new Set())).toBe('error')
+  })
+  it('ticks a done part, and marks one with something waiting for a check as info', () => {
+    expect(stepMark(step('details', 0), 'land', new Set())).toBe('complete')
+    expect(stepMark(step('animals', 0, 1), 'land', new Set())).toBe('info')
   })
 })

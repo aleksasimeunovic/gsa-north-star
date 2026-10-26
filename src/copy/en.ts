@@ -664,6 +664,7 @@ export const steps = {
   done: 'Done',
   /** Under each part's name in the stepper. */
   status: (left: number) => (left === 1 ? '1 thing to do' : left ? `${left} things to do` : 'Done'),
+  waiting: 'Waiting for a check',
 }
 
 export const bar = {

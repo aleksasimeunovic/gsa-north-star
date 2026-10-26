@@ -3,12 +3,13 @@ import { Icon } from '../ui/Icon'
 import { Progress } from '../ui/Progress'
 import { useApp } from './AppContext'
 import { stepIcon } from './taskIcon'
-import type { StepId } from '../logic/application'
+import { stepMark, type StepId } from '../logic/application'
 import type { Flow } from './useApplicationFlow'
 
 /**
  * The parts of his application, generated around his farm: a part with nothing for his farm is left out.
  * Each says what's left in it, and any part can be opened. On a phone it shrinks to where he is and a bar.
+ * A part's mark says how it stands: a tick, a warning or error for what's left, info for a check it waits on.
  */
 export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (id: StepId) => void }) {
   const { derived } = useApp()
@@ -27,17 +28,21 @@ export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (
       <ol>
         {list.map((s, i) => {
           const current = s.id === flow.step.id
-          const done = s.id !== 'submit' && s.left === 0
-          // What's left is said only for the part he is in; a done part shows its tick.
-          const status = current && s.id !== 'submit' ? copy.status(s.left) : ''
+          const mark = stepMark(s, flow.step.id, flow.seen)
+          // What's left is said for the part he is in and for a part marked; a done part shows its tick.
+          const status =
+            current && s.id !== 'submit' ? copy.status(s.left) : mark === 'warning' || mark === 'error' ? copy.status(s.left) : mark === 'info' ? copy.waiting : ''
           return (
-            <li key={s.id} data-state={current ? 'current' : done ? 'done' : 'todo'}>
+            <li key={s.id} data-state={current ? 'current' : 'todo'} data-mark={mark}>
               <button type="button" aria-current={current ? 'step' : undefined} onClick={() => onStep(s.id)}>
-                <span className="step-mark" aria-hidden="true">{done ? <Icon name="check" /> : <Icon name={stepIcon(s.id)} />}
-                  <span className="sr-only">{i + 1}</span></span>
+                <span className="step-mark" aria-hidden="true">
+                  <Icon name={mark === 'part' ? stepIcon(s.id) : mark} />
+                  <span className="sr-only">{i + 1}</span>
+                </span>
                 <span className="step-text">
                   <span className="step-name">{copy.name[s.id]}</span>
                   {status && <span className="step-status">{status}</span>}
+                  {mark === 'complete' && <span className="sr-only">{copy.done}</span>}
                 </span>
               </button>
             </li>

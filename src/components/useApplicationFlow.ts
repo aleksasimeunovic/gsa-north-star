@@ -45,6 +45,8 @@ export function useApplicationFlow(target: string | null) {
   const [after, setAfter] = useState<AfterAnswer | null>(null)
   const [announce, setAnnounce] = useState('')
   const [bring, setBring] = useState(0)
+  /** Parts he has opened, so one he left unfinished can be marked. */
+  const [seen, setSeen] = useState<ReadonlySet<StepId>>(() => new Set([step]))
 
   const index = Math.max(0, list.steps.findIndex((s) => s.id === step))
   const current = list.steps[index]
@@ -144,6 +146,9 @@ export function useApplicationFlow(target: string | null) {
   useEffect(() => {
     shown.current = focus
   })
+  useEffect(() => {
+    setSeen((s) => (s.has(current.id) ? s : new Set([...s, current.id])))
+  }, [current.id])
 
   // Arriving from elsewhere (the readiness drawer, the receipt) opens the task or part asked for.
   useEffect(() => {
@@ -164,7 +169,7 @@ export function useApplicationFlow(target: string | null) {
     })
   }, [bring])
 
-  return { step: current, index, nextStep, focus, focusTask, held, after, announce, show, goStep, back, forward, forwardIsPrimary, title }
+  return { step: current, index, seen, nextStep, focus, focusTask, held, after, announce, show, goStep, back, forward, forwardIsPrimary, title }
 }
 
 export type Flow = ReturnType<typeof useApplicationFlow>

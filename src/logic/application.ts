@@ -162,6 +162,19 @@ export function applicationList(s: Scenario, a: Answers, items: Item[], role: Ro
 
 export const allTasks = (l: ApplicationList) => [...l.todo, ...l.waiting, ...l.done]
 
+/**
+ * The mark on a part in the stepper, in the readiness drawer's terms. A part he hasn't opened keeps its
+ * own icon, so nothing is flagged on arrival. One he left with things to do is a warning; once he is on
+ * check and submit, those stop him submitting and become errors. Done with something waiting for a check
+ * is info; done is a tick. Payment impact never sets a mark.
+ */
+export type StepMark = 'part' | 'complete' | 'warning' | 'error' | 'info'
+export function stepMark(s: Step, at: StepId, seen: ReadonlySet<StepId>): StepMark {
+  if (s.id === 'submit' || s.id === at) return 'part'
+  if (s.left > 0) return at === 'submit' ? 'error' : seen.has(s.id) ? 'warning' : 'part'
+  return s.waiting > 0 ? 'info' : 'complete'
+}
+
 /** Work his last answer removed: shown once, with its reason, then gone. */
 export function newlyRemoved(before: ApplicationList, after: ApplicationList): { taskId: TaskId; work: Work }[] {
   const was = new Map(allTasks(before).flatMap((t) => t.work.map((w) => [w.id, w.state] as const)))
