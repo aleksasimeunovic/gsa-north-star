@@ -4,10 +4,10 @@ import { Button } from './Button'
 import { Icon } from './Icon'
 
 /**
- * A short message about what just happened, above the action bar. It leaves on its own after a while,
+ * A short message about what just happened, in the lower right above the action bar. It leaves on its own after a while,
  * but never while the pointer or focus is on it, so Undo stays reachable. Announced politely.
  */
-export function Toast({ id, title, children, action, onClose, seconds = 8 }: { id: number; title: string; children?: ReactNode; action?: ReactNode; onClose: () => void; seconds?: number }) {
+export function Toast({ id, title, children, action, onClose, seconds = 4 }: { id: number; title: string; children?: ReactNode; action?: ReactNode; onClose: () => void; seconds?: number }) {
   const [paused, setPaused] = useState(false)
   const close = useRef(onClose)
   close.current = onClose

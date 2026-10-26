@@ -77,8 +77,8 @@
 .answer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 12px 16px; border-radius: 16px; background: var(--muted); }
 .answer strong { color: var(--foreground); }
 
-/* What his last answer changed: a toast above the action bar, with Undo */
-.toast { position: fixed; z-index: 45; left: 50%; bottom: 88px; transform: translateX(-50%); width: min(520px, calc(100vw - 32px)); display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); border-radius: 16px; background: var(--foreground); color: #fff; box-shadow: 0 12px 32px -8px rgb(28 42 34 / 0.4); }
+/* What his last answer changed: a toast in the lower right, above the action bar, with Undo */
+.toast { position: fixed; z-index: 45; right: 16px; bottom: 88px; width: min(440px, calc(100vw - 32px)); display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); border-radius: 16px; background: var(--foreground); color: #fff; box-shadow: 0 12px 32px -8px rgb(28 42 34 / 0.4); }
 @media (max-width: 639px) { .toast { bottom: 136px; } }
 .toast-icon { display: inline-flex; margin-top: 10px; color: var(--forest-100); }
 .toast-icon svg path { stroke: var(--foreground); }
@@ -91,7 +91,7 @@
 .toast-actions [data-variant='link'], .toast-actions a { color: var(--forest-100); }
 @media (prefers-reduced-motion: no-preference) {
   .toast { animation: toast-in 0.25s ease-out; }
-  @keyframes toast-in { from { transform: translate(-50%, 12px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+  @keyframes toast-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 }
 
 /* This part at a glance */
