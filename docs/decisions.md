@@ -162,3 +162,6 @@ One line per decision: what was chosen, the alternative rejected, why.
 133. **`src/copy/en.ts`: 4,204 to 4,264 words**, against the deletion rule, because the readiness verdicts and the three group names are new; the greeting, "After your answer" and the measure "You add" lines were cut.
 134. **A title and the body it introduces sit 8 px apart (`--gap-pair`)**: the task title and its first line, a drawer group and its rows, a receipt section and its content. Sections inside the task stay 40 apart.
 135. **The open part in the stepper is filled solid green with a white icon and white text**, rather than pale green, so where he is reads as active, not merely selected.
+136. **Only the open part in the stepper says how many things are left**; other parts show just their name and icon (a done part its tick), so the stepper reads as places, not counts.
+137. **No group names in the readiness drawer**: the icon says it (red cross, orange mark, blue i) and its tooltip names it ("Stops you submitting", "You can submit, but look at these", "Good to know"); screen readers still hear the name. The groups stay apart by spacing.
+138. **The outline's bar has its count beside it ("2/5")**, and the open row is filled solid green with a white icon, like the open part in the stepper.

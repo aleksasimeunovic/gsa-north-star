@@ -27,7 +27,8 @@ export function Stepper({ flow }: { flow: Flow }) {
         {list.map((s, i) => {
           const current = s.id === flow.step.id
           const done = s.id !== 'submit' && s.left === 0
-          const status = s.id === 'submit' ? '' : copy.status(s.left)
+          // What's left is said only for the part he is in; a done part shows its tick.
+          const status = current && s.id !== 'submit' ? copy.status(s.left) : ''
           return (
             <li key={s.id} data-state={current ? 'current' : done ? 'done' : 'todo'}>
               <button type="button" aria-current={current ? 'step' : undefined} onClick={() => flow.goStep(s.id)}>

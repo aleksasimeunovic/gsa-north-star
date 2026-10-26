@@ -106,11 +106,15 @@
 .outline-row { width: calc(100% + 16px); margin: 0 -8px; display: flex; gap: var(--space-3); align-items: center; min-height: 44px; padding: 0 8px; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 0.875rem; color: var(--foreground); cursor: pointer; text-align: left; transition: background-color 0.15s; }
 .outline-row:hover { background: var(--hover); }
 .outline-mark { display: inline-flex; width: 20px; height: 20px; flex: none; align-items: center; justify-content: center; border-radius: 1000px; color: var(--input); }
-.outline-list li[data-now] .outline-row { background: var(--accent); }
-.outline-list li[data-now] .outline-mark { background: var(--primary); color: var(--primary-foreground); }
+.outline-list li[data-now] .outline-row { background: var(--primary); color: var(--primary-foreground); }
+.outline-list li[data-now] .outline-row:hover { background: var(--primary-hover); }
+.outline-list li[data-now] .outline-mark { background: color-mix(in oklch, #fff 18%, transparent); color: var(--primary-foreground); }
 .outline-list li[data-now] .outline-mark svg { width: 14px; height: 14px; }
 .row-title { flex: 1; }
-.outline-list li[data-now] .row-title { font-weight: 600; color: var(--accent-foreground); }
+.outline-list li[data-now] .row-title { font-weight: 600; color: var(--primary-foreground); }
+.outline-progress { display: flex; align-items: center; gap: var(--space-3); }
+.outline-progress > :first-child { flex: 1; }
+.outline-count { font-size: 0.8125rem; font-weight: 500; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 .outline-list li[data-status='complete'] .row-title { color: var(--muted-foreground); }
 
 /* Readiness: answers "Is my application ready?" */
@@ -122,7 +126,6 @@
 /* The drawer: errors, warnings and good to know, never mixed. No lines between rows: each row is its own hover. */
 .drawer-group { display: flex; flex-direction: column; gap: var(--gap-pair); }
 .drawer-group + .drawer-group { margin-top: var(--space-4); }
-.drawer-group-title { font-size: 0.8125rem; font-weight: 600; color: var(--muted-foreground); }
 .drawer-list { list-style: none; padding: 0; margin: 0 -12px; display: flex; flex-direction: column; gap: 2px; }
 .drawer-row { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-3); align-items: start; padding: var(--space-3); border: 0; border-radius: 12px; background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
 .drawer-row[data-static] { cursor: default; grid-template-columns: auto 1fr; }

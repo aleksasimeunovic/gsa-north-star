@@ -54,7 +54,6 @@ export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open
 function Group({ severity, children }: { severity: Severity; children: ReactNode }) {
   return (
     <section className="drawer-group" data-severity={severity} aria-label={en.readiness.group[severity]}>
-      <h3 className="drawer-group-title">{en.readiness.group[severity]}</h3>
       <ul className="drawer-list">{children}</ul>
     </section>
   )
@@ -64,7 +63,8 @@ function Group({ severity, children }: { severity: Severity; children: ReactNode
 function Row({ severity, title, hint, onClick }: { severity: Severity; title: string; hint?: string; onClick?: () => void }) {
   const body = (
     <>
-      <span className="drawer-mark" data-severity={severity}>
+      {/* The kind (stops you, look at this, good to know) is the icon's tooltip; the shape and colour say it at a glance. */}
+      <span className="drawer-mark" data-severity={severity} title={en.readiness.group[severity]}>
         <Icon name={severity} />
         <span className="sr-only">{en.readiness.group[severity]}: </span>
       </span>
