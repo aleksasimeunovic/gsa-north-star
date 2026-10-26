@@ -178,6 +178,11 @@ button.drawer-row:hover { background: var(--hover); }
 .map-handle:focus-visible, .map-grip:focus-visible { outline: 3px dashed #fff; outline-offset: 3px; }
 
 /* A large map with the question built in: the map fills the screen between the stepper and the action bar */
+/* The map screen is exactly the window: header, stepper, the stage filling the rest, the action bar. Nothing scrolls but the panel. */
+.page[data-screen='review'] { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding-bottom: calc(var(--bar-h) + var(--space-4)); }
+.page[data-screen='review'] .main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.page[data-screen='review'] .step { flex: 1; min-height: 0; }
+.page[data-screen='review'] .map-stage { flex: 1; min-height: 0; height: auto; }
 .map-stage { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: max(520px, calc(100dvh - var(--topbar-h) - var(--stepper-h) - var(--bar-h) - var(--space-6))); border-radius: 24px; overflow: hidden; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-card); }
 .map-stage-map { position: relative; min-height: 0; min-width: 0; }
 .map-stage-panel { display: flex; flex-direction: column; gap: var(--gap-group); min-height: 0; overflow-y: auto; padding: var(--space-6) var(--space-6) 0; border-left: 1px solid var(--border); }
