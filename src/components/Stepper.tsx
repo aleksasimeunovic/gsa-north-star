@@ -3,13 +3,14 @@ import { Icon } from '../ui/Icon'
 import { Progress } from '../ui/Progress'
 import { useApp } from './AppContext'
 import { stepIcon } from './taskIcon'
+import type { StepId } from '../logic/application'
 import type { Flow } from './useApplicationFlow'
 
 /**
  * The parts of his application, generated around his farm: a part with nothing for his farm is left out.
  * Each says what's left in it, and any part can be opened. On a phone it shrinks to where he is and a bar.
  */
-export function Stepper({ flow }: { flow: Flow }) {
+export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (id: StepId) => void }) {
   const { derived } = useApp()
   const list = derived.list.steps
   const at = flow.index + 1
@@ -31,7 +32,7 @@ export function Stepper({ flow }: { flow: Flow }) {
           const status = current && s.id !== 'submit' ? copy.status(s.left) : ''
           return (
             <li key={s.id} data-state={current ? 'current' : done ? 'done' : 'todo'}>
-              <button type="button" aria-current={current ? 'step' : undefined} onClick={() => flow.goStep(s.id)}>
+              <button type="button" aria-current={current ? 'step' : undefined} onClick={() => onStep(s.id)}>
                 <span className="step-mark" aria-hidden="true">{done ? <Icon name="check" /> : <Icon name={stepIcon(s.id)} />}
                   <span className="sr-only">{i + 1}</span></span>
                 <span className="step-text">

@@ -39,7 +39,8 @@ export function Application({ target, review }: { target: string | null; review?
   return (
     <>
       <div className="step-nav">
-        <Stepper flow={flow} />
+        {/* From the map, a part in the stepper leaves the map for that part. */}
+        <Stepper flow={flow} onStep={reviewing ? (id) => go('welcome', `step-${id}`) : undefined} />
       </div>
       <section id="step" className="step" aria-labelledby="step-title">
         {/* The stepper already names the part on screen; the heading stays for screen readers. */}
