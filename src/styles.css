@@ -59,7 +59,6 @@
 @media (max-width: 639px) { .next { padding: var(--space-5); border-radius: 20px; } }
 .next-top { display: flex; align-items: center; gap: 12px; }
 .task-icon { width: 44px; height: 44px; flex: none; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-foreground); }
-.next-kind { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 500; color: var(--muted-foreground); }
 .next-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .next h3 { font-size: 1.5rem; letter-spacing: -0.02em; }
 .next > p, .next .lead { color: var(--muted-foreground); }
@@ -98,8 +97,6 @@
 /* This part at a glance */
 .step-outline { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); box-shadow: var(--shadow-card); }
 .outline-head { display: flex; flex-direction: column; gap: 12px; }
-.outline-group { display: flex; flex-direction: column; gap: 2px; }
-.outline-kind { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 2px; }
 .outline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .outline-list { gap: 2px; }
 /* One button per row: the hover and the selected row cover the mark and the name together, edge to edge. */
@@ -149,6 +146,7 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-option > label { border: 0 !important; background: none !important; }
 .measure-fields { display: flex; flex-direction: column; gap: var(--space-4); margin: 0 var(--space-4) var(--space-4); padding: var(--space-4); border-radius: 12px; background: var(--card); }
 .measure-fields .auto-line { padding: 0; background: none; }
+.auto-mark { display: inline-flex; color: var(--muted-foreground); }
 .measure-state { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.875rem; font-weight: 500; }
 .measure-state[data-ready] { color: var(--success); }
 .measure-state:not([data-ready]) { color: var(--warning-text); }

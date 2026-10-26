@@ -36,7 +36,7 @@ function NextAction({ flow }: { flow: Flow }) {
     <section id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
       <div className="next-top">
         <div className="next-titles">
-          {task.kind === 'change' ? <Note kind="ai" /> : <p className="next-kind">{home.kind[task.kind]}</p>}
+          {task.kind === 'change' && <Note kind="ai" />}
           <div className="next-head">
             <h3 id="next-title" tabIndex={-1}>{heading}</h3>
             {!needsHim && <StatusBadge status={task.status} />}
@@ -49,7 +49,6 @@ function NextAction({ flow }: { flow: Flow }) {
 }
 
 function actionTitle(id: TaskId, flow: Flow) {
-  if (id.startsWith('measure_')) return tasks.measureAction(flow.title(id))
   // Missing receipts are an upload, named as one; otherwise receipts are something to confirm.
   if (id === 'receipts' && flow.title(id) === tasks.receiptsMissingTitle) return tasks.receiptsMissingTitle
   return tasks.action[id] ?? flow.title(id)

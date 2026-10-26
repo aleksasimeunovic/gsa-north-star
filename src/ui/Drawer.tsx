@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { en } from '../copy/en'
 import { cn } from '../lib/utils'
 import { Button } from './Button'
@@ -14,7 +15,8 @@ interface Props {
   variant?: 'default' | 'prototype'
 }
 
-// A sheet from the right. Non-modal: no focus trap. Esc closes and focus returns to the opener.
+// A sheet from the right, the full height of the window. Non-modal: no focus trap. Esc closes and focus returns
+// to the opener. Rendered at the end of the page, so a blurred header it opens from can't clip it.
 export function Drawer({ open, title, onClose, returnFocusTo, children, variant = 'default' }: Props) {
   const titleId = useId()
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -34,7 +36,7 @@ export function Drawer({ open, title, onClose, returnFocusTo, children, variant 
   }, [open, onClose])
 
   if (!open) return null
-  return (
+  return createPortal(
     <section
       role="dialog"
       aria-modal="false"
@@ -51,6 +53,7 @@ export function Drawer({ open, title, onClose, returnFocusTo, children, variant 
         </Button>
       </div>
       {children}
-    </section>
+    </section>,
+    document.body,
   )
 }

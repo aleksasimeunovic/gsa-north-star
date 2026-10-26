@@ -72,12 +72,16 @@ describe('application list', () => {
     expect(work(run('second_year', { type: 'answer_upper', answer: 'no' }), 'upper_redraw').state).toBe('needed')
   })
 
-  it('choosing measures adds a task for each one that needs something from him, and none for the rest', () => {
-    const r = run('second_year', { type: 'choose_measures', chosen: ['plant_production', 'fertiliser', 'irrigation', 'breeding_cattle'] })
-    expect(ids(r.list.todo)).toContain('measure_irrigation')
-    expect(ids(r.list.todo)).toContain('measure_breeding_cattle')
-    expect(ids(allTasks(r.list))).not.toContain('measure_fertiliser')
-    expect(ids(allTasks(r.list))).not.toContain('measure_plant_production')
+  it('measures stay one task, open until every chosen measure has what it needs', () => {
+    const open = run('second_year', { type: 'choose_measures', chosen: ['plant_production', 'fertiliser', 'irrigation'] })
+    expect(ids(open.list.todo)).toContain('measures')
+    expect(ids(allTasks(open.list)).filter((id) => id.startsWith('measure'))).toEqual(['measures'])
+    const done = run('second_year', {
+      type: 'choose_measures',
+      chosen: ['plant_production', 'fertiliser', 'irrigation'],
+      inputs: { 'irrigation.water_permit': 'permit.jpg', 'irrigation.how_water': 'A pump from the river' },
+    })
+    expect(ids(done.list.done)).toContain('measures')
   })
 
   it('a correction to his details waits for a check and stays among the confirmations', () => {
@@ -143,7 +147,7 @@ describe('parts and kinds of work', () => {
     expect(['bank', 'household', 'details', 'renewal'].map((id) => stepOf(id as never))).toEqual(Array(4).fill('details'))
     expect(['herd', 'pigs', 'calvings'].map((id) => stepOf(id as never))).toEqual(Array(3).fill('animals'))
     expect(['field_meadow', 'fields_other'].map((id) => stepOf(id as never))).toEqual(['land', 'land'])
-    expect(['measures', 'measure_diesel'].map((id) => stepOf(id as never))).toEqual(Array(2).fill('measures'))
+    expect(stepOf('measures')).toBe('measures')
     expect(['receipt_unreadable', 'receipts'].map((id) => stepOf(id as never))).toEqual(['documents', 'documents'])
   })
 

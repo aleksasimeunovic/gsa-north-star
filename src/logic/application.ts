@@ -75,7 +75,7 @@ export function stepOf(id: TaskId): StepId {
   if (id === 'renewal' || id === 'bank' || id === 'household' || id === 'details') return 'details'
   if (id === 'herd' || id === 'pigs' || id === 'calvings') return 'animals'
   if (id.startsWith('field_') || id === 'fields_other') return 'land'
-  if (id === 'measures' || id.startsWith('measure_')) return 'measures'
+  if (id === 'measures') return 'measures'
   return 'documents'
 }
 

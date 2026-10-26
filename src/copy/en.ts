@@ -1,7 +1,7 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
 import type { Crop, FieldId, MeasureId, Office, ScenarioId } from '../data/scenarios'
 import type { DrawingProblem } from '../logic/geometry'
-import type { RemovalReason, StepId, TaskKind, WorkId } from '../logic/application'
+import type { RemovalReason, StepId, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
 import type { Severity } from '../logic/readiness'
@@ -113,7 +113,6 @@ export const home = {
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   daysLeft: (n: number) => (n === 1 ? '1 day left to apply' : `${n} days left to apply`),
   activeFarmer: "You're an active farmer for this year",
-  kind: { choice: 'Your choices', same: 'To confirm' } satisfies Record<Exclude<TaskKind, 'change'>, string>,
   stepDone: (step: string) => `Nothing left to do in ${step.toLowerCase()}`,
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check, and you can still submit' : `${n} things wait for a check, and you can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
@@ -183,7 +182,6 @@ export const tasks = {
   } as Record<string, string>,
   /** A confirmation's one button. */
   confirm: "Yes, that's right",
-  measureAction: (name: string) => `${name}: add what it needs`,
   review: 'Review this boundary',
   reviewSplit: 'Split the field on the map',
   reviewDraw: 'Draw where your field ends',
@@ -402,10 +400,9 @@ export const tasks = {
       organic: 'Needs a certified organic farm',
       milk: 'Needs milk sold to a dairy',
     } satisfies Record<MeasureId, string>,
-    needs: (list: string) => `Add: ${list}`,
-    ready: 'Everything added',
+    add: (list: string) => `To apply, add ${list}`,
+    ready: 'Everything is added',
     ruledOut: "Can't be paid this year",
-    save: 'Save',
     leaveOut: 'Leave this measure out',
     attached: (name: string) => `Attached: ${name}`,
     error: {

@@ -15,7 +15,7 @@ import { Note } from '../ui/Note'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { useApp, type AppCtx } from './AppContext'
 import { SendToJelena } from './SendToJelena'
-import { MeasureBody, MeasuresBody, measureSummary } from './MeasureBodies'
+import { MeasuresBody, measureSummary } from './MeasureBodies'
 
 // Maps load only when one is shown.
 export const FarmMap = lazy(() => import('./map/FarmMap'))
@@ -509,7 +509,6 @@ function UnreadableBody() {
 // Each kind of decision gets its own body: a number, a map, a drawing, a choice of measures, a form.
 export function TaskBody({ task }: { task: Task }) {
   const id = task.id
-  if (id.startsWith('measure_')) return <MeasureBody taskId={id} />
   if (isMapChange(id)) return <MapChangeCard id={id} />
   switch (id) {
     case 'renewal':
@@ -546,7 +545,7 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
   const s = d.scenario
   const jelena = milanCaseState(state)
   if (id === 'renewal') return d.list.todo.some((t) => t.id === 'renewal') ? tasks.renewal.body : home.activeFarmer
-  if (id.startsWith('measure_') || id === 'measures') return measureSummary(id, d)
+  if (id === 'measures') return measureSummary(d, state.answers.measures.inputs)
   const item = itemOf(d, id)
   const done = item.status === 'complete'
   const g = s.generalData

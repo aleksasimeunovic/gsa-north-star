@@ -1,4 +1,4 @@
-import type { FieldId, Measure, MeasureId, Requirement, Scenario } from '../data/scenarios'
+import type { FieldId, Measure, Requirement, Scenario } from '../data/scenarios'
 import type { Answers, MeasureValue } from '../state/actions'
 import type { CaseState } from './advisor'
 import { overlapHa, polygonAreaHa, roundHa, splitPolygon } from './geometry'
@@ -14,7 +14,6 @@ export type ItemId =
   | `field_${FieldId}`
   | 'fields_other'
   | 'measures'
-  | `measure_${MeasureId}`
   | 'receipt_unreadable'
   | 'receipts'
 
@@ -69,9 +68,7 @@ export type ItemDetail =
   | 'details_correction'
   | 'measures_to_choose'
   | 'measures_chosen'
-  | 'measure_needs_input'
-  | 'measure_ruled_out' // an answer means the measure can't be paid; he leaves it out
-  | 'measure_ready'
+  | 'measures_incomplete' // a chosen measure still needs something, or an answer rules it out
   | 'receipts_to_confirm'
   | 'receipts_confirmed'
   | 'receipts_missing'
@@ -83,7 +80,7 @@ export interface Item {
   paymentImpact?: PaymentImpact
   /** Both values, when his answer differs from a record. */
   conflict?: { record: number; his: number; owner: 'animal_registry' | 'land_map' }
-  /** For a measure: what he still has to add. */
+  /** For measures: the chosen ones that still need him. */
   missing?: string[]
 }
 
@@ -204,21 +201,21 @@ export function measureGaps(m: Measure, inputs: Answers['measures']['inputs']): 
 export const fitting = (s: Scenario) => s.measures.filter((m) => m.fits)
 
 /**
- * Choosing measures is its own task. Once chosen, every measure that needs something from him
- * becomes its own task; measures GSA can fill in from records need nothing more.
+ * Choosing measures and adding what each needs is one task. It is done only once every chosen measure
+ * has everything it needs: a measure he ticked but didn't finish keeps the task open (and blocks
+ * submission), however many he finished. `missing` lists the measures that still need him.
  */
-function measureItems(s: Scenario, a: Answers): Item[] {
+export function measuresItem(s: Scenario, a: Answers): Item {
   const m = a.measures
-  const items: Item[] = [m.confirmed ? { id: 'measures', status: 'complete', detail: 'measures_chosen' } : { id: 'measures', status: 'action_required', detail: 'measures_to_choose' }]
-  if (!m.confirmed) return items
-  for (const measure of fitting(s).filter((x) => m.chosen.includes(x.id) && x.requirements.some((r) => r.kind !== 'auto'))) {
-    const { missing, ruledOut } = measureGaps(measure, m.inputs)
-    const id = `measure_${measure.id}` as const
-    if (ruledOut) items.push({ id, status: 'action_required', detail: 'measure_ruled_out' })
-    else if (missing.length) items.push({ id, status: 'action_required', detail: 'measure_needs_input', missing })
-    else items.push({ id, status: 'complete', detail: 'measure_ready' })
-  }
-  return items
+  if (!m.confirmed) return { id: 'measures', status: 'action_required', detail: 'measures_to_choose' }
+  const open = fitting(s).filter((x) => {
+    if (!m.chosen.includes(x.id)) return false
+    const g = measureGaps(x, m.inputs)
+    return g.ruledOut || g.missing.length > 0
+  })
+  return open.length
+    ? { id: 'measures', status: 'action_required', detail: 'measures_incomplete', missing: open.map((x) => x.id) }
+    : { id: 'measures', status: 'complete', detail: 'measures_chosen' }
 }
 
 /** The bank closed the account payments go to and reported a new one: one question, his own account only if No. */
@@ -276,7 +273,7 @@ export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = 
 
   // Measures
   // GSA's suggestions sit at the top of choosing measures, so he sees them with the rest.
-  items.push(...measureItems(s, a))
+  items.push(measuresItem(s, a))
 
   // Documents
   const missing = s.documents.some((d) => !d.attached && !a.attachedDocuments.includes(d.id))

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { en, home, steps, tasks } from '../copy/en'
+import { home, steps, tasks } from '../copy/en'
 import { allTasks, newlyRemoved, stepOf, type ApplicationList, type StepId, type TaskId, type Work } from '../logic/application'
 import { useApp } from './AppContext'
 
@@ -22,7 +22,6 @@ const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce
 
 export function taskTitle(id: TaskId | 'submit', receiptsMissing = false) {
   if (id === 'receipts' && receiptsMissing) return tasks.receiptsMissingTitle
-  if (id.startsWith('measure_')) return en.measures[id.slice(8) as keyof typeof en.measures]
   return tasks.title[id]
 }
 

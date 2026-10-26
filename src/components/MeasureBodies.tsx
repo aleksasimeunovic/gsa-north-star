@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { en, formatDinars, formatHa, formatNumber, tasks } from '../copy/en'
 import type { Measure, MeasureId, Requirement } from '../data/scenarios'
-import type { TaskId } from '../logic/application'
 import { fitting, measureGaps, shown } from '../logic/status'
 import type { MeasureValue } from '../state/actions'
 import { Banner } from '../ui/Banner'
@@ -37,8 +36,9 @@ function amountLine(m: Measure, d: Derived): string {
 /**
  * Choosing measures, in the order that helps him decide: last year's, then the ones GSA found evidence for
  * on his farm (with that evidence), then the rest that fit, counted but closed. Ticking a measure opens what
- * it needs from him right under it, so choosing and filling in are one step; what GSA has is shown done.
- * Anything he leaves empty becomes its own task after he applies, so nothing has to be finished here.
+ * it needs from him right under it, so choosing and filling in are one step. He can apply with something
+ * still empty (nothing he typed is lost), but the task stays open, and blocks submitting, until every
+ * measure he chose has everything it needs.
  */
 export function MeasuresBody() {
   const { derived, state, dispatch } = useApp()
@@ -56,6 +56,8 @@ export function MeasuresBody() {
   const sameChoice = chosen.length === stored.chosen.length && chosen.every((id) => stored.chosen.includes(id))
   const sameInputs = Object.keys(draft).every((k) => JSON.stringify(draft[k]) === JSON.stringify(stored.inputs[k]))
   const changed = !stored.confirmed || !sameChoice || !sameInputs
+  // Once he has applied, an empty field says so; before that, each measure only says what's missing.
+  const [tried, setTried] = useState(stored.confirmed)
 
   const toggle = (m: Measure, on: boolean) => {
     setChosen((c) => (on ? [...c.filter((x) => x !== m.id), m.id] : c.filter((x) => x !== m.id)))
@@ -78,6 +80,7 @@ export function MeasuresBody() {
       }),
     )
     dispatch({ type: 'choose_measures', chosen: ids, inputs })
+    setTried(true)
   }
 
   const option = (m: Measure) => {
@@ -98,7 +101,15 @@ export function MeasuresBody() {
             </>
           }
         />
-        {on && <MeasureFields m={m} draft={draft} onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))} />}
+        {on && (
+          <MeasureFields
+            m={m}
+            draft={draft}
+            showErrors={tried}
+            onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))}
+            onLeaveOut={() => toggle(m, false)}
+          />
+        )}
       </li>
     )
   }
@@ -140,8 +151,12 @@ export function MeasuresBody() {
   )
 }
 
-/** Under a ticked measure: what GSA has (done) and what he adds, each in the form that fits it. */
-function MeasureFields({ m, draft, onChange }: { m: Measure; draft: Inputs; onChange: (key: string, v: MeasureValue) => void }) {
+/**
+ * Under a ticked measure: what GSA has from records and what he adds, each in the form that fits it, then
+ * where the measure stands. Green only once everything is in; until then it says what's missing, and once
+ * he has applied, each empty field says so. An answer that rules the measure out offers to leave it out.
+ */
+function MeasureFields({ m, draft, showErrors, onChange, onLeaveOut }: { m: Measure; draft: Inputs; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void; onLeaveOut: () => void }) {
   const { derived } = useApp()
   const gaps = measureGaps(m, draft)
   const ruledOut = m.requirements.find((r) => r.blocks !== undefined && draft[`${m.id}.${r.id}`] === r.blocks)
@@ -154,16 +169,27 @@ function MeasureFields({ m, draft, onChange }: { m: Measure; draft: Inputs; onCh
           r.kind === 'auto' ? (
             <AutoLine key={r.id} r={r} d={derived} />
           ) : (
-            <RequirementInput key={r.id} r={r} value={draft[`${m.id}.${r.id}`]} onChange={(v) => onChange(`${m.id}.${r.id}`, v)} />
+            <RequirementInput
+              key={r.id}
+              r={r}
+              value={draft[`${m.id}.${r.id}`]}
+              error={showErrors && gaps.missing.includes(r.id) ? t.error[r.kind] : undefined}
+              onChange={(v) => onChange(`${m.id}.${r.id}`, v)}
+            />
           ),
         )}
       {ruledOut ? (
-        <Banner tone="attention">{req(ruledOut).ruledOut}</Banner>
+        <>
+          <Banner tone="attention">{req(ruledOut).ruledOut}</Banner>
+          <div>
+            <Button onClick={onLeaveOut}>{t.leaveOut}</Button>
+          </div>
+        </>
       ) : (
         own.length > 0 && (
           <p className="measure-state" data-ready={!gaps.missing.length || undefined}>
             <Icon name={gaps.missing.length ? 'action_required' : 'complete'} size="sm" />
-            {gaps.missing.length ? t.needs(m.requirements.filter((r) => gaps.missing.includes(r.id)).map((r) => req(r).short).join(', ')) : t.ready}
+            {gaps.missing.length ? t.add(gapNames(m, gaps.missing)) : t.ready}
           </p>
         )
       )}
@@ -186,9 +212,10 @@ function AutoLine({ r, d }: { r: Requirement; d: Derived }) {
           ? a.calvings(d.scenario.herd?.cowsCalved ?? 0)
           : a.fertiliser_receipt
   const missing = r.id === 'receipts' && receipts?.detail === 'receipts_missing'
+  // From records, so it's marked as a record, not as done: green is only for what he has finished.
   return (
     <p className="auto-line">
-      <StatusBadge status={missing ? 'action_required' : 'complete'} iconOnly /> <strong>{req(r).label}</strong>: {value}
+      {missing ? <StatusBadge status="action_required" iconOnly /> : <span className="auto-mark"><Icon name="records" size="sm" /></span>} <strong>{req(r).label}</strong>: {value}
     </p>
   )
 }
@@ -247,85 +274,17 @@ function RequirementInput({ r, value, error, onChange }: { r: Requirement; value
   }
 }
 
-/**
- * One measure he chose that needs something from him. What GSA has is shown done; what he adds
- * is asked in the form that fits it. An answer that rules the measure out is said at once, with a way out.
- */
-export function MeasureBody({ taskId }: { taskId: TaskId }) {
-  const { derived, state, dispatch } = useApp()
-  const m = derived.scenario.measures.find((x) => `measure_${x.id}` === taskId)!
-  const stored = state.answers.measures
-  const [draft, setDraft] = useState<Inputs>(() => Object.fromEntries(Object.entries(stored.inputs).filter(([k]) => k.startsWith(`${m.id}.`))))
-  const [tried, setTried] = useState(false)
-  const gaps = measureGaps(m, draft)
-  const ruledOut = m.requirements.find((r) => r.blocks !== undefined && draft[`${m.id}.${r.id}`] === r.blocks)
-
-  const save = () => {
-    if (gaps.missing.length) {
-      setTried(true)
-      requestAnimationFrame(() => document.querySelector<HTMLElement>(`#${taskId}-form [role='alert']`)?.scrollIntoView({ block: 'center' }))
-      return
-    }
-    // Only what he can see is kept.
-    dispatch({ type: 'save_measure', measureId: m.id, inputs: Object.fromEntries(Object.entries(draft).filter(([k]) => m.requirements.some((r) => `${m.id}.${r.id}` === k && shown(m, r, draft)))) })
-  }
-
-  return (
-    <Stack gap="sm">
-      <Text variant="small">{amountLine(m, derived)}</Text>
-      <form
-        id={`${taskId}-form`}
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault()
-          save()
-        }}
-      >
-        <Stack gap="md">
-          {m.requirements
-            .filter((r) => shown(m, r, draft))
-            .map((r) =>
-              r.kind === 'auto' ? (
-                <AutoLine key={r.id} r={r} d={derived} />
-              ) : (
-                <RequirementInput
-                  key={r.id}
-                  r={r}
-                  value={draft[`${m.id}.${r.id}`]}
-                  error={tried && gaps.missing.includes(r.id) ? t.error[r.kind] : undefined}
-                  onChange={(v) => setDraft({ ...draft, [`${m.id}.${r.id}`]: v })}
-                />
-              ),
-            )}
-          {ruledOut ? (
-            <>
-              <Banner tone="attention">{req(ruledOut).ruledOut}</Banner>
-              <div>
-                <Button variant="primary" onClick={() => dispatch({ type: 'choose_measures', chosen: stored.chosen.filter((id) => id !== m.id) })}>
-                  {t.leaveOut}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <div>
-              <Button type="submit" variant="primary">{t.save}</Button>
-            </div>
-          )}
-        </Stack>
-      </form>
-    </Stack>
-  )
+/** One line for the measures task: what's chosen, or which chosen measures still need him and what. */
+export function measureSummary(d: Derived, inputs: Inputs): string {
+  const item = d.items.find((i) => i.id === 'measures')
+  if (item?.detail !== 'measures_incomplete') return t.chosen(d.farm.measures.chosen, d.farm.measures.fitting)
+  return item
+    .missing!.map((id) => {
+      const m = d.scenario.measures.find((x) => x.id === id)!
+      const g = measureGaps(m, inputs)
+      return `${en.measures[m.id]}: ${g.ruledOut ? t.ruledOut.toLowerCase() : t.add(gapNames(m, g.missing))}`
+    })
+    .join('. ')
 }
 
-/** One line for a collapsed measure task, or the choosing task. */
-export function measureSummary(id: TaskId, d: Derived): string {
-  if (id === 'measures') return t.chosen(d.farm.measures.chosen, d.farm.measures.fitting)
-  const item = d.items.find((i) => i.id === id)
-  if (!item) return ''
-  if (item.detail === 'measure_ruled_out') return t.ruledOut
-  if (item.missing?.length) {
-    const m = d.scenario.measures.find((x) => `measure_${x.id}` === id)!
-    return t.needs(m.requirements.filter((r) => item.missing!.includes(r.id)).map((r) => req(r).short).join(', '))
-  }
-  return t.ready
-}
+const gapNames = (m: Measure, missing: string[]) => m.requirements.filter((r) => missing.includes(r.id)).map((r) => req(r).short).join(', ')

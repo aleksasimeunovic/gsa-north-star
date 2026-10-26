@@ -55,7 +55,8 @@ describe('status per item', () => {
     expect(chosen.inputs['green_cover.cover_fields']).toEqual(['river', 'upper'])
     // Only his promise is left.
     const r = run('second_year', { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] })
-    expect(item(r, 'measure_green_cover').missing).toEqual(['cover_promise'])
+    expect(measureGaps(SCENARIOS.second_year.measures.find((m) => m.id === 'green_cover')!, chosen.inputs).missing).toEqual(['cover_promise'])
+    expect(item(r, 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_incomplete', missing: ['green_cover'] })
   })
 
   it('an unreadable receipt needs a new photo; sending it does not confirm the other receipts', () => {
@@ -158,7 +159,7 @@ describe('status per item', () => {
 
   it('an answer that rules a measure out is said at once', () => {
     const r = run('second_year', { type: 'choose_measures', chosen: ['breeding_cattle'] }, { type: 'save_measure', measureId: 'breeding_cattle', inputs: { 'breeding_cattle.herd_book': 'no' } })
-    expect(item(r, 'measure_breeding_cattle')).toMatchObject({ status: 'action_required', detail: 'measure_ruled_out' })
+    expect(item(r, 'measures')).toMatchObject({ status: 'action_required', missing: ['breeding_cattle'] })
   })
 
   it('Jelena asking him something makes the herd his action again', () => {

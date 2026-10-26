@@ -9,7 +9,7 @@ export function taskIcon(id: TaskId): IconName {
   if (id === 'field_meadow') return 'meadow'
   if (id === 'fields_other') return 'map'
   if (id.startsWith('field_')) return 'land'
-  if (id === 'measures' || id.startsWith('measure_')) return 'measures'
+  if (id === 'measures') return 'measures'
   if (id === 'receipt_unreadable' || id === 'receipts') return 'receipt'
   return 'same'
 }
