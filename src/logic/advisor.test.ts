@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { advisorQueue, milanCaseState } from './advisor'
+import { advisorQueue, followUpDate, milanCaseState, milanOutcome } from './advisor'
+import { derive } from './derive'
 import { play } from './testUtils'
 
 const sendHerd = [
@@ -35,11 +36,36 @@ describe('advisor queue', () => {
     expect(q[1].history[q[1].history.length - 1]).toMatchObject({ actor: 'Jelena', action: 'referred' })
   })
 
-  it('opening a case does not change who owns it; resolved goes last', () => {
+  it('opening a case does not change who owns it', () => {
     const s = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'opened' })
     expect(advisorQueue(s)[0].state).toBe('assigned')
-    const r = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'resolved' })
-    expect(advisorQueue(r).map((c) => c.state)).toEqual(['assigned', 'resolved'])
+  })
+
+  it("never resolves straight from her: only the record owner's decision, after a referral, recorded as the outcome", () => {
+    const direct = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'owner_decided', outcome: 'changed' })
+    expect(advisorQueue(direct)[0].state).toBe('assigned')
+    const r = play(
+      'second_year',
+      ...sendHerd,
+      { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'referred' },
+      { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'owner_decided', outcome: 'kept' },
+    )
+    expect(advisorQueue(r).map((c) => [c.id, c.state, c.outcome])).toEqual([
+      ['milan_herd', 'assigned', undefined],
+      ['neighbour_parcel', 'resolved', 'kept'],
+    ])
+  })
+
+  it('a referred case says when to follow up, halfway to the application deadline', () => {
+    expect(followUpDate('2026-04-28', '2026-05-26')).toBe('2026-05-12')
+    const s = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'neighbour_parcel', act: 'referred' })
+    expect(advisorQueue(s).find((c) => c.id === 'neighbour_parcel')!.followUp).toBe('2026-05-12')
+  })
+
+  it("the registry's decision settles Milan's herd: his part and theirs are done", () => {
+    const s = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'milan_herd', act: 'referred' }, { type: 'advisor_act', caseId: 'milan_herd', act: 'owner_decided', outcome: 'changed' })
+    expect(derive(s).items.find((i) => i.id === 'herd')).toMatchObject({ status: 'complete', detail: 'herd_settled' })
+    expect(milanOutcome(s)).toBe('changed')
   })
 
   it('Milan sees the same state on his item', () => {

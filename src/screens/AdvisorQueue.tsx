@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { advisor, en, formatDate, formatDateYear, formatTime } from '../copy/en'
 import { useApp } from '../components/AppContext'
 import { SCENARIOS } from '../data/scenarios'
@@ -6,7 +6,11 @@ import { advisorQueue, type AdvisorCase, type CaseState } from '../logic/advisor
 import { daysLeft } from '../logic/readiness'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
-import { Compare, Inline, Stack, Text } from '../ui/Layout'
+import { Compare, Inline, KeyValues, Stack, Text } from '../ui/Layout'
+import { StatusBadge } from '../ui/StatusBadge'
+import { markOf } from '../logic/severity'
+import { FarmMap, MapFallback, taskSummary } from '../components/TaskBodies'
+import type { Outcome } from '../state/actions'
 import { Table } from '../ui/Table'
 
 // Dates follow the prototype clock; times are real.
@@ -21,22 +25,44 @@ const CLOSE_DAYS = 7
 const GROUPS: CaseState[] = ['assigned', 'waiting_farmer', 'waiting_office', 'resolved']
 
 
+/**
+ * One case, with enough to decide without opening the application: who acts next, both values or the
+ * registry record, the farmer's explanation, the deadline, and a map of the parcel when it's about land.
+ * A referral moves responsibility to the record's owner; only the owner's decision resolves the case.
+ */
 function CaseDetail({ c }: { c: AdvisorCase }) {
-  const { dispatch, go } = useApp()
-  const act = (a: 'referred' | 'asked_farmer' | 'resolved') => dispatch({ type: 'advisor_act', caseId: c.id, act: a })
+  const { derived, state, dispatch, go } = useApp()
+  const act = (a: 'referred' | 'asked_farmer') => dispatch({ type: 'advisor_act', caseId: c.id, act: a })
+  const decide = (outcome: Outcome) => dispatch({ type: 'advisor_act', caseId: c.id, act: 'owner_decided', outcome })
   const office = en.offices[c.owner]
+  const herd = c.id === 'milan_herd' ? derived.items.find((i) => i.id === 'herd') : undefined
+  const reg = c.values?.record ?? 0
+  const his = c.values?.his ?? 0
+  const outcomeLabel = (o: Outcome) => advisor.outcome[c.kind][o](his, reg)
   return (
     <Card id="case-detail" title={`${c.farmer}: ${advisor.kind[c.kind]}`} headingLevel={2}>
-      <Stack gap="sm">
-        {/* Who owns the next action, said once. */}
-        <Text variant="strong">{advisor.next[c.state](en.offices[c.owner])}</Text>
-        {c.values && (
+      <Stack gap="md">
+        {/* Who owns the next action, said once; when to chase the office, once it's referred. */}
+        <div>
+          <Text variant="strong">{advisor.next[c.state](office)}</Text>
+          {c.followUp && <Text variant="secondary">{advisor.followUp(formatDateYear(c.followUp))}</Text>}
+          {c.outcome && <Text>{`${advisor.record[c.kind]}: ${outcomeLabel(c.outcome)}`}</Text>}
+          <Text variant="small">{advisor.deadline(formatDateYear(c.deadline))}</Text>
+        </div>
+        {c.values ? (
           <Compare
             items={[
-              { label: advisor.record, value: c.values.record },
+              { label: advisor.record[c.kind], value: c.values.record },
               { label: advisor.his, value: c.values.his },
             ]}
           />
+        ) : (
+          <KeyValues items={[{ label: advisor.record[c.kind], value: advisor.parcelRecord }]} />
+        )}
+        {c.parcel && (
+          <Suspense fallback={<MapFallback mode="preview" />}>
+            <FarmMap scenario={derived.scenario} parcel={c.parcel} mode="preview" label={`${advisor.kind[c.kind]}: ${c.farmer}`} />
+          </Suspense>
         )}
         <div>
           <Text variant="small">{advisor.note}</Text>
@@ -48,18 +74,31 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
             <Text>{c.reply}</Text>
           </div>
         )}
-        <Text variant="secondary">{advisor.owner(office)}</Text>
-        {/* The likely next step is primary: an official record goes to its owner; resolve once the owner has settled it. */}
-        {c.state !== 'resolved' && (
-          <Inline>
-            {c.state === 'waiting_office' ? (
-              <Button variant="primary" onClick={() => act('resolved')}>{advisor.act.resolved}</Button>
-            ) : (
+        {/* What Milan sees on his item: the same status signal and words as his application. */}
+        {herd && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Text variant="small">{advisor.inApp}</Text>
+            <StatusBadge mark={markOf(herd)} />
+            <Text variant="small">{taskSummary('herd', derived, state)}</Text>
+          </div>
+        )}
+        {/* The likely next step is primary: an official record goes to its owner; the owner's decision resolves it. */}
+        {c.state === 'waiting_office' ? (
+          <div className="flex flex-col gap-2">
+            <Text variant="strong">{advisor.act.decided(office)}</Text>
+            <Inline>
+              {(['changed', 'kept'] as const).map((o) => (
+                <Button key={o} onClick={() => decide(o)}>{outcomeLabel(o)}</Button>
+              ))}
+            </Inline>
+          </div>
+        ) : (
+          c.state !== 'resolved' && (
+            <Inline>
               <Button variant="primary" onClick={() => act('referred')}>{advisor.act.referred(office)}</Button>
-            )}
-            {c.state !== 'waiting_farmer' && <Button onClick={() => act('asked_farmer')}>{advisor.act.asked_farmer}</Button>}
-            {c.state !== 'waiting_office' && <Button variant="link" onClick={() => act('resolved')}>{advisor.act.resolved}</Button>}
-          </Inline>
+              {c.state !== 'waiting_farmer' && <Button onClick={() => act('asked_farmer')}>{advisor.act.asked_farmer}</Button>}
+            </Inline>
+          )
         )}
         {c.id === 'milan_herd' && (
           <div>

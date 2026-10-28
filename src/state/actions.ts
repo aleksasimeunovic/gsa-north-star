@@ -53,14 +53,20 @@ export interface HistoryEntry {
   action: Action['type']
 }
 
-/** Each act says who owns the next step: Jelena, another office, or the farmer. */
-export type AdvisorAct = 'opened' | 'referred' | 'asked_farmer' | 'farmer_replied' | 'resolved'
+/**
+ * Each act says who owns the next step: Jelena, another office, or the farmer. A referral moves
+ * responsibility to the record's owner; only the owner's decision, recorded as the outcome, resolves a case.
+ */
+export type AdvisorAct = 'opened' | 'referred' | 'asked_farmer' | 'farmer_replied' | 'owner_decided'
+/** The record owner's decision: the record changed to match the farmer, or it stays as it was. */
+export type Outcome = 'changed' | 'kept'
 
 export interface AdvisorLogEntry {
   caseId: string
   act: AdvisorAct
   at: string
   note?: string
+  outcome?: Outcome
 }
 
 export interface AppState {
@@ -81,7 +87,7 @@ export type Action =
   | { type: 'set_scenario'; scenarioId: ScenarioId }
   | { type: 'set_role'; role: Role }
   | { type: 'set_notes'; show: boolean }
-  | { type: 'advisor_act'; caseId: string; act: AdvisorAct }
+  | { type: 'advisor_act'; caseId: string; act: AdvisorAct; outcome?: Outcome }
   | { type: 'answer_herd'; answer: YesNo }
   | { type: 'set_herd_count'; count: number | null }
   | { type: 'send_to_jelena'; itemId: string; note: string }

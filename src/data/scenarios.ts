@@ -339,6 +339,10 @@ export interface AdvisorCaseSeed {
   /** Record vs farmer's value, when there are two numbers. */
   values?: { record: number; his: number }
   owner: Office
+  /** The prototype clock (assumption), so follow-up dates mean something. */
+  today: string
+  /** The neighbour's parcel, for a small map preview (placeholder outline). */
+  parcel?: Polygon
   /** Earlier history on the application before it reached Jelena. */
   history: { at: string; actor: string; action: string }[]
 }
@@ -359,6 +363,7 @@ export const MILAN_CASE: AdvisorCaseSeed = {
   deadline: '2026-05-26',
   values: { record: 38, his: 41 },
   owner: 'animal_registry',
+  today: '2026-04-28',
   history: [],
 }
 
@@ -371,6 +376,8 @@ export const NEIGHBOUR_CASE: AdvisorCaseSeed = {
   blocksSubmission: true,
   deadline: '2026-05-26',
   owner: 'land_registry',
+  today: '2026-04-28',
+  parcel: rect(0, 245, 200, 45),
   history: [
     { at: '2026-04-27T15:20:00Z', actor: 'Neighbour', action: 'confirm' },
     { at: '2026-04-27T15:40:00Z', actor: 'Neighbour', action: 'send_to_jelena' },

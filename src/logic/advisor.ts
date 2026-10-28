@@ -1,5 +1,5 @@
 import { MILAN_CASE, NEIGHBOUR_CASE, type AdvisorCaseSeed } from '../data/scenarios'
-import type { AdvisorAct, AdvisorLogEntry, AppState } from '../state/actions'
+import type { AdvisorAct, AdvisorLogEntry, AppState, Outcome } from '../state/actions'
 
 export interface HistoryLine {
   at: string
@@ -7,7 +7,10 @@ export interface HistoryLine {
   action: string // action type or advisor act, turned into words by copy
 }
 
-/** Who owns the next action. Referring a case to another office is waiting, not resolved. */
+/**
+ * Who owns the next action: needs Jelena, referred to the record's owner (awaiting its response: one state,
+ * since both say the same thing), needs the farmer, resolved (with the owner's decision as the outcome).
+ */
 export type CaseState = 'assigned' | 'waiting_office' | 'waiting_farmer' | 'resolved'
 
 export interface AdvisorCase extends AdvisorCaseSeed {
@@ -15,19 +18,39 @@ export interface AdvisorCase extends AdvisorCaseSeed {
   history: HistoryLine[]
   /** The farmer's latest reply to her question. */
   reply?: string
+  /** The record owner's decision, once there is one. */
+  outcome?: Outcome
+  /** When she should chase the office, once referred. */
+  followUp?: string
 }
 
 const STATE_OF: Partial<Record<AdvisorAct, CaseState>> = {
   referred: 'waiting_office',
   asked_farmer: 'waiting_farmer',
   farmer_replied: 'assigned',
-  resolved: 'resolved',
+  owner_decided: 'resolved',
+}
+
+const DAY_MS = 86_400_000
+/**
+ * When to chase the record's owner: halfway between the referral and the application deadline, so an answer
+ * still leaves the farmer time to act. Worked out from the deadline, not from a policy number.
+ */
+export function followUpDate(referredOn: string, deadline: string): string {
+  const from = Date.parse(`${referredOn}T00:00:00Z`)
+  const to = Date.parse(`${deadline}T00:00:00Z`)
+  return new Date(from + Math.floor((to - from) / DAY_MS / 2) * DAY_MS).toISOString().slice(0, 10)
 }
 
 /** A case is Jelena's until an act hands the next step to someone else. Opening it changes nothing. */
 export function caseState(log: AdvisorLogEntry[], caseId: string): CaseState {
   const acts = log.filter((l) => l.caseId === caseId && STATE_OF[l.act])
   return acts.length ? STATE_OF[acts[acts.length - 1].act]! : 'assigned'
+}
+
+/** The record owner's decision on Milan's herd, once Jelena has recorded it. */
+export function milanOutcome(state: AppState): Outcome | null {
+  return [...state.advisor.log].reverse().find((l) => l.caseId === MILAN_CASE.id && l.act === 'owner_decided')?.outcome ?? null
 }
 
 /** What Milan sees on his item: the same state as Jelena's queue, or null if he hasn't sent it. */
@@ -69,10 +92,15 @@ export function advisorQueue(state: AppState): AdvisorCase[] {
   return seeds
     .map((c): AdvisorCase => {
       const log = state.advisor.log.filter((l) => l.caseId === c.id)
+      const st = caseState(state.advisor.log, c.id)
+      const referred = [...log].reverse().find((l) => l.act === 'referred')
       return {
         ...c,
-        state: caseState(state.advisor.log, c.id),
+        state: st,
         reply: [...log].reverse().find((l) => l.act === 'farmer_replied')?.note,
+        outcome: [...log].reverse().find((l) => l.act === 'owner_decided')?.outcome,
+        // Dates follow the prototype clock: a referral made today counts from the scenario's today.
+        ...(st === 'waiting_office' && referred ? { followUp: followUpDate(c.today, c.deadline) } : {}),
         history: [...c.history, ...log.filter((l) => l.act !== 'farmer_replied').map((l) => ({ at: l.at, actor: 'Jelena', action: l.act }))].sort((x, y) => x.at.localeCompare(y.at)),
       }
     })

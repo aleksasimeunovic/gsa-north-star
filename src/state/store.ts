@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { Action, Actor, Answers, AppState } from './actions'
 import { derive } from '../logic/derive'
+import { caseState } from '../logic/advisor'
 import { submitCheck } from '../logic/submit'
 import { loadState, saveState } from './persist'
 import { MILAN_CASE, type ScenarioId } from '../data/scenarios'
@@ -117,7 +118,10 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
   if (action.type === 'set_role') return { ...state, role: action.role }
   if (action.type === 'set_notes') return { ...state, prototype: { showNotes: action.show } }
   if (action.type === 'advisor_act') {
-    return { ...state, advisor: { log: [...state.advisor.log, { caseId: action.caseId, act: action.act, at }] } }
+    // Resolved needs the record owner's decision, and only after the case was referred to that owner.
+    if (action.act === 'owner_decided' && (!action.outcome || caseState(state.advisor.log, action.caseId) !== 'waiting_office')) return state
+    const entry = { caseId: action.caseId, act: action.act, at, ...(action.outcome ? { outcome: action.outcome } : {}) }
+    return { ...state, advisor: { log: [...state.advisor.log, entry] } }
   }
   // His reply goes back to Jelena: the next action is hers again.
   if (action.type === 'reply_to_jelena') {

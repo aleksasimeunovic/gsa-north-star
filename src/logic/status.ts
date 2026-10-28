@@ -39,6 +39,7 @@ export type ItemDetail =
   | 'herd_confirmed'
   | 'herd_differs' // his value and the registry's are both kept
   | 'herd_jelena_asks' // Jelena sent the problem back to him with a question
+  | 'herd_settled' // the animal registry decided, and Jelena recorded its decision
   | 'river_unanswered'
   | 'river_needs_split'
   | 'river_split_done'
@@ -100,7 +101,8 @@ function herdItem(s: Scenario, a: Answers, jelena: CaseState | null): Item | nul
   if (ownCount === null || ownCount < 0) return { id, status: 'action_required', detail: 'herd_needs_count' }
   if (ownCount === s.herd.registryCount) return { id, status: 'complete', detail: 'herd_confirmed' }
   // A record never overwrites his answer, and his answer never overwrites the record.
-  // If Jelena asks him something, the next action is his again.
+  // Once the registry has decided, his part and theirs are done. If Jelena asks him something, it's his again.
+  if (jelena === 'resolved') return { id, status: 'complete', detail: 'herd_settled' }
   const asked = jelena === 'waiting_farmer'
   return {
     id,

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useRef, useState } from 'react'
 import { draw, en, finish, formatDate, formatDateYear, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
-import { milanCaseState } from '../logic/advisor'
+import { milanCaseState, milanOutcome } from '../logic/advisor'
 import { isMapChange, type Task, type TaskId } from '../logic/application'
 import { partNames, polygonAreaHa, roundHa, splitPolygon } from '../logic/geometry'
 import { impactOf, type Item, type ItemId } from '../logic/status'
@@ -527,6 +527,7 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       return tasks.meadow.rule
     case 'herd': {
       const h = s.herd!
+      if (item.detail === 'herd_settled') return tasks.herd.outcome[milanOutcome(state) ?? 'kept'](state.answers.herd.ownCount ?? h.registryCount, h.registryCount)
       if (item.conflict) return jelena && jelena !== 'assigned' ? tasks.jelena.state[jelena] : tasks.herd.waiting(item.conflict.record)
       if (done) return tasks.herd.done(h.registryCount)
       return item.detail === 'herd_needs_count' ? tasks.herd.countLabel : tasks.herd.summary(h.registryCount, h.lastYearDeclared ?? 0)

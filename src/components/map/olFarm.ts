@@ -35,6 +35,8 @@ export interface FarmMapOptions {
   editing?: boolean
   /** His own drawing of the field in question, shown instead of last year's line. */
   drawn?: Polygon | null
+  /** Someone else's parcel, shown alone and framed. */
+  parcel?: Polygon
 }
 
 export type FarmMap = ReturnType<typeof createFarmMap>
@@ -69,7 +71,8 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   }
 
   const focused = opts.focus ? s.fields.find((f) => f.id === opts.focus) : undefined
-  const fields = opts.only ? s.fields.filter((f) => opts.only!.includes(f.id)) : s.fields
+  const fields = opts.parcel ? [] : opts.only ? s.fields.filter((f) => opts.only!.includes(f.id)) : s.fields
+  if (opts.parcel) shape(opts.parcel, 'field')
 
   // Registered farmland is drawn but not labelled: it explains itself when it stops a corner.
   if (opts.editing && focused) shape(landOf(s, focused), 'land')
@@ -113,9 +116,11 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
 
   const extentOf = (polys: Polygon[]) => boundingExtent(polys.flat().map(coord))
   const all = s.fields.map((f) => f.polygon)
-  const home = focused
-    ? [focused.polygon, ...(signal?.kind === 'overlap' ? [signal.neighbourPolygon] : [])]
-    : fields.map((f) => f.polygon)
+  const home = opts.parcel
+    ? [opts.parcel]
+    : focused
+      ? [focused.polygon, ...(signal?.kind === 'overlap' ? [signal.neighbourPolygon] : [])]
+      : fields.map((f) => f.polygon)
 
   const view = new View({
     maxZoom: 20,

@@ -25,10 +25,12 @@ interface Props {
   fill?: boolean
   /** Where the field ends, as one line he moves. */
   edge?: { field: Field; d: EdgeDraft }
+  /** Someone else's parcel, alone on the photo (Jelena's case preview). */
+  parcel?: Polygon
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, drawn, fill, edge }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, drawn, fill, edge, parcel }: Props) {
   const el = useRef<HTMLDivElement>(null)
   const [fm, setFm] = useState<Handle | null>(null)
   const [large, setLarge] = useState(false)
@@ -38,7 +40,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, dra
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, drawn })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, drawn, parcel })
     setFm(h)
     return () => {
       setFm(null)
