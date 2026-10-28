@@ -11,15 +11,21 @@ This file is the single source of truth. Read it fully before planning. If somet
 **The one rule (the product's core principle):**
 > The complexity of the application should reflect the complexity of the farm, not the complexity of the government's policies.
 
-**Key line:** the application is generated around Milan's farm rather than fixed around the government's process. GSA does the thinking so Milan has to think as little as possible. It must not feel like a simplified form (fewer questions, shorter wizard).
+**Key line:** the application is generated around Milan's farm rather than fixed around the government's process. GSA does the thinking; it must not feel like a simplified form.
+
+**Fewer decisions, not easier ones (Earl, 26 Oct).** Before a task exists, ask whether it needs Milan's input this year. If not, GSA reuses it without asking.
+
+**Know, suspect, don't know.** A photo or record is a fact, with its source and date. What it might mean is worded as a possibility, or left out. What GSA can't know becomes his question.
+
+**GSA prepares, only Milan declares.** Nothing counts as declared without his tap.
 
 **Removal is the default.** Every sentence, card, badge, note and control must help Milan decide or act right now. If it doesn't, cut it. Never add text to explain the UI; fix the UI instead.
 
 **No AI interface.** AI works behind the scenes (detecting changes, matching records, plain-language explanations). Eligibility, money, official records and declarations stay predictable and auditable. Milan never has to care what uses AI.
 
-**Look (round 7, Aleksa):** clean, modern and sleek, with little on screen, built on shadcn/ui (Tailwind + Radix) in natural colours: warm stone page, white cards, forest green for action, wheat for attention, sky for "waiting for someone else". Every task and part has its own lucide icon. Status colours are always paired with text and an icon shape. Hierarchy: the next action is the most visible thing on every screen. **Maps are real:** every map is an OpenLayers map on the real satellite photo near Bečanj that Milan can pan and zoom, because the photo is the evidence and he recognises his land on it.
+**Look (round 7, Aleksa):** clean, modern and sleek, with little on screen, built on shadcn/ui (Tailwind + Radix) in natural colours: warm stone page, white cards. **One meaning per colour:** solid green fills only the primary action; done is a green tick plus the word; work not done yet is neutral, never an error; orange means look at this (a check, a lower payment); red means something is wrong and must be fixed. The open part and row are neutral, with a label. Every task and part has its own lucide icon; colour always comes with text and an icon. Hierarchy: the next action is the most visible thing on every screen. **Maps are real:** every map is an OpenLayers map on the real satellite photo near Bečanj that Milan can pan and zoom, because the photo is the evidence and he recognises his land on it.
 
-**Less cognitive effort, not fewer steps (Earl, 23 Oct call).** Welcome back must feel like a guided experience, not a dashboard of problems. At any moment the screen answers three questions in this order: what to do next, what is already done, what can wait.
+**Less cognitive effort, not fewer steps (Earl, 23 Oct).** Welcome back is a guided experience, not a dashboard of problems: what to do next, what is done, what can wait, in that order.
 
 ## 2. How to work (token budget matters)
 
@@ -107,7 +113,8 @@ A record never overwrites Milan's answer, and his answer never overwrites an off
 - `complete`: answered, nothing left to do.
 - `action_required`: a change he hasn't answered or a problem to fix.
 - `awaiting_verification`: his answer differs from a record; both kept until the owner settles it.
-- **Payment impact** is a separate field (amount + reason). An item can be complete and still lower the payment (the road strip). Never colour or rank status by money.
+- **Payment impact** is a separate field (amount + reason). An item can be complete and still lower the payment (the road strip). Never rank status by money.
+- **Severity, from one pure function** for the stepper, outline, readiness bar and drawer, Check and submit, "Your farm this year" and Jelena's view: **to do** (neutral; blocks, not an error), **look at this** (orange: waiting for a check or a lower payment; never blocks), **error** (red: something wrong he must fix, such as an unreadable receipt, an invalid account number, a missing required document).
 
 ### Application state (derived, never stored)
 `waiting_for_renewal` → `action_required` → `ready_to_submit` → `submitted`.
@@ -115,22 +122,24 @@ A record never overwrites Milan's answer, and his answer never overwrites an off
 - Payment impact never blocks.
 - `awaiting_verification` does not block; only that part waits. Label this in design notes as **assumption to confirm with the ministry**.
 - "Ready to submit" means nothing needs his action. It does not mean approved. Always list what the state will still check.
+- Check and submit opens any time, but until nothing blocks it is a review with what's left as the primary action. The declaration and Submit appear only when he can submit.
 
 ### Application list rules (pure function, unit-tested)
 The application is one list of named tasks. It is also the readiness view.
 | When | Then |
 |---|---|
 | The farm has nothing a task asks about | Task not in the list (no animals → no herd task) |
-| A possible change is detected | Its own task, opening on the evidence and the question |
+| A record differs (bank account, herd, pigs, river, road, upper field, meadow) | Its own change task, opening on the evidence and the question |
 | An answer makes work unnecessary | That work leaves the list with a one-line reason |
 | A task is done | It collapses to one line with its outcome |
-| Something GSA already has | A named confirmation in its own part ("To confirm"): your details, cows that calved, your other fields, your input receipts, each shown and confirmed in one tap. Never a miscellaneous bucket. A correction asked for waits for a check where it is |
-| Something needs attention | Its own named task, e.g. "Upload your input receipts" |
+| Unchanged, nothing to declare this year (name, address, active farmer) | Reused without asking: not a task, not counted. One "Unchanged since last year" review on Check and submit, each item with "Something wrong? Ask for a correction" |
+| He declares it under liability, or it needs new evidence every year (cows that calved, this year's crops on unchanged fields, input receipts, the declaration) | A one-tap confirmation in its part. Never bundled. A problem with it (the blurry diesel receipt) is an action inside it |
 | A rule doesn't apply to his farm | Left out |
 | Choosing measures | Ones that fit come first, with the reason; full list stays |
 | Parts | The application comes in parts, in order: Your details, Animals, Land, Measures, Documents, Check and submit. Every task belongs to the part it is about. A part his farm has nothing for is left out (no animals, no Animals part). The point is not fewer steps; it is less effort per step and better, more personal questions |
 | Always | Inside the open part, exactly one next action, open, the most visible thing on screen. Once the part is done, "Continue: <next part>" is the primary action |
-| Kinds of work | Within each part, three kinds, each with its own label and mark, changes first because they shape the rest: **Changes GSA found** (something may differ from the records; he verifies it), **Your choices** (decided every year regardless of changes, e.g. measures and what they need), **To confirm** (what GSA already has; he confirms it is still right) |
+| Kinds of work | Within each part, changes first because they shape the rest, then choices (measures), then yearly confirmations |
+| An answer adds work | The toast says what and why; the finish line never moves silently |
 | Advisor signs in | Same list, denser, what needs action first |
 
 Structure by what Milan has to accomplish, not by the smallest step count. There is no target number of steps.
@@ -145,7 +154,7 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Land:** five fields, 9.00 ha total. Use local-style names:
   - River field, 2.40 ha, wheat last year. Satellite photo: lower part looks different. The lower half floods every spring; this year sunflowers there, wheat on the rest.
   - Road field, 1.80 ha, maize. Land map: 0.12 ha strip now marked as road (wider road).
-  - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's drawing. Yes: GSA moves his edge (about 1,800 dinars less). No: he draws where his field ends on an OpenLayers map.
+  - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's drawing. Yes: GSA moves his edge (about 1,800 dinars less). No: he moves the shared edge as one line.
   - Meadow, 1.50 ha, grassland/fodder. Unchanged.
   - House field, 1.30 ha, maize. Unchanged.
 - **Measures:** 12 in the list, 10 fit his farm, 2 don't (organic, milk premium). Last year he had the first two:
@@ -156,11 +165,11 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Jelena:** PSSS advisor in Čačak, about 20 applications a day, studied agronomy.
 - **Neighbour (advisor mode only):** has a parcel still in his late father's name; he sent just that problem to Jelena. Referring it to the land registry means waiting for that office, not handled.
 - **Added in round 5 at Aleksa's request (more problems per part):**
-  - Your details: the bank closed the farm account ending 0417 on 3 March 2026 and reported a new one in his name ending 2291 (Yes: paid there; No: he types the 18-digit account). The population register shows his grandson Luka Dragović now living at his address (member of the farm household? Doesn't change the estimate).
+  - Your details: the bank closed the farm account ending 0417 on 3 March 2026 and reported a new one in his name ending 2291 (Yes: paid there; No: he types the 18-digit account). Round 10 cut the household question (grandson Luka): it changes nothing in this application.
   - Animals: the 14 cows that calved come from the animal registry; he confirms them, seeing they pay about 280,000 dinars, or asks the registry to check.
-  - Land: satellite photos saw no mowing or grazing on the meadow last summer. Yes, he will mow or graze it; No leaves the meadow out (1.50 ha, about 27,000 dinars less).
-  - Measures: GSA suggests green cover over winter (satellite: the wheat fields, river and upper, stayed green all winter; those fields are filled in for him) and artificial insemination (registry: 9 inseminations by his vet since last April). Never a rate.
-  - Documents: Diesel receipt.jpg is too blurry to read the amount; he sends a new photo.
+  - Land: the state checks by satellite that the meadow is mowed or grazed at least once this year (assumption; no invented date). Last summer's photos saw none, which is only why GSA asks. Yes, he will; No leaves the meadow out (1.50 ha, about 27,000 dinars less).
+  - Measures: GSA suggests green cover over winter (satellite: the river and upper fields stayed green all winter; suggested, with one tap "Use these fields"; the photo justifies the suggestion, never eligibility) and artificial insemination (registry: 9 inseminations by his vet since last April). Never a rate.
+  - Documents: Diesel receipt.jpg is too blurry to read the amount: an error inside "Your input receipts", "Send a clearer diesel receipt".
 
 ## 8. Milan's journey (one connected flow)
 
@@ -169,48 +178,45 @@ Earl: one connected experience, not separate features. How the application chang
 **Flow:** welcome back → changes → land → readiness → submit → receipt. All of it reads as one application list that shrinks to what's left.
 
 ### Welcome back: a stepper, and one obvious next action in each part
-- Greeting, deadline and days left, then the **stepper**: every part of his application, which one is open, which are done, how much is left in each (numbers only on a phone, with the open part named underneath). Any part can be opened.
-- Inside a part: the one next task on the left, full width of its column ("Start with your account for payments" first); on the right, where "Your farm" used to be, the part at a glance: done ✓, now →, later ○, grouped by kind. On a phone it sits below. A finished part says so, with "Continue: <next part>".
+- Greeting, deadline and days left, then the **stepper**: every part, which is open, which are done. Any part can be opened.
+- Inside a part: the one next task on the left ("Start with your account for payments" first); on the right the part at a glance: done ✓, now →, later ○. On a phone it sits below.
+- On arrival the readiness bar leads with the verdict and the next action, not a big number; the count lives in the open part of the stepper and in the drawer.
 - Back in the action bar goes to the previous part; forward is the next task in the part, then the next part.
-- **Progressive disclosure:** only the open part is shown; what an answer changed appears after the answer; detail opens on request.
-- **More problems, asked as GSA's best guess** (at Aleksa's request): each part has several, and each is asked from a record so the usual answer is one tap; work appears only on No (see section 7).
-- After each decision, the next action takes the top slot, done work collapses, and work that isn't needed leaves with a one-line reason ("After your answer", with Undo). The application visibly changing after each answer is the defining interaction.
-- A short transition may explain each change (respect `prefers-reduced-motion`). Changes are announced with `aria-live`.
-- **"Your farm this year" and the estimate are on the last part, Check and submit**, beside what waits for a check, what the state still checks and the declaration. The farm shows every part and where it comes from ("From government records", "Confirmed by you", "Waiting for a check").
-- The estimate stays a separate block at body size, never mixed with status: the amount, then, while anything that could change it is unanswered, that it is provisional and what it waits for. What changed it and how it is worked out open on request.
-- The page is light grey and every element on it white, so cards, the outline and the stepper stand out.
+- **Progressive disclosure:** only the open part is shown; detail opens on request.
+- Each change is asked as GSA's best guess from a record, so the usual answer is one tap.
+- After each decision, the next action takes the top slot, done work collapses, and unneeded work leaves with a one-line reason (a toast, with Undo). This visible change is the defining interaction. Announced with `aria-live`.
+- **"Your farm this year", the estimate and "Unchanged since last year" are on Check and submit.** The farm shows every part and where it comes from ("From government records", "Confirmed by you", "Waiting for a check").
+- The estimate is a separate block, never mixed with status, in three states (pure, tested): **no basis yet** (no number; "Your estimate appears once you choose your measures"), **provisional** (amount and what it waits for), **current** (amount and caveat). Never "About 0 dinars".
 
 ### Change cards: evidence before the question
 A card is one line of context (what GSA found, and where), the evidence, the question and the actions. The changes are different kinds of decision, so the cards differ:
 - **Herd and pigs:** a number is easy to check, so the card stays a simple confirm. Last year 41, registry today 38, yes or no. No invented breakdown.
-- **Map changes (river field, road strip, upper field):** the card shows the place, not a description: a small preview on the satellite photo with the affected area highlighted. The road card shows the exact strip the government believes is no longer farmland, its size (0.12 ha) and the payment impact (about 2,200 dinars less). The primary action is **"Review this boundary"**, which opens the map at that area; he answers there, with the map in front of him, not from text. This shows that GSA already knows things he shouldn't have to reconstruct.
-- "Why am I seeing this?" only where it adds something the evidence doesn't already show.
+- **Map changes (river field, road strip, upper field):** the card shows the place, not a description: a small preview on the satellite photo with the affected area highlighted. The road card shows the exact strip, its size (0.12 ha) and the payment impact (about 2,200 dinars less). The primary action is **"Review this boundary"**, which opens the map at that area; he answers there.
 
 Paths:
-- Herd yes → herd complete. Herd no → "How many cattle do you have today?" → he enters 41 → **registry 38 | you declared 41** side by side, "The registry stays the official record until it's checked", awaiting verification, he can ask the registry to check or send it to Jelena, and carry on. Never a dead end. This is the one meaningful disagreement with a government record.
-- River yes → the river field split becomes the next action. River no → his declaration stands (one crop), complete, estimate unchanged; "The state may still check it" (assumption).
+- Herd yes → herd complete. Herd no → "How many cattle do you have today?" → he enters 41 → **registry 38 | you declared 41** side by side, "The registry stays the official record until it's checked", awaiting verification. The one exception and the best-designed state: it says plainly that his part is done; who settles it (the animal registry, and Jelena if he sent it); that he needs to do nothing unless they contact him; what happens next (the registry checks, its 38 counts until then, he can still submit, the result appears here). Same words wherever the herd appears.
+- River: the lower strip is greening later than the wheat above (fact). "What's growing in the lower part this year?" The same as the rest → complete. Something else → suggested split, a crop for each part. No third branch.
 - Road yes → complete; area and estimate drop with the reason shown. Road no → the correction is sent in the same step (awaiting verification); the land map's area counts until checked.
-- Herd disagreement also says "This doesn't change your estimate" (the estimate uses cows that calved).
 - Answers stay editable; changing one re-runs the list rules.
 
 ### Land: real maps in plain language, and the suggested split
-- Every map is OpenLayers on the real satellite photo (loaded only when a map is shown). He can pan, zoom (buttons, pinch, wheel once the map has focus, keyboard), go back to the field or see the whole farm, and enlarge the map. Previews on cards are still pictures of the same map; the review map is the one he moves around. The split line and drawing where a field ends sit on that same satellite map. Card previews stay small; the review map is large but leaves the question in view.
+- Every map is OpenLayers on the real satellite photo (loaded only when a map is shown). He can pan, zoom (buttons, pinch, wheel, keyboard), go back to the field or see the whole farm. Card previews are small still pictures; the review map fills the screen with the question beside it.
 - Plain labels and clearly different boundary styles, e.g. "Land the government has registered" vs "Draw the area you actually farm". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
 - When a boundary stops an action, explain why at that moment, in place.
-- **Split:** GSA proposes the line along the area the satellite flagged. Milan accepts it or nudges it: large handles, drag the whole line. No precise point placement with a finger. Keep the guardrail (line clipped to eligible land), live areas (on the map and in the crop labels), undo (shown once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
+- **Split:** GSA proposes the line along the flagged area. Milan accepts it or nudges it: large handles, drag the whole line. Keep the guardrail (line clipped to eligible land), live areas, undo (once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
+- **Upper field No:** he moves the shared edge as one line, the split's interaction: a large handle, a metre stepper as the alternative, live area, guardrail, undo. No precise point placement anywhere. River and road are the hero moments; check at 360 px, then 1280.
 
 ### Readiness through submit
-- Readiness is the application list itself, with a one-line summary on every screen ("16 things left before you can submit" / "Ready to submit"), text plus icon shape, announced politely; the stepper shows what's left per part.
-- Confirmations sit in their part: his details (records, read-only, incl. active farmer, "Records wrong? Ask for a correction"), cows that calved, his other fields, his receipts (the files listed). Measures are chosen in Measures (fitting ones first, each with the amount worked out, *your part*, why it fits). Missing receipts become their own task, "Upload your input receipts".
-- **Submit:** what's complete, what's awaiting verification and that it doesn't block (assumption), what the state will still check, declaration signed once ("I confirm under full criminal and material liability..."), one clear Submit button. If blocked: say exactly what's left, linked, and make that the primary action.
+- Readiness is the application list itself, with a one-line verdict on every screen, text plus icon shape, announced politely.
+- Measures are decision support: each suggested one says why GSA thinks it fits (evidence, source), what the state still checks and what he must provide. Last year's come first as "You applied for these last year", unticked, each with "Apply again".
+- **Submit:** what's complete, what's awaiting verification and that it doesn't block (assumption), what the state will still check, declaration signed once ("I confirm under full criminal and material liability..."), one clear Submit button.
 - **Receipt:** "Your application is submitted." Date, reference number, what happens next, what's still awaiting verification, how to amend until the national deadline. Never ambiguous.
 - Renewal gate (scenario): first screen says renewal is needed, links to it (mock), lets him prepare but not submit; after renewal: "You're an active farmer. Next: your application."
 
 ### Jelena (advisor mode): small, don't let it grow
 - Sign in as Jelena via prototype controls. A queue of only escalated problems (Milan's herd discrepancy with both values and his note; the neighbour's inherited parcel), each with full context.
-- Case states say who owns the next action: **assigned to Jelena**, **waiting for another office** (named), **waiting for the farmer**, **resolved**. Referring to the land registry is waiting, not resolved.
+- Case states name who acts next: **needs Jelena**, **referred to <office>** (awaiting its response), **needs farmer action**, **resolved**. A referral moves responsibility; resolved needs the record owner's decision recorded as the outcome, never right after a referral. Show when she should follow up, worked out from the application deadline. Each case carries enough to decide without opening the application (parcel dispute: map preview, registry record, farmer's explanation, deadline).
 - Desktop first (checked at 1280 px). Grouped by state; within hers: blocks submission, then close to the deadline. The national deadline shows only within 7 days.
-- Primary action is the likely next step: refer to the record's owner; resolve once the owner has it.
 - Milan sees the same state on his item, e.g. "Jelena asked the animal registry to check."
 - Keyboard shortcuts and an action history per application (who did what, when).
 
@@ -242,20 +248,11 @@ src/
   copy/        en.ts
 ```
 
-## 10. Phases (round 3; stop after each; Aleksa checks and commits)
+## 10. Rounds (one phase at a time; decide, build, log, commit)
 
-Round 1 (foundation, four moments, prototype controls, advisor mode, deploy) and round 2 (one list, evidence cards, plain map, suggested split) are done. Round 3 makes Milan think less: (1) fewer decisions on arrival, next action on top, river and road No fixed, see what he confirms; (2) maps, split tool, copy cuts, desktop column, Jelena at a desk, AI design note.
+Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidence cards, real maps, the suggested split, a stepper with parts, readiness severities, shadcn/ui in natural colours.
 
-1. **Review and CLAUDE.md update** (no code).
-2. **Welcome back as one workflow:** contextual change cards with evidence, one application list that shrinks after each answer, "Everything else" replaced by named tasks.
-3. **Land:** plain-language map and the suggested split line.
-4. **Readiness through submit, Jelena's states and priority, scenario cuts, final content pass, `docs/acceptance.md`, deploy.**
-
-Round 4 (Aleksa, 23 Oct): no stepper; an "After your answer" panel with Undo, a readiness drawer, a sticky action bar (Back, readiness, forward), GSA's next-step line, "Your farm this year", pigs and the neighbour overlap, OpenLayers drawing, 10 measures with their own inputs, Jelena's question and Milan's reply. See `docs/decisions.md` 55 to 68.
-
-Round 5, third pass (Aleksa, decisions 88 onwards): a stepper with the parts of the application, each part with its own problems and confirmations, the part's outline on the right, "Your farm this year" and the estimate on the last part, a grey page with white elements, more problems per part.
-
-Round 5 (Earl, 23 Oct call; decisions 69 onwards): one obvious next action at the top of Welcome back; three kinds of work kept apart (changes, choices, confirmations); map changes show the place with "Review this boundary"; real OpenLayers maps on the satellite photo everywhere; records vs confirmed in "Your farm this year"; a provisional estimate.
+**Round 10 (Earl, 26 Oct, on 558f96d): fewer decisions, not easier ones.** Phases: (1) CLAUDE.md; (2) fewer decisions on return: reuse without asking, confirm every year, only when changed; (3) know, suspect, don't know (river, meadow, measures, herd); (4) one status system, three severities, three estimate states, review is not submit; (5) parcel delineation as the hero, the upper field's edge moved as one line; (6) Jelena's states, colour, spacing, content pass, `docs/acceptance.md`, deploy.
 
 Prototype controls (floating "Prototype" button, clearly separated panel, "Not part of GSA"): scenario, sign in as Milan or Jelena, show design notes, reset. No new scenarios.
 
@@ -282,24 +279,27 @@ shadcn/ui components live in `src/ui/shadcn/` and our semantic primitives in `sr
 - [ ] North Star is the smartest version of the application, not a different product, and not a simplified form; no AI interface.
 - [ ] Opens with what GSA knows; asks only about what changed, with the evidence before the question.
 - [ ] Herd, river and road cards look different because they are different decisions (number; map with satellite flag; map with strip, size and payment impact).
-- [ ] Change cards and the application are one list. After each answer, done work collapses, unneeded work disappears with a reason, and the next action gets focus. One primary action at a time.
-- [ ] No "Everything else". Unchanged things are named confirmations; anything needing attention is its own named task.
+- [ ] One list: after each answer, done work collapses, unneeded work leaves with a reason, the next action gets focus.
+- [ ] No "Everything else". Unchanged things with nothing to declare are reused without asking; yearly declarations are separate one-tap confirmations; changes are their own tasks.
 - [ ] Map in plain words; no technical land terms; cadastral parcels hidden by default; a boundary explains itself when it stops an action.
 - [ ] The split line is proposed from the satellite flag; Milan accepts or nudges it with large handles; slider, undo, guardrail and live areas remain.
 - [ ] Milan's journey runs end to end: welcome back, changes, land, readiness, submit, receipt.
-- [ ] Readiness is the list itself, not a separate stage; conflicts are a branch that returns to the application.
 - [ ] Status (complete / action required / awaiting verification) is separate from payment impact.
 - [ ] "Ready to submit", never "safe"; ready isn't approved; what the state still checks is listed.
 - [ ] 38 vs 41: both values kept, explained, awaiting verification, resolvable, no dead end.
-- [ ] Which issues block submission and which don't is explicit; non-blocking verification is labelled an assumption.
 - [ ] Satellite only flags; Milan decides what he planted.
 - [ ] Estimate labelled as an estimate with assumptions visible; it is not the hero.
 - [ ] Jelena's cases show who owns the next action, ordered by what matters; Milan sees the same state.
 - [ ] Tested, mandate and assumptions are distinguishable (design notes, off by default).
 - [ ] Every problem P1 to P12 is answered somewhere in the flow.
 - [ ] `src/copy/en.ts` is shorter than at the start of the round.
-- [ ] Welcome back leads with one obvious next action; the screen answers what to do next, what's done, what can wait, in that order, and discloses the rest progressively.
-- [ ] A stepper shows the parts of his application, generated around his farm; each part has its own problems, asked so the usual answer is one tap; his farm and the estimate are on the last part.
-- [ ] Changes GSA found, your choices and same-as-last-year are separate sections with their own labels and treatment.
+- [ ] Welcome back leads with one obvious next action, then what's done, then what can wait; a stepper of parts generated around his farm.
 - [ ] River, road and upper field cards show the place on the satellite photo; "Review this boundary" opens a map he can pan and zoom.
-- [ ] "Your farm this year" says per item what comes from records and what he confirmed; the estimate says when it is provisional.
+- [ ] "Your farm this year" says per item what comes from records and what he confirmed.
+- [ ] Round 10: fewer decisions on arrival (count logged before and after); progress leads with the verdict; added work is announced with its reason.
+- [ ] Facts carry source and date; meanings are possibilities; what GSA can't know is his question (river, meadow, measures).
+- [ ] The herd disagreement answers: your part is done, who settles it, do you need to act, what happens next; same words everywhere.
+- [ ] One status function on every screen; red only for errors; the estimate has no basis / provisional / current; review is not submit.
+- [ ] River field and road strip are the strongest moments; no point placement with a finger anywhere.
+- [ ] Jelena never resolves straight after a referral; follow-up date from the deadline; cases decidable without opening the application.
+- [ ] Solid green only on the primary action; one content width; the primary action in one place on every task.
