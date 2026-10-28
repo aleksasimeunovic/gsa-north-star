@@ -36,7 +36,8 @@ export const en = {
   readiness: {
     headline: {
       renewal: 'Renew your status before you can submit',
-      blocked: (n: number) => (n === 1 ? "You can't submit yet: 1 thing to do" : `You can't submit yet: ${n} things to do`),
+      blocked: 'Not ready to submit yet',
+      count: (n: number) => (n === 1 ? '1 thing to do before you can submit' : `${n} things to do before you can submit`),
       ready_with_warnings: (n: number) => (n === 1 ? 'Ready to submit, 1 thing to look at' : `Ready to submit, ${n} things to look at`),
       ready: 'Ready to submit',
       submitted: 'Submitted',
@@ -113,6 +114,7 @@ export const home = {
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   daysLeft: (n: number) => (n === 1 ? '1 day left to apply' : `${n} days left to apply`),
   activeFarmer: "You're an active farmer for this year",
+  nextAction: (what: string) => `Next: ${what.charAt(0).toLowerCase()}${what.slice(1)}`,
   stepDone: (step: string) => `Nothing left to do in ${step.toLowerCase()}`,
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check, and you can still submit' : `${n} things wait for a check, and you can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
@@ -137,6 +139,12 @@ export const after = {
   done: (task: string, outcome: string) => `${task}: ${outcome}`,
   waiting: (task: string) => `${task} waits for a check, and you can still submit`,
   removed: (work: string, reason: string) => `No longer needed: ${work.toLowerCase()}, ${reason}`,
+  more: (work: string, why: string) => `1 more thing: ${work.toLowerCase()}, because ${why}`,
+  why: {
+    river_split: 'something else is growing in the lower part',
+    upper_redraw: 'you said the strip is yours',
+    bank_enter: "the new account isn't the right one",
+  } as Partial<Record<WorkId, string>>,
   undo: 'Undo',
   undoLabel: 'Undo your last answer',
 }
@@ -145,16 +153,14 @@ export const tasks = {
   title: {
     renewal: 'Renew your active farmer status',
     bank: 'Account for payments',
-    household: 'Your household',
     calvings: 'Cows that calved',
     field_meadow: 'Meadow',
-    receipt_unreadable: 'Diesel receipt',
     herd: 'Your herd',
     pigs: 'Your pigs',
     field_river: 'River field',
     field_road: 'Road field',
     field_upper: 'Upper field',
-    fields_other: 'Your other fields',
+    fields_other: 'Crops on your other fields',
     details: 'Your details',
     measures: 'Choose your measures',
     receipts: 'Your input receipts',
@@ -166,12 +172,9 @@ export const tasks = {
   action: {
     renewal: 'Renew your active farmer status',
     bank: 'Check your account for payments',
-    household: 'Check your household',
-    details: 'Confirm your details',
     calvings: 'Confirm your cows that calved',
     field_meadow: 'Check the meadow',
-    fields_other: 'Confirm your other fields',
-    receipt_unreadable: 'Send a clearer diesel receipt',
+    fields_other: "Confirm this year's crops",
     herd: 'Check your herd',
     pigs: 'Tell us about your pigs',
     field_river: 'Check the river field',
@@ -189,7 +192,7 @@ export const tasks = {
   work: {
     river_split: 'Split the field',
     road_redraw: 'Redraw the field',
-    upper_redraw: 'Redraw the field',
+    upper_redraw: 'Move the edge to where your field ends',
     pigs_declare: 'Declare your pigs',
     bank_enter: 'Type in your account number',
   } satisfies Record<WorkId, string>,
@@ -218,14 +221,6 @@ export const tasks = {
     paidTo: (n: string) => `Paid into the account ending ${n}`,
   },
 
-  household: {
-    context: (relation: string, name: string) => `The population register shows your ${relation} ${name} now lives at your address`,
-    question: (first: string) => `Is ${first} a member of your farm household?`,
-    hint: "It doesn't change your estimate",
-    added: (name: string) => `${name} added to your household`,
-    notMember: 'Not a member of your farm household',
-  },
-
   calvings: {
     lead: (n: number) => `${n} cows calved between 1 April 2025 and 31 March 2026`,
     source: 'From the animal registry',
@@ -250,10 +245,10 @@ export const tasks = {
   },
 
   unreadable: {
-    context: (name: string) => `${name} is too blurry to read the amount`,
+    action: 'Send a clearer diesel receipt',
+    context: 'Too blurry to read the amount',
     hint: 'Take a new photo in good light, with the whole receipt in it',
     upload: 'Choose a new photo',
-    done: (name: string) => `New photo of ${name} attached`,
   },
 
   renewal: {
@@ -356,13 +351,16 @@ export const tasks = {
   },
 
 
+  /** Reused without asking: unchanged since last year, nothing to declare. */
   details: {
-    holder: 'Holder',
-    place: 'Place',
+    title: 'Unchanged since last year',
+    source: 'From government records',
+    holder: 'Name',
+    place: 'Address',
     active: 'Active farmer',
     activeYes: 'Yes, this year',
-    wrong: 'Records wrong? Ask for a correction',
-    asked: 'Correction asked for, and the office that keeps the record will check it',
+    wrong: 'Something wrong? Ask for a correction',
+    asked: 'Correction asked for, the office that keeps the record checks it',
   },
 
   measures: {

@@ -4,6 +4,7 @@ import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
 import { StepReview } from '../components/StepReview'
 import { FarmPicture } from '../components/FarmPicture'
+import { UnchangedReview } from '../components/UnchangedReview'
 import { taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
@@ -34,6 +35,7 @@ export function SubmitStep({ flow }: { flow: Flow }) {
         <FarmPicture detailed />
         <EstimateBlock />
       </div>
+      <UnchangedReview />
 
       {readiness.awaiting.length > 0 && (
         <section className="status-section" aria-labelledby="awaiting-title">

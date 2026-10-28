@@ -6,7 +6,6 @@ import { overlapHa, polygonAreaHa, roundHa, splitPolygon } from './geometry'
 export type Status = 'complete' | 'action_required' | 'awaiting_verification'
 export type ItemId =
   | 'bank'
-  | 'household'
   | 'details'
   | 'herd'
   | 'pigs'
@@ -14,7 +13,6 @@ export type ItemId =
   | `field_${FieldId}`
   | 'fields_other'
   | 'measures'
-  | 'receipt_unreadable'
   | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
@@ -30,17 +28,12 @@ export type ItemDetail =
   | 'bank_needs_account'
   | 'bank_new' // payments go to the new account the bank reported
   | 'bank_own' // he gave the account himself
-  | 'household_unanswered'
-  | 'household_added'
-  | 'household_not_member'
   | 'calvings_to_confirm'
   | 'calvings_confirmed'
   | 'calvings_check' // he asked the registry to check
   | 'meadow_unanswered'
   | 'meadow_kept'
   | 'meadow_out'
-  | 'receipt_unreadable'
-  | 'receipt_replaced'
   | 'herd_unanswered'
   | 'herd_needs_count'
   | 'herd_confirmed'
@@ -63,15 +56,14 @@ export type ItemDetail =
   | 'pigs_declared'
   | 'fields_same'
   | 'fields_confirmed'
-  | 'details_to_confirm'
-  | 'details_confirmed'
-  | 'details_correction'
+  | 'details_correction' // he asked the record's owner to correct something unchanged since last year
   | 'measures_to_choose'
   | 'measures_chosen'
   | 'measures_incomplete' // a chosen measure still needs something, or an answer rules it out
   | 'receipts_to_confirm'
   | 'receipts_confirmed'
   | 'receipts_missing'
+  | 'receipts_unreadable' // a receipt GSA can't read: he sends a clearer one before confirming
 
 export interface Item {
   id: ItemId
@@ -227,12 +219,6 @@ function bankItem(s: Scenario, a: Answers): Item | null {
   return account ? { id: 'bank', status: 'complete', detail: 'bank_own' } : { id: 'bank', status: 'action_required', detail: 'bank_needs_account' }
 }
 
-function householdItem(s: Scenario, a: Answers): Item | null {
-  if (!s.generalData.resident) return null
-  if (a.household.answer === null) return { id: 'household', status: 'action_required', detail: 'household_unanswered' }
-  return { id: 'household', status: 'complete', detail: a.household.answer === 'yes' ? 'household_added' : 'household_not_member' }
-}
-
 /** The calvings the cow payment is worked out on, from the registry: confirmed, or checked by the registry. */
 function calvingsItem(s: Scenario, a: Answers): Item | null {
   if (!s.herd) return null
@@ -244,9 +230,17 @@ function confirmedItem(id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDeta
   return done ? { id, status: 'complete', detail: ok } : { id, status: 'action_required', detail: todo }
 }
 
+/** Unchanged since last year with nothing to declare: reused without asking, so never a task. */
+export const UNCHANGED = ['holder', 'place', 'active'] as const
+export type Unchanged = (typeof UNCHANGED)[number]
+export const correctionAsked = (a: Answers, what: Unchanged) => a.requests.some((r) => r.kind === 'record_check' && r.itemId === 'details' && r.note === what)
+
 /**
  * Every item gets a status. Pure: derived from scenario + answers, never stored.
- * Unchanged things are named confirmations, not complete by default: he hasn't seen them yet.
+ * A task exists only if it needs his input this year: a change a record shows, or something he declares
+ * every year under liability (cows that calved, this year's crops, his receipts). What is unchanged and
+ * declares nothing (name, address, active farmer) is reused without asking and isn't an item, unless he
+ * asked for a correction, which then waits for the record's owner.
  */
 export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = null): Item[] {
   const items: Item[] = []
@@ -254,13 +248,7 @@ export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = 
 
   // Your details
   add(bankItem(s, a))
-  add(householdItem(s, a))
-  const correction = a.requests.some((r) => r.kind === 'record_check' && r.itemId === 'details')
-  add(
-    correction
-      ? { id: 'details', status: 'awaiting_verification', detail: 'details_correction' }
-      : confirmedItem('details', a.confirmed.includes('details'), 'details_to_confirm', 'details_confirmed'),
-  )
+  if (UNCHANGED.some((w) => correctionAsked(a, w))) add({ id: 'details', status: 'awaiting_verification', detail: 'details_correction' })
 
   // Animals
   add(herdItem(s, a, jelena))
@@ -275,20 +263,15 @@ export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = 
   // GSA's suggestions sit at the top of choosing measures, so he sees them with the rest.
   items.push(measuresItem(s, a))
 
-  // Documents
+  // Documents: one task for his receipts. An unreadable one is an error inside it, fixed before he confirms.
   const missing = s.documents.some((d) => !d.attached && !a.attachedDocuments.includes(d.id))
-  const unreadable = s.documents.find((d) => d.attached && d.unreadable)
-  if (unreadable) {
-    add(
-      a.attachedDocuments.includes('unreadable_receipt')
-        ? { id: 'receipt_unreadable', status: 'complete', detail: 'receipt_replaced' }
-        : { id: 'receipt_unreadable', status: 'action_required', detail: 'receipt_unreadable' },
-    )
-  }
+  const unreadable = s.documents.some((d) => d.attached && d.unreadable) && !a.attachedDocuments.includes('unreadable_receipt')
   add(
     missing
       ? { id: 'receipts', status: 'action_required', detail: 'receipts_missing' }
-      : confirmedItem('receipts', a.confirmed.includes('receipts'), 'receipts_to_confirm', 'receipts_confirmed'),
+      : unreadable
+        ? { id: 'receipts', status: 'action_required', detail: 'receipts_unreadable' }
+        : confirmedItem('receipts', a.confirmed.includes('receipts'), 'receipts_to_confirm', 'receipts_confirmed'),
   )
   return items
 }

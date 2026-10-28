@@ -1,7 +1,7 @@
 import {
   ArrowRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Copy, CircleAlert, CircleCheck,
   CircleX, Clock, Database, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, Map, Maximize2, Minimize2, Minus,
-  PiggyBank, Plus, Receipt, Satellite, Send, Sprout, Undo2, Upload, Users, Wheat, X, type LucideIcon,
+  PiggyBank, Plus, Receipt, Satellite, Send, Sprout, Undo2, Upload, Wheat, X, type LucideIcon,
 } from 'lucide-react'
 import { useDensity } from './Density'
 
@@ -43,7 +43,6 @@ const ICONS = {
   // Parts of the application and what they're about
   details: IdCard,
   bank: Landmark,
-  household: Users,
   animals: Beef,
   pigs: PiggyBank,
   calvings: Baby,

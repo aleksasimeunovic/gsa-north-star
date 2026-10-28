@@ -12,7 +12,6 @@ export const emptyAnswers = (): Answers => ({
   upper: { answer: null, drawn: null },
   pigs: { answer: null },
   bank: { answer: null, account: null },
-  household: { answer: null },
   meadow: { answer: null },
   measures: { chosen: [], confirmed: false, inputs: {} },
   confirmed: [],
@@ -24,7 +23,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 8,
+  version: 9,
   scenarioId: 'second_year',
   role: 'farmer',
   prototype: { showNotes: false },
@@ -41,7 +40,7 @@ export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(),
 const UNDOABLE = new Set<Action['type']>([
   'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper', 'set_upper_drawing',
   'answer_pigs', 'confirm', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
-  'answer_bank', 'set_bank_account', 'answer_household', 'answer_meadow',
+  'answer_bank', 'set_bank_account', 'answer_meadow',
 ])
 const PAST_LIMIT = 20
 
@@ -57,8 +56,8 @@ function reduceAnswers(a: Answers, action: Action, at: string, s: Scenario): Ans
     case 'send_to_jelena':
       return { ...a, requests: [...a.requests, { kind: 'jelena', itemId: action.itemId, note: action.note, at }] }
     case 'ask_record_check':
-      if (a.requests.some((r) => r.kind === 'record_check' && r.itemId === action.itemId)) return a
-      return { ...a, requests: [...a.requests, { kind: 'record_check', itemId: action.itemId, note: '', at }] }
+      if (a.requests.some((r) => r.kind === 'record_check' && r.itemId === action.itemId && r.note === (action.what ?? ''))) return a
+      return { ...a, requests: [...a.requests, { kind: 'record_check', itemId: action.itemId, note: action.what ?? '', at }] }
     case 'answer_river':
       return { ...a, river: { ...a.river, answer: action.answer } }
     case 'set_split':
@@ -77,8 +76,6 @@ function reduceAnswers(a: Answers, action: Action, at: string, s: Scenario): Ans
       return { ...a, bank: { answer: action.answer, account: action.answer === 'no' ? null : a.bank.account } }
     case 'set_bank_account':
       return { ...a, bank: { ...a.bank, account: action.account } }
-    case 'answer_household':
-      return { ...a, household: { answer: action.answer } }
     case 'answer_meadow':
       return { ...a, meadow: { answer: action.answer } }
     case 'choose_measures': {

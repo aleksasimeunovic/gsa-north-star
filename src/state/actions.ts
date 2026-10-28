@@ -5,7 +5,7 @@ export type Role = 'farmer' | 'advisor'
 export type Actor = 'Milan' | 'Jelena' | 'GSA'
 
 /** Things GSA already has, confirmed by name. */
-export type Confirmable = 'fields_other' | 'details' | 'receipts' | 'calvings'
+export type Confirmable = 'fields_other' | 'receipts' | 'calvings'
 
 /** A measure input: text or a number as text, a choice, a list of fields, a ticked promise, or a file name. */
 export type MeasureValue = string | string[] | boolean
@@ -27,8 +27,6 @@ export interface Answers {
   pigs: { answer: YesNo | null }
   /** Yes: payments go to the new account the bank reported. No: he gives the account. */
   bank: { answer: YesNo | null; account: string | null }
-  /** Whether the person now living at his address is a member of the farm household. */
-  household: { answer: YesNo | null }
   /** Yes: he will mow or graze it. No: the meadow is left out this year. */
   meadow: { answer: YesNo | null }
   /** Chosen measures and what each needs, keyed `${measureId}.${requirementId}`. */
@@ -66,7 +64,7 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 8
+  version: 9
   scenarioId: ScenarioId
   role: Role
   /** Prototype only, not part of GSA. */
@@ -87,7 +85,8 @@ export type Action =
   | { type: 'answer_herd'; answer: YesNo }
   | { type: 'set_herd_count'; count: number | null }
   | { type: 'send_to_jelena'; itemId: string; note: string }
-  | { type: 'ask_record_check'; itemId: string }
+  /** `what` names the record to correct, when the item holds several (his details). */
+  | { type: 'ask_record_check'; itemId: string; what?: string }
   | { type: 'answer_river'; answer: YesNo }
   | { type: 'set_split'; split: Split | null }
   | { type: 'answer_road'; answer: YesNo }
@@ -96,7 +95,6 @@ export type Action =
   | { type: 'answer_pigs'; answer: YesNo }
   | { type: 'answer_bank'; answer: YesNo }
   | { type: 'set_bank_account'; account: string }
-  | { type: 'answer_household'; answer: YesNo }
   | { type: 'answer_meadow'; answer: YesNo }
   /** With what he already added for them, so choosing and filling in is one step. */
   | { type: 'choose_measures'; chosen: MeasureId[]; inputs?: Record<string, MeasureValue> }

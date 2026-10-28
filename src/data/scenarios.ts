@@ -114,8 +114,6 @@ export interface GeneralData {
   place: string
   /** The farm account payments go to. The bank reported it closed and a new one open in his name. */
   account: { ending: string; closedOn: string; newEnding: string } | null
-  /** Someone the population register shows at his address who isn't in the household on the farm register. */
-  resident: { name: string; relation: string } | null
 }
 
 export type ScenarioId = 'second_year' | 'second_year_not_renewed' | 'missing_document'
@@ -298,7 +296,6 @@ const BASE: Scenario = {
     holder: 'Milan Dragović',
     place: 'Bečanj, near Čačak',
     account: { ending: '0417', closedOn: '2026-03-03', newEnding: '2291' },
-    resident: { name: 'Luka Dragović', relation: 'grandson' },
   },
   place: { lon: 20.55172, lat: 43.86748, rotationDeg: 12.5 },
   herd: HERD,

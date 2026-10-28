@@ -1,7 +1,7 @@
 import type { Scenario } from '../data/scenarios'
 import type { Answers, Role } from '../state/actions'
 import { isRenewed } from './readiness'
-import type { Item, ItemDetail, ItemId, Status } from './status'
+import type { Item, ItemId, Status } from './status'
 
 export type TaskId = 'renewal' | ItemId
 
@@ -21,12 +21,14 @@ export interface Work {
 
 /**
  * Three kinds of work, kept apart because they ask different things of him:
- * - change: GSA found something that may differ from the records, and he verifies it
- * - choice: what he decides or adds for this year regardless of changes (measures, what they need)
- * - same: what GSA already has and he confirms is still right
+ * - change: a record differs from last year, and he says what is true
+ * - choice: what he decides for this year (measures)
+ * - confirm: what he declares every year under liability or with new evidence (cows that calved,
+ *   this year's crops on unchanged fields, his receipts), one tap each, never bundled
+ * What is unchanged and declares nothing (name, address, active farmer) is reused without asking: no task.
  */
-export type TaskKind = 'change' | 'choice' | 'same'
-export const KINDS: TaskKind[] = ['change', 'choice', 'same']
+export type TaskKind = 'change' | 'choice' | 'confirm'
+export const KINDS: TaskKind[] = ['change', 'choice', 'confirm']
 
 /**
  * The parts of his application, in the order he goes through them. A part his farm has nothing for
@@ -63,28 +65,20 @@ export interface ApplicationList {
   density: 'comfortable' | 'compact'
 }
 
-export const CHANGE_TASKS: TaskId[] = ['bank', 'household', 'herd', 'pigs', 'receipt_unreadable']
-
-/** Things GSA already has; he confirms them while they only need confirming. */
-const CONFIRMABLE = new Set<ItemDetail>([
-  'fields_same', 'fields_confirmed', 'details_to_confirm', 'details_confirmed',
-  'receipts_to_confirm', 'receipts_confirmed', 'calvings_to_confirm', 'calvings_confirmed',
-])
+export const CHANGE_TASKS: TaskId[] = ['bank', 'herd', 'pigs']
 
 export function stepOf(id: TaskId): StepId {
-  if (id === 'renewal' || id === 'bank' || id === 'household' || id === 'details') return 'details'
+  if (id === 'renewal' || id === 'bank' || id === 'details') return 'details'
   if (id === 'herd' || id === 'pigs' || id === 'calvings') return 'animals'
   if (id.startsWith('field_') || id === 'fields_other') return 'land'
   if (id === 'measures') return 'measures'
   return 'documents'
 }
 
-function kindOf(id: TaskId, item: Item | undefined): TaskKind {
+function kindOf(id: TaskId): TaskKind {
   if (CHANGE_TASKS.includes(id) || id.startsWith('field_')) return 'change'
-  if (item && CONFIRMABLE.has(item.detail)) return 'same'
-  // A correction asked for on something he was confirming stays where it was.
-  if (id === 'details' || id === 'calvings') return 'same'
-  return 'choice'
+  if (id === 'measures' || id === 'renewal') return 'choice'
+  return 'confirm'
 }
 
 /** Whether a map shows this change: he reviews the boundary on the map, not from a description. */
@@ -135,7 +129,7 @@ const order = (t: Task) => (t.id === 'renewal' ? -1 : STEPS.indexOf(t.step) * 10
 export function applicationList(s: Scenario, a: Answers, items: Item[], role: Role): ApplicationList {
   const all: Task[] = []
   if (!s.renewed) all.push({ id: 'renewal', status: isRenewed(s, a) ? 'complete' : 'action_required', kind: 'choice', step: 'details', work: [] })
-  for (const item of items) all.push({ id: item.id, status: item.status, kind: kindOf(item.id, item), step: stepOf(item.id), work: workFor(item.id, a, item) })
+  for (const item of items) all.push({ id: item.id, status: item.status, kind: kindOf(item.id), step: stepOf(item.id), work: workFor(item.id, a, item) })
   // Stable sort: by part, then by kind, keeping the order within each.
   const sorted = all.map((t, i) => [t, i] as const).sort(([x, i], [y, j]) => order(x) - order(y) || i - j).map(([t]) => t)
 
@@ -173,6 +167,14 @@ export function stepMark(s: Step, at: StepId, seen: ReadonlySet<StepId>): StepMa
   if (s.id === 'submit' || s.id === at) return 'part'
   if (s.left > 0) return at === 'submit' ? 'error' : seen.has(s.id) ? 'warning' : 'part'
   return s.waiting > 0 ? 'info' : 'complete'
+}
+
+/** Work his last answer added: said with its reason, so the finish line never moves silently. */
+export function newlyNeeded(before: ApplicationList, after: ApplicationList): { taskId: TaskId; work: Work }[] {
+  const was = new Map(allTasks(before).flatMap((t) => t.work.map((w) => [w.id, w.state] as const)))
+  return allTasks(after).flatMap((t) =>
+    t.work.filter((w) => w.state === 'needed' && was.get(w.id) !== 'needed').map((work) => ({ taskId: t.id, work })),
+  )
 }
 
 /** Work his last answer removed: shown once, with its reason, then gone. */

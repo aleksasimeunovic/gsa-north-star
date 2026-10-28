@@ -23,8 +23,6 @@ export const halfSplit = (crops: [Crop | null, Crop | null] = ['sunflower', 'whe
 /** Every part answered the simple way and the rest confirmed: nothing left before submitting. */
 export const ready: Action[] = [
   { type: 'answer_bank', answer: 'yes' },
-  { type: 'answer_household', answer: 'no' },
-  { type: 'confirm', what: 'details' },
   { type: 'answer_herd', answer: 'yes' },
   { type: 'answer_pigs', answer: 'yes' },
   { type: 'confirm', what: 'calvings' },

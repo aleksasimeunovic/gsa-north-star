@@ -121,8 +121,15 @@
 
 /* Readiness: answers "Is my application ready?" */
 .readiness-link { display: inline-flex; align-items: center; gap: 12px; font: inherit; font-size: 0.875rem; font-weight: 500; background: none; border: 0; padding: 8px 0; min-height: 44px; color: var(--foreground); cursor: pointer; text-align: left; }
+.unchanged { display: grid; gap: var(--gap-item); margin-top: var(--gap-item); }
+.unchanged-row { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: 2px var(--space-4); }
+.unchanged-row dt { color: var(--muted-foreground); font-size: 0.875rem; }
+.unchanged-row dd { font-weight: 500; }
+.unchanged-row dd + dd { grid-column: 2; font-weight: 400; font-size: 0.875rem; }
+.readiness-lines { display: flex; flex-direction: column; min-width: 0; }
+.readiness-next { font-weight: 400; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .readiness-text { text-decoration: underline; text-decoration-color: color-mix(in oklch, currentColor 30%, transparent); text-underline-offset: 4px; }
-.readiness-icon { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 1000px; background: var(--error-surface); color: var(--error); }
+.readiness-icon { display: inline-flex; flex-shrink: 0; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 1000px; background: var(--muted); color: var(--muted-foreground); }
 .readiness[data-verdict='ready_with_warnings'] .readiness-icon { background: var(--warning-surface); color: var(--warning); }
 .readiness[data-verdict='ready'] .readiness-icon, .readiness[data-verdict='submitted'] .readiness-icon { background: var(--success-surface); color: var(--success); }
 /* The drawer: errors, warnings and good to know, never mixed. No lines between rows: each row is its own hover. */

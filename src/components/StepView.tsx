@@ -7,6 +7,7 @@ import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
 import { Toast } from '../ui/Toast'
 import { useApp } from './AppContext'
+import { nextActionLabel } from './ReadinessBar'
 import { TaskBody, taskSummary } from './TaskBodies'
 import type { AfterAnswer, Flow } from './useApplicationFlow'
 
@@ -30,7 +31,7 @@ function NextAction({ flow }: { flow: Flow }) {
   const needsHim = task.status === 'action_required'
   // The very first thing he does in the application is said as a start.
   const first = derived.list.done.length === 0 && derived.list.waiting.length === 0 && task.id === derived.list.next
-  const heading = needsHim ? (first && tasks.start[task.id]) || actionTitle(task.id, flow) : flow.title(task.id)
+  const heading = needsHim ? (first && tasks.start[task.id]) || actionTitle(task.id, derived.items) : flow.title(task.id)
 
   return (
     <section id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
@@ -48,11 +49,8 @@ function NextAction({ flow }: { flow: Flow }) {
   )
 }
 
-function actionTitle(id: TaskId, flow: Flow) {
-  // Missing receipts are an upload, named as one; otherwise receipts are something to confirm.
-  if (id === 'receipts' && flow.title(id) === tasks.receiptsMissingTitle) return tasks.receiptsMissingTitle
-  return tasks.action[id] ?? flow.title(id)
-}
+// Missing receipts are an upload, named as one; a blurry one is sent again; otherwise receipts are confirmed.
+const actionTitle = (id: TaskId, items: { id: string; detail: string }[]) => nextActionLabel(id, items)
 
 /** A part with nothing left: what waits for a check, and the way on to the next part. */
 function StepDone({ flow }: { flow: Flow }) {
@@ -91,6 +89,7 @@ function AfterAnswerToast({ flow }: { flow: Flow }) {
   if (!a || a === seen) return null
   const outcome = (id: TaskId) => taskSummary(id, derived, state)
   const lines = [
+    ...a.more.map(({ work }) => copy.more(tasks.work[work.id], copy.why[work.id] ?? '')),
     ...a.done.map((id) => copy.done(flow.title(id), outcome(id))),
     ...a.waiting.map((id) => copy.waiting(flow.title(id))),
     ...a.removed.map(({ work }) => copy.removed(tasks.work[work.id], tasks.reason[work.reason!])),

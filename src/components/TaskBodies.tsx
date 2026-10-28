@@ -10,7 +10,8 @@ import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
-import { Compare, KeyValues, Stack, Text, VisuallyHidden } from '../ui/Layout'
+import { Compare, Stack, Text, VisuallyHidden } from '../ui/Layout'
+import { Problem } from '../ui/Problem'
 import { Note } from '../ui/Note'
 import { StageAction } from '../ui/MapStage'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
@@ -325,35 +326,14 @@ function FieldsBody() {
   )
 }
 
-function DetailsBody() {
-  const { derived, dispatch } = useApp()
-  const g = derived.scenario.generalData
-  const asked = itemOf(derived, 'details').status === 'awaiting_verification'
-  return (
-    <Stack gap="section">
-      <KeyValues
-        items={[
-          { label: tasks.details.holder, value: g.holder },
-          { label: tasks.details.place, value: g.place },
-          { label: tasks.details.active, value: tasks.details.activeYes },
-        ]}
-      />
-      <ConfirmButton id="details" what="details" />
-      {asked ? (
-        <Text>{tasks.details.asked}</Text>
-      ) : (
-        <div>
-          <Button variant="link" onClick={() => dispatch({ type: 'ask_record_check', itemId: 'details' })}>{tasks.details.wrong}</Button>
-        </div>
-      )}
-    </Stack>
-  )
-}
-
+/**
+ * His input receipts, declared again every year with new evidence: the files listed, and one tap to confirm.
+ * A receipt GSA can't read is an error in its row, and sending a clearer one comes before confirming.
+ */
 function ReceiptsBody() {
   const { derived, dispatch } = useApp()
-  const missing = itemOf(derived, 'receipts').detail === 'receipts_missing'
-  if (missing) {
+  const detail = itemOf(derived, 'receipts').detail
+  if (detail === 'receipts_missing') {
     return (
       <Stack gap="sm">
         <Text>{tasks.receipts.needed}</Text>
@@ -361,17 +341,25 @@ function ReceiptsBody() {
       </Stack>
     )
   }
-  const files = derived.scenario.documents.flatMap((d) => d.files)
+  const doc = derived.scenario.documents.find((d) => d.attached)
+  const blurry = detail === 'receipts_unreadable' ? doc?.unreadable : undefined
   return (
     <Stack gap="section">
       <ul className="plain-list">
-        {files.map((f) => (
-          <li key={f.name}>
+        {(doc?.files ?? []).map((f) => (
+          <li key={f.name} data-error={f.name === blurry || undefined}>
             <strong>{f.name}</strong> {formatDate(f.date)}
+            {f.name === blurry && <Problem>{tasks.unreadable.context}</Problem>}
           </li>
         ))}
       </ul>
-      <ConfirmButton id="receipts" what="receipts" />
+      {blurry ? (
+        <StageAction>
+          <FileInput label={tasks.unreadable.upload} hint={tasks.unreadable.hint} onFile={() => dispatch({ type: 'attach_document', documentId: 'unreadable_receipt' })} />
+        </StageAction>
+      ) : (
+        <ConfirmButton id="receipts" what="receipts" />
+      )}
     </Stack>
   )
 }
@@ -419,24 +407,6 @@ function BankBody() {
           </Stack>
         </form>
       )}
-    </Stack>
-  )
-}
-
-/** Someone the population register now shows at his address: one question. */
-function HouseholdBody() {
-  const { derived, state, dispatch } = useApp()
-  const r = derived.scenario.generalData.resident!
-  const a = state.answers.household
-  return (
-    <Stack gap="section">
-      <Text>{tasks.household.context(r.relation, r.name)}</Text>
-      <Question
-        legend={tasks.household.question(r.name.split(' ')[0])}
-        hint={tasks.household.hint}
-        value={a.answer}
-        onAnswer={(answer) => dispatch({ type: 'answer_household', answer })}
-      />
     </Stack>
   )
 }
@@ -494,20 +464,6 @@ function MeadowBody() {
   )
 }
 
-/** A receipt GSA couldn't read: what's wrong with it and a new photo, nothing else. */
-function UnreadableBody() {
-  const { derived, dispatch } = useApp()
-  const name = derived.scenario.documents.find((d) => d.unreadable)?.unreadable ?? ''
-  const done = itemOf(derived, 'receipt_unreadable').status === 'complete'
-  if (done) return <Text>{tasks.unreadable.done(name)}</Text>
-  return (
-    <Stack gap="section">
-      <Text>{tasks.unreadable.context(name)}</Text>
-      <FileInput label={tasks.unreadable.upload} hint={tasks.unreadable.hint} onFile={() => dispatch({ type: 'attach_document', documentId: 'unreadable_receipt' })} />
-    </Stack>
-  )
-}
-
 // Each kind of decision gets its own body: a number, a map, a drawing, a choice of measures, a form.
 export function TaskBody({ task }: { task: Task }) {
   const id = task.id
@@ -517,10 +473,6 @@ export function TaskBody({ task }: { task: Task }) {
       return <RenewalBody />
     case 'bank':
       return <BankBody />
-    case 'household':
-      return <HouseholdBody />
-    case 'details':
-      return <DetailsBody />
     case 'herd':
       return <HerdBody />
     case 'pigs':
@@ -533,8 +485,6 @@ export function TaskBody({ task }: { task: Task }) {
       return <FieldsBody />
     case 'measures':
       return <MeasuresBody />
-    case 'receipt_unreadable':
-      return <UnreadableBody />
     case 'receipts':
       return <ReceiptsBody />
     default:
@@ -557,20 +507,12 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       if (item.detail === 'bank_own') return tasks.bank.paidTo((state.answers.bank.account ?? '').slice(-4))
       if (item.detail === 'bank_needs_account') return tasks.bank.label
       return tasks.bank.context(formatDate(g.account!.closedOn))
-    case 'household':
-      if (item.detail === 'household_added') return tasks.household.added(g.resident!.name)
-      if (item.detail === 'household_not_member') return tasks.household.notMember
-      return tasks.household.context(g.resident!.relation, g.resident!.name)
     case 'calvings':
       return item.status === 'awaiting_verification' ? tasks.calvings.asked(s.herd!.cowsCalved) : tasks.calvings.done(s.herd!.cowsCalved)
     case 'field_meadow':
       if (item.detail === 'meadow_kept') return tasks.meadow.kept
       if (item.detail === 'meadow_out') return tasks.meadow.out(formatHa(item.paymentImpact?.areaHa ?? 0))
       return tasks.meadow.context
-    case 'receipt_unreadable': {
-      const name = s.documents.find((x) => x.unreadable)?.unreadable ?? ''
-      return item.status === 'complete' ? tasks.unreadable.done(name) : tasks.unreadable.context(name)
-    }
     case 'herd': {
       const h = s.herd!
       if (item.conflict) return `${tasks.herd.differs(item.conflict.his, item.conflict.record)}, ${jelena ? tasks.jelena.state[jelena].toLowerCase() : tasks.herd.willCheck}`
@@ -614,9 +556,11 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       return names
     }
     case 'details':
-      return item.status === 'awaiting_verification' ? tasks.details.asked : `${s.generalData.holder}, ${s.generalData.place}`
+      return tasks.details.asked
     case 'receipts':
-      return item.detail === 'receipts_missing' ? tasks.receipts.needed : tasks.receipts.files(Math.max(1, s.documents.flatMap((x) => x.files).length))
+      if (item.detail === 'receipts_missing') return tasks.receipts.needed
+      if (item.detail === 'receipts_unreadable') return tasks.unreadable.context
+      return tasks.receipts.files(Math.max(1, s.documents.flatMap((x) => x.files).length))
     default:
       return ''
   }

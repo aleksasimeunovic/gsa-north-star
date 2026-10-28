@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { home, steps, tasks } from '../copy/en'
-import { allTasks, newlyRemoved, stepOf, type ApplicationList, type StepId, type TaskId, type Work } from '../logic/application'
+import { after as afterCopy, home, steps, tasks } from '../copy/en'
+import { allTasks, newlyNeeded, newlyRemoved, stepOf, type ApplicationList, type StepId, type TaskId, type Work } from '../logic/application'
 import { useApp } from './AppContext'
 
 /** What is in the top slot: a task in this part, "check and submit", or nothing (this part is done, or submitted). */
@@ -13,6 +13,8 @@ export interface AfterAnswer {
   removed: { taskId: TaskId; work: Work }[]
   /** Tasks his answer added, such as a measure that needs something from him. */
   added: TaskId[]
+  /** Work his answer made needed, said with why, so the finish line never moves silently. */
+  more: { taskId: TaskId; work: Work }[]
 }
 
 /** Forward: the next task in this part, or the next part once this one is done. */
@@ -114,14 +116,16 @@ export function useApplicationFlow(target: string | null) {
       waiting: all.filter((t) => t.status === 'awaiting_verification' && was.get(t.id) !== 'awaiting_verification').map((t) => t.id),
       removed: newlyRemoved(prev, list),
       added: all.filter((t) => !was.has(t.id) && t.status === 'action_required').map((t) => t.id),
+      more: newlyNeeded(prev, list),
     }
-    const any = change.done.length + change.waiting.length + change.removed.length + change.added.length > 0
+    const any = change.done.length + change.waiting.length + change.removed.length + change.added.length + change.more.length > 0
     setAfter(any ? change : null)
 
     const words = [
       ...change.done.map((id) => home.announce.done(title(id))),
       ...change.waiting.map((id) => home.announce.waiting(title(id))),
       ...change.removed.map((r) => home.announce.removed(tasks.work[r.work.id])),
+      ...change.more.map((m) => afterCopy.more(tasks.work[m.work.id], afterCopy.why[m.work.id] ?? '')),
     ]
     const prevFocus = shown.current
     if (prevFocus && prevFocus !== 'submit' && was.get(prevFocus) === 'action_required') {

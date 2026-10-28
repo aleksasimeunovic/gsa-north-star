@@ -7,14 +7,14 @@ describe('application state', () => {
   it('action required until every task is done', () => {
     const r = run('second_year').readiness
     expect(r.state).toBe('action_required')
-    expect(r.counts.action_required).toBe(14)
+    expect(r.counts.action_required).toBe(11)
     expect(r.canSubmit).toBe(false)
   })
 
   it('counts every thing left, across the parts', () => {
-    expect(run('second_year').list.todo).toHaveLength(14)
-    // Missing receipts replace the unreadable one and the confirmation.
-    expect(run('missing_document').list.todo).toHaveLength(13)
+    expect(run('second_year').list.todo).toHaveLength(11)
+    // Missing receipts are the same one task, as an upload.
+    expect(run('missing_document').list.todo).toHaveLength(11)
   })
 
   it('ready to submit once nothing needs his action', () => {
@@ -60,7 +60,7 @@ describe('readiness verdict', () => {
   it("anything that needs him is an error: he can't submit", () => {
     const r = run('second_year').report
     expect(r.verdict).toBe('blocked')
-    expect(r.errors).toHaveLength(14)
+    expect(r.errors).toHaveLength(11)
   })
 
   it('no renewal comes first', () => {

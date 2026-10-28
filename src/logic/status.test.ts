@@ -11,8 +11,6 @@ describe('status per item', () => {
     const r = run('second_year')
     expect(r.items.map((i) => [i.id, i.status])).toEqual([
       ['bank', 'action_required'],
-      ['household', 'action_required'],
-      ['details', 'action_required'],
       ['herd', 'action_required'],
       ['pigs', 'action_required'],
       ['calvings', 'action_required'],
@@ -22,7 +20,6 @@ describe('status per item', () => {
       ['field_meadow', 'action_required'],
       ['fields_other', 'action_required'],
       ['measures', 'action_required'],
-      ['receipt_unreadable', 'action_required'],
       ['receipts', 'action_required'],
     ])
   })
@@ -31,11 +28,6 @@ describe('status per item', () => {
     expect(item(run('second_year', { type: 'answer_bank', answer: 'yes' }), 'bank')).toEqual({ id: 'bank', status: 'complete', detail: 'bank_new' })
     expect(item(run('second_year', { type: 'answer_bank', answer: 'no' }), 'bank').detail).toBe('bank_needs_account')
     expect(item(run('second_year', { type: 'answer_bank', answer: 'no' }, { type: 'set_bank_account', account: '160000000012345678' }), 'bank').status).toBe('complete')
-  })
-
-  it('household: one question, either answer completes it', () => {
-    expect(item(run('second_year', { type: 'answer_household', answer: 'yes' }), 'household').detail).toBe('household_added')
-    expect(item(run('second_year', { type: 'answer_household', answer: 'no' }), 'household').status).toBe('complete')
   })
 
   it('cows that calved: confirmed, or checked by the registry without blocking', () => {
@@ -59,10 +51,10 @@ describe('status per item', () => {
     expect(item(r, 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_incomplete', missing: ['green_cover'] })
   })
 
-  it('an unreadable receipt needs a new photo; sending it does not confirm the other receipts', () => {
+  it('an unreadable receipt needs a new photo; sending it does not confirm the receipts for him', () => {
+    expect(item(run('second_year', { type: 'confirm', what: 'receipts' }), 'receipts').detail).toBe('receipts_unreadable')
     const r = run('second_year', { type: 'attach_document', documentId: 'unreadable_receipt' })
-    expect(item(r, 'receipt_unreadable').status).toBe('complete')
-    expect(item(r, 'receipts').status).toBe('action_required')
+    expect(item(r, 'receipts')).toMatchObject({ status: 'action_required', detail: 'receipts_to_confirm' })
   })
 
   it('confirming an unchanged thing completes it', () => {
@@ -70,7 +62,7 @@ describe('status per item', () => {
   })
 
   it('a correction to his details waits for the record owner and does not block', () => {
-    expect(item(run('second_year', { type: 'ask_record_check', itemId: 'details' }), 'details').status).toBe('awaiting_verification')
+    expect(item(run('second_year', { type: 'ask_record_check', itemId: 'details', what: 'holder' }), 'details').status).toBe('awaiting_verification')
   })
 
   it('herd yes is complete', () => {

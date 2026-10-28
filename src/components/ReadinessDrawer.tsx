@@ -5,7 +5,7 @@ import type { Severity } from '../logic/readiness'
 import { Drawer } from '../ui/Drawer'
 import { Icon } from '../ui/Icon'
 import { useApp } from './AppContext'
-import { readinessHeadline } from './ReadinessBar'
+import { readinessCount } from './ReadinessBar'
 import { taskSummary } from './TaskBodies'
 import { taskTitle } from './useApplicationFlow'
 
@@ -21,7 +21,7 @@ export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open
   const c = en.readiness
   const unpriced = derived.scenario.measures.filter((m) => !m.rateDinars && state.answers.measures.chosen.includes(m.id)).length
   return (
-    <Drawer open={open} title={readinessHeadline(r)} onClose={onClose} returnFocusTo={returnFocusTo}>
+    <Drawer open={open} title={readinessCount(r)} onClose={onClose} returnFocusTo={returnFocusTo}>
       {r.errors.length > 0 && (
         <Group severity="error">
           {r.errors.map((id) => (

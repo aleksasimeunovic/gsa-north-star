@@ -177,3 +177,16 @@ One line per decision: what was chosen, the alternative rejected, why.
 ## Round 10 (Earl, 26 Oct, on 558f96d: fewer decisions, not easier ones)
 
 147. **CLAUDE.md rewritten in place rather than appended to**: the round 10 rules (fewer decisions, know/suspect/don't know, GSA prepares and only Milan declares, unfinished is not an error, one meaning per colour) replace the rules they supersede; 5,745 to 5,677 words.
+148. **Every task sorted by whether it needs Milan's input this year**, rather than "more problems per part" (94): Earl's test wins.
+
+| Kind | What | Treatment |
+|---|---|---|
+| Reuse without asking | Name, address, active farmer status | Not a task, not counted. "Unchanged since last year" on Check and submit, from records, each with "Something wrong? Ask for a correction" (a correction then waits for a check in Your details) |
+| Confirm every year | Cows that calved, this year's crops on unchanged fields, input receipts, the declaration | One-tap confirmation each, never bundled (receipts and declarations need new evidence every year) |
+| Only when something changed | Bank account, herd, pigs, river field, road field, upper field, meadow | Its own change task, opening on the evidence |
+| Cut | Household question (grandson Luka) | Changes nothing in this application; belongs to the farm register. Reverses part of 94 |
+| Folded | Blurry diesel receipt | An error inside "Your input receipts", whose action becomes "Send a clearer diesel receipt"; confirming comes after |
+
+149. **Things to do on arrival: 14 before, 11 after** (bank, herd, pigs, calvings, river, road, upper, meadow, crops on other fields, measures, receipts). The bank account stays: it's where the money goes.
+150. **The readiness bar leads with the verdict and the next action ("Not ready to submit yet / Next: check your account for payments")**, rather than "You can't submit yet: 13 things to do"; the count lives in the open part of the stepper and the drawer's title. Unfinished work has a neutral circle, not a red cross.
+151. **When an answer adds work, the toast leads with it and why ("1 more thing: split the field, because something else is growing in the lower part")**, so the finish line never moves silently; pure `newlyNeeded`, tested.
