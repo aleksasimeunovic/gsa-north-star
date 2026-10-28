@@ -18,7 +18,7 @@ export function RadioGroupItem({ className, ...props }: React.ComponentProps<typ
       {...props}
     >
       <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-        <span className="size-2.5 rounded-full bg-primary" />
+        <span className="size-2.5 rounded-full bg-foreground" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   )

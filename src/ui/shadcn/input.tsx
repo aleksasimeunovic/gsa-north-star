@@ -6,7 +6,7 @@ const field =
 
 // shadcn/ui Input and Textarea (MIT).
 export function Input({ className, ...props }: React.ComponentProps<'input'>) {
-  return <input data-slot="input" className={cn(field, 'min-h-[var(--control-h)] py-2 file:mr-3 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-medium file:text-accent-foreground', className)} {...props} />
+  return <input data-slot="input" className={cn(field, 'min-h-[var(--control-h)] py-2 file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground', className)} {...props} />
 }
 export function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
   return <textarea data-slot="textarea" className={cn(field, 'min-h-24 py-3', className)} {...props} />

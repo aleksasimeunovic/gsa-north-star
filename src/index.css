@@ -2,7 +2,8 @@
 
 /*
  * Theme after shadcn/ui (MIT), in natural colours for a farm application: warm stone, white cards,
- * forest green for action, wheat for attention, sky for "waiting for someone else".
+ * one meaning per colour: solid forest green only for the primary action, a green tick for done,
+ * orange to look at, red for an error, blue for good to know; everything else neutral.
  * Tier 1: palette. Tier 2: semantic names (shadcn's), the only ones components use.
  */
 :root {
@@ -24,7 +25,7 @@
   --orange-50: oklch(0.98 0.016 73.7);
   --orange-200: oklch(0.901 0.076 70.7);
   --orange-500: oklch(0.705 0.191 47.6);
-  --orange-700: oklch(0.553 0.195 38.4);
+  --orange-700: oklch(0.52 0.14 52);
   --sky-50: oklch(0.972 0.014 230);
   --sky-200: oklch(0.9 0.04 230);
   --sky-700: oklch(0.45 0.08 235);

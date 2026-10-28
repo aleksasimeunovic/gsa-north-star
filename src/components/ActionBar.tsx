@@ -16,7 +16,7 @@ interface Step {
  * Always at the bottom: Back, where he stands (opens everything that's left), and the way forward.
  * Forward is the primary action only when nothing in the open task is waiting for his answer.
  */
-export function ActionBar({ back, forward, forwardIsPrimary, onPick }: { back?: Step; forward?: Step; forwardIsPrimary: boolean; onPick: (id: TaskId) => void }) {
+export function ActionBar({ back, forward, forwardIsPrimary, onPick, next }: { back?: Step; forward?: Step; forwardIsPrimary: boolean; onPick: (id: TaskId) => void; next?: TaskId | null }) {
   const [open, setOpen] = useState(false)
   const opener = useRef<HTMLButtonElement>(null)
   return (
@@ -24,7 +24,7 @@ export function ActionBar({ back, forward, forwardIsPrimary, onPick }: { back?: 
       <StickyBar
         label={bar.label}
         start={back && <Button onClick={back.onClick}>{back.label}</Button>}
-        middle={<ReadinessBar ref={opener} expanded={open} onOpen={() => setOpen(true)} />}
+        middle={<ReadinessBar ref={opener} expanded={open} onOpen={() => setOpen(true)} next={next} />}
         end={forward && <Button variant={forwardIsPrimary ? 'primary' : 'secondary'} onClick={forward.onClick} disabled={forward.disabled}>{forward.label}</Button>}
       />
       <ReadinessDrawer

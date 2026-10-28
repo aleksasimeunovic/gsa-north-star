@@ -13,7 +13,7 @@ export function Checkbox({ label, hint, checked, onChange, card }: { label: stri
       className={cn(
         'flex cursor-pointer items-start gap-3',
         compact ? 'min-h-8 py-1' : 'min-h-11 py-2',
-        card && 'rounded-xl border bg-card px-4 py-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40',
+        card && 'rounded-xl border bg-card px-4 py-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/50',
       )}
     >
       <Base id={id} checked={checked} aria-describedby={hint ? `${id}-hint` : undefined} onCheckedChange={(v) => onChange(v === true)} className="mt-0.5" />

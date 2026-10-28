@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from 'react'
+import { lazy, Suspense, useRef, useState, type ReactNode } from 'react'
 import { draw, en, finish, formatDate, formatDateYear, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
 import { milanCaseState, milanOutcome } from '../logic/advisor'
@@ -52,17 +52,20 @@ function Question({ legend, hint, value, answer, onAnswer }: { legend: string; h
       </p>
     )
   }
+  // The answer is the task's action, so it sits where every task's action sits: pinned at the bottom of the card.
   return (
-    <ChoiceButtons
-      legend={legend}
-      hint={hint}
-      options={YES_NO}
-      onChoose={(a) => {
-        onAnswer(a)
-        setEditing(false)
-        requestAnimationFrame(() => line.current?.focus())
-      }}
-    />
+    <StageAction>
+      <ChoiceButtons
+        legend={legend}
+        hint={hint}
+        options={YES_NO}
+        onChoose={(a) => {
+          onAnswer(a)
+          setEditing(false)
+          requestAnimationFrame(() => line.current?.focus())
+        }}
+      />
+    </StageAction>
   )
 }
 
@@ -119,7 +122,7 @@ function HerdBody() {
           }
         />
       </div>
-      <div><Note kind="tested" /></div>
+      <Note kind="tested" />
       <Question
         legend={tasks.herd.question(herd.registryCount)}
         value={a.answer}
@@ -134,16 +137,16 @@ function HerdBody() {
         >
           <Stack gap="sm">
             <Field label={tasks.herd.countLabel} hint={tasks.herd.countHint} error={error} inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
-            <div>
+            <StageAction>
               <Button type="submit" variant="primary" disabled={count.trim() === ''}>{tasks.herd.countSave}</Button>
-            </div>
+            </StageAction>
           </Stack>
         </form>
       )}
       {c && (
         <>
           {/* The one exception, said as four plain answers: done, who, anything to do, what next. */}
-          <Answers items={herdSettled(!!jelena)} />
+          <Answers items={herdSettled(!!jelena, c.record)} />
           <Note kind="assumption" />
           {jelena === 'waiting_farmer' ? (
             <ReplyToJelena />
@@ -230,8 +233,7 @@ export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upp
 }
 
 /** The herd disagreement's four answers, in the same words wherever they appear. */
-export const herdSettled = (jelena: boolean): [string, string][] =>
-  tasks.herd.settled.map(([q, a], i) => [q, i === 1 && jelena ? tasks.herd.withJelena : a] as [string, string])
+export const herdSettled = (jelena: boolean, reg: number) => tasks.herd.settled(reg, jelena ? tasks.herd.withJelena : tasks.herd.registryOnly)
 
 /** What GSA found, said in one line, before he answers. */
 export const mapContext = (id: 'field_river' | 'field_road' | 'field_upper') =>
@@ -247,9 +249,13 @@ export function mapSource(s: Derived['scenario'], id: 'field_river' | 'field_roa
 }
 
 /** What GSA knows about a map change: the fact and its source. */
-export const MapFact = ({ id }: { id: 'field_river' | 'field_road' | 'field_upper' }) => {
+export const MapFact = ({ id, children }: { id: 'field_river' | 'field_road' | 'field_upper'; children?: ReactNode }) => {
   const { derived } = useApp()
-  return <Fact source={mapSource(derived.scenario, id)}>{mapContext(id)}</Fact>
+  return (
+    <Fact source={mapSource(derived.scenario, id)}>
+      {mapContext(id)} {children}
+    </Fact>
+  )
 }
 
 /**
@@ -267,11 +273,16 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
 
   return (
     <Stack gap="section">
-      {unanswered ? <MapFact id={id} /> : <Text>{taskSummary(id, derived, state)}</Text>}
-      {unanswered && id === 'field_river' && (
-        <div>
-          <Note kind="eu_mandate" /> <Note kind="ai" />
-        </div>
+      {unanswered ? (
+        <MapFact id={id}>
+          {id === 'field_river' && (
+            <>
+              <Note kind="eu_mandate" /> <Note kind="ai" />
+            </>
+          )}
+        </MapFact>
+      ) : (
+        <Text>{taskSummary(id, derived, state)}</Text>
       )}
       <figure className="map-figure">
         <div className="map-link" onClick={review}>
@@ -340,9 +351,11 @@ function ReceiptsBody() {
   const detail = itemOf(derived, 'receipts').detail
   if (detail === 'receipts_missing') {
     return (
-      <Stack gap="sm">
+      <Stack gap="section">
         <Text>{tasks.receipts.needed}</Text>
-        <FileInput label={tasks.receipts.upload} onFile={() => dispatch({ type: 'attach_document', documentId: 'input_receipts' })} />
+        <StageAction>
+          <FileInput label={tasks.receipts.upload} onFile={() => dispatch({ type: 'attach_document', documentId: 'input_receipts' })} />
+        </StageAction>
       </Stack>
     )
   }
@@ -386,6 +399,7 @@ function BankBody() {
   return (
     <Stack gap="section">
       <Compare
+        long
         items={[
           { label: b.registered, value: <>{b.ending(acc.ending)} <Text variant="small" as="span">{b.closed}</Text></> },
           { label: b.fromBank, value: b.ending(acc.newEnding) },
@@ -406,9 +420,9 @@ function BankBody() {
         >
           <Stack gap="sm">
             <Field label={b.label} hint={b.hint} error={error} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} />
-            <div>
+            <StageAction>
               <Button type="submit" variant="primary" disabled={value.trim() === ''}>{b.save}</Button>
-            </div>
+            </StageAction>
           </Stack>
         </form>
       )}

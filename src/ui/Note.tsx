@@ -17,7 +17,7 @@ export const NotesContext = createContext(false)
 export function Note({ kind }: { kind: NoteKind }) {
   if (!useContext(NotesContext)) return null
   return (
-    <Badge variant="meta" className="mx-1 align-middle">
+    <Badge variant="meta" className="mx-1 self-start align-middle">
       <span className="sr-only">Design note: </span>
       {LABEL[kind]}
     </Badge>

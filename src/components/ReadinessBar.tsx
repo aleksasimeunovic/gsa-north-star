@@ -11,10 +11,11 @@ const SHAPE = { renewal: 'todo', blocked: 'todo', ready_with_warnings: 'warning'
  * Answers "Can I submit?" on every screen: the verdict, then the next action, not a count.
  * The count lives in the open part of the stepper and in the drawer this opens.
  */
-export const ReadinessBar = forwardRef<HTMLButtonElement, { onOpen: () => void; expanded: boolean }>(function ReadinessBar({ onOpen, expanded }, ref) {
+export const ReadinessBar = forwardRef<HTMLButtonElement, { onOpen: () => void; expanded: boolean; next?: string | null }>(function ReadinessBar({ onOpen, expanded, next: onScreen }, ref) {
   const { derived } = useApp()
   const r = derived.report
-  const next = derived.list.next
+  // The next action is the one in front of him, or else the application's first.
+  const next = onScreen ?? derived.list.next
   const nextLine = (r.verdict === 'blocked' || r.verdict === 'renewal') && next && next !== 'submit' ? home.nextAction(nextActionLabel(next, derived.items)) : null
   return (
     <div className="readiness" data-verdict={r.verdict} aria-live="polite" aria-atomic="true">

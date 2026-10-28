@@ -76,7 +76,7 @@ function StepDone({ flow }: { flow: Flow }) {
  * The defining moment, said briefly: what his answer did to the application (done, no longer needed and
  * why, added), as a toast with Undo. The next action has already taken the top slot under it.
  */
-function AfterAnswerToast({ flow }: { flow: Flow }) {
+export function AfterAnswerToast({ flow }: { flow: Flow }) {
   const { derived, state, dispatch } = useApp()
   const a = flow.after
   const [seen, setSeen] = useState<AfterAnswer | null>(null)

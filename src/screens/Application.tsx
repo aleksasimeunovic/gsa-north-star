@@ -4,7 +4,7 @@ import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { StepOutline } from '../components/StepOutline'
 import { Stepper } from '../components/Stepper'
-import { StepView } from '../components/StepView'
+import { AfterAnswerToast, StepView } from '../components/StepView'
 import { useApplicationFlow } from '../components/useApplicationFlow'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
@@ -56,18 +56,20 @@ export function Application({ target, review }: { target: string | null; review?
         {/* The stepper already names the part on screen; the heading stays for screen readers. */}
         <h1 id="step-title" tabIndex={-1} className="sr-only">{steps.name[step.id]}</h1>
         {reviewing ? (
-          <Review id={reviewing} flow={flow} />
+          <>
+            {/* On the map too, an answer that adds work says what and why. */}
+            <AfterAnswerToast flow={flow} />
+            <Review id={reviewing} flow={flow} />
+          </>
         ) : step.id === 'submit' ? (
           <SubmitStep flow={flow} />
         ) : (
-          // A part with several things: the part at a glance on the right (below on a phone). One thing: full width.
-          <div className="app-layout" data-single={step.tasks.length < 2 || undefined}>
+          // One content width for every part: the task on the left, the part at a glance on the right (below on a phone).
+          <div className="app-layout">
             <StepView flow={flow} />
-            {step.tasks.length > 1 && (
-              <aside className="app-side">
-                <StepOutline flow={flow} />
-              </aside>
-            )}
+            <aside className="app-side">
+              <StepOutline flow={flow} />
+            </aside>
           </div>
         )}
       </section>
@@ -81,6 +83,7 @@ export function Application({ target, review }: { target: string | null; review?
               : undefined
           }
           forwardIsPrimary={flow.forwardIsPrimary}
+          next={flow.focusTask?.status === 'action_required' ? flow.focusTask.id : null}
           onPick={(id) => flow.show(id)}
         />
       )}

@@ -1,60 +1,62 @@
-# Acceptance pass (round 5)
+# Acceptance pass (round 10)
 
-Where each problem and each item in CLAUDE.md section 13 can be checked. Start fresh with Prototype → Reset this scenario. Checked at 375 px and 1280 px.
+Where each problem and each item in CLAUDE.md section 13 can be checked. Start fresh with Prototype → Reset this scenario. Checked at 360 px and 1280 px.
 
 ## A five-minute path for Earl
 
-1. **Arrival:** greeting, deadline, then the stepper: Your details, Animals, Land, Measures, Documents, Check and submit. Your details is open: "Start with your account for payments" (the bank closed …0417 and sent …2291). On the right, the part at a glance: ◆ Account for payments (now), Your household; = Your details. The page is grey, everything on it white.
-2. **Your details:** Yes, the new account: "After your answer" says typing in an account number is no longer needed. Your household (grandson Luka, doesn't change the estimate), then Your details, "Yes, that's right". "Your details: done", Continue: Animals.
-3. **Animals:** Your herd (41 last year, 38 in the registry; No, 41 keeps both and the herd waits for a check), your pigs, then the 14 cows that calved with what they pay, confirmed in one tap.
-4. **Land:** each field change shows the place on the satellite photo. "Review this boundary" opens a map he can move: the river field (two crops: GSA's line where the photo changes), the road strip (0.12 ha, about 2,200 dinars less), the upper field (the neighbour's line, or drawing his own). The meadow: no mowing seen; Yes, he will mow or graze it. Then his other field, confirmed.
-5. **Measures:** green cover may fit (the wheat fields stayed green all winter, those fields filled in for him), insemination may fit (9 inseminations in the registry), then choose your measures; a measure he adds asks only for what's still missing.
-6. **Documents:** the diesel receipt is too blurry, send a new photo; then the receipts, confirmed.
-7. **Check and submit:** "Your farm this year" with every part "Confirmed by you", the estimate, what the state still checks, the declaration, Submit application → receipt.
-8. **Jelena (Prototype → Jelena):** grouped by state; on Milan's case the primary button is "Ask the animal registry to check"; Milan's herd then says "Jelena asked the animal registry to check."
+1. **Arrival:** the stepper (Your details, Animals, Land, Measures, Documents, Check and submit), then "Start with your account for payments". The readiness bar says "Not ready to submit yet / Next: check your account for payments", no big number. 11 things to do, down from 14: name, address and active farmer are reused without asking; the household question is gone; the blurry receipt lives inside "Your input receipts".
+2. **Your details:** Yes, the new account. The toast says what changed; Animals opens.
+3. **Animals:** Your herd, No, 41: four plain answers (your part: done; who settles it: the animal registry; do you need to do anything: no, unless they contact you; what happens next). The same words in the drawer, the toast and "Your farm this year". Pigs, then cows that calved, one tap.
+4. **Land, the hero:** river field card shows the photo with its source and date. Review this boundary → "What's growing in the lower part this year?" → Something else → the toast says "1 more thing: split the field, because something else is growing in the lower part" → GSA's line, nudge it (large handles, or the slider), a crop for each part, Confirm. Road: the hatched 0.12 ha strip, about 2,200 dinars less. Upper field, "No, the strip is mine": move the edge as one line by its handle or the metre stepper, live area, it stops at his land and says why, undo. Meadow: what the state checks this year leads; last summer's photo is only why GSA asks.
+5. **Measures:** "You applied for these last year", unticked, each with "Apply again". GSA's two suggestions with the evidence and its source, what the state still checks and what he provides; green cover's fields are one tap, "Use these fields".
+6. **Documents:** "Send a clearer diesel receipt": the blurry file is red in the list (an error); then confirm the receipts.
+7. **Check and submit:** a review until nothing blocks (what's left is the primary action); then the state's checks, the declaration and Submit. "Unchanged since last year" sits beside the estimate, each line with "Something wrong? Ask for a correction". Receipt.
+8. **Jelena (Prototype → Jelena):** refer the neighbour's parcel; it moves to "Referred, awaiting a response" with a follow-up date; only "Record the decision of the land registry" resolves it. The case shows the parcel on the photo, the registry record, the explanation and the deadline.
 
 ## Problems P1 to P12
 
 | # | Where |
 |---|---|
-| P1 | Welcome back: "Submit by 26 May. 29 days left." (design note: EU mandate). |
-| P2 | Scenario "Second year, not renewed": renewal is the first task; readiness says "Renew your status to submit"; after renewing, "You're an active farmer. Next: your application." The receipt is unmistakable. |
-| P3 | Every change brings the record in (registry count, satellite photo, land map); receipts and records are listed in the app. |
-| P4 | Real satellite maps in plain words; no key, no plots; neighbours faint; the line explains itself at the field's edge. |
+| P1 | Header: days left to apply (design note: EU mandate on the river field). |
+| P2 | Scenario "Second year, not renewed": renewal comes first; after it, "You're an active farmer. Next: your application." The receipt is unmistakable. |
+| P3 | Every change brings the record in, with its source and date; what's unchanged is reused without asking. |
+| P4 | Real satellite maps in plain words; no plots, no key; a line explains itself where it stops. |
 | P5 | "Do you have 38 cattle now?" |
-| P6 | River field: GSA proposes the split line from the satellite flag; Milan nudges it or uses the slider. |
-| P7 | "Changes GSA found", each with its evidence (numbers, or the place on the photo) before the question. |
-| P8 | Herd disagreement → "Send this to Jelena". His item then shows Jelena's state. |
-| P9 | A stepper with the parts of his application, one next action in each, the part's outline beside it; autosave with "Saved". |
-| P10 | Status by section (needs you / waiting for a check / done), payment impact apart, "Ready to submit", what the state still checks. |
-| P11 | The whole flow can be finished alone, from Welcome back to the receipt. |
-| P12 | Jelena: only escalated problems, grouped by who acts next, likely next step primary. |
+| P6 | River field: GSA's line from the photo, nudged by large handles or the slider; no point placement anywhere. |
+| P7 | Facts before questions, with source and date; meanings left to Milan. |
+| P8 | Herd disagreement → "Send this to Jelena"; his item shows her state in the same words she sees. |
+| P9 | Stepper with parts, one next action, readiness verdict first; autosave with "Saved". |
+| P10 | One status signal everywhere: to do (neutral), look at this (orange), error (red); payment impact apart; "Ready to submit"; what the state still checks. |
+| P11 | The whole flow can be finished alone. |
+| P12 | Jelena: only escalated problems, who acts next, follow-up dates, resolved only with the record owner's decision. |
 
 ## Earl's checklist
 
-- [x] Smartest version of the application, not a simplified form; no AI interface (AI shown to Earl only as a design note).
+- [x] Smartest version of the application, not a simplified form; AI only as a design note.
 - [x] Opens with what GSA knows; asks only about what changed, evidence first.
-- [x] Herd, river and road cards differ: two numbers; map with satellite flag; map with strip, size and payment impact.
-- [x] Change cards and the application are one list, ordered by status. After each answer the task moves to Done, unneeded work is struck through with a reason, and the next action opens at the top with focus and a polite announcement.
-- [x] No "Everything else": "Same as last year" names each thing and opens it; anything changed or missing is its own task.
-- [x] Map in plain words; no technical terms, no plots, no key; a boundary explains itself when it stops the line.
-- [x] Split line proposed from the satellite flag; grip, handles, slider, undo (when there is something to undo), guardrail and live areas.
+- [x] Herd, river and road differ: two numbers; photo with flag; photo with strip, size and payment.
+- [x] One list: done work collapses, unneeded work leaves with a reason, added work is announced with its reason, the next action gets focus.
+- [x] No "Everything else": unchanged reused without asking, yearly declarations one tap each, changes their own tasks.
+- [x] Map in plain words; parcels hidden; a boundary explains itself when it stops a line.
+- [x] Split line from the photo; large handles; slider, undo, guardrail and live areas.
 - [x] Journey runs end to end at 360 px and 1280 px.
-- [x] Readiness is the list itself plus one line; disagreements return to the list with Continue.
-- [x] Status is separate from payment impact ("This doesn't change your estimate").
-- [x] "Ready to submit", never "safe"; the same heading lists what the state still checks.
-- [x] 38 vs 41: both kept, explained, awaiting verification, no dead end.
-- [x] What blocks (needs you) and what doesn't (waiting for a check, assumption note) is explicit.
-- [x] Satellite only flags; a No about crops stands.
-- [x] Estimate at body size with its basis; assumptions under "How is this worked out?".
-- [x] Jelena's cases show who owns the next action; Milan sees the same state.
+- [x] Status separate from payment impact.
+- [x] "Ready to submit", never "safe"; the state's checks listed.
+- [x] 38 vs 41: both kept, four plain answers, no dead end, same words everywhere.
+- [x] Satellite only flags; Milan decides what he planted.
+- [x] Estimate: no basis yet / provisional / current; never "About 0 dinars".
+- [x] Jelena: who acts next, ordered by what matters, never resolved straight after a referral; Milan sees the same state.
 - [x] Design notes (off by default): tested, EU mandate, assumption, AI behind the scenes.
-- [x] Every problem P1 to P12 is answered (table above).
-- [x] `src/copy/en.ts`: 2,037 words at the start of round 3, 1,944 at the end.
+- [x] Fewer decisions on arrival: 14 → 11 (decision 149).
+- [x] Facts with source and date; meanings as possibilities; what GSA can't know is his question.
+- [x] One status function on every screen; red only for errors; review is not submit.
+- [x] No point placement with a finger anywhere.
+- [x] Solid green only on the primary action; open part and row neutral and labelled; one content width; the task's action pinned in one place.
+- [x] `src/copy/en.ts`: 4,242 words at the start of round 10, 4,208 at the end.
 
 ## Assumptions and placeholders
 
 - Prototype clock: today is 28 April 2026 (29 days left).
-- Receipt file names and dates (Seed receipt.pdf, Fertiliser receipt.pdf, Diesel receipt.jpg), reference numbers, plot outlines and the neighbour's case are placeholders.
-- Assumptions to confirm with the ministry: awaiting verification doesn't block submission; amending until the national deadline; after a "one crop" answer the state may still check the field. A geotagged field photo (as in EU area monitoring) is an idea to raise with the ministry, not built.
-- Unchanged things have one change path only: "Records wrong? Ask for a correction" on your details.
+- Placeholders: receipt file names and dates, reference numbers, plot outlines, the neighbour's parcel outline, the evidence dates (satellite photo 21 April 2026, land map 16 March 2026, neighbour's declaration 15 April 2026, summer 2025, winter 2025 to 2026).
+- Assumptions to confirm with the ministry: awaiting verification doesn't block submission; amending until the national deadline; after "the same as the rest of the field" the state may still check it; the meadow must be mowed or grazed at least once this year, checked by satellite (no date invented); household pigs need no declaration.
+- Follow-up date for a referral: halfway to the application deadline (a design choice, not a policy).

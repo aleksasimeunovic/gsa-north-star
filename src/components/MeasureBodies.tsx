@@ -250,7 +250,10 @@ function AutoLine({ r, d }: { r: Requirement; d: Derived }) {
   // From records, so it's marked as a record, not as done: green is only for what he has finished.
   return (
     <p className="auto-line">
-      {missing ? <StatusBadge mark="error" iconOnly /> : <span className="auto-mark"><Icon name="records" size="sm" /></span>} <strong>{req(r).label}</strong>: {value}
+      {missing ? <StatusBadge mark="error" iconOnly /> : <span className="auto-mark"><Icon name="records" size="sm" /></span>}
+      <span>
+        <strong>{req(r).label}</strong>: {value}
+      </span>
     </p>
   )
 }

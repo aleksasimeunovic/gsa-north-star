@@ -47,9 +47,9 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
     <header className="review-head">
       <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
       {item.status === 'action_required' ? (
-        <div>
-          <MapFact id={id} /> <Note kind="ai" />
-        </div>
+        <MapFact id={id}>
+          <Note kind="ai" />
+        </MapFact>
       ) : (
         <Text>{taskSummary(id, derived, state)}</Text>
       )}
@@ -62,6 +62,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
       <ActionBar
         back={{ label: map.back, onClick: back }}
         forwardIsPrimary={false}
+        next={item.status === 'action_required' ? id : null}
         onPick={(task) => {
           go('welcome', `task-${task}`)
           flow.show(task)

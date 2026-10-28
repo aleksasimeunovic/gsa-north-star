@@ -23,9 +23,10 @@ export function VisuallyHidden({ as: As = 'span', children }: { as?: ElementType
 }
 
 /** Two values side by side, both kept (record vs his answer). */
-export function Compare({ items }: { items: { label: string; value: ReactNode }[] }) {
+export function Compare({ items, long }: { items: { label: string; value: ReactNode }[]; long?: boolean }) {
+  // Long values (account numbers) stack on a phone, so each reads on one line.
   return (
-    <dl className="grid grid-cols-2 gap-2">
+    <dl className={cn('grid gap-2', long ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2')}>
       {items.map((i) => (
         <div key={i.label} className="rounded-xl bg-muted px-4 py-3">
           <dt className="text-sm text-muted-foreground">{i.label}</dt>

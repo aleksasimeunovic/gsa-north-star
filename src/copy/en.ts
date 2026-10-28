@@ -84,11 +84,11 @@ export const en = {
 
   impact: {
     road_took_area: (ha: string, about: string) => `The road took ${ha}, about ${about} less`,
-    road_pending_correction: (ha: string, about: string) => `Until the correction is checked, ${ha} doesn't count, about ${about} less`,
+    road_pending_correction: (ha: string, about: string) => `${ha} doesn't count until checked, about ${about} less`,
     overlap_removed: (ha: string, about: string) => `Your neighbour's line took ${ha}, about ${about} less`,
     redrawn: (ha: string, about: string) => `Your new line takes ${ha} off the field, about ${about} less`,
-    overlap_pending: (ha: string, about: string) => `Until the line is checked, ${ha} doesn't count, about ${about} less`,
-    meadow_out: (ha: string, about: string) => `The meadow is left out this year: ${ha}, about ${about} less`,
+    overlap_pending: (ha: string, about: string) => `${ha} doesn't count until checked, about ${about} less`,
+    meadow_out: (ha: string, about: string) => `The meadow is left out: ${ha}, about ${about} less`,
   } satisfies Record<ImpactReason, (ha: string, about: string) => string>,
 
   estimate: {
@@ -129,10 +129,9 @@ export const home = {
   activeFarmer: "You're an active farmer for this year",
   nextAction: (what: string) => `Next: ${what.charAt(0).toLowerCase()}${what.slice(1)}`,
   stepDone: (step: string) => `Nothing left to do in ${step.toLowerCase()}`,
-  stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check, and you can still submit' : `${n} things wait for a check, and you can still submit`),
+  stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check. You can still submit' : `${n} things wait for a check. You can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
   now: 'Now',
-  todo: 'To do',
   /** What's left in this part. */
   outline: (left: number) => (left === 0 ? 'Nothing left to do' : left === 1 ? '1 thing to do' : `${left} things to do`),
   submitted: 'Your application is submitted.',
@@ -176,7 +175,6 @@ export const tasks = {
     details: 'Your details',
     measures: 'Choose your measures',
     receipts: 'Your input receipts',
-    submit: 'Sign and submit',
   } as Record<string, string>,
   receiptsMissingTitle: 'Upload your input receipts',
   /** The one next action, said as what to do. */
@@ -251,7 +249,7 @@ export const tasks = {
     out: (ha: string) => `Left out this year, ${ha} less`,
   },
 
-  /** Why GSA thinks a measure fits, what the state still checks, what he provides. Never eligibility. */
+  /** Why it may fit, what the state checks, what he provides. */
   suggest: {
     green_cover: 'Your river and upper fields stayed green all winter',
     insemination: (n: number) => `${n} inseminations by your vet since last April`,
@@ -271,7 +269,7 @@ export const tasks = {
   },
 
   renewal: {
-    body: 'You need it to submit, and you can prepare everything else first',
+    body: 'You need it to submit. You can prepare everything else first',
     button: 'Renew now',
   },
 
@@ -287,14 +285,15 @@ export const tasks = {
     countHint: 'Include calves',
     countError: 'Enter a whole number, like 41',
     countSave: 'Save my number',
-    /** The one disagreement with a record: the same words wherever the herd appears. */
+    /** Same words wherever the herd appears. */
     waiting: (reg: number) => `The animal registry checks it, and its ${reg} counts until then`,
-    settled: [
+    settled: (reg: number, who: string): [string, string][] => [
       ['Your part', 'Done'],
-      ['Who settles it', 'The animal registry'],
+      ['Who settles it', who],
       ['Do you need to do anything?', 'No, unless they contact you'],
-      ['What happens next', 'The registry checks your number. Its count stays until then, you can still submit, and the result appears here'],
+      ['What happens next', `The animal registry checks it, and its ${reg} counts until then. You can still submit, and the result appears here`],
     ],
+    registryOnly: 'The animal registry',
     withJelena: 'The animal registry, with Jelena',
     outcome: {
       changed: (his: number) => `The animal registry checked and now shows ${his}`,
@@ -304,9 +303,9 @@ export const tasks = {
   },
 
   jelena: {
-    who: 'Jelena, your advisor at PSSS Čačak, sees only this problem',
+    who: 'Jelena, your advisor at PSSS Čačak, sees only this',
     noteLabel: 'Add a note (optional)',
-    noteHint: 'For example, what happened to the animals',
+    noteHint: 'For example, what happened to them',
     send: 'Send to Jelena',
     cancel: 'Cancel',
     state: {
@@ -315,13 +314,13 @@ export const tasks = {
       waiting_farmer: 'Jelena needs more from you',
       resolved: 'Jelena has sorted this out',
     } satisfies Record<CaseState, string>,
-    asks: 'Jelena asks: can you tell her when you sold or slaughtered the cattle that left?',
+    asks: 'Jelena asks: when did you sell or slaughter the cattle that left?',
     replyLabel: 'Your reply',
     reply: 'Send reply',
   },
 
   river: {
-    /** What the photo shows, no more: what it means is his to say. */
+    /** What the photo shows, no more. */
     context: 'The lower strip is greening later than the wheat above it',
     question: "What's growing in the lower part this year?",
     same: 'The same as the rest of the field',
@@ -340,12 +339,12 @@ export const tasks = {
     yes: "Yes, it's road now",
     no: "No, it's still my field",
     done: (left: string) => `Now ${left}`,
-    correctionAsked: "Correction asked for, and until it's checked the land map's area counts",
+    correctionAsked: "Correction asked for. Until it's checked, the land map's area counts",
   },
 
   upper: {
     context: 'Your neighbour declared a strip along the bottom of this field this year',
-    overlap: (ha: string) => `${ha} is declared by both of you, and only one of you can get support for it`,
+    overlap: (ha: string) => `${ha} declared by both of you`,
     question: "Should we move your edge back to your neighbour's line?",
     yes: 'Yes, move my edge',
     no: 'No, the strip is mine',
@@ -360,7 +359,7 @@ export const tasks = {
   pigs: {
     context: (n: number) => `The animal registry shows ${n} pigs, and you didn't declare any last year`,
     question: 'Are they only for your household?',
-    hint: "Household pigs don't need declaring, and no measure pays for them",
+    hint: "Household pigs don't need declaring",
     answerYes: 'Household only',
     answerNo: 'I keep them to sell',
     household: 'Household only, nothing to declare',
@@ -372,7 +371,7 @@ export const tasks = {
   },
 
 
-  /** Reused without asking: unchanged since last year, nothing to declare. */
+  /** Reused without asking. */
   details: {
     title: 'Unchanged since last year',
     source: 'From government records',
@@ -389,7 +388,6 @@ export const tasks = {
     groupLast: 'You applied for these last year',
     applyAgain: 'Apply again',
     applying: "You're applying again",
-    dontApply: "Don't apply",
     groupSuggested: (n: number) => (n === 1 ? 'GSA found 1 more that fits your farm' : `GSA found ${n} more that fit your farm`),
     groupMore: (n: number) => `${n} more measures you can apply for`,
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
@@ -454,7 +452,7 @@ export const tasks = {
       label: 'Are your cows entered in the herd book?',
       short: 'herd book',
       options: { yes: 'Yes', no: 'No' },
-      ruledOut: 'This measure only pays for cows in the herd book, so leave it out this year. Jelena can tell you how to enter them',
+      ruledOut: 'It only pays for cows in the herd book, so leave it out this year',
     },
     vet_certificate: { label: "Your vet's insemination certificate", short: 'vet certificate' },
     cover_fields: { label: 'Which fields stay green over winter?', short: 'fields' },
@@ -488,7 +486,7 @@ export const map = {
   neighbour: "Neighbour's field",
   both: (ha: string) => `${ha} declared by both`,
   imagery: 'Imagery © Esri',
-  keys: 'Drag or use the arrow keys to move the map, and plus or minus to zoom',
+  keys: 'Drag or use the arrow keys to move the map, plus or minus to zoom',
   zoomIn: 'Zoom in',
   zoomOut: 'Zoom out',
   backTo: (field: string) => `Back to the ${field.toLowerCase()}`,
@@ -503,7 +501,7 @@ export const map = {
 export const draw = {
   area: (ha: string) => `Your field: ${ha}`,
   loading: 'Loading the map',
-  stillOverlaps: (ha: string) => `Your line still runs ${ha} into your neighbour's field. If that's right, save it and the payments office checks both lines`,
+  stillOverlaps: (ha: string) => `Still ${ha} in your neighbour's field. Save it and the payments office checks both lines`,
   stepperLabel: 'Where your field ends, in metres from the top',
   metres: (n: number) => `${n} m`,
   up: 'Move the edge up 1 metre',
@@ -535,7 +533,6 @@ export const split = {
 
 export const finish = {
   submit: {
-    title: 'Sign and submit',
     readyTitle: 'Ready to submit. The state still checks:',
     blockedTitle: 'Before you submit',
     goTo: (what: string) => `Go to: ${what}`,
@@ -550,11 +547,9 @@ export const finish = {
     declarationTitle: 'Declaration',
     declaration: 'I confirm under full criminal and material liability that the information in this application is true.',
     button: 'Submit application',
-    back: 'Back to your application',
   },
   receipt: {
     title: 'Your application is submitted.',
-    thanks: "Thank you, Milan, there's nothing more you need to do now",
     when: (d: string) => `Submitted on ${d}`,
     reference: 'Reference number',
     referenceNote: 'Keep this number',
@@ -567,12 +562,12 @@ export const finish = {
       "You'll see the decision and the payment in GSA",
     ],
     amendTitle: 'Need to change something?',
-    amendText: "You can amend your application until the national deadline, and you'll sign the declaration again",
+    amendText: 'You can amend it until the national deadline, and sign the declaration again',
     amend: 'Amend your application',
   },
   renewal: {
     title: 'Renew your active farmer status',
-    why: "You need it to submit, and it's separate from your application",
+    why: 'You need it to submit',
     button: 'Renew my status',
     doneTitle: "You're an active farmer.",
     doneNext: 'Next: your application',
@@ -597,7 +592,7 @@ export const advisor = {
   title: 'Problems sent to you',
   shortcuts: 'J next, K previous, O open',
   listLabel: 'Cases',
-  /** Each state names who acts next. Referred and awaiting a response say the same thing, so they are one. */
+  /** Each state names who acts next. */
   state: {
     assigned: 'Needs you',
     waiting_office: 'Referred, awaiting a response',
@@ -637,35 +632,34 @@ export const advisor = {
   historyTitle: 'Action history',
   historyHead: { when: 'When', who: 'Who', what: 'What' },
   history: {
-    answer_herd: 'Answered the herd question',
-    set_herd_count: 'Gave his own cattle count',
+    answer_herd: 'Answered: herd',
+    set_herd_count: 'Gave his cattle count',
     send_to_jelena: 'Sent the problem to Jelena',
-    ask_record_check: 'Asked for a record correction',
-    answer_river: 'Answered the river field question',
+    ask_record_check: 'Asked for a correction',
+    answer_river: 'Answered: river field',
     set_split: 'Split the river field',
-    answer_road: 'Answered the road question',
-    answer_upper: 'Answered the upper field question',
-    set_upper_drawing: 'Drew where the upper field ends',
-    answer_pigs: 'Answered the pigs question',
+    answer_road: 'Answered: road field',
+    answer_upper: 'Answered: upper field',
+    set_upper_drawing: 'Moved the upper field edge',
+    answer_pigs: 'Answered: pigs',
     choose_measures: 'Chose measures',
     save_measure: 'Added what a measure needs',
     reply_to_jelena: 'Replied to Jelena',
     undo: 'Undid his last answer',
     farmer_replied: 'Farmer replied',
-    confirm: 'Confirmed part of the application',
-    answer_bank: 'Answered the account question',
-    set_bank_account: 'Gave his account for payments',
-    answer_household: 'Answered the household question',
-    answer_meadow: 'Answered the meadow question',
+    confirm: 'Confirmed a part',
+    answer_bank: 'Answered: account',
+    set_bank_account: 'Gave his account',
+    answer_meadow: 'Answered: meadow',
     attach_document: 'Attached a document',
     renew: 'Renewed active farmer status',
     sign_declarations: 'Signed the declaration',
     submit: 'Submitted the application',
-    amend: 'Reopened the application to amend it',
+    amend: 'Reopened to amend',
     opened: 'Opened the case',
-    referred: 'Asked the record owner to check',
+    referred: 'Referred to the record owner',
     asked_farmer: 'Asked the farmer',
-    owner_decided: "Recorded the record owner's decision",
+    owner_decided: "Recorded the owner's decision",
   } as Record<string, string>,
 }
 
@@ -681,11 +675,8 @@ export const steps = {
     submit: 'Check and submit',
   } satisfies Record<StepId, string>,
   of: (i: number, n: number) => `Step ${i} of ${n}`,
-  left: (n: number) => (n === 1 ? '1 thing left' : `${n} things left`),
-  done: 'Done',
   /** Under each part's name in the stepper. */
   status: (left: number) => (left === 1 ? '1 thing to do' : left ? `${left} things to do` : 'Done'),
-  waiting: 'Waiting for a check',
 }
 
 export const bar = {

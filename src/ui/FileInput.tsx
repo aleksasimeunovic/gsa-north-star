@@ -7,7 +7,7 @@ export function FileInput({ label, hint, onFile }: { label: string; hint?: strin
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-input bg-muted/60 px-4 py-6 text-center transition-colors hover:border-ring hover:bg-accent/50 focus-within:ring-[3px] focus-within:ring-ring/40"
+      className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-input bg-muted/60 px-4 py-6 text-center transition-colors hover:border-ring hover:bg-hover focus-within:ring-[3px] focus-within:ring-ring/40"
     >
       <span className="flex size-10 items-center justify-center rounded-full bg-card text-primary shadow-xs">
         <Icon name="upload" />

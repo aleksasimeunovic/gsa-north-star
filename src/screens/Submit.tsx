@@ -34,9 +34,11 @@ export function SubmitStep({ flow }: { flow: Flow }) {
 
       <div className="submit-picture">
         <FarmPicture detailed />
-        <EstimateBlock />
+        <div className="submit-side">
+          <EstimateBlock />
+          <UnchangedReview />
+        </div>
       </div>
-      <UnchangedReview />
 
       {readiness.awaiting.length > 0 && (
         <section className="status-section" aria-labelledby="awaiting-title">
@@ -66,7 +68,8 @@ export function SubmitStep({ flow }: { flow: Flow }) {
             <ul className="status-list">
               {STATE_CHECKS.map((c) => (
                 <li key={c}>
-                  <Icon name="complete" />
+                  {/* Not done: what the state will still check, so good to know, not a tick. */}
+                  <Icon name="info" />
                   <span>{finish.submit.checks[c]}</span>
                 </li>
               ))}
