@@ -11,13 +11,14 @@ export const CROPS: Crop[] = ['wheat', 'maize', 'sunflower', 'barley', 'soya', '
 
 export type FieldId = 'river' | 'road' | 'upper' | 'meadow' | 'house'
 
+/** Each signal is a fact with its source's date (prototype placeholders): GSA says what it saw and when. */
 export type FieldSignal =
-  | { kind: 'satellite_difference'; flagPolygon: Polygon; flagHa: number }
-  | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number }
+  | { kind: 'satellite_difference'; flagPolygon: Polygon; flagHa: number; seen: string }
+  | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number; seen: string }
   /** Last year's drawing runs into a neighbour's declared field. */
-  | { kind: 'overlap'; neighbourPolygon: Polygon; overlapPolygon: Polygon; overlapHa: number }
-  /** Satellite photos saw no mowing or grazing on grassland last summer. */
-  | { kind: 'not_mown' }
+  | { kind: 'overlap'; neighbourPolygon: Polygon; overlapPolygon: Polygon; overlapHa: number; seen: string }
+  /** Satellite photos saw no mowing or grazing on grassland last summer: only why GSA asks about this year. */
+  | { kind: 'not_mown'; summer: number }
 
 export interface Field {
   id: FieldId
@@ -90,8 +91,10 @@ export interface Document {
 export interface Suggestion {
   measureId: MeasureId
   evidence: 'green_all_winter' | 'inseminations'
-  /** Fields the evidence is about, filled in for him if he says yes. */
+  /** Fields the evidence is about, suggested to him; he uses them with one tap. Never ticked for him. */
   fields?: FieldId[]
+  /** When the evidence is from: the winter the photos cover, or the registry's period. */
+  winter?: number
   count?: number
 }
 
@@ -155,7 +158,7 @@ const FIELDS: Field[] = [
     arable: true,
     polygon: rect(0, 0, 200, 120),
     // The lower half floods every spring; satellite sees it differently.
-    signal: { kind: 'satellite_difference', flagPolygon: rect(0, 60, 200, 60), flagHa: 1.2 },
+    signal: { kind: 'satellite_difference', flagPolygon: rect(0, 60, 200, 60), flagHa: 1.2, seen: '2026-04-21' },
   },
   {
     id: 'road',
@@ -164,7 +167,7 @@ const FIELDS: Field[] = [
     cropLastYear: 'maize',
     arable: true,
     polygon: rect(220, 0, 150, 120),
-    signal: { kind: 'road_strip', stripPolygon: rect(220, 112, 150, 8), stripHa: 0.12 },
+    signal: { kind: 'road_strip', stripPolygon: rect(220, 112, 150, 8), stripHa: 0.12, seen: '2026-03-16' },
   },
   {
     id: 'upper',
@@ -174,9 +177,9 @@ const FIELDS: Field[] = [
     arable: true,
     polygon: rect(0, 140, 200, 100),
     // The neighbour's new declaration starts 5 m inside last year's drawing.
-    signal: { kind: 'overlap', neighbourPolygon: rect(0, 235, 200, 55), overlapPolygon: rect(0, 235, 200, 5), overlapHa: 0.1 },
+    signal: { kind: 'overlap', neighbourPolygon: rect(0, 235, 200, 55), overlapPolygon: rect(0, 235, 200, 5), overlapHa: 0.1, seen: '2026-04-15' },
   },
-  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100), signal: { kind: 'not_mown' } },
+  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100), signal: { kind: 'not_mown', summer: 2025 } },
   { id: 'house', name: 'House field', areaHa: 1.3, cropLastYear: 'maize', arable: true, polygon: rect(390, 0, 130, 100) },
 ]
 
@@ -305,7 +308,7 @@ const BASE: Scenario = {
   parcels: PARCELS,
   measures: MEASURES,
   suggestions: [
-    { measureId: 'green_cover', evidence: 'green_all_winter', fields: ['river', 'upper'] },
+    { measureId: 'green_cover', evidence: 'green_all_winter', fields: ['river', 'upper'], winter: 2025 },
     { measureId: 'insemination', evidence: 'inseminations', count: 9 },
   ],
   documents: [{ id: 'input_receipts', attached: true, files: RECEIPTS, unreadable: 'Diesel receipt.jpg' }],

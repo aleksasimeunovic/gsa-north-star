@@ -1,5 +1,5 @@
 import { lazy, Suspense, useRef, useState } from 'react'
-import { draw, en, finish, formatDate, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
+import { draw, en, finish, formatDate, formatDateYear, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
 import { milanCaseState } from '../logic/advisor'
 import { isMapChange, type Task, type TaskId } from '../logic/application'
@@ -12,6 +12,7 @@ import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Compare, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Problem } from '../ui/Problem'
+import { Answers, Fact } from '../ui/Fact'
 import { Note } from '../ui/Note'
 import { StageAction } from '../ui/MapStage'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
@@ -141,10 +142,9 @@ function HerdBody() {
       )}
       {c && (
         <>
-          <Text>{tasks.herd.keepBoth}</Text>
-          <Text variant="secondary">
-            {tasks.herd.canSubmit} <Note kind="assumption" />
-          </Text>
+          {/* The one exception, said as four plain answers: done, who, anything to do, what next. */}
+          <Answers items={herdSettled(!!jelena)} />
+          <Note kind="assumption" />
           {jelena === 'waiting_farmer' ? (
             <ReplyToJelena />
           ) : jelena ? (
@@ -229,20 +229,28 @@ export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upp
   return null
 }
 
-/** What GSA reads in the river field's satellite photo, so the dotted area means something to him. */
-export function RiverInsight() {
-  return (
-    <ul className="insight">
-      {tasks.river.insight.map((line) => (
-        <li key={line}>{line}</li>
-      ))}
-    </ul>
-  )
-}
+/** The herd disagreement's four answers, in the same words wherever they appear. */
+export const herdSettled = (jelena: boolean): [string, string][] =>
+  tasks.herd.settled.map(([q, a], i) => [q, i === 1 && jelena ? tasks.herd.withJelena : a] as [string, string])
 
 /** What GSA found, said in one line, before he answers. */
 export const mapContext = (id: 'field_river' | 'field_road' | 'field_upper') =>
   id === 'field_river' ? tasks.river.context : id === 'field_road' ? tasks.road.context : tasks.upper.context
+
+/** Where a map change's fact comes from, and when. */
+export function mapSource(s: Derived['scenario'], id: 'field_river' | 'field_road' | 'field_upper' | 'field_meadow') {
+  const sig = s.fields.find((f) => `field_${f.id}` === id)?.signal
+  if (!sig) return ''
+  if (sig.kind === 'not_mown') return en.source.summer(sig.summer)
+  const d = formatDateYear(sig.seen)
+  return sig.kind === 'satellite_difference' ? en.source.photo(d) : sig.kind === 'road_strip' ? en.source.landMap(d) : en.source.neighbour(d)
+}
+
+/** What GSA knows about a map change: the fact and its source. */
+export const MapFact = ({ id }: { id: 'field_river' | 'field_road' | 'field_upper' }) => {
+  const { derived } = useApp()
+  return <Fact source={mapSource(derived.scenario, id)}>{mapContext(id)}</Fact>
+}
 
 /**
  * A change on the land shows the place, not a description: a still picture of the satellite photo with
@@ -259,14 +267,12 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
 
   return (
     <Stack gap="section">
-      <Text>
-        {unanswered ? mapContext(id) : taskSummary(id, derived, state)}{' '}
-        {unanswered && id === 'field_river' && (
-          <>
-            <Note kind="eu_mandate" /> <Note kind="ai" />
-          </>
-        )}
-      </Text>
+      {unanswered ? <MapFact id={id} /> : <Text>{taskSummary(id, derived, state)}</Text>}
+      {unanswered && id === 'field_river' && (
+        <div>
+          <Note kind="eu_mandate" /> <Note kind="ai" />
+        </div>
+      )}
       <figure className="map-figure">
         <div className="map-link" onClick={review}>
           <Suspense fallback={<MapFallback mode="preview" />}>
@@ -280,7 +286,6 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
           </Suspense>
         </div>
       </figure>
-      {unanswered && id === 'field_river' && <RiverInsight />}
       {unanswered && <MapFacts id={id} />}
       {item.status === 'awaiting_verification' && (
         <Text variant="secondary">
@@ -436,7 +441,10 @@ function CalvingsBody() {
   )
 }
 
-/** The satellite saw no mowing or grazing: the place, the rule in one line, and whether he will look after it. */
+/**
+ * What the state checks for this year's payment leads, and the question is about this year. Last summer's
+ * photo is only why GSA asks, labelled as last summer.
+ */
 function MeadowBody() {
   const { derived, state, dispatch } = useApp()
   const a = state.answers.meadow
@@ -445,17 +453,21 @@ function MeadowBody() {
     <Stack gap="section">
       {a.answer === null && (
         <Text>
-          {m.context} <Note kind="ai" />
+          {m.rule} <Note kind="assumption" />
         </Text>
       )}
       <figure className="map-figure">
         <Suspense fallback={<MapFallback mode="preview" />}>
-          <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}. ${m.context}`} />
+          <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}. ${m.why}`} />
         </Suspense>
       </figure>
+      {a.answer === null && (
+        <Fact source={mapSource(derived.scenario, 'field_meadow')}>
+          {m.why} <Note kind="ai" />
+        </Fact>
+      )}
       <Question
         legend={m.question}
-        hint={m.hint}
         value={a.answer}
         answer={a.answer === 'yes' ? m.answerYes : m.answerNo}
         onAnswer={(answer) => dispatch({ type: 'answer_meadow', answer })}
@@ -512,10 +524,10 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
     case 'field_meadow':
       if (item.detail === 'meadow_kept') return tasks.meadow.kept
       if (item.detail === 'meadow_out') return tasks.meadow.out(formatHa(item.paymentImpact?.areaHa ?? 0))
-      return tasks.meadow.context
+      return tasks.meadow.rule
     case 'herd': {
       const h = s.herd!
-      if (item.conflict) return `${tasks.herd.differs(item.conflict.his, item.conflict.record)}, ${jelena ? tasks.jelena.state[jelena].toLowerCase() : tasks.herd.willCheck}`
+      if (item.conflict) return jelena && jelena !== 'assigned' ? tasks.jelena.state[jelena] : tasks.herd.waiting(item.conflict.record)
       if (done) return tasks.herd.done(h.registryCount)
       return item.detail === 'herd_needs_count' ? tasks.herd.countLabel : tasks.herd.summary(h.registryCount, h.lastYearDeclared ?? 0)
     }
@@ -528,7 +540,7 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
         const [x, y] = order.map((i) => tasks.river.part(en.crops[sp.crops[i]!], formatHa(r.areasHa[i])))
         return tasks.river.split(x, y)
       }
-      if (item.detail === 'river_one_crop') return `${tasks.river.answerNo}, ${tasks.river.mayCheck}`
+      if (item.detail === 'river_one_crop') return `${tasks.river.oneCrop}, ${tasks.river.mayCheck}`
       return tasks.river.context
     }
     case 'field_road': {

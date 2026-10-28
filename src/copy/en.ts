@@ -47,7 +47,6 @@ export const en = {
       warning: "You can submit, but look at these",
       info: 'Good to know',
     } satisfies Record<Severity, string>,
-    waiting: 'Waits for a check, and you can still submit',
     info: {
       state_checks: 'The state still inspects your farm and checks eligibility before paying',
       unpriced: (n: number) => (n === 1 ? '1 measure is worked out after checks' : `${n} measures are worked out after checks`),
@@ -102,6 +101,16 @@ export const en = {
     total: (t: string) => `Total: ${t}`,
   },
 
+  /** Where a fact comes from, and when. */
+  source: {
+    photo: (d: string) => `Satellite photo, ${d}`,
+    landMap: (d: string) => `Land map, ${d}`,
+    neighbour: (d: string) => `Your neighbour's declaration, ${d}`,
+    summer: (y: number) => `Satellite photos, summer ${y}`,
+    winter: (y: number) => `Satellite photos, winter ${y} to ${y + 1}`,
+    registry: 'Animal registry',
+  },
+
   scenarios: {
     second_year: 'Second year',
     second_year_not_renewed: 'Second year, not renewed',
@@ -137,7 +146,6 @@ export const home = {
 /** What his last answer changed in the application, shown until his next answer. */
 export const after = {
   done: (task: string, outcome: string) => `${task}: ${outcome}`,
-  waiting: (task: string) => `${task} waits for a check, and you can still submit`,
   removed: (work: string, reason: string) => `No longer needed: ${work.toLowerCase()}, ${reason}`,
   more: (work: string, why: string) => `1 more thing: ${work.toLowerCase()}, because ${why}`,
   why: {
@@ -230,18 +238,25 @@ export const tasks = {
   },
 
   meadow: {
-    context: 'The satellite photos show no mowing or grazing on the meadow last summer',
-    question: 'Will you mow or graze the meadow this year?',
-    hint: 'A meadow needs mowing or grazing at least once a year to get support',
+    rule: 'The state checks by satellite that the meadow is mowed or grazed at least once this year',
+    question: 'Will you mow or graze the meadow at least once this year?',
+    why: 'Last summer the photos showed no mowing or grazing',
     answerYes: 'Yes, I will',
     answerNo: 'No, not this year',
-    kept: "You'll mow or graze it, the state may check it",
+    kept: "You'll mow or graze it, and the state checks by satellite",
     out: (ha: string) => `Left out this year, ${ha} less`,
   },
 
+  /** Why GSA thinks a measure fits, what the state still checks, what he provides. Never eligibility. */
   suggest: {
-    green_cover: 'The satellite photos show your wheat fields stayed green all winter',
-    insemination: (n: number) => `The animal registry shows ${n} inseminations by your vet since last April`,
+    green_cover: 'Your river and upper fields stayed green all winter',
+    insemination: (n: number) => `${n} inseminations by your vet since last April`,
+    checks: {
+      green_cover: 'The state checks the fields stay covered from autumn to spring',
+      insemination: "The state checks your vet's certificate against the registry",
+    } as Partial<Record<MeasureId, string>>,
+    provide: (list: string) => `You provide: ${list}`,
+    useFields: (names: string) => `Use these fields: ${names}`,
   },
 
   unreadable: {
@@ -268,10 +283,15 @@ export const tasks = {
     countHint: 'Include calves',
     countError: 'Enter a whole number, like 41',
     countSave: 'Save my number',
-    keepBoth: 'We keep both numbers, and the registry stays the official record until it has checked',
-    canSubmit: "You can still submit, and this doesn't change your estimate",
-    differs: (his: number, reg: number) => `You said ${his}, the registry shows ${reg}`,
-    willCheck: 'the registry will check',
+    /** The one disagreement with a record: the same words wherever the herd appears. */
+    waiting: (reg: number) => `The animal registry checks it, and its ${reg} counts until then`,
+    settled: [
+      ['Your part', 'Done'],
+      ['Who settles it', 'The animal registry'],
+      ['Do you need to do anything?', 'No, unless they contact you'],
+      ['What happens next', 'The registry checks your number. Its count stays until then, you can still submit, and the result appears here'],
+    ],
+    withJelena: 'The animal registry, with Jelena',
     sendJelena: 'Send this to Jelena',
   },
 
@@ -293,19 +313,12 @@ export const tasks = {
   },
 
   river: {
-    context: 'The satellite photo shows the lower part of the field looks different from the rest',
-    /** What GSA makes of the photo, so he can tell at a glance whether it's right. */
-    insight: [
-      'The dotted area is the strip along the river, where the field floods most springs',
-      "This year it's greening later than the wheat above it",
-      'That usually means another crop was sown there after the water went down',
-    ],
-    question: 'Are you growing two crops in the river field?',
-    hint: "The photo can't see what you planted, so you decide",
-    yes: 'Yes, two crops',
-    no: 'No, one crop',
-    answerYes: 'Two crops',
-    answerNo: 'One crop',
+    /** What the photo shows, no more: what it means is his to say. */
+    context: 'The lower strip is greening later than the wheat above it',
+    question: "What's growing in the lower part this year?",
+    same: 'The same as the rest of the field',
+    other: 'Something else',
+    oneCrop: 'The same crop in the whole field',
     mayCheck: 'the state may still check it',
     split: (a: string, b: string) => `${a}, ${b}`,
     part: (crop: string, area: string) => `${crop} ${area}`,
@@ -365,11 +378,13 @@ export const tasks = {
 
   measures: {
     lead: (fit: number) => `You can apply for ${fit} measures this year`,
-    groupLast: 'You had these last year',
+    groupLast: 'You applied for these last year',
+    applyAgain: 'Apply again',
+    applying: "You're applying again",
+    dontApply: "Don't apply",
     groupSuggested: (n: number) => (n === 1 ? 'GSA found 1 more that fits your farm' : `GSA found ${n} more that fit your farm`),
     groupMore: (n: number) => `${n} more measures you can apply for`,
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
-    lastYear: 'You had it last year',
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
     others: (list: string) => `Not for your farm: ${list}`,
@@ -458,7 +473,7 @@ export const tasks = {
 
 export const map = {
   title: 'Map of your fields',
-  flag: 'Along the river, looks different',
+  flag: 'Greening later',
   notMown: 'No mowing seen',
   strip: (ha: string) => `${ha} now road`,
   edge: "The line stops at your field's edge, because land outside it can't get support",
@@ -681,7 +696,7 @@ export const farm = {
   landValue: (ha: string, n: number) => `${ha} in ${n} fields`,
   crop: (crop: string, ha: string) => `${crop} ${ha}`,
   cattle: (n: number) => `${n} cattle`,
-  cattleChecking: (his: number, reg: number) => `${his} cattle, the registry shows ${reg}`,
+  cattleChecking: (his: number, reg: number) => `${his} cattle. The animal registry checks it, and its ${reg} counts until then`,
   pigs: (n: number) => `${n} pigs`,
   pigsHousehold: (n: number) => `${n} pigs for the household`,
   measuresValue: (n: number, fit: number) => `${n} of ${fit} you can apply for`,

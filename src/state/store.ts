@@ -3,7 +3,7 @@ import type { Action, Actor, Answers, AppState } from './actions'
 import { derive } from '../logic/derive'
 import { submitCheck } from '../logic/submit'
 import { loadState, saveState } from './persist'
-import { MILAN_CASE, SCENARIOS, type ScenarioId, type Scenario } from '../data/scenarios'
+import { MILAN_CASE, type ScenarioId } from '../data/scenarios'
 
 export const emptyAnswers = (): Answers => ({
   herd: { answer: null, ownCount: null },
@@ -46,7 +46,7 @@ const PAST_LIMIT = 20
 
 const addUnique = <T,>(list: T[], item: T) => (list.includes(item) ? list : [...list, item])
 
-function reduceAnswers(a: Answers, action: Action, at: string, s: Scenario): Answers {
+function reduceAnswers(a: Answers, action: Action, at: string): Answers {
   switch (action.type) {
     case 'answer_herd':
       // "No" always asks for his own number afresh.
@@ -78,18 +78,9 @@ function reduceAnswers(a: Answers, action: Action, at: string, s: Scenario): Ans
       return { ...a, bank: { ...a.bank, account: action.account } }
     case 'answer_meadow':
       return { ...a, meadow: { answer: action.answer } }
-    case 'choose_measures': {
-      // A measure GSA suggested comes with the fields its evidence was about filled in.
-      const fill: Record<string, string[]> = {}
-      for (const g of s.suggestions) {
-        const pick = s.measures.find((m) => m.id === g.measureId)?.requirements.find((r) => r.kind === 'fields')
-        const key = pick && `${g.measureId}.${pick.id}`
-        if (key && g.fields && action.chosen.includes(g.measureId) && a.measures.inputs[key] === undefined) fill[key] = g.fields
-      }
-      const inputs = { ...a.measures.inputs, ...action.inputs }
-      for (const [k, v] of Object.entries(fill)) if (inputs[k] === undefined) inputs[k] = v
-      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true, inputs } }
-    }
+    case 'choose_measures':
+      // Nothing is filled in for him: GSA prepares, only Milan declares. A suggestion's fields are one tap away.
+      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true, inputs: { ...a.measures.inputs, ...action.inputs } } }
     case 'save_measure':
       return { ...a, measures: { ...a.measures, inputs: { ...a.measures.inputs, ...action.inputs } } }
     case 'reply_to_jelena':
@@ -147,7 +138,7 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
     if (!submitCheck(d.readiness, state.answers.declarationsSigned).canSubmit) return state
   }
   const actor: Actor = state.role === 'advisor' ? 'Jelena' : 'Milan'
-  const answers = reduceAnswers(state.answers, action, at, SCENARIOS[state.scenarioId])
+  const answers = reduceAnswers(state.answers, action, at)
   return {
     ...state,
     answers,

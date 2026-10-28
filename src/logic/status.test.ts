@@ -42,12 +42,11 @@ describe('status per item', () => {
     expect(out.paymentImpact).toEqual({ amountDinars: -27_000, areaHa: 1.5, reason: 'meadow_out' })
   })
 
-  it('choosing a measure GSA suggested fills in the fields its evidence was about', () => {
+  it('choosing a measure GSA suggested fills in nothing for him: only Milan declares', () => {
     const chosen = play('second_year', { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] }).answers.measures
-    expect(chosen.inputs['green_cover.cover_fields']).toEqual(['river', 'upper'])
-    // Only his promise is left.
+    expect(chosen.inputs['green_cover.cover_fields']).toBeUndefined()
     const r = run('second_year', { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] })
-    expect(measureGaps(SCENARIOS.second_year.measures.find((m) => m.id === 'green_cover')!, chosen.inputs).missing).toEqual(['cover_promise'])
+    expect(measureGaps(SCENARIOS.second_year.measures.find((m) => m.id === 'green_cover')!, chosen.inputs).missing).toEqual(['cover_fields', 'cover_promise'])
     expect(item(r, 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_incomplete', missing: ['green_cover'] })
   })
 

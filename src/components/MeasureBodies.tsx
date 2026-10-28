@@ -60,14 +60,8 @@ export function MeasuresBody() {
   // Once he has applied, an empty field says so; before that, each measure only says what's missing.
   const [tried, setTried] = useState(stored.confirmed)
 
-  const toggle = (m: Measure, on: boolean) => {
-    setChosen((c) => (on ? [...c.filter((x) => x !== m.id), m.id] : c.filter((x) => x !== m.id)))
-    // A suggested measure comes with the fields its evidence was about.
-    const g = suggested.find((x) => x.measureId === m.id)
-    const pick = m.requirements.find((r) => r.kind === 'fields')
-    const key = pick && `${m.id}.${pick.id}`
-    if (on && g?.fields && key) setDraft((d) => (d[key] === undefined ? { ...d, [key]: g.fields! } : d))
-  }
+  // Nothing is chosen or filled in for him: GSA prepares, only Milan declares.
+  const toggle = (m: Measure, on: boolean) => setChosen((c) => (on ? [...c.filter((x) => x !== m.id), m.id] : c.filter((x) => x !== m.id)))
 
   const apply = () => {
     const ids = fit.map((m) => m.id).filter((id) => chosen.includes(id))
@@ -87,6 +81,36 @@ export function MeasuresBody() {
   const option = (m: Measure) => {
     const on = chosen.includes(m.id)
     const g = suggested.find((x) => x.measureId === m.id)
+    const fields = on && (
+      <MeasureFields
+        m={m}
+        draft={draft}
+        suggestedFields={g?.fields}
+        showErrors={tried}
+        onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))}
+        onLeaveOut={() => toggle(m, false)}
+      />
+    )
+    // Last year's: unticked, one tap to apply again. Accidental declarations cost more than one tap each.
+    if (m.lastYear) {
+      return (
+        <li key={m.id} className="measure-option" data-on={on || undefined}>
+          <div className="measure-again">
+            <span className="flex flex-col gap-0.5">
+              <span className="font-medium leading-snug">{en.measures[m.id]}</span>
+              <span className="text-sm text-muted-foreground">{amountLine(m, derived)}</span>
+            </span>
+            <Button aria-pressed={on} onClick={() => toggle(m, !on)}>
+              {on ? <><Icon name="check" /> {t.applying}</> : t.applyAgain}
+              <span className="sr-only">: {en.measures[m.id]}</span>
+            </Button>
+          </div>
+          {fields}
+        </li>
+      )
+    }
+    // Suggested: why GSA thinks it fits (the fact and its source), what the state still checks, what he provides.
+    const own = userReqs(m)
     return (
       <li key={m.id} className="measure-option" data-on={on || undefined}>
         <Checkbox
@@ -96,21 +120,22 @@ export function MeasuresBody() {
           onChange={(v) => toggle(m, v)}
           hint={
             <>
-              {g && <span className="measure-line" data-strong>{g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}</span>}
+              {g && (
+                <span className="measure-line" data-strong>
+                  {g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}
+                  <span className="measure-source">
+                    <Icon name="records" size="sm" /> {g.winter ? en.source.winter(g.winter) : en.source.registry}
+                  </span>
+                </span>
+              )}
               <span className="measure-line">{amountLine(m, derived)}</span>
-              {!g && !m.lastYear && <span className="measure-line">{t.why[m.id]}</span>}
+              {!g && <span className="measure-line">{t.why[m.id]}</span>}
+              {g && tasks.suggest.checks[m.id] && <span className="measure-line">{tasks.suggest.checks[m.id]}</span>}
+              {g && !on && own.length > 0 && <span className="measure-line">{tasks.suggest.provide(own.map((r) => req(r).short).join(', '))}</span>}
             </>
           }
         />
-        {on && (
-          <MeasureFields
-            m={m}
-            draft={draft}
-            showErrors={tried}
-            onChange={(k, v) => setDraft((d) => ({ ...d, [k]: v }))}
-            onLeaveOut={() => toggle(m, false)}
-          />
-        )}
+        {fields}
       </li>
     )
   }
@@ -157,7 +182,7 @@ export function MeasuresBody() {
  * where the measure stands. Green only once everything is in; until then it says what's missing, and once
  * he has applied, each empty field says so. An answer that rules the measure out offers to leave it out.
  */
-function MeasureFields({ m, draft, showErrors, onChange, onLeaveOut }: { m: Measure; draft: Inputs; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void; onLeaveOut: () => void }) {
+function MeasureFields({ m, draft, suggestedFields, showErrors, onChange, onLeaveOut }: { m: Measure; draft: Inputs; suggestedFields?: string[]; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void; onLeaveOut: () => void }) {
   const { derived } = useApp()
   const gaps = measureGaps(m, draft)
   const ruledOut = m.requirements.find((r) => r.blocks !== undefined && draft[`${m.id}.${r.id}`] === r.blocks)
@@ -170,13 +195,22 @@ function MeasureFields({ m, draft, showErrors, onChange, onLeaveOut }: { m: Meas
           r.kind === 'auto' ? (
             <AutoLine key={r.id} r={r} d={derived} />
           ) : (
-            <RequirementInput
-              key={r.id}
-              r={r}
-              value={draft[`${m.id}.${r.id}`]}
-              error={showErrors && gaps.missing.includes(r.id) ? t.error[r.kind] : undefined}
-              onChange={(v) => onChange(`${m.id}.${r.id}`, v)}
-            />
+            <Stack key={r.id} gap="sm">
+              {/* The fields GSA's evidence was about: suggested, never ticked for him. One tap uses them. */}
+              {r.kind === 'fields' && suggestedFields && !(draft[`${m.id}.${r.id}`] as string[] | undefined)?.length && (
+                <div>
+                  <Button onClick={() => onChange(`${m.id}.${r.id}`, suggestedFields)}>
+                    {tasks.suggest.useFields(suggestedFields.map((f) => en.fields[f as keyof typeof en.fields]).join(', '))}
+                  </Button>
+                </div>
+              )}
+              <RequirementInput
+                r={r}
+                value={draft[`${m.id}.${r.id}`]}
+                error={showErrors && gaps.missing.includes(r.id) ? t.error[r.kind] : undefined}
+                onChange={(v) => onChange(`${m.id}.${r.id}`, v)}
+              />
+            </Stack>
           ),
         )}
       {ruledOut ? (

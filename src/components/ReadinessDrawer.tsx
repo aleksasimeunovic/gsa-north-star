@@ -36,7 +36,7 @@ export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open
               key={w.id}
               severity="warning"
               title={title(w.id)}
-              hint={w.why === 'waiting' ? c.waiting : taskSummary(w.id, derived, state)}
+              hint={taskSummary(w.id, derived, state)}
               onClick={() => onPick(w.id)}
             />
           ))}

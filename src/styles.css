@@ -165,6 +165,8 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .measure-line { display: block; }
 .measure-line[data-strong] { color: var(--foreground); }
+.measure-source { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--muted-foreground); font-size: 0.8125rem; }
+.measure-again { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); }
 .auto-line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border-radius: 12px; background: var(--muted); }
 
 /* Maps: the real satellite photo */

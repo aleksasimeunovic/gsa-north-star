@@ -91,7 +91,7 @@ function AfterAnswerToast({ flow }: { flow: Flow }) {
   const lines = [
     ...a.more.map(({ work }) => copy.more(tasks.work[work.id], copy.why[work.id] ?? '')),
     ...a.done.map((id) => copy.done(flow.title(id), outcome(id))),
-    ...a.waiting.map((id) => copy.waiting(flow.title(id))),
+    ...a.waiting.map((id) => copy.done(flow.title(id), outcome(id))),
     ...a.removed.map(({ work }) => copy.removed(tasks.work[work.id], tasks.reason[work.reason!])),
     ...a.added.map((id) => `${flow.title(id)}: ${outcome(id)}`),
   ]

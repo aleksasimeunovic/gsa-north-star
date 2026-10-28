@@ -4,7 +4,7 @@ import type { FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { SplitControls, useSplitDraft } from '../components/SplitTool'
-import { FarmMap, MapFacts, MapFallback, RiverInsight, mapContext, taskSummary } from '../components/TaskBodies'
+import { FarmMap, MapFact, MapFacts, MapFallback, taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
 import { Button } from '../ui/Button'
@@ -46,10 +46,13 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
   const head = (
     <header className="review-head">
       <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
-      <Text>
-        {item.status === 'action_required' ? mapContext(id) : taskSummary(id, derived, state)}{' '}
-        {item.status === 'action_required' && <Note kind="ai" />}
-      </Text>
+      {item.status === 'action_required' ? (
+        <div>
+          <MapFact id={id} /> <Note kind="ai" />
+        </div>
+      ) : (
+        <Text>{taskSummary(id, derived, state)}</Text>
+      )}
     </header>
   )
 
@@ -121,13 +124,20 @@ function RiverReview({ onAnswer, head }: BodyProps) {
       }
     >
       {head}
-      {asking && <RiverInsight />}
       {asking ? (
         <StageAction>
-          <ChoiceButtons legend={tasks.river.question} hint={tasks.river.hint} options={options(tasks.river.yes, tasks.river.no)} onChoose={answer} />
+          {/* Asked neutrally: the photo can't see what he planted. "Something else" leads to the split. */}
+          <ChoiceButtons
+            legend={tasks.river.question}
+            options={[
+              { value: 'same' as const, label: tasks.river.same },
+              { value: 'other' as const, label: tasks.river.other },
+            ]}
+            onChoose={(v) => answer(v === 'other' ? 'yes' : 'no')}
+          />
         </StageAction>
       ) : (
-        <AnswerLine legend={tasks.river.question} answer={a.answer === 'yes' ? tasks.river.answerYes : tasks.river.answerNo} onChange={() => setAsking(true)} />
+        <AnswerLine legend={tasks.river.question} answer={a.answer === 'yes' ? tasks.river.other : tasks.river.same} onChange={() => setAsking(true)} />
       )}
       {a.answer === 'yes' &&
         !asking &&
