@@ -185,8 +185,12 @@ button.drawer-row:hover { background: var(--hover); }
 .farm-map .ol-attribution { font-size: 0.6875rem; }
 .farm-map .ol-attribution ul { background: rgb(255 255 255 / 0.85); padding: 0 8px; border-radius: 8px; }
 .map-tools { display: flex; flex-wrap: wrap; gap: 8px; }
-.map-handle { width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 4px solid var(--primary); box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); cursor: grab; touch-action: none; }
-.map-grip { min-width: 56px; height: 44px; padding: 0 12px; border-radius: 24px; background: var(--primary); color: #fff; border: 2px solid #fff; box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); font: 700 1.25rem/1 var(--font-sans, sans-serif); cursor: grab; touch-action: none; }
+/* Map handles are controls, not actions: white and dark, never the primary green */
+.map-handle { width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 4px solid var(--foreground); box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); cursor: grab; touch-action: none; }
+.map-grip { min-width: 64px; height: 48px; padding: 0 16px; border-radius: 24px; background: #fff; color: var(--foreground); border: 3px solid var(--foreground); box-shadow: 0 2px 8px rgb(0 0 0 / 0.35); font: 700 1.375rem/1 var(--font-sans, sans-serif); cursor: grab; touch-action: none; }
+.edge-stepper { display: inline-flex; align-items: center; gap: var(--space-3); }
+.edge-stepper button { min-width: 48px; font-size: 1.25rem; }
+.edge-stepper output { min-width: 4rem; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 .map-handle:focus-visible, .map-grip:focus-visible { outline: 3px dashed #fff; outline-offset: 3px; }
 
 /* A large map with the question built in: the map fills the screen between the stepper and the action bar */
@@ -205,7 +209,8 @@ button.drawer-row:hover { background: var(--hover); }
   /* Below the map on a phone: the map takes what the panel doesn't need, the panel at most half */
   .map-stage { display: flex; flex-direction: column; }
   .map-stage-map { flex: 1 1 auto; min-height: 240px; }
-  .map-stage-panel { flex: 0 1 auto; max-height: 50%; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--space-4); }
+  .map-stage[data-working] .review-head, .map-stage[data-working] .answer > span:first-child { display: none; }
+  .map-stage-panel { flex: 0 1 auto; max-height: 60%; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--space-4); }
 }
 .map-frame[data-fill] { height: 100%; position: relative; }
 .map-frame[data-fill] .farm-map, .map-frame[data-fill] .farm-map[data-mode='draw'] { height: 100%; border-radius: 0; }

@@ -1,7 +1,4 @@
-import type { FeatureLike } from 'ol/Feature'
-import MultiPoint from 'ol/geom/MultiPoint'
-import type Polygon from 'ol/geom/Polygon'
-import { Circle, Fill, Stroke, Style, Text } from 'ol/style'
+import { Fill, Stroke, Style, Text } from 'ol/style'
 
 // Map styles on the satellite photo: white lines with a dark halo so they read on any field.
 // Greyscale like the rest of the prototype; the design system replaces these later.
@@ -71,10 +68,10 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
  * - land: land the government has registered as farmland (shown only when drawing)
  * - neighbour: the neighbour's declared field
  * - flag / strip / overlap: what changed, patterned so it never relies on colour
- * - mine / mine_problem: the shape he is drawing
+ * - mine: his field as he moves its edge
  * - split: the line that splits a field
  */
-export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'mine' | 'mine_problem' | 'split'
+export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'mine' | 'split'
 
 export function mapStyle(role: MapRole): Style[] {
   switch (role) {
@@ -92,20 +89,8 @@ export function mapStyle(role: MapRole): Style[] {
     case 'overlap':
       return [new Style({ fill: new Fill({ color: fills().hatch }) }), ...line(2)]
     case 'mine':
-    case 'mine_problem':
-      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.12)' }) }), ...line(role === 'mine' ? 3 : 4, role === 'mine' ? undefined : [8, 5]), corners]
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.12)' }) }), ...line(3)]
     case 'split':
       return line(4)
   }
 }
-
-/** His field's corners, always shown, so he can see what to drag. */
-const corners = new Style({
-  image: new Circle({ radius: 9, fill: new Fill({ color: white }), stroke: new Stroke({ color: halo, width: 3 }) }),
-  geometry: (f: FeatureLike) => new MultiPoint((f.getGeometry() as Polygon).getCoordinates()[0]),
-})
-
-/** The corner under his finger: large enough to grab. */
-export const vertexStyle = new Style({
-  image: new Circle({ radius: 12, fill: new Fill({ color: white }), stroke: new Stroke({ color: halo, width: 3 }) }),
-})

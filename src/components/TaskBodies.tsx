@@ -560,7 +560,7 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       if (item.detail === 'upper_moved' && f.signal?.kind === 'overlap') return tasks.upper.moved(formatHa(roundHa(f.areaHa - f.signal.overlapHa)))
       if (item.detail === 'upper_drawn' && drawn) return tasks.upper.drawn(formatHa(roundHa(polygonAreaHa(drawn))))
       if (item.detail === 'upper_drawn_overlaps') return tasks.upper.drawnOverlaps
-      if (item.detail === 'upper_needs_drawing') return draw.how
+      if (item.detail === 'upper_needs_drawing') return tasks.work.upper_redraw
       return tasks.upper.context
     }
     case 'fields_other': {

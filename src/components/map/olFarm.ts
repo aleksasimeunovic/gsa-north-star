@@ -16,8 +16,8 @@ import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import XYZ from 'ol/source/XYZ'
 import { en, formatHa, map as copy } from '../../copy/en'
-import type { Field, FieldId, Point, Polygon, Scenario } from '../../data/scenarios'
-import { bounds, centroid } from '../../logic/geometry'
+import type { FieldId, Point, Polygon, Scenario } from '../../data/scenarios'
+import { bounds, centroid, landOf } from '../../logic/geometry'
 import { fromMercator, toMercator } from '../../logic/geo'
 import { labelStyle, mapStyle, type MapRole } from '../../ui/mapStyles'
 
@@ -39,13 +39,7 @@ export interface FarmMapOptions {
 
 export type FarmMap = ReturnType<typeof createFarmMap>
 
-const inside = (p: Point, poly: Polygon) => {
-  const b = bounds(poly)
-  return p.x >= b.minX && p.x <= b.maxX && p.y >= b.minY && p.y <= b.maxY
-}
-
-/** The land the government has registered as farmland around a field. */
-export const landOf = (s: Scenario, field: Field) => s.blocks.find((b) => inside(centroid(field.polygon), b.polygon))?.polygon ?? field.polygon
+export { landOf }
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 

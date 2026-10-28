@@ -7,6 +7,8 @@ import { VisuallyHidden } from '../../ui/Layout'
 import type { SplitDraft } from '../SplitTool'
 import { createFarmMap, type FarmMap as Handle } from './olFarm'
 import { SplitOnMap } from './SplitOnMap'
+import { EdgeOnMap } from './EdgeOnMap'
+import type { EdgeDraft } from '../EdgeTool'
 
 interface Props {
   scenario: Scenario
@@ -21,10 +23,12 @@ interface Props {
   drawn?: Polygon | null
   /** Fills a map stage: as large as the screen allows, with its tools on the map. */
   fill?: boolean
+  /** Where the field ends, as one line he moves. */
+  edge?: { field: Field; d: EdgeDraft }
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, drawn, fill }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, drawn, fill, edge }: Props) {
   const el = useRef<HTMLDivElement>(null)
   const [fm, setFm] = useState<Handle | null>(null)
   const [large, setLarge] = useState(false)
@@ -82,6 +86,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, dra
         </VisuallyHidden>
       )}
       {split && fm && <SplitOnMap fm={fm} {...split} />}
+      {edge && fm && <EdgeOnMap fm={fm} {...edge} />}
     </div>
   )
 }

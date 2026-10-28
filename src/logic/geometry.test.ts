@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { centroid, clampToField, clipLineToPolygon, drawingProblems, fractionOfLine, inArea, lineAtFraction, overlapHa, partNames, polygonAreaHa, proposedSplitLine, selfCrosses, splitPolygon, translateLine } from './geometry'
+import { centroid, clampToField, clipLineToPolygon, fractionOfLine, inArea, lineAtFraction, moveBottomEdge, overlapHa, partNames, polygonAreaHa, proposedSplitLine, splitPolygon, translateLine } from './geometry'
 
 const fields = SCENARIOS.second_year.fields
 const river = fields.find((f) => f.id === 'river')!.polygon
@@ -96,24 +96,29 @@ describe('drawing a field', () => {
   const upper = s.fields.find((f) => f.id === 'upper')!
   const signal = upper.signal?.kind === 'overlap' ? upper.signal : null!
   const land = s.blocks.find((b) => b.id === 'block_2')!.polygon
-  const others = s.fields.filter((f) => f.id !== 'upper').map((f) => f.polygon)
-  const rect = (x: number, y: number, w: number, h: number) => [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }]
 
   it("last year's drawing overlaps the neighbour by 0.10 ha", () => {
     expect(overlapHa(upper.polygon, signal.neighbourPolygon)).toBe(0.1)
     expect(polygonAreaHa(signal.overlapPolygon)).toBeCloseTo(signal.overlapHa, 6)
   })
 
-  it('finds edges that cross each other', () => {
-    expect(selfCrosses(upper.polygon)).toBe(false)
-    expect(selfCrosses([{ x: 0, y: 0 }, { x: 10, y: 10 }, { x: 10, y: 0 }, { x: 0, y: 10 }])).toBe(true)
+  it('moving the edge 5 m up clears the overlap', () => {
+    expect(overlapHa(moveBottomEdge(upper.polygon, land, 235).polygon, signal.neighbourPolygon)).toBe(0)
   })
+})
 
-  it('names what stops a drawing: outside farmland, over his own field, crossing itself', () => {
-    expect(drawingProblems(upper.polygon, land, signal.neighbourPolygon, others)).toEqual(['overlaps_neighbour'])
-    expect(drawingProblems(rect(0, 140, 200, 95), land, signal.neighbourPolygon, others)).toEqual([])
-    expect(drawingProblems(rect(0, 140, 200, 120), land, null, others)).toContain('outside_land')
-    expect(drawingProblems(rect(0, 140, 260, 95), land, null, others)).toContain('overlaps_own')
-    expect(drawingProblems([{ x: 0, y: 140 }, { x: 200, y: 235 }, { x: 200, y: 140 }, { x: 0, y: 235 }], land, null, others)).toEqual(['crosses_itself'])
+describe('moving the shared edge as one line', () => {
+  const field = [{ x: 0, y: 140 }, { x: 200, y: 140 }, { x: 200, y: 240 }, { x: 0, y: 240 }]
+  const land = [{ x: 0, y: 140 }, { x: 370, y: 140 }, { x: 370, y: 240 }, { x: 0, y: 240 }]
+  it('moves both bottom corners together, with the live area', () => {
+    const r = moveBottomEdge(field, land, 235)
+    expect(r.polygon).toEqual([{ x: 0, y: 140 }, { x: 200, y: 140 }, { x: 200, y: 235 }, { x: 0, y: 235 }])
+    expect(polygonAreaHa(r.polygon)).toBeCloseTo(1.9)
+    expect(r.clamped).toBe(false)
+  })
+  it('stops at his registered land, and says so', () => {
+    const r = moveBottomEdge(field, land, 260)
+    expect(r.y).toBe(240)
+    expect(r.clamped).toBe(true)
   })
 })

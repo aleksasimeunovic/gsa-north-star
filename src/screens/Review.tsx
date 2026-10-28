@@ -1,9 +1,11 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
-import { en, finish, map, tasks } from '../copy/en'
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
+import { draw, en, finish, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { SplitControls, useSplitDraft } from '../components/SplitTool'
+import { EdgeControls, useEdgeDraft } from '../components/EdgeTool'
+import { landOf } from '../logic/geometry'
 import { FarmMap, MapFact, MapFacts, MapFallback, taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
@@ -13,8 +15,6 @@ import { Text, VisuallyHidden } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
 import { Note } from '../ui/Note'
 
-// Drawing where a field ends loads only when he needs it.
-const FieldEditor = lazy(() => import('../components/FieldEditor'))
 
 export type MapTask = 'field_river' | 'field_road' | 'field_upper'
 
@@ -110,6 +110,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
   return (
     <MapStage
       label={en.fields.river}
+      working={splitting}
       map={
         <Suspense fallback={<MapFallback mode="explore" fill />}>
           <FarmMap
@@ -207,6 +208,7 @@ function UpperReview({ onAnswer, head }: BodyProps) {
   const [asking, setAsking] = useState(a.answer === null)
   const [editing, setEditing] = useState(false)
   const drawing = a.answer === 'no' && !asking && (!a.drawn || editing)
+  const edge = useEdgeDraft(field, landOf(s, field), a.drawn ?? field.polygon)
 
   const question = asking ? (
     <StageAction>
@@ -224,27 +226,30 @@ function UpperReview({ onAnswer, head }: BodyProps) {
     <AnswerLine legend={tasks.upper.question} answer={a.answer === 'yes' ? tasks.upper.answerYes : tasks.upper.answerNo} onChange={() => setAsking(true)} />
   )
 
-  // Drawing where the field ends brings its own map and tools; his answer stays at the top of the panel.
+  // The strip is his: he moves the shared edge as one line, the split's interaction. His answer stays on top.
   if (drawing) {
     return (
-      <Suspense fallback={<MapFallback mode="explore" fill />}>
-        <FieldEditor
-          scenario={s}
-          fieldId="upper"
-          start={a.drawn ?? field.polygon}
-          head={
-            <>
-              {head}
-              {question}
-            </>
-          }
+      <MapStage
+        label={en.fields.upper}
+        working
+        map={
+          <Suspense fallback={<MapFallback mode="explore" fill />}>
+            <FarmMap scenario={s} focus="upper" mode="explore" fill label={`${map.title}: ${en.fields.upper}. ${draw.moveEdge}`} edge={{ field, d: edge }} />
+          </Suspense>
+        }
+      >
+        {head}
+        {question}
+        <EdgeControls
+          d={edge}
+          neighbour={field.signal?.kind === 'overlap' ? field.signal.neighbourPolygon : null}
           onSave={(polygon) => {
             onAnswer()
             dispatch({ type: 'set_upper_drawing', polygon })
             setEditing(false)
           }}
         />
-      </Suspense>
+      </MapStage>
     )
   }
 

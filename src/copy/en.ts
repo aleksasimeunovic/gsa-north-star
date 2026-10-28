@@ -1,6 +1,5 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
 import type { Crop, FieldId, MeasureId, Office, ScenarioId } from '../data/scenarios'
-import type { DrawingProblem } from '../logic/geometry'
 import type { RemovalReason, StepId, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
@@ -200,7 +199,7 @@ export const tasks = {
   confirm: "Yes, that's right",
   review: 'Review this boundary',
   reviewSplit: 'Split the field on the map',
-  reviewDraw: 'Draw where your field ends',
+  reviewDraw: 'Move the edge on the map',
 
   work: {
     river_split: 'Split the field',
@@ -349,9 +348,9 @@ export const tasks = {
     answerYes: "Moved to the neighbour's line",
     answerNo: 'The strip is mine',
     moved: (ha: string) => `Now ${ha}`,
-    drawn: (ha: string) => `Drawn by you, ${ha}`,
+    drawn: (ha: string) => `Your edge, ${ha}`,
     drawnOverlaps: "Your line and your neighbour's are both kept until the payments office checks them",
-    redraw: 'Draw it again',
+    redraw: 'Move the edge again',
   },
 
   pigs: {
@@ -496,26 +495,19 @@ export const map = {
   back: 'Back to your application',
 }
 
-/** Drawing where a field ends, on a real map. */
+/** Where a field ends, moved as one line on a real map. */
 export const draw = {
-  label: (field: string) => `Map: drag the corners of the ${field.toLowerCase()} to where it ends`,
-  how: 'Drag a corner, or drag an edge to add one',
   area: (ha: string) => `Your field: ${ha}`,
   loading: 'Loading the map',
-  problem: {
-    crosses_itself: 'The edges cross each other, so move a corner back to make one shape',
-    outside_land: "Part of the field is outside registered farmland, which can't get support. Move the corner back inside the dashed line",
-    overlaps_neighbour: '',
-    overlaps_own: 'The field runs into another of your fields, so move the corner back',
-    too_small: "The field is too small, so start again from last year's line",
-  } satisfies Record<DrawingProblem, string>,
   stillOverlaps: (ha: string) => `Your line still runs ${ha} into your neighbour's field. If that's right, save it and the payments office checks both lines`,
+  stepperLabel: 'Where your field ends, in metres from the top',
+  metres: (n: number) => `${n} m`,
+  up: 'Move the edge up 1 metre',
+  down: 'Move the edge down 1 metre',
+  moveEdge: 'Drag to move where your field ends',
+  keys: 'Arrow keys move it',
   undo: 'Undo',
-  reset: "Start again from last year's line",
   save: 'Save my field',
-  useSlider: 'Use a slider instead',
-  useMap: 'Drag on the map instead',
-  sliderLabel: 'Where your field ends at the bottom, in metres from the top',
 }
 
 export const split = {

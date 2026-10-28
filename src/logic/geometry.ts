@@ -186,47 +186,24 @@ export function clipToConvex(subject: Polygon, area: Polygon): Polygon {
 /** How much of one polygon lies inside a convex other, in hectares. */
 export const overlapHa = (poly: Polygon, convexOther: Polygon) => roundHa(polygonAreaHa(clipToConvex(poly, convexOther)))
 
-const segmentsCross = (p1: Point, p2: Point, q1: Point, q2: Point) => {
-  const d1 = side(q1, p1, p2)
-  const d2 = side(q2, p1, p2)
-  const d3 = side(p1, q1, q2)
-  const d4 = side(p2, q1, q2)
-  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
-}
-
-/** A drawn edge that crosses another edge of the same shape. */
-export function selfCrosses(poly: Polygon): boolean {
-  const n = poly.length
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 2; j < n; j++) {
-      if (i === 0 && j === n - 1) continue // neighbouring edges share a corner
-      if (segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])) return true
-    }
-  }
-  return false
-}
-
-export type DrawingProblem = 'crosses_itself' | 'outside_land' | 'overlaps_neighbour' | 'overlaps_own' | 'too_small'
-
-/** Below this, a difference is drawing noise, not land. */
-const TOLERANCE_HA = 0.01
-
 /**
- * What stops a drawn field from being saved, explained where it happens.
- * Registered land and other fields are convex in this scenario.
+ * The field's shared edge moved as one line, never point by point: every corner on the bottom edge goes
+ * to `y`. The guardrail keeps the line on his registered land and leaves the field at least 10 m deep.
  */
-export function drawingProblems(
-  poly: Polygon,
-  land: Polygon,
-  neighbour: Polygon | null,
-  ownOthers: Polygon[],
-): DrawingProblem[] {
-  const out: DrawingProblem[] = []
-  // A crossed shape can add up to almost no area, so say what's actually wrong first.
-  if (poly.length >= 3 && selfCrosses(poly)) return ['crosses_itself']
-  if (poly.length < 3 || polygonAreaHa(poly) < TOLERANCE_HA) return ['too_small']
-  if (polygonAreaHa(poly) - polygonAreaHa(clipToConvex(poly, land)) > TOLERANCE_HA) out.push('outside_land')
-  if (neighbour && overlapHa(poly, neighbour) > TOLERANCE_HA) out.push('overlaps_neighbour')
-  if (ownOthers.some((o) => overlapHa(poly, o) > TOLERANCE_HA)) out.push('overlaps_own')
-  return out
+export function moveBottomEdge(poly: Polygon, land: Polygon, y: number): { polygon: Polygon; y: number; clamped: boolean } {
+  const b = bounds(poly)
+  const lo = b.minY + 10
+  const hi = bounds(land).maxY
+  const at = Math.round(Math.min(hi, Math.max(lo, y)) * 10) / 10
+  return { polygon: poly.map((p) => (p.y === b.maxY ? { x: p.x, y: at } : p)), y: at, clamped: at !== Math.round(y * 10) / 10 }
+}
+
+/** The land the government has registered as farmland around a field. */
+export function landOf(s: { blocks: { polygon: Polygon }[] }, field: { polygon: Polygon }): Polygon {
+  const c = centroid(field.polygon)
+  const inside = (poly: Polygon) => {
+    const b = bounds(poly)
+    return c.x >= b.minX && c.x <= b.maxX && c.y >= b.minY && c.y <= b.maxY
+  }
+  return s.blocks.find((b) => inside(b.polygon))?.polygon ?? field.polygon
 }
