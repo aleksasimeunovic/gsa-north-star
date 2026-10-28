@@ -31,6 +31,15 @@ export interface Estimate {
 
 const round = (n: number, to: number) => Math.round(n / to) * to
 
+/**
+ * What the estimate can say, never "about 0 dinars":
+ * - none: no basis yet (no measure chosen, or only ones worked out after checks): no number, and what it needs
+ * - provisional: the amount and what it waits for
+ * - current: the amount and the caveat
+ */
+export type EstimateState = 'none' | 'provisional' | 'current'
+export const estimateState = (e: Estimate): EstimateState => (e.totalDinars <= 0 ? 'none' : e.pending.length ? 'provisional' : 'current')
+
 /** What can change the estimate: area (road, the neighbour's line, the meadow), the measures chosen, the receipts that justify them. */
 const CAN_CHANGE: ItemId[] = ['field_road', 'field_upper', 'field_meadow', 'measures', 'receipts']
 

@@ -25,18 +25,18 @@ export function StepOutline({ flow }: { flow: Flow }) {
         {tasks.map((t) => {
           const now = t.id === flow.focus
           return (
-            <li key={t.id} data-status={t.status} data-now={now || undefined}>
+            <li key={t.id} data-mark={t.mark} data-now={now || undefined}>
               {/* One button per row, so the hover covers the mark and the name together. */}
               <button type="button" className="outline-row" aria-current={now ? 'true' : undefined} onClick={() => flow.show(t.id)}>
-                {t.status === 'action_required' ? (
+                {now ? (
                   <span className="outline-mark">
-                    <Icon name={now ? 'now' : 'todo'} size="sm" />
+                    <Icon name="now" size="sm" />
                   </span>
                 ) : (
-                  <StatusBadge status={t.status} iconOnly />
+                  <StatusBadge mark={t.mark} iconOnly />
                 )}
                 <span className="row-title">{flow.title(t.id)}</span>
-                {t.status === 'action_required' && <span className="visually-hidden">, {now ? home.now : home.todo}</span>}
+                {now && <span className="row-now">{home.now}</span>}
               </button>
             </li>
           )

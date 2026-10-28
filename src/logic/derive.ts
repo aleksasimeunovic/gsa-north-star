@@ -19,7 +19,7 @@ export function derive(state: AppState) {
     list,
     changes: detectChanges(scenario),
     readiness: readiness(scenario, state.answers, items),
-    report: readinessReport(scenario, state.answers, items, list.todo.map((t) => t.id)),
+    report: readinessReport(scenario, state.answers, [...list.todo, ...list.waiting, ...list.done]),
     estimate: estimate(scenario, state.answers, items),
     farm: farmPicture(scenario, state.answers, items),
   }

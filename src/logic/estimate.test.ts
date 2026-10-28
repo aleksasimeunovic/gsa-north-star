@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { halfSplit, lastYear, run } from './testUtils'
+import { estimateState } from './estimate'
+import { halfSplit, lastYear, ready, run } from './testUtils'
 
 const split = halfSplit()
+
+describe('estimate state', () => {
+  it('has no basis before he chooses a measure, so no number (never about 0 dinars)', () => {
+    expect(estimateState(run('second_year').estimate)).toBe('none')
+    expect(estimateState(run('second_year', { type: 'choose_measures', chosen: ['fertiliser'] }).estimate)).toBe('none')
+  })
+  it('is provisional while something that could change it is unanswered, then current', () => {
+    expect(estimateState(run('second_year', lastYear).estimate)).toBe('provisional')
+    expect(estimateState(run('second_year', ...ready).estimate)).toBe('current')
+  })
+})
 
 describe('estimate', () => {
   it('starts at 9.00 × 18,000 + 14 × 20,000 = 442,000', () => {

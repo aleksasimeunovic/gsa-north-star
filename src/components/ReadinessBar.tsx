@@ -46,6 +46,6 @@ export function readinessHeadline(r: Report) {
 /** The drawer's title: here, and only here, the count of what's left. */
 export function readinessCount(r: Report) {
   const h = en.readiness.headline
-  if (r.verdict === 'blocked') return h.count(r.errors.length)
+  if (r.verdict === 'blocked') return h.count(r.errors.length + r.todo.length)
   return readinessHeadline(r)
 }

@@ -8,6 +8,7 @@ import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
 import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
+import { markOf } from '../logic/severity'
 
 // Date follows the prototype clock; the time is real.
 /** Never ambiguous: submitted, when, which number, what next. */
@@ -66,7 +67,7 @@ export function Receipt() {
           <ul className="status-list">
             {awaiting.map((i) => (
               <li key={i.id}>
-                <StatusBadge status={i.status} iconOnly />
+                <StatusBadge mark={markOf(i)} iconOnly />
                 <span>
                   <strong>{taskTitle(i.id)}</strong>
                   <span className="hint">{taskSummary(i.id, derived, state)}</span>

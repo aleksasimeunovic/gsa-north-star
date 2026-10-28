@@ -1,4 +1,4 @@
-import { steps as copy } from '../copy/en'
+import { en, steps as copy } from '../copy/en'
 import { Icon } from '../ui/Icon'
 import { Progress } from '../ui/Progress'
 import { useApp } from './AppContext'
@@ -6,10 +6,13 @@ import { stepIcon } from './taskIcon'
 import { stepMark, type StepId } from '../logic/application'
 import type { Flow } from './useApplicationFlow'
 
+const ICON = { done: 'complete', look: 'warning', error: 'error' } as const
+
 /**
  * The parts of his application, generated around his farm: a part with nothing for his farm is left out.
- * Each says what's left in it, and any part can be opened. On a phone it shrinks to where he is and a bar.
- * A part's mark says how it stands: a tick, a warning or error for what's left, info for a check it waits on.
+ * The open part says what's left in it, and any part can be opened. On a phone it shrinks to where he is
+ * and a bar. A part's mark comes from the same status signal as every screen: a tick when done, orange for
+ * something to look at, red only for something wrong. Work not done yet stays neutral.
  */
 export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (id: StepId) => void }) {
   const { derived } = useApp()
@@ -28,21 +31,20 @@ export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (
       <ol>
         {list.map((s, i) => {
           const current = s.id === flow.step.id
-          const mark = stepMark(s, flow.step.id, flow.seen)
-          // What's left is said for the part he is in and for a part marked; a done part shows its tick.
-          const status =
-            current && s.id !== 'submit' ? copy.status(s.left) : mark === 'warning' || mark === 'error' ? copy.status(s.left) : mark === 'info' ? copy.waiting : ''
+          const mark = stepMark(s, flow.step.id)
+          // What's left is said for the part he is in; elsewhere only what to fix or look at.
+          const status = current && s.id !== 'submit' ? copy.status(s.left) : mark === 'error' ? en.mark.error : mark === 'look' ? (s.waiting ? en.mark.waiting : en.mark.payment) : ''
           return (
             <li key={s.id} data-state={current ? 'current' : 'todo'} data-mark={mark}>
               <button type="button" aria-current={current ? 'step' : undefined} onClick={() => onStep(s.id)}>
                 <span className="step-mark" aria-hidden="true">
-                  <Icon name={mark === 'part' ? stepIcon(s.id) : mark} />
+                  <Icon name={mark === 'part' ? stepIcon(s.id) : ICON[mark]} />
                   <span className="sr-only">{i + 1}</span>
                 </span>
                 <span className="step-text">
                   <span className="step-name">{copy.name[s.id]}</span>
                   {status && <span className="step-status">{status}</span>}
-                  {mark === 'complete' && <span className="sr-only">{copy.done}</span>}
+                  {mark === 'done' && <span className="sr-only">{en.mark.done}</span>}
                 </span>
               </button>
             </li>

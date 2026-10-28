@@ -74,6 +74,8 @@ export interface Item {
   conflict?: { record: number; his: number; owner: 'animal_registry' | 'land_map' }
   /** For measures: the chosen ones that still need him. */
   missing?: string[]
+  /** Something is wrong and he must fix it, as opposed to work he simply hasn't done. */
+  problem?: true
 }
 
 const plantRate = (s: Scenario) => s.measures.find((m) => m.id === 'plant_production')?.rateDinars ?? 0
@@ -205,8 +207,9 @@ export function measuresItem(s: Scenario, a: Answers): Item {
     const g = measureGaps(x, m.inputs)
     return g.ruledOut || g.missing.length > 0
   })
+  const ruledOut = open.some((x) => measureGaps(x, m.inputs).ruledOut)
   return open.length
-    ? { id: 'measures', status: 'action_required', detail: 'measures_incomplete', missing: open.map((x) => x.id) }
+    ? { id: 'measures', status: 'action_required', detail: 'measures_incomplete', missing: open.map((x) => x.id), ...(ruledOut ? { problem: true as const } : {}) }
     : { id: 'measures', status: 'complete', detail: 'measures_chosen' }
 }
 
@@ -268,9 +271,9 @@ export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = 
   const unreadable = s.documents.some((d) => d.attached && d.unreadable) && !a.attachedDocuments.includes('unreadable_receipt')
   add(
     missing
-      ? { id: 'receipts', status: 'action_required', detail: 'receipts_missing' }
+      ? { id: 'receipts', status: 'action_required', detail: 'receipts_missing', problem: true }
       : unreadable
-        ? { id: 'receipts', status: 'action_required', detail: 'receipts_unreadable' }
+        ? { id: 'receipts', status: 'action_required', detail: 'receipts_unreadable', problem: true }
         : confirmedItem('receipts', a.confirmed.includes('receipts'), 'receipts_to_confirm', 'receipts_confirmed'),
   )
   return items

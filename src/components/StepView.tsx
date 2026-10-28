@@ -40,7 +40,7 @@ function NextAction({ flow }: { flow: Flow }) {
           {task.kind === 'change' && <Note kind="ai" />}
           <div className="next-head">
             <h3 id="next-title" tabIndex={-1}>{heading}</h3>
-            {!needsHim && <StatusBadge status={task.status} />}
+            {!needsHim && <StatusBadge mark={task.mark} />}
           </div>
         </div>
       </div>

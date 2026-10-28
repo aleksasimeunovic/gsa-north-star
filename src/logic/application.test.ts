@@ -181,18 +181,19 @@ describe('parts and kinds of work', () => {
 })
 
 describe('step marks', () => {
-  const step = (id: Step['id'], left: number, waiting = 0): Step => ({ id, tasks: [], left, waiting })
-  it('keeps the part icon for the open part, for check and submit and for parts not opened yet', () => {
-    expect(stepMark(step('land', 3), 'land', new Set())).toBe('part')
-    expect(stepMark(step('submit', 0), 'land', new Set())).toBe('part')
-    expect(stepMark(step('animals', 2), 'land', new Set())).toBe('part')
+  const step = (id: Step['id'], left: number, o: { waiting?: number; errors?: number; look?: number } = {}): Step => ({ id, tasks: [], left, waiting: o.waiting ?? 0, errors: o.errors ?? 0, look: o.look ?? 0 })
+  it('keeps the part icon for the open part, for check and submit and for work not done yet, opened or not', () => {
+    expect(stepMark(step('land', 3), 'land')).toBe('part')
+    expect(stepMark(step('submit', 0), 'land')).toBe('part')
+    expect(stepMark(step('animals', 2), 'land')).toBe('part')
+    // Red never marks work he simply hasn't done, even on check and submit.
+    expect(stepMark(step('animals', 2), 'submit')).toBe('part')
   })
-  it('warns about a part he left with things to do, and makes it an error once he is on check and submit', () => {
-    expect(stepMark(step('animals', 2), 'land', new Set(['animals']))).toBe('warning')
-    expect(stepMark(step('animals', 2), 'submit', new Set())).toBe('error')
+  it('marks a part red only when something in it is wrong', () => {
+    expect(stepMark(step('documents', 1, { errors: 1 }), 'land')).toBe('error')
   })
-  it('ticks a done part, and marks one with something waiting for a check as info', () => {
-    expect(stepMark(step('details', 0), 'land', new Set())).toBe('complete')
-    expect(stepMark(step('animals', 0, 1), 'land', new Set())).toBe('info')
+  it('ticks a done part; orange when something waits for a check or lowers the payment', () => {
+    expect(stepMark(step('details', 0), 'land')).toBe('done')
+    expect(stepMark(step('animals', 0, { waiting: 1, look: 1 }), 'land')).toBe('look')
   })
 })

@@ -14,6 +14,7 @@ import { Checkbox } from '../ui/Checkbox'
 import { Stack, Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
+import { markOf } from '../logic/severity'
 
 /**
  * The last part: his farm as he is about to declare it and the estimate, then an unambiguous submission:
@@ -46,7 +47,7 @@ export function SubmitStep({ flow }: { flow: Flow }) {
           <ul className="status-list">
             {readiness.awaiting.map((i) => (
               <li key={i.id}>
-                <StatusBadge status={i.status} iconOnly />
+                <StatusBadge mark={markOf(i)} iconOnly />
                 <span>
                   <strong>{flow.title(i.id)}</strong>
                   <span className="hint">{taskSummary(i.id, derived, state)}</span>

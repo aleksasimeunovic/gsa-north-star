@@ -9,6 +9,8 @@ import { readinessCount } from './ReadinessBar'
 import { taskSummary } from './TaskBodies'
 import { taskTitle } from './useApplicationFlow'
 
+const ICON = { error: 'error', todo: 'todo', look: 'warning', info: 'info' } as const
+
 /**
  * Whether he can submit, in three groups that never mix: what stops him, what he can submit with but
  * should look at (a check, a lower payment), and what's good to know. Each row is one target.
@@ -29,12 +31,19 @@ export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open
           ))}
         </Group>
       )}
+      {r.todo.length > 0 && (
+        <Group severity="todo">
+          {r.todo.map((id) => (
+            <Row key={id} severity="todo" title={title(id)} hint={taskSummary(id, derived, state)} onClick={() => onPick(id)} />
+          ))}
+        </Group>
+      )}
       {r.warnings.length > 0 && (
-        <Group severity="warning">
+        <Group severity="look">
           {r.warnings.map((w) => (
             <Row
               key={w.id}
-              severity="warning"
+              severity="look"
               title={title(w.id)}
               hint={taskSummary(w.id, derived, state)}
               onClick={() => onPick(w.id)}
@@ -65,7 +74,7 @@ function Row({ severity, title, hint, onClick }: { severity: Severity; title: st
     <>
       {/* The kind (stops you, look at this, good to know) is the icon's tooltip; the shape and colour say it at a glance. */}
       <span className="drawer-mark" data-severity={severity} title={en.readiness.group[severity]}>
-        <Icon name={severity} />
+        <Icon name={ICON[severity]} />
         <span className="sr-only">{en.readiness.group[severity]}: </span>
       </span>
       <span className="drawer-text">

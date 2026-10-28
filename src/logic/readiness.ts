@@ -1,6 +1,6 @@
 import type { Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import type { TaskId } from './application'
+import type { Task, TaskId } from './application'
 import type { Item, ItemId, Status } from './status'
 
 export type ApplicationState = 'waiting_for_renewal' | 'action_required' | 'ready_to_submit' | 'submitted'
@@ -42,13 +42,14 @@ export function readiness(s: Scenario, a: Answers, items: Item[]): Readiness {
 }
 
 /**
- * How sure he can be about submitting, said as one verdict. Three severities, never mixed:
- * - error: stops him submitting (anything that needs his action, or no renewal)
- * - warning: he can submit, but something waits for a check or lowers his payment
- * - info: good to know, nothing to do (what the state still checks)
- * So three warnings still mean "ready to submit", and a single error means he can't.
+ * How sure he can be about submitting, said as one verdict, from the same marks every screen shows:
+ * - error: something wrong he must fix (red). Stops him submitting.
+ * - todo: work he hasn't done (neutral). Stops him submitting, but is not an error.
+ * - look: he can submit, but something waits for a check or lowers his payment (orange).
+ * - info: good to know, nothing to do (what the state still checks).
+ * So three things to look at still mean "ready to submit", and a single thing to do means he can't.
  */
-export type Severity = 'error' | 'warning' | 'info'
+export type Severity = 'error' | 'todo' | 'look' | 'info'
 export type Verdict = 'renewal' | 'blocked' | 'ready_with_warnings' | 'ready' | 'submitted'
 export interface Warning {
   id: ItemId
@@ -57,15 +58,19 @@ export interface Warning {
 export type Info = 'state_checks' | 'unpriced'
 export interface Report {
   verdict: Verdict
-  /** Tasks that stop him submitting, in the list's order. */
+  /** Something wrong to fix, in the list's order. */
   errors: TaskId[]
+  /** Work not done yet, in the list's order. */
+  todo: TaskId[]
   warnings: Warning[]
   info: Info[]
 }
 
-export function readinessReport(s: Scenario, a: Answers, items: Item[], todo: TaskId[]): Report {
-  const warnings: Warning[] = items.flatMap((i): Warning[] =>
-    i.status === 'awaiting_verification' ? [{ id: i.id, why: 'waiting' }] : i.status === 'complete' && i.paymentImpact ? [{ id: i.id, why: 'payment' }] : [],
+export function readinessReport(s: Scenario, a: Answers, tasks: Task[]): Report {
+  const errors = tasks.filter((t) => t.mark === 'error').map((t) => t.id)
+  const todo = tasks.filter((t) => t.mark === 'todo').map((t) => t.id)
+  const warnings: Warning[] = tasks.flatMap((t): Warning[] =>
+    t.id !== 'renewal' && (t.mark === 'waiting' || t.mark === 'payment') ? [{ id: t.id, why: t.mark }] : [],
   )
   const unpriced = s.measures.some((m) => m.fits && !m.rateDinars && a.measures.chosen.includes(m.id))
   const info: Info[] = ['state_checks', ...(unpriced ? (['unpriced'] as const) : [])]
@@ -73,12 +78,12 @@ export function readinessReport(s: Scenario, a: Answers, items: Item[], todo: Ta
     ? 'submitted'
     : !isRenewed(s, a)
       ? 'renewal'
-      : todo.length
+      : todo.length || errors.length
         ? 'blocked'
         : warnings.length
           ? 'ready_with_warnings'
           : 'ready'
-  return { verdict, errors: todo, warnings, info }
+  return { verdict, errors, todo, warnings, info }
 }
 
 const DAY_MS = 86_400_000

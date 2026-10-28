@@ -1,6 +1,7 @@
 import type { Scenario } from '../data/scenarios'
 import type { Answers, Role } from '../state/actions'
 import { isRenewed } from './readiness'
+import { markOf, type Mark } from './severity'
 import type { Item, ItemId, Status } from './status'
 
 export type TaskId = 'renewal' | ItemId
@@ -40,6 +41,8 @@ export const STEPS: StepId[] = ['details', 'animals', 'land', 'measures', 'docum
 export interface Task {
   id: TaskId
   status: Status
+  /** The one status signal every screen shows. */
+  mark: Mark
   kind: TaskKind
   step: StepId
   work: Work[]
@@ -48,9 +51,13 @@ export interface Task {
 export interface Step {
   id: StepId
   tasks: Task[]
-  /** How many tasks in this part still need him. */
+  /** How many tasks in this part still need him (to do or to fix). */
   left: number
   waiting: number
+  /** Something in this part is wrong and must be fixed. */
+  errors: number
+  /** Something in this part to look at: a check he waits for, or a lower payment. */
+  look: number
 }
 
 export interface ApplicationList {
@@ -128,8 +135,11 @@ const order = (t: Task) => (t.id === 'renewal' ? -1 : STEPS.indexOf(t.step) * 10
  */
 export function applicationList(s: Scenario, a: Answers, items: Item[], role: Role): ApplicationList {
   const all: Task[] = []
-  if (!s.renewed) all.push({ id: 'renewal', status: isRenewed(s, a) ? 'complete' : 'action_required', kind: 'choice', step: 'details', work: [] })
-  for (const item of items) all.push({ id: item.id, status: item.status, kind: kindOf(item.id), step: stepOf(item.id), work: workFor(item.id, a, item) })
+  if (!s.renewed) {
+    const status = isRenewed(s, a) ? 'complete' : 'action_required'
+    all.push({ id: 'renewal', status, mark: markOf({ status }), kind: 'choice', step: 'details', work: [] })
+  }
+  for (const item of items) all.push({ id: item.id, status: item.status, mark: markOf(item), kind: kindOf(item.id), step: stepOf(item.id), work: workFor(item.id, a, item) })
   // Stable sort: by part, then by kind, keeping the order within each.
   const sorted = all.map((t, i) => [t, i] as const).sort(([x, i], [y, j]) => order(x) - order(y) || i - j).map(([t]) => t)
 
@@ -142,6 +152,8 @@ export function applicationList(s: Scenario, a: Answers, items: Item[], role: Ro
       tasks,
       left: tasks.filter((t) => t.status === 'action_required').length,
       waiting: tasks.filter((t) => t.status === 'awaiting_verification').length,
+      errors: tasks.filter((t) => t.mark === 'error').length,
+      look: tasks.filter((t) => t.mark === 'waiting' || t.mark === 'payment').length,
     }
   }).filter((st) => st.tasks.length > 0 || st.id === 'submit')
   return {
@@ -157,16 +169,16 @@ export function applicationList(s: Scenario, a: Answers, items: Item[], role: Ro
 export const allTasks = (l: ApplicationList) => [...l.todo, ...l.waiting, ...l.done]
 
 /**
- * The mark on a part in the stepper, in the readiness drawer's terms. A part he hasn't opened keeps its
- * own icon, so nothing is flagged on arrival. One he left with things to do is a warning; once he is on
- * check and submit, those stop him submitting and become errors. Done with something waiting for a check
- * is info; done is a tick. Payment impact never sets a mark.
+ * The mark on a part in the stepper, from the same status signal as every other screen. Red only when
+ * something in it is wrong; work not done yet keeps the part's own icon (neutral), whether or not he has
+ * opened it. Done with something to look at (a check, a lower payment) is orange; done is a tick.
  */
-export type StepMark = 'part' | 'complete' | 'warning' | 'error' | 'info'
-export function stepMark(s: Step, at: StepId, seen: ReadonlySet<StepId>): StepMark {
+export type StepMark = 'part' | 'done' | 'look' | 'error'
+export function stepMark(s: Step, at: StepId): StepMark {
   if (s.id === 'submit' || s.id === at) return 'part'
-  if (s.left > 0) return at === 'submit' ? 'error' : seen.has(s.id) ? 'warning' : 'part'
-  return s.waiting > 0 ? 'info' : 'complete'
+  if (s.errors > 0) return 'error'
+  if (s.left > 0) return 'part'
+  return s.look > 0 ? 'look' : 'done'
 }
 
 /** Work his last answer added: said with its reason, so the finish line never moves silently. */

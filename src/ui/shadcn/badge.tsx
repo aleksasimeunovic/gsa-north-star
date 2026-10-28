@@ -13,6 +13,7 @@ export const badgeVariants = cva(
         success: 'border-transparent bg-success-surface text-success',
         warning: 'border-warning-border bg-warning-surface text-warning-text [&_svg]:text-warning',
         info: 'border-info-border bg-info-surface text-info',
+        error: 'border-transparent bg-error-surface text-error',
         meta: 'border-dashed border-meta bg-meta-surface text-meta',
       },
     },

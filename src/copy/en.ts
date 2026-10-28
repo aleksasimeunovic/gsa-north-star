@@ -5,7 +5,8 @@ import type { RemovalReason, StepId, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
 import type { Severity } from '../logic/readiness'
-import type { ImpactReason, Status } from '../logic/status'
+import type { ImpactReason } from '../logic/status'
+import type { Mark } from '../logic/severity'
 
 const num = new Intl.NumberFormat('en-GB')
 export const formatNumber = (n: number) => num.format(Math.round(n))
@@ -27,11 +28,14 @@ export const en = {
   change: 'Change',
   close: 'Close',
 
-  status: {
-    complete: 'Complete',
-    action_required: 'Needs your action',
-    awaiting_verification: 'Awaiting verification',
-  } satisfies Record<Status, string>,
+  /** The one status signal, worded the same on every screen. */
+  mark: {
+    done: 'Done',
+    todo: 'To do',
+    waiting: 'Waiting for a check',
+    payment: 'Lower payment',
+    error: 'Needs fixing',
+  } satisfies Record<Mark, string>,
 
   readiness: {
     headline: {
@@ -43,8 +47,9 @@ export const en = {
       submitted: 'Submitted',
     },
     group: {
-      error: 'Stops you submitting',
-      warning: "You can submit, but look at these",
+      error: 'Needs fixing',
+      todo: 'To do before you submit',
+      look: 'You can submit, but look at these',
       info: 'Good to know',
     } satisfies Record<Severity, string>,
     info: {
@@ -89,7 +94,8 @@ export const en = {
 
   estimate: {
     title: 'Estimated subsidy',
-    basis: "Based on what you've told us",
+    none: 'Your estimate appears once you choose your measures',
+    afterChecks: 'Your measures are worked out after checks',
     provisional: (what: string) => `Provisional until you've checked ${what}`,
     pending: { field_road: 'the road field', field_upper: 'the upper field', field_meadow: 'the meadow', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
     about: (d: string) => `About ${d}`,
@@ -98,7 +104,6 @@ export const en = {
     how: 'How is this worked out?',
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} = ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} = ${total}`,
-    total: (t: string) => `Total: ${t}`,
   },
 
   /** Where a fact comes from, and when. */

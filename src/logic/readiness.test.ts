@@ -57,10 +57,17 @@ describe('application state', () => {
 })
 
 describe('readiness verdict', () => {
-  it("anything that needs him is an error: he can't submit", () => {
+  it("work not done yet is to do, not an error, and still stops him submitting; only the blurry receipt is an error", () => {
     const r = run('second_year').report
     expect(r.verdict).toBe('blocked')
-    expect(r.errors).toHaveLength(11)
+    expect(r.todo).toHaveLength(10)
+    expect(r.errors).toEqual(['receipts'])
+  })
+
+  it('a missing required document and a ruled-out measure are errors', () => {
+    expect(run('missing_document').report.errors).toEqual(['receipts'])
+    const r = run('second_year', { type: 'choose_measures', chosen: ['breeding_cattle'], inputs: { 'breeding_cattle.herd_book': 'no' } }).report
+    expect(r.errors).toContain('measures')
   })
 
   it('no renewal comes first', () => {
