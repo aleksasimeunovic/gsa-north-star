@@ -17,8 +17,8 @@ import { Note } from '../ui/Note'
 import { StageAction } from '../ui/MapStage'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { useApp, type AppCtx } from './AppContext'
-import { SendToJelena } from './SendToJelena'
 import { MeasuresBody, measureSummary } from './MeasureBodies'
+import { AddedBody, BoughtBody, fieldLine } from './NewField'
 
 // Maps load only when one is shown.
 export const FarmMap = lazy(() => import('./map/FarmMap'))
@@ -93,7 +93,6 @@ function HerdBody() {
   const a = state.answers.herd
   const [count, setCount] = useState(a.ownCount?.toString() ?? '')
   const [error, setError] = useState<string | undefined>()
-  const [composing, setComposing] = useState(false)
   const jelena = milanCaseState(state)
   const c = item.conflict
 
@@ -148,17 +147,8 @@ function HerdBody() {
           {/* The one exception, said as four plain answers: done, who, anything to do, what next. */}
           <Answers items={herdSettled(!!jelena, c.record)} />
           <Note kind="assumption" />
-          {jelena === 'waiting_farmer' ? (
-            <ReplyToJelena />
-          ) : jelena ? (
-            <Banner>{tasks.jelena.state[jelena]}</Banner>
-          ) : composing ? (
-            <SendToJelena itemId="herd" onDone={() => setComposing(false)} />
-          ) : (
-            <div>
-              <Button onClick={() => setComposing(true)}>{tasks.herd.sendJelena}</Button>
-            </div>
-          )}
+          {/* His part is done: nothing to send on. If Jelena already has it, he sees what she did. */}
+          {jelena === 'waiting_farmer' ? <ReplyToJelena /> : jelena && <Banner>{tasks.jelena.state[jelena]}</Banner>}
         </>
       )}
     </Stack>
@@ -494,6 +484,7 @@ function MeadowBody() {
 export function TaskBody({ task }: { task: Task }) {
   const id = task.id
   if (isMapChange(id)) return <MapChangeCard id={id} />
+  if (id.startsWith('added_')) return <AddedBody id={id} />
   switch (id) {
     case 'renewal':
       return <RenewalBody />
@@ -509,6 +500,8 @@ export function TaskBody({ task }: { task: Task }) {
       return <MeadowBody />
     case 'fields_other':
       return <FieldsBody />
+    case 'field_bought':
+      return <BoughtBody Question={Question} />
     case 'measures':
       return <MeasuresBody />
     case 'receipts':
@@ -524,6 +517,8 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
   const jelena = milanCaseState(state)
   if (id === 'renewal') return d.list.todo.some((t) => t.id === 'renewal') ? tasks.renewal.body : home.activeFarmer
   if (id === 'measures') return measureSummary(d, state.answers.measures.inputs)
+  const added = state.answers.newFields.find((f) => `added_${f.id}` === id || (id === 'field_bought' && f.landId === 'bought'))
+  if (added) return fieldLine(added)
   const item = itemOf(d, id)
   const done = item.status === 'complete'
   const g = s.generalData
@@ -533,8 +528,11 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       if (item.detail === 'bank_own') return tasks.bank.paidTo((state.answers.bank.account ?? '').slice(-4))
       if (item.detail === 'bank_needs_account') return tasks.bank.label
       return tasks.bank.context(formatDate(g.account!.closedOn))
-    case 'calvings':
-      return item.status === 'awaiting_verification' ? tasks.calvings.asked(s.herd!.cowsCalved) : tasks.calvings.done(s.herd!.cowsCalved)
+    case 'calvings': {
+      const v = state.answers.requests.find((r) => r.kind === 'record_check' && r.itemId === 'calvings')?.value
+      if (item.status !== 'awaiting_verification') return tasks.calvings.done(s.herd!.cowsCalved)
+      return v ? tasks.calvings.askedWith(v, s.herd!.cowsCalved) : tasks.calvings.asked(s.herd!.cowsCalved)
+    }
     case 'field_meadow':
       if (item.detail === 'meadow_kept') return tasks.meadow.kept
       if (item.detail === 'meadow_out') return tasks.meadow.out(formatHa(item.paymentImpact?.areaHa ?? 0))
@@ -582,6 +580,10 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       const names = s.fields.filter((f) => !f.signal).map((f) => en.fields[f.id]).join(', ')
       return names
     }
+    case 'field_bought':
+      if (item.detail === 'bought_not_farmed') return tasks.bought.notFarmed
+      if (item.detail === 'bought_needs_field') return tasks.work.bought_draw
+      return tasks.bought.context(formatDateYear(s.bought!.on))
     case 'details':
       return tasks.details.asked
     case 'receipts':

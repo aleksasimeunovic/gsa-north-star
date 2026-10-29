@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
 import { measureGaps, orderMeasures } from './status'
+import { derive } from './derive'
 import { halfSplit, play, run } from './testUtils'
 
 const item = (r: ReturnType<typeof run>, id: string) => r.items.find((i) => i.id === id)!
 const split = halfSplit()
+const rect = (h: number) => [{ x: 0, y: 140 }, { x: 200, y: 140 }, { x: 200, y: 140 + h }, { x: 0, y: 140 + h }]
 
 describe('status per item', () => {
   it('starts with every part needing action, in step order; nothing is complete before he sees it', () => {
@@ -17,6 +19,7 @@ describe('status per item', () => {
       ['field_road', 'action_required'],
       ['field_upper', 'action_required'],
       ['field_meadow', 'action_required'],
+      ['field_bought', 'action_required'],
       ['fields_other', 'action_required'],
       ['measures', 'action_required'],
       ['receipts', 'action_required'],
@@ -128,7 +131,6 @@ describe('status per item', () => {
 
   it('upper no: needs his drawing; a line clear of the neighbour completes it, one still over it waits for a check', () => {
     expect(item(run('second_year', { type: 'answer_upper', answer: 'no' }), 'field_upper').detail).toBe('upper_needs_drawing')
-    const rect = (h: number) => [{ x: 0, y: 140 }, { x: 200, y: 140 }, { x: 200, y: 140 + h }, { x: 0, y: 140 + h }]
     const clear = item(run('second_year', { type: 'answer_upper', answer: 'no' }, { type: 'set_upper_drawing', polygon: rect(95) }), 'field_upper')
     expect(clear).toMatchObject({ status: 'complete', detail: 'upper_drawn', paymentImpact: { areaHa: 0.1, reason: 'redrawn' } })
     const over = item(run('second_year', { type: 'answer_upper', answer: 'no' }, { type: 'set_upper_drawing', polygon: rect(100) }), 'field_upper')
@@ -156,5 +158,29 @@ describe('status per item', () => {
       { type: 'advisor_act', caseId: 'milan_herd', act: 'asked_farmer' },
     )
     expect(item(r, 'herd')).toMatchObject({ status: 'action_required', detail: 'herd_jelena_asks' })
+  })
+
+  it('the parcel he bought: a question; yes needs the field drawn and saved, no leaves it out', () => {
+    expect(item(run('second_year'), 'field_bought').detail).toBe('bought_unanswered')
+    expect(item(run('second_year', { type: 'answer_bought', answer: 'no' }), 'field_bought')).toEqual({ id: 'field_bought', status: 'complete', detail: 'bought_not_farmed' })
+    expect(item(run('second_year', { type: 'answer_bought', answer: 'yes' }), 'field_bought').detail).toBe('bought_needs_field')
+    const field = { id: 'bought', landId: 'bought', polygon: rect(60), name: 'Lower field', crop: 'maize' as const, measures: [] }
+    const saved = run('second_year', { type: 'answer_bought', answer: 'yes' }, { type: 'save_field', field })
+    expect(item(saved, 'field_bought').status).toBe('complete')
+    // No takes the drawn field out again.
+    expect(play('second_year', { type: 'answer_bought', answer: 'yes' }, { type: 'save_field', field }, { type: 'answer_bought', answer: 'no' }).answers.newFields).toEqual([])
+  })
+
+  it('a field he adds is its own done task in Land, and removing it takes it out', () => {
+    const field = { id: 'f1', landId: 'block_5', polygon: rect(60), name: 'Rented field', crop: 'wheat' as const, measures: [] }
+    const r = run('second_year', { type: 'save_field', field })
+    expect(item(r, 'added_f1')).toEqual({ id: 'added_f1', status: 'complete', detail: 'added_field' })
+    expect(run('second_year', { type: 'save_field', field }, { type: 'remove_field', id: 'f1' }).items.some((i) => i.id === 'added_f1')).toBe(false)
+  })
+
+  it('a correction to a record keeps his value, and a new value replaces the old one', () => {
+    const s = play('second_year', { type: 'ask_record_check', itemId: 'calvings', value: '12' }, { type: 'ask_record_check', itemId: 'calvings', value: '13' })
+    expect(s.answers.requests.filter((r) => r.itemId === 'calvings').map((r) => r.value)).toEqual(['13'])
+    expect(item(derive(s), 'calvings').status).toBe('awaiting_verification')
   })
 })

@@ -1,40 +1,18 @@
 import { tasks } from '../copy/en'
-import { UNCHANGED, correctionAsked, type Unchanged } from '../logic/status'
-import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
-import { SourceTag } from '../ui/SourceTag'
 import { useApp } from './AppContext'
+import { detailRows, RecordList } from './Records'
 
 /**
  * What GSA reuses without asking: unchanged since last year, nothing to declare, so never a task and never
- * counted. Shown together once, before he signs, each with its own way to ask for a correction.
+ * counted. Shown together once, before he signs, in the same rows as his details, each changed with its pen.
  */
 export function UnchangedReview() {
-  const { derived, state, dispatch } = useApp()
-  const g = derived.scenario.generalData
-  const c = tasks.details
-  const value: Record<Unchanged, string> = { holder: g.holder, place: g.place, active: c.activeYes }
+  const { derived, state, go } = useApp()
+  const rows = detailRows(derived, state.answers).filter((r) => r.key !== 'bank')
   return (
-    <Card id="unchanged" title={c.title} headingLevel={3} emphasis="low">
-      <SourceTag source="records">{c.source}</SourceTag>
-      <dl className="unchanged">
-        {UNCHANGED.map((w) => (
-          <div key={w} className="unchanged-row">
-            <dt>{c[w]}</dt>
-            <dd>{value[w]}</dd>
-            <dd>
-              {correctionAsked(state.answers, w) ? (
-                <SourceTag source="checking">{c.asked}</SourceTag>
-              ) : (
-                <Button variant="link" onClick={() => dispatch({ type: 'ask_record_check', itemId: 'details', what: w })}>
-                  {c.wrong}
-                  <span className="sr-only">: {c[w]}</span>
-                </Button>
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
+    <Card id="unchanged" title={tasks.details.title} headingLevel={3} emphasis="low">
+      <RecordList rows={rows} onOpen={() => go('welcome')} />
     </Card>
   )
 }

@@ -1,6 +1,6 @@
 import type { Crop, Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import { roundHa, splitPolygon } from './geometry'
+import { polygonAreaHa, roundHa, splitPolygon } from './geometry'
 import { fitting, riverSplitComplete, type Item, type ItemId } from './status'
 
 /**
@@ -52,6 +52,13 @@ export function farmPicture(s: Scenario, a: Answers, items: Item[]): FarmPicture
     } else add(f.cropLastYear, ha)
   }
 
+  // Fields he added this year, the parcel he bought among them.
+  for (const f of a.newFields) {
+    const ha = roundHa(polygonAreaHa(f.polygon))
+    total += ha
+    add(f.crop, ha)
+  }
+
   // Each field is confirmed by its own question, or by "same as last year" for the unchanged ones.
   const fieldItems = s.fields.map((f) => (f.signal ? item(`field_${f.id}` as ItemId) : item('fields_other')))
   const herd = item('herd')
@@ -59,7 +66,7 @@ export function farmPicture(s: Scenario, a: Answers, items: Item[]): FarmPicture
   return {
     fields: {
       totalHa: roundHa(total),
-      count: s.fields.length,
+      count: s.fields.length + a.newFields.length,
       crops: [...byCrop].map(([crop, ha]) => ({ crop, ha })).sort((x, y) => y.ha - x.ha),
       source: sourceOf(fieldItems),
       confirmed: fieldItems.filter((i) => i?.status === 'complete').length,

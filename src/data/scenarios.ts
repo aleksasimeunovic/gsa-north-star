@@ -111,6 +111,14 @@ export interface Herd {
   calvingPeriod: { from: string; to: string }
 }
 
+/** A parcel the land registry now shows in his name, bought since last year: GSA asks whether he farms it. */
+export interface BoughtParcel {
+  polygon: Polygon
+  areaHa: number
+  /** When the land registry recorded it in his name (prototype placeholder). */
+  on: string
+}
+
 /** Records GSA brings in. Read-only for Milan. */
 export interface GeneralData {
   holder: string
@@ -137,6 +145,9 @@ export interface Scenario {
   blocks: LandShape[]
   /** Land register plots (cadastral parcels). Reference only, hidden by default. */
   parcels: LandShape[]
+  bought: BoughtParcel | null
+  /** Registered farmland near his fields that isn't in his application: where a field he adds can go. */
+  otherLand: LandShape[]
   measures: Measure[]
   suggestions: Suggestion[]
   documents: Document[]
@@ -199,7 +210,12 @@ const BLOCKS: LandShape[] = [
   },
   { id: 'block_2', label: 'Block 2', polygon: rect(0, 140, 370, 100) },
   { id: 'block_3', label: 'Block 3', polygon: rect(390, 0, 130, 100) },
+  // Around the parcel he bought: a little wider than the parcel itself.
+  { id: 'block_4', label: 'Block 4', polygon: rect(220, -90, 150, 76) },
 ]
+
+// Farmland by the meadow, not in his application: where a field he rents could go.
+const OTHER_LAND: LandShape[] = [{ id: 'block_5', label: 'Block 5', polygon: rect(220, 262, 150, 60) }]
 
 const PARCELS: LandShape[] = [
   { id: 'parcel_1', label: 'Parcel 1', polygon: rect(0, 0, 120, 120) },
@@ -207,6 +223,7 @@ const PARCELS: LandShape[] = [
   { id: 'parcel_3', label: 'Parcel 3', polygon: rect(0, 140, 370, 60) },
   { id: 'parcel_4', label: 'Parcel 4', polygon: rect(0, 200, 370, 40) },
   { id: 'parcel_5', label: 'Parcel 5', polygon: rect(390, 0, 130, 100) },
+  { id: 'parcel_6', label: 'Parcel 6', polygon: rect(232, -84, 125, 64) },
 ]
 
 const HERD: Herd = {
@@ -290,6 +307,9 @@ const RECEIPTS = [
   { name: 'Diesel receipt.jpg', date: '2026-04-02' },
 ]
 
+/** Measures he applies for field by field, offered when he adds a field. */
+export const LAND_MEASURES: MeasureId[] = ['plant_production', 'green_cover', 'irrigation']
+
 const BASE: Scenario = {
   id: 'second_year',
   renewed: true,
@@ -306,6 +326,9 @@ const BASE: Scenario = {
   fields: FIELDS,
   blocks: BLOCKS,
   parcels: PARCELS,
+  // 0.80 ha above the road field, in his name since February (round 11, Aleksa).
+  bought: { polygon: rect(232, -84, 125, 64), areaHa: 0.8, on: '2026-02-12' },
+  otherLand: OTHER_LAND,
   measures: MEASURES,
   suggestions: [
     { measureId: 'green_cover', evidence: 'green_all_winter', fields: ['river', 'upper'], winter: 2025 },

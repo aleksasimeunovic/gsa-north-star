@@ -32,8 +32,9 @@ export function App() {
       // so what his answer changed is there when he returns.
       <Application
         key={state.scenarioId}
-        target={screen === 'submit' ? 'step-submit' : screen === 'review' ? null : target}
+        target={screen === 'submit' ? 'step-submit' : screen === 'review' || screen === 'field' ? null : target}
         review={screen === 'review' ? target : null}
+        field={screen === 'field' ? target : null}
       />
     )
 

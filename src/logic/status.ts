@@ -11,6 +11,8 @@ export type ItemId =
   | 'pigs'
   | 'calvings'
   | `field_${FieldId}`
+  | 'field_bought'
+  | `added_${string}`
   | 'fields_other'
   | 'measures'
   | 'receipts'
@@ -55,6 +57,11 @@ export type ItemDetail =
   | 'pigs_unanswered'
   | 'pigs_household'
   | 'pigs_declared'
+  | 'bought_unanswered'
+  | 'bought_needs_field' // he farms it: draw it, name it, choose its measures
+  | 'bought_added'
+  | 'bought_not_farmed'
+  | 'added_field'
   | 'fields_same'
   | 'fields_confirmed'
   | 'details_correction' // he asked the record's owner to correct something unchanged since last year
@@ -243,6 +250,25 @@ function confirmedItem(id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDeta
 export const UNCHANGED = ['holder', 'place', 'active'] as const
 export type Unchanged = (typeof UNCHANGED)[number]
 export const correctionAsked = (a: Answers, what: Unchanged) => a.requests.some((r) => r.kind === 'record_check' && r.itemId === 'details' && r.note === what)
+/** The value he gave in a correction to a record (or '' if he asked without one), or null if he hasn't asked. */
+export function correctionOf(a: Answers, itemId: string, what = ''): string | null {
+  const r = a.requests.find((x) => x.kind === 'record_check' && x.itemId === itemId && x.note === what)
+  return r ? (r.value ?? '') : null
+}
+
+/**
+ * The parcel the land registry now shows in his name. A fact with its source; whether he farms it is his
+ * question. Yes needs the field drawn, named and its measures chosen; No leaves it out with that reason.
+ */
+function boughtItem(s: Scenario, a: Answers): Item | null {
+  if (!s.bought) return null
+  const id = 'field_bought' as const
+  if (a.bought.answer === null) return { id, status: 'action_required', detail: 'bought_unanswered' }
+  if (a.bought.answer === 'no') return { id, status: 'complete', detail: 'bought_not_farmed' }
+  return a.newFields.some((f) => f.landId === 'bought')
+    ? { id, status: 'complete', detail: 'bought_added' }
+    : { id, status: 'action_required', detail: 'bought_needs_field' }
+}
 
 /**
  * Every item gets a status. Pure: derived from scenario + answers, never stored.
@@ -266,6 +292,9 @@ export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = 
 
   // Land
   s.fields.forEach((f) => add(changedFieldItem(s, a, f.id)))
+  add(boughtItem(s, a))
+  // A field he added is saved whole, so it is done; he can still change or remove it.
+  a.newFields.filter((f) => f.landId !== 'bought').forEach((f) => add({ id: `added_${f.id}`, status: 'complete', detail: 'added_field' }))
   if (s.fields.some((f) => !f.signal)) add(confirmedItem('fields_other', a.confirmed.includes('fields_other'), 'fields_same', 'fields_confirmed'))
 
   // Measures

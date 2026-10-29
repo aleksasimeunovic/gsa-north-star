@@ -10,11 +10,11 @@ const work = (r: R, id: WorkId) => allTasks(r.list).flatMap((t) => t.work).find(
 const ids = (tasks: { id: string }[]) => tasks.map((t) => t.id)
 
 describe('application list', () => {
-  it('opens only on what needs his input this year, by part; changes first in each (14 before round 10, 11 now)', () => {
+  it('opens only on what needs his input this year, by part; changes first in each (14 before round 10, 11 after it, 12 with the parcel he bought)', () => {
     expect(ids(run('second_year').list.todo)).toEqual([
       'bank',
       'herd', 'pigs',
-      'field_river', 'field_road', 'field_upper', 'field_meadow', 'fields_other',
+      'field_river', 'field_road', 'field_upper', 'field_meadow', 'field_bought', 'fields_other',
       'measures',
       'receipts',
     ])
@@ -46,6 +46,7 @@ describe('application list', () => {
       ['river_split', 'possible'],
       ['road_redraw', 'possible'],
       ['upper_redraw', 'possible'],
+      ['bought_draw', 'possible'],
     ])
   })
 
@@ -144,7 +145,7 @@ describe('parts and kinds of work', () => {
     expect(steps.map((st) => [st.id, st.left])).toEqual([
       ['details', 1],
       ['animals', 2],
-      ['land', 5],
+      ['land', 6],
       ['measures', 1],
       ['documents', 1],
       ['submit', 0],
@@ -164,7 +165,7 @@ describe('parts and kinds of work', () => {
     expect(kinds).toEqual({
       bank: 'change',
       herd: 'change', pigs: 'change',
-      field_river: 'change', field_road: 'change', field_upper: 'change', field_meadow: 'change', fields_other: 'confirm',
+      field_river: 'change', field_road: 'change', field_upper: 'change', field_meadow: 'change', field_bought: 'change', fields_other: 'confirm',
       measures: 'choice',
       receipts: 'confirm',
     })

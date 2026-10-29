@@ -49,9 +49,10 @@ export function readinessHeadline(r: Report) {
   return h[r.verdict]
 }
 
-/** The drawer's title: here, and only here, the count of what's left. */
+/** The drawer's title: what to fix and what to look at, never the work still ahead of him. */
 export function readinessCount(r: Report) {
   const h = en.readiness.headline
-  if (r.verdict === 'blocked') return h.count(r.errors.length + r.todo.length)
-  return readinessHeadline(r)
+  if (r.verdict !== 'blocked' && r.verdict !== 'renewal') return readinessHeadline(r)
+  if (r.errors.length && r.warnings.length) return h.fixAndLook(r.errors.length, r.warnings.length)
+  return r.errors.length ? h.fix(r.errors.length) : h.look(r.warnings.length)
 }

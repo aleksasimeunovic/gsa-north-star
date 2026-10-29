@@ -70,8 +70,9 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
  * - flag / strip / overlap: what changed, patterned so it never relies on colour
  * - mine: his field as he moves its edge
  * - split: the line that splits a field
+ * - spot: land in question that isn't his field yet (the parcel he bought)
  */
-export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'mine' | 'split'
+export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'mine' | 'split' | 'spot'
 
 export function mapStyle(role: MapRole): Style[] {
   switch (role) {
@@ -92,5 +93,7 @@ export function mapStyle(role: MapRole): Style[] {
       return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.12)' }) }), ...line(3)]
     case 'split':
       return line(4)
+    case 'spot':
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.18)' }) }), ...line(3, [10, 6])]
   }
 }

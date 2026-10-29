@@ -288,21 +288,24 @@ button.drawer-row:hover { background: var(--hover); }
 .timeline-dot { width: 28px; height: 28px; flex: none; border-radius: 1000px; display: inline-flex; align-items: center; justify-content: center; background: var(--muted); color: var(--foreground); font-size: 0.8125rem; font-weight: 600; }
 
 /* Kept from last year: closed by default, quiet zebra rows, no colour, so it never competes with the next action */
-.kept { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); overflow: hidden; }
-.kept-head { width: 100%; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--panel-pad); min-height: 56px; border: 0; background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
-.kept-head:hover { background: var(--hover); }
-.kept-icon { width: 32px; height: 32px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--row-radius); background: var(--muted); color: var(--muted-foreground); }
-.kept-titles { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.kept-title { font-size: 0.875rem; font-weight: 600; }
-.kept-hint { font-size: 0.8125rem; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kept-chevron { display: inline-flex; color: var(--muted-foreground); transition: transform 0.15s; }
-.kept[data-open] .kept-chevron { transform: rotate(180deg); }
-.kept-note { margin: 0; padding: 0 var(--panel-pad) var(--space-3); font-size: 0.8125rem; color: var(--muted-foreground); }
-.kept-rows { margin: 0; display: flex; flex-direction: column; }
-.kept-row { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--panel-pad); }
-.kept-row:nth-child(odd) { background: var(--muted); }
-.kept-row dt { font-size: 0.8125rem; color: var(--muted-foreground); }
-.kept-row dd { margin: 0; }
-.kept-value { font-weight: 500; }
-.kept-action { font-size: 0.875rem; }
-.kept-action button { min-height: 0; height: auto; padding: 2px 0; font-size: 0.8125rem; }
+.records { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); display: flex; flex-direction: column; gap: var(--space-2); }
+.records-title { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground); }
+/* Rows are divided by a hairline, never shaded, so nothing reads as hover or selection. */
+.records-rows { margin: 0; display: flex; flex-direction: column; }
+.records-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--border); }
+.records-row:first-child { border-top: 0; }
+.records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.records-text dt { font-size: 0.8125rem; color: var(--muted-foreground); }
+.records-text dd { margin: 0; }
+.records-value { font-weight: 600; }
+.records-sub { font-size: 0.875rem; color: var(--muted-foreground); }
+.records-pen { flex: none; width: 44px; height: 44px; margin: -6px -10px 0 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.records-pen:hover { border-color: var(--hover-border); color: var(--foreground); }
+.records-pen:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.records-row[data-editing] { display: block; }
+.records-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.records-form-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.records-foot { border-top: 1px solid var(--border); padding-top: var(--space-2); margin: 0 -8px; }
+.side-steps summary { cursor: pointer; font-weight: 500; min-height: 44px; display: flex; align-items: center; }
+.side-steps ul { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.side-steps li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--space-2); }

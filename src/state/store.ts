@@ -14,6 +14,8 @@ export const emptyAnswers = (): Answers => ({
   pigs: { answer: null },
   bank: { answer: null, account: null },
   meadow: { answer: null },
+  bought: { answer: null },
+  newFields: [],
   measures: { chosen: [], confirmed: false, inputs: {} },
   confirmed: [],
   requests: [],
@@ -24,7 +26,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 10,
+  version: 11,
   scenarioId: 'second_year',
   role: 'farmer',
   advisor: { log: [] },
@@ -40,7 +42,7 @@ export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(),
 const UNDOABLE = new Set<Action['type']>([
   'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper', 'set_upper_drawing',
   'answer_pigs', 'confirm', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
-  'answer_bank', 'set_bank_account', 'answer_meadow',
+  'answer_bank', 'set_bank_account', 'answer_meadow', 'answer_bought', 'save_field', 'remove_field',
 ])
 const PAST_LIMIT = 20
 
@@ -55,9 +57,14 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, herd: { ...a.herd, ownCount: action.count } }
     case 'send_to_jelena':
       return { ...a, requests: [...a.requests, { kind: 'jelena', itemId: action.itemId, note: action.note, at }] }
-    case 'ask_record_check':
-      if (a.requests.some((r) => r.kind === 'record_check' && r.itemId === action.itemId && r.note === (action.what ?? ''))) return a
-      return { ...a, requests: [...a.requests, { kind: 'record_check', itemId: action.itemId, note: action.what ?? '', at }] }
+    case 'ask_record_check': {
+      // A new value for the same record replaces the one he gave before.
+      const same = (r: Answers['requests'][number]) => r.kind === 'record_check' && r.itemId === action.itemId && r.note === (action.what ?? '')
+      const prev = a.requests.find(same)
+      if (prev && prev.value === action.value) return a
+      const req = { kind: 'record_check' as const, itemId: action.itemId, note: action.what ?? '', at, ...(action.value !== undefined ? { value: action.value } : {}) }
+      return { ...a, requests: [...a.requests.filter((r) => !same(r)), req] }
+    }
     case 'answer_river':
       return { ...a, river: { ...a.river, answer: action.answer } }
     case 'set_split':
@@ -78,6 +85,13 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, bank: { ...a.bank, account: action.account } }
     case 'answer_meadow':
       return { ...a, meadow: { answer: action.answer } }
+    case 'answer_bought':
+      // No takes the parcel out again, with anything he drew on it.
+      return { ...a, bought: { answer: action.answer }, newFields: action.answer === 'no' ? a.newFields.filter((f) => f.landId !== 'bought') : a.newFields }
+    case 'save_field':
+      return { ...a, newFields: [...a.newFields.filter((f) => f.id !== action.field.id), action.field] }
+    case 'remove_field':
+      return { ...a, newFields: a.newFields.filter((f) => f.id !== action.id) }
     case 'choose_measures':
       // Nothing is filled in for him: GSA prepares, only Milan declares. A suggestion's fields are one tap away.
       return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true, inputs: { ...a.measures.inputs, ...action.inputs } } }

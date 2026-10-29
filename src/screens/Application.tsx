@@ -2,7 +2,8 @@ import { bar, home, steps } from '../copy/en'
 import { isMapChange } from '../logic/application'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
-import { Kept } from '../components/Kept'
+import { Records } from '../components/Records'
+import { FieldEditor } from '../components/NewField'
 import { StepOutline } from '../components/StepOutline'
 import { Stepper } from '../components/Stepper'
 import { AfterAnswerToast, StepView } from '../components/StepView'
@@ -18,12 +19,15 @@ import { SubmitStep } from './Submit'
  * next action on the left and the part at a glance on the right; the last part shows his farm and the
  * estimate before he signs.
  */
-export function Application({ target, review }: { target: string | null; review?: string | null }) {
+export function Application({ target, review, field }: { target: string | null; review?: string | null; field?: string | null }) {
   const { state, go } = useApp()
   // Opening a boundary review straight from a link still puts the stepper on its part.
-  const flow = useApplicationFlow(target ?? (review ? `task-${review}` : null))
+  const flow = useApplicationFlow(target ?? (review ? `task-${review}` : field ? 'step-land' : null))
   const submitted = !!state.answers.submittedAt
   const reviewing = review && isMapChange(review as never) && !submitted ? (review as MapTask) : null
+  // Drawing a field he adds, or the parcel he bought, on the map.
+  const drawing = field && !submitted ? field : null
+  const onMap = reviewing || drawing
 
   const { step, forward } = flow
   const forwardLabel = !forward ? '' : 'task' in forward ? bar.next(flow.title(forward.task)) : home.continueTo(steps.name[forward.step])
@@ -44,7 +48,7 @@ export function Application({ target, review }: { target: string | null; review?
         <Stepper
           flow={flow}
           onStep={
-            reviewing
+            onMap
               ? (id) => {
                   go('welcome')
                   flow.goStep(id)
@@ -62,6 +66,8 @@ export function Application({ target, review }: { target: string | null; review?
             <AfterAnswerToast flow={flow} />
             <Review id={reviewing} flow={flow} />
           </>
+        ) : drawing ? (
+          <FieldEditor key={drawing} id={drawing} flow={flow} />
         ) : step.id === 'submit' ? (
           <SubmitStep flow={flow} />
         ) : (
@@ -70,13 +76,13 @@ export function Application({ target, review }: { target: string | null; review?
             <StepView flow={flow} />
             <aside className="app-side">
               <StepOutline flow={flow} />
-              <Kept step={step.id} />
+              <Records step={step.id} onOpen={(id) => flow.show(id)} />
             </aside>
           </div>
         )}
       </section>
 
-      {!reviewing && step.id !== 'submit' && (
+      {!onMap && step.id !== 'submit' && (
         <ActionBar
           back={flow.back && { label: bar.back, onClick: flow.back }}
           forward={

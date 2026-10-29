@@ -37,6 +37,14 @@ export interface FarmMapOptions {
   drawn?: Polygon | null
   /** Someone else's parcel, shown alone and framed. */
   parcel?: Polygon
+  /** Fields he added this year, drawn and named like the rest. */
+  added?: { id: string; polygon: Polygon; name: string }[]
+  /** A place in question that isn't a field yet (the parcel he bought): outlined, named, and framed. */
+  spot?: { polygon: Polygon; label: string }
+  /** Registered farmland he can put a field on, outlined and named so he can tap it. */
+  lands?: { id: string; polygon: Polygon; label: string }[]
+  /** Leave this added field out: it is being drawn. */
+  skip?: string
 }
 
 export type FarmMap = ReturnType<typeof createFarmMap>
@@ -78,7 +86,8 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   if (opts.editing && focused) shape(landOf(s, focused), 'land')
   for (const f of fields) {
     if (opts.editing && f.id === focused?.id) continue
-    const strong = !focused || f.id === focused.id
+    // With a place in question (a parcel, farmland to pick), his fields are only there for orientation.
+    const strong = (!focused && !opts.spot && !opts.lands?.length) || f.id === focused?.id
     shape(f.id === focused?.id && opts.drawn ? opts.drawn : f.polygon, strong ? 'field' : 'faint')
     // On a still preview only the field in question is named; on a map he moves around, every field is.
     if (strong || opts.interactive) {
@@ -86,6 +95,25 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
       // Named just above its top edge, so the inside stays clear for what changed and the split areas.
       label(labels, { x: b.minX + 2, y: b.minY - 2 }, en.fields[f.id], { align: 'left', above: true, strong, size: strong ? 15 : 13 })
     }
+  }
+
+  for (const f of opts.parcel ? [] : (opts.added ?? [])) {
+    if (f.id === opts.skip) continue
+    const strong = !focused && !opts.spot && !opts.lands?.length
+    shape(f.polygon, strong ? 'field' : 'faint')
+    if (strong || opts.interactive) {
+      const b = bounds(f.polygon)
+      label(labels, { x: b.minX + 2, y: b.minY - 2 }, f.name, { align: 'left', above: true, strong, size: strong ? 15 : 13 })
+    }
+  }
+  if (opts.spot) {
+    shape(opts.spot.polygon, 'spot')
+    const b = bounds(opts.spot.polygon)
+    label(notes, { x: b.minX + 2, y: b.minY - 2 }, opts.spot.label, { align: 'left', above: true, size: 15 })
+  }
+  for (const l of opts.lands ?? []) {
+    shape(l.polygon, 'land')
+    label(notes, centroid(l.polygon), l.label, { size: 14 })
   }
 
   // What changed, in place: the satellite flag, the road strip, the neighbour's line.
@@ -115,10 +143,14 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   }
 
   const extentOf = (polys: Polygon[]) => boundingExtent(polys.flat().map(coord))
-  const all = s.fields.map((f) => f.polygon)
+  const all = [...s.fields.map((f) => f.polygon), ...(opts.added ?? []).map((f) => f.polygon), ...(s.bought ? [s.bought.polygon] : [])]
   const home = opts.parcel
     ? [opts.parcel]
-    : focused
+    : opts.spot
+      ? [opts.spot.polygon, ...(opts.lands ?? []).map((l) => l.polygon)]
+      : opts.lands?.length
+        ? [...s.fields.map((f) => f.polygon), ...opts.lands.map((l) => l.polygon)]
+        : focused
       ? [focused.polygon, ...(signal?.kind === 'overlap' ? [signal.neighbourPolygon] : [])]
       : fields.map((f) => f.polygon)
 

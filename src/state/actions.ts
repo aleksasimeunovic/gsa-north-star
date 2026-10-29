@@ -15,6 +15,20 @@ export interface Split {
   crops: [Crop | null, Crop | null]
 }
 
+/**
+ * A field he adds this year: the parcel he bought, or land he farms that isn't in his application yet.
+ * Saved whole, once he has drawn it, named it, given its crop and chosen its measures.
+ */
+export interface NewField {
+  id: string
+  /** The registered farmland it sits on, or 'bought' for the parcel in his name. */
+  landId: string
+  polygon: Polygon
+  name: string
+  crop: Crop
+  measures: MeasureId[]
+}
+
 // Only what people answered. Tasks, statuses and the estimate are derived.
 export interface Answers {
   herd: { answer: YesNo | null; ownCount: number | null }
@@ -29,6 +43,9 @@ export interface Answers {
   bank: { answer: YesNo | null; account: string | null }
   /** Yes: he will mow or graze it. No: the meadow is left out this year. */
   meadow: { answer: YesNo | null }
+  /** Yes: he farms the parcel he bought, and adds it as a field. No: it stays out of this application. */
+  bought: { answer: YesNo | null }
+  newFields: NewField[]
   /** Chosen measures and what each needs, keyed `${measureId}.${requirementId}`. */
   measures: { chosen: MeasureId[]; confirmed: boolean; inputs: Record<string, MeasureValue> }
   confirmed: Confirmable[]
@@ -44,6 +61,8 @@ export interface Request {
   kind: 'jelena' | 'record_check'
   itemId: string
   note: string
+  /** The value he says is right, when he typed one. */
+  value?: string
   at: string
 }
 
@@ -70,7 +89,7 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 10
+  version: 11
   scenarioId: ScenarioId
   role: Role
   /** Jelena's work on escalated cases. */
@@ -89,7 +108,7 @@ export type Action =
   | { type: 'set_herd_count'; count: number | null }
   | { type: 'send_to_jelena'; itemId: string; note: string }
   /** `what` names the record to correct, when the item holds several (his details). */
-  | { type: 'ask_record_check'; itemId: string; what?: string }
+  | { type: 'ask_record_check'; itemId: string; what?: string; value?: string }
   | { type: 'answer_river'; answer: YesNo }
   | { type: 'set_split'; split: Split | null }
   | { type: 'answer_road'; answer: YesNo }
@@ -99,6 +118,9 @@ export type Action =
   | { type: 'answer_bank'; answer: YesNo }
   | { type: 'set_bank_account'; account: string }
   | { type: 'answer_meadow'; answer: YesNo }
+  | { type: 'answer_bought'; answer: YesNo }
+  | { type: 'save_field'; field: NewField }
+  | { type: 'remove_field'; id: string }
   /** With what he already added for them, so choosing and filling in is one step. */
   | { type: 'choose_measures'; chosen: MeasureId[]; inputs?: Record<string, MeasureValue> }
   | { type: 'save_measure'; measureId: MeasureId; inputs: Record<string, MeasureValue> }

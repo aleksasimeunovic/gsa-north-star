@@ -198,6 +198,32 @@ export function moveBottomEdge(poly: Polygon, land: Polygon, y: number): { polyg
   return { polygon: poly.map((p) => (p.y === b.maxY ? { x: p.x, y: at } : p)), y: at, clamped: at !== Math.round(y * 10) / 10 }
 }
 
+export type Side = 'top' | 'right' | 'bottom' | 'left'
+
+/**
+ * Moves one side of a rectangular outline as one line, kept on the registered farmland it sits on and at
+ * least 10 m from the opposite side. Says when the farmland stopped it, so the map can explain why.
+ */
+export function moveSide(rect: Polygon, land: Polygon, side: Side, to: number): { polygon: Polygon; value: number; clamped: boolean } {
+  const b = bounds(rect)
+  const l = bounds(land)
+  const want = Math.round(to * 10) / 10
+  const [lo, hi] =
+    side === 'top' ? [l.minY, b.maxY - 10] : side === 'bottom' ? [b.minY + 10, l.maxY] : side === 'left' ? [l.minX, b.maxX - 10] : [b.minX + 10, l.maxX]
+  const value = Math.min(hi, Math.max(lo, want))
+  const n = { ...b, [side === 'top' ? 'minY' : side === 'bottom' ? 'maxY' : side === 'left' ? 'minX' : 'maxX']: value }
+  return {
+    polygon: [
+      { x: n.minX, y: n.minY },
+      { x: n.maxX, y: n.minY },
+      { x: n.maxX, y: n.maxY },
+      { x: n.minX, y: n.maxY },
+    ],
+    value,
+    clamped: value !== want,
+  }
+}
+
 /** The land the government has registered as farmland around a field. */
 export function landOf(s: { blocks: { polygon: Polygon }[] }, field: { polygon: Polygon }): Polygon {
   const c = centroid(field.polygon)

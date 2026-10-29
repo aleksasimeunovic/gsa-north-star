@@ -7,13 +7,13 @@ describe('application state', () => {
   it('action required until every task is done', () => {
     const r = run('second_year').readiness
     expect(r.state).toBe('action_required')
-    expect(r.counts.action_required).toBe(10)
+    expect(r.counts.action_required).toBe(11)
     expect(r.canSubmit).toBe(false)
   })
 
   it('counts every thing left, across the parts', () => {
     // Cows that calved are the registry's record: reused, not asked (round 10, Aleksa).
-    expect(run('second_year').list.todo).toHaveLength(10)
+    expect(run('second_year').list.todo).toHaveLength(11)
   })
 
   it('ready to submit once nothing needs his action', () => {
@@ -54,7 +54,7 @@ describe('readiness verdict', () => {
   it("work not done yet is to do, not an error, and still stops him submitting; only the blurry receipt is an error", () => {
     const r = run('second_year').report
     expect(r.verdict).toBe('blocked')
-    expect(r.todo).toHaveLength(9)
+    expect(r.todo).toHaveLength(10)
     expect(r.errors).toEqual(['receipts'])
   })
 

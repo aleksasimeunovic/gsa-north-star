@@ -10,9 +10,9 @@ export type TaskId = 'renewal' | ItemId
  * Work a change could still need. It starts as possible; his answer makes it needed or
  * removes it with a reason. This is what makes the application shrink as he answers.
  */
-export type WorkId = 'river_split' | 'road_redraw' | 'upper_redraw' | 'pigs_declare' | 'bank_enter'
+export type WorkId = 'river_split' | 'road_redraw' | 'upper_redraw' | 'pigs_declare' | 'bank_enter' | 'bought_draw'
 export type WorkState = 'possible' | 'needed' | 'done' | 'removed'
-export type RemovalReason = 'one_crop' | 'edge_moved' | 'kept_until_checked' | 'neighbour_line' | 'household' | 'bank_sent'
+export type RemovalReason = 'one_crop' | 'edge_moved' | 'kept_until_checked' | 'neighbour_line' | 'household' | 'bank_sent' | 'not_farmed'
 
 export interface Work {
   id: WorkId
@@ -77,14 +77,14 @@ export const CHANGE_TASKS: TaskId[] = ['bank', 'herd', 'pigs']
 export function stepOf(id: TaskId): StepId {
   if (id === 'renewal' || id === 'bank' || id === 'details') return 'details'
   if (id === 'herd' || id === 'pigs' || id === 'calvings') return 'animals'
-  if (id.startsWith('field_') || id === 'fields_other') return 'land'
+  if (id.startsWith('field_') || id.startsWith('added_') || id === 'fields_other') return 'land'
   if (id === 'measures') return 'measures'
   return 'documents'
 }
 
 function kindOf(id: TaskId): TaskKind {
   if (CHANGE_TASKS.includes(id) || id.startsWith('field_')) return 'change'
-  if (id === 'measures' || id === 'renewal') return 'choice'
+  if (id === 'measures' || id === 'renewal' || id.startsWith('added_')) return 'choice'
   return 'confirm'
 }
 
@@ -112,6 +112,10 @@ function workFor(id: TaskId, a: Answers, item: Item | undefined): Work[] {
     if (a.road.answer === 'yes') return [removed('road_redraw', 'edge_moved')]
     if (a.road.answer === 'no') return [removed('road_redraw', 'kept_until_checked')]
     return [{ id: 'road_redraw', state: 'possible' }]
+  }
+  if (id === 'field_bought') {
+    if (a.bought.answer === 'no') return [removed('bought_draw', 'not_farmed')]
+    return [{ id: 'bought_draw', state: a.bought.answer === 'yes' ? (item?.status === 'complete' ? 'done' : 'needed') : 'possible' }]
   }
   if (id === 'field_upper') {
     if (a.upper.answer === 'yes') return [removed('upper_redraw', 'neighbour_line')]

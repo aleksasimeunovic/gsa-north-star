@@ -12,29 +12,21 @@ import { taskTitle } from './useApplicationFlow'
 const ICON = { error: 'error', todo: 'todo', look: 'warning', info: 'info' } as const
 
 /**
- * Whether he can submit, in three groups that never mix: what stops him, what he can submit with but
- * should look at (a check, a lower payment), and what's good to know. Each row is one target.
+ * Only what went wrong and what to look at, never the work he simply hasn't reached: what to fix (red),
+ * then what he can submit with but should look at (a check, a lower payment). Each row takes him to the
+ * place it is about.
  */
 export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open: boolean; onClose: () => void; onPick: (id: TaskId) => void; returnFocusTo: RefObject<HTMLElement> }) {
   const { derived, state } = useApp()
   const r = derived.report
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
   const title = (id: TaskId) => taskTitle(id, receiptsMissing)
-  const c = en.readiness
-  const unpriced = derived.scenario.measures.filter((m) => !m.rateDinars && state.answers.measures.chosen.includes(m.id)).length
   return (
     <Drawer open={open} title={readinessCount(r)} onClose={onClose} returnFocusTo={returnFocusTo}>
       {r.errors.length > 0 && (
         <Group severity="error">
           {r.errors.map((id) => (
             <Row key={id} severity="error" title={title(id)} hint={taskSummary(id, derived, state)} onClick={() => onPick(id)} />
-          ))}
-        </Group>
-      )}
-      {r.todo.length > 0 && (
-        <Group severity="todo">
-          {r.todo.map((id) => (
-            <Row key={id} severity="todo" title={title(id)} hint={taskSummary(id, derived, state)} onClick={() => onPick(id)} />
           ))}
         </Group>
       )}
@@ -51,11 +43,6 @@ export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open
           ))}
         </Group>
       )}
-      <Group severity="info">
-        {r.info.map((i) => (
-          <Row key={i} severity="info" title={i === 'unpriced' ? c.info.unpriced(unpriced) : c.info.state_checks} />
-        ))}
-      </Group>
     </Drawer>
   )
 }

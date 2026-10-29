@@ -170,6 +170,9 @@ Use exactly these facts. Don't invent research findings or extra numbers.
   - Land: the state checks by satellite that the meadow is mowed or grazed at least once this year (assumption; no invented date). Last summer's photos saw none, which is only why GSA asks. Yes, he will; No leaves the meadow out (1.50 ha, about 27,000 dinars less).
   - Measures: GSA suggests green cover over winter (satellite: the river and upper fields stayed green all winter; suggested, with one tap "Use these fields"; the photo justifies the suggestion, never eligibility) and artificial insemination (registry: 9 inseminations by his vet since last April). Never a rate.
   - Documents: Diesel receipt.jpg is too blurry to read the amount: an error inside "Your input receipts", "Send a clearer diesel receipt".
+- **Added in round 11 at Aleksa's request (new land):**
+  - Land: the land registry shows a parcel in his name since 12 February 2026, 0.80 ha above the road field (prototype placeholder). Question: will he farm it this year? Yes: he draws it from GSA's outline, names it, gives its crop and chooses its measures. No: left out.
+  - Land: registered farmland south of the meadow (0.90 ha) is where a field he adds himself can go ("Add a field").
 
 ## 8. Milan's journey (one connected flow)
 
@@ -253,6 +256,8 @@ src/
 Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidence cards, real maps, the suggested split, a stepper with parts, readiness severities, shadcn/ui in natural colours.
 
 **Round 10 (Earl, 26 Oct, on 558f96d): fewer decisions, not easier ones.** Phases: (1) CLAUDE.md; (2) fewer decisions on return: reuse without asking, confirm every year, only when changed; (3) know, suspect, don't know (river, meadow, measures, herd); (4) one status system, three severities, three estimate states, review is not submit; (5) parcel delineation as the hero, the upper field's edge moved as one line; (6) Jelena's states, colour, spacing, content pass, `docs/acceptance.md`, deploy.
+
+**Round 11 (Aleksa, 29 Oct):** readiness drawer shows only errors and warnings; "What GSA knows" per part with a pen per line; no Jelena button once the herd is his part done; the bought parcel and adding a field on the map.
 
 Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset, nothing else (round 10b, Aleksa). Design notes are not shown in the prototype; tested, mandate and assumption distinctions live in `docs/decisions.md`.
 

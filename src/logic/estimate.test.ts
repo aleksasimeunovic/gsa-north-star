@@ -1,3 +1,4 @@
+import { SCENARIOS } from '../data/scenarios'
 import { describe, expect, it } from 'vitest'
 import { estimateState } from './estimate'
 import { halfSplit, lastYear, ready, run } from './testUtils'
@@ -54,9 +55,16 @@ describe('estimate', () => {
   })
 
   it('is provisional while the road, the upper field or the measures are unanswered, and says which', () => {
-    expect(run('second_year').estimate.pending).toEqual(['field_road', 'field_upper', 'field_meadow', 'measures'])
-    const e = run('second_year', lastYear, { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }, { type: 'answer_meadow', answer: 'yes' }, { type: 'choose_measures', chosen: ['plant_production'] }).estimate
+    expect(run('second_year').estimate.pending).toEqual(['field_road', 'field_upper', 'field_meadow', 'field_bought', 'measures'])
+    const e = run('second_year', lastYear, { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }, { type: 'answer_meadow', answer: 'yes' }, { type: 'answer_bought', answer: 'no' }, { type: 'choose_measures', chosen: ['plant_production'] }).estimate
     expect(e.pending).toEqual([])
+  })
+
+  it('a field he adds counts only where he applies for plant production on it: 9.80 ha × 18,000 + 280,000 = 456,400', () => {
+    const field = { id: 'bought', landId: 'bought', polygon: SCENARIOS.second_year.bought!.polygon, name: 'Lower field', crop: 'maize' as const }
+    const yes = { type: 'answer_bought', answer: 'yes' } as const
+    expect(run('second_year', lastYear, yes, { type: 'save_field', field: { ...field, measures: ['plant_production'] } }).estimate.totalDinars).toBe(456_400)
+    expect(run('second_year', lastYear, yes, { type: 'save_field', field: { ...field, measures: [] } }).estimate.totalDinars).toBe(442_000)
   })
 
   it('leaving the meadow out takes 1.50 ha: 7.50 ha × 18,000 + 280,000 = 415,000', () => {

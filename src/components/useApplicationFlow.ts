@@ -22,9 +22,10 @@ export type Forward = { task: TaskId } | { step: StepId } | null
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-export function taskTitle(id: TaskId | 'submit', receiptsMissing = false) {
+/** A task's name; a field he added goes by the name he gave it. */
+export function taskTitle(id: TaskId | 'submit', receiptsMissing = false, names: Record<string, string> = {}) {
   if (id === 'receipts' && receiptsMissing) return tasks.receiptsMissingTitle
-  return tasks.title[id]
+  return names[id] ?? tasks.title[id] ?? ''
 }
 
 /**
@@ -38,7 +39,8 @@ export function useApplicationFlow(target: string | null) {
   const { list } = derived
   const submitted = !!state.answers.submittedAt
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
-  const title = (id: TaskId | 'submit') => taskTitle(id, receiptsMissing)
+  const names = Object.fromEntries(state.answers.newFields.filter((f) => f.landId !== 'bought').map((f) => [`added_${f.id}`, f.name]))
+  const title = (id: TaskId | 'submit') => taskTitle(id, receiptsMissing, names)
   const all = allTasks(list)
 
   const [step, setStep] = useState<StepId>(() => (list.next && list.next !== 'submit' ? stepOf(list.next) : 'submit'))

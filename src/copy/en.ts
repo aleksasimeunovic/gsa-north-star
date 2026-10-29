@@ -42,21 +42,17 @@ export const en = {
       blocked: 'Not ready to submit yet',
       fix: (n: number) => (n === 1 ? '1 thing to fix' : `${n} things to fix`),
       look: (n: number) => (n === 1 ? '1 thing to look at' : `${n} things to look at`),
-      count: (n: number) => (n === 1 ? '1 thing to do before you can submit' : `${n} things to do before you can submit`),
+      fixAndLook: (fix: number, look: number) => `${fix} to fix, ${look} to look at`,
       ready_with_warnings: (n: number) => (n === 1 ? 'Ready to submit, 1 thing to look at' : `Ready to submit, ${n} things to look at`),
       ready: 'Ready to submit',
       submitted: 'Submitted',
     },
     group: {
       error: 'Needs fixing',
-      todo: 'To do before you submit',
+      todo: 'To do',
       look: 'You can submit, but look at these',
       info: 'Good to know',
     } satisfies Record<Severity, string>,
-    info: {
-      state_checks: 'The state still inspects your farm and checks eligibility before paying',
-      unpriced: (n: number) => (n === 1 ? '1 measure is worked out after checks' : `${n} measures are worked out after checks`),
-    },
   },
 
   fields: { river: 'River field', road: 'Road field', upper: 'Upper field', meadow: 'Meadow', house: 'House field' } satisfies Record<FieldId, string>,
@@ -115,6 +111,7 @@ export const en = {
     summer: (y: number) => `Satellite photos, summer ${y}`,
     winter: (y: number) => `Satellite photos, winter ${y} to ${y + 1}`,
     registry: 'Animal registry',
+    landRegistry: (d: string) => `Land registry, ${d}`,
   },
 
   scenarios: {
@@ -157,6 +154,7 @@ export const after = {
     river_split: 'something else is growing in the lower part',
     upper_redraw: 'you said the strip is yours',
     bank_enter: "the new account isn't the right one",
+    bought_draw: 'you farm it this year',
   } as Partial<Record<WorkId, string>>,
   undo: 'Undo',
   undoLabel: 'Undo your last answer',
@@ -174,6 +172,7 @@ export const tasks = {
     field_road: 'Road field',
     field_upper: 'Upper field',
     fields_other: 'Crops on your other fields',
+    field_bought: 'The parcel you bought',
     details: 'Your details',
     measures: 'Choose your measures',
     receipts: 'Your input receipts',
@@ -192,6 +191,7 @@ export const tasks = {
     field_river: 'Check the river field',
     field_road: 'Check the road field',
     field_upper: 'Check the upper field',
+    field_bought: 'Check the parcel you bought',
     measures: 'Choose your measures',
     receipts: 'Confirm your input receipts',
   } as Record<string, string>,
@@ -207,12 +207,14 @@ export const tasks = {
     upper_redraw: 'Move the edge to where your field ends',
     pigs_declare: 'Declare your pigs',
     bank_enter: 'Type in your account number',
+    bought_draw: 'Draw the field and choose its measures',
   } satisfies Record<WorkId, string>,
   reason: {
     one_crop: 'one crop in the whole field (the state may still check it)',
     edge_moved: 'GSA moved the edge to the road for you',
     kept_until_checked: 'we asked for a correction instead',
     neighbour_line: "GSA moved your edge to your neighbour's line",
+    not_farmed: "you don't farm it this year",
     household: "household pigs don't need declaring",
     bank_sent: 'your bank sent the new one',
   } satisfies Record<RemovalReason, string>,
@@ -238,6 +240,7 @@ export const tasks = {
     source: 'From the animal registry',
     wrong: 'Not right? Ask the registry to check',
     asked: (n: number) => `The registry will check, and ${n} counts until then`,
+    askedWith: (his: string, n: number) => `You said ${his}, the registry will check, and ${n} counts until then`,
     done: (n: number) => `${n} cows calved`,
   },
 
@@ -301,15 +304,9 @@ export const tasks = {
       changed: (his: number) => `The animal registry checked and now shows ${his}`,
       kept: (_his: number, reg: number) => `The animal registry checked and kept ${reg}, which counts`,
     },
-    sendJelena: 'Send this to Jelena',
   },
 
   jelena: {
-    who: 'Jelena, your advisor at PSSS Čačak, sees only this',
-    noteLabel: 'Add a note (optional)',
-    noteHint: 'For example, what happened to them',
-    send: 'Send to Jelena',
-    cancel: 'Cancel',
     state: {
       assigned: 'Jelena has your problem',
       waiting_office: 'Jelena asked the animal registry to check',
@@ -358,6 +355,15 @@ export const tasks = {
     redraw: 'Move the edge again',
   },
 
+  bought: {
+    context: (d: string) => `The land registry shows a parcel in your name since ${d}`,
+    question: 'Will you farm it this year?',
+    yes: 'Yes, I farm it',
+    no: 'No, not this year',
+    draw: 'Draw the field on the map',
+    notFarmed: 'Not farmed this year',
+  },
+
   pigs: {
     context: (n: number) => `The animal registry shows ${n} pigs, and you didn't declare any last year`,
     question: 'Are they only for your household?',
@@ -376,12 +382,10 @@ export const tasks = {
   /** Reused without asking. */
   details: {
     title: 'Unchanged since last year',
-    source: 'From government records',
     holder: 'Name',
     place: 'Address',
     active: 'Active farmer',
     activeYes: 'Yes, this year',
-    wrong: 'Something wrong? Ask for a correction',
     asked: 'Correction asked for, the office that keeps the record checks it',
   },
 
@@ -577,15 +581,71 @@ export const finish = {
   },
 }
 
-/** What GSA kept from last year and reuses without asking: shown on request, changed only if something did. */
-export const kept = {
-  title: 'Kept from last year',
-  hint: "GSA reuses these, so there's nothing to do unless something changed",
-  change: 'Something changed? Ask for a correction',
-  calvings: 'Cows that calved, 1 April 2025 to 31 March 2026, from the animal registry',
-  calvingsShort: (n: number) => `${n} cows that calved`,
-  calvingsValue: (n: number, total: string) => `${n}, about ${total}`,
-  askRegistry: 'Something wrong? Ask the registry to check',
+/** What GSA knows about each part of his farm right now, from records and his answers, each line changed with a pen. */
+export const records = {
+  title: 'What GSA knows',
+  edit: (what: string) => `Change: ${what}`,
+  save: 'Send the correction',
+  cancel: 'Cancel',
+  correctionHint: "The record's office checks it, and its value counts until then",
+  numberError: 'Enter a whole number, like 14',
+  textError: 'Enter the right value',
+  youSaid: (v: string) => `You said ${v}`,
+  confirmed: 'Confirmed by you',
+  added: 'Added by you',
+  from: {
+    register: 'Farm register',
+    bank: (d: string) => `Your bank, ${d}`,
+    animals: 'Animal registry, today',
+    animalsShort: 'Animal registry',
+    landMap: 'Land map',
+  },
+  cattle: 'Cattle',
+  pigs: 'Pigs',
+  calvings: 'Cows that calved',
+  period: (from: string, to: string) => `${from} to ${to}`,
+  fieldValue: (ha: string, crop: string) => `${ha}, ${crop}`,
+  leftOut: 'Left out this year',
+  addField: 'Add a field',
+}
+
+/** Adding a field on the map: where, its outline, its name and crop, its measures. */
+export const fieldEdit = {
+  titleNew: 'Add a field',
+  yourField: 'Your field',
+  step: (n: number, of: number) => `Step ${n} of ${of}`,
+  place: 'Where is the field?',
+  placeHint: 'Tap the land on the map, or choose it here',
+  landLabel: 'Registered farmland',
+  landNames: { block_5: 'Farmland south of the meadow' } as Record<string, string>,
+  landChoice: (name: string, ha: string) => `${name}, ${ha}`,
+  boughtLabel: 'Bought',
+  outline: 'Is this the area you farm?',
+  fromParcel: 'Drawn from the land registry, so move a side if you farm less or more of it',
+  fromLand: 'Drawn from the land map, so move a side to where your field ends',
+  yours: 'Move a side to change your field',
+  fromFarmland: 'Land map',
+  moveSide: 'Drag a handle to move that side',
+  keys: 'Arrow keys move it by a metre, with Shift by 5',
+  sides: { top: 'Top side', right: 'Right side', bottom: 'Bottom side', left: 'Left side' } as Record<'top' | 'right' | 'bottom' | 'left', string>,
+  stepByStep: 'Move a side step by step',
+  in: '1 m in',
+  out: '1 m out',
+  useOutline: 'Use this outline',
+  details: 'About the field',
+  name: 'Name',
+  nameHint: 'So you recognise it, for example Lower field',
+  nameError: 'Give the field a name',
+  crop: 'What are you growing there this year?',
+  next: 'Continue',
+  measures: 'What do you apply for on this field?',
+  perHa: (rate: string) => `${rate} dinars per hectare`,
+  save: 'Add the field',
+  saveNone: 'Add the field without measures',
+  saveChanges: 'Save the field',
+  change: 'Change the field',
+  remove: 'Remove this field',
+  line: (name: string, ha: string, crop: string) => `${name}, ${ha}, ${crop}`,
 }
 
 export const proto = {

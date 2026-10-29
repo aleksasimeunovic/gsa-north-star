@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { centroid, clampToField, clipLineToPolygon, fractionOfLine, inArea, lineAtFraction, moveBottomEdge, overlapHa, partNames, polygonAreaHa, proposedSplitLine, splitPolygon, translateLine } from './geometry'
+import { centroid, clampToField, clipLineToPolygon, fractionOfLine, inArea, lineAtFraction, moveBottomEdge, moveSide, overlapHa, partNames, polygonAreaHa, proposedSplitLine, splitPolygon, translateLine } from './geometry'
 
 const fields = SCENARIOS.second_year.fields
 const river = fields.find((f) => f.id === 'river')!.polygon
@@ -121,4 +121,14 @@ describe('moving the shared edge as one line', () => {
     expect(r.y).toBe(240)
     expect(r.clamped).toBe(true)
   })
+
+  it('moves one side of an outline as one line, kept on its farmland and 10 m from the other side', () => {
+    const land = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }, { x: 0, y: 50 }]
+    const rect = [{ x: 10, y: 10 }, { x: 90, y: 10 }, { x: 90, y: 40 }, { x: 10, y: 40 }]
+    expect(moveSide(rect, land, 'right', 95)).toMatchObject({ value: 95, clamped: false })
+    expect(moveSide(rect, land, 'right', 120)).toMatchObject({ value: 100, clamped: true })
+    expect(moveSide(rect, land, 'top', 35)).toMatchObject({ value: 30, clamped: true })
+    expect(moveSide(rect, land, 'left', 0).polygon[0]).toEqual({ x: 0, y: 10 })
+  })
 })
+
