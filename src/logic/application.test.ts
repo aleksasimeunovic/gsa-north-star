@@ -13,7 +13,7 @@ describe('application list', () => {
   it('opens only on what needs his input this year, by part; changes first in each (14 before round 10, 11 now)', () => {
     expect(ids(run('second_year').list.todo)).toEqual([
       'bank',
-      'herd', 'pigs', 'calvings',
+      'herd', 'pigs',
       'field_river', 'field_road', 'field_upper', 'field_meadow', 'fields_other',
       'measures',
       'receipts',
@@ -115,15 +115,6 @@ describe('application list', () => {
     expect(run('second_year', ...ready, { type: 'sign_declarations', signed: true }, { type: 'submit' }).list.next).toBeNull()
   })
 
-  it('renewal is the first task when the status needs renewing', () => {
-    expect(run('second_year_not_renewed').list.next).toBe('renewal')
-    expect(ids(run('second_year_not_renewed', { type: 'renew' }).list.done)).toEqual(['renewal'])
-  })
-
-  it('missing receipts are something to upload, and there is no unreadable one', () => {
-    expect(run('missing_document').items.find((i) => i.id === 'receipts')!.detail).toBe('receipts_missing')
-  })
-
   it('no animals: no herd, pigs or calvings task, and no animals part', () => {
     const s = { ...SCENARIOS.second_year, herd: null, pigs: null }
     const a = emptyAnswers()
@@ -152,7 +143,7 @@ describe('parts and kinds of work', () => {
     const steps = run('second_year').list.steps
     expect(steps.map((st) => [st.id, st.left])).toEqual([
       ['details', 1],
-      ['animals', 3],
+      ['animals', 2],
       ['land', 5],
       ['measures', 1],
       ['documents', 1],
@@ -172,7 +163,7 @@ describe('parts and kinds of work', () => {
     const kinds = Object.fromEntries(allTasks(run('second_year').list).map((t) => [t.id, t.kind]))
     expect(kinds).toEqual({
       bank: 'change',
-      herd: 'change', pigs: 'change', calvings: 'confirm',
+      herd: 'change', pigs: 'change',
       field_river: 'change', field_road: 'change', field_upper: 'change', field_meadow: 'change', fields_other: 'confirm',
       measures: 'choice',
       receipts: 'confirm',

@@ -1,6 +1,6 @@
 /* Composed pieces and page layout. Theme: index.css (shadcn tokens). Primitives: src/ui (Tailwind). */
 
-.page { max-width: 1120px; margin: 0 auto; padding: 0 16px 160px; }
+.page { max-width: 1120px; margin: 0 auto; padding: 0 var(--page-gutter) 160px; }
 @media (min-width: 640px) { .page { padding-bottom: 120px; } }
 .main { min-width: 0; }
 .hint { display: block; font-size: 0.875rem; color: var(--muted-foreground); font-weight: 400; }
@@ -22,7 +22,7 @@
 @media (max-width: 639px) { .deadline, .brand-sub { display: none; } }
 
 /* Stepper: sticks under the header, also while he reviews a boundary */
-.step-nav { position: sticky; top: var(--topbar-h); z-index: 34; margin: 0 -16px; padding: 4px 16px 12px; background: color-mix(in oklch, var(--background) 85%, transparent); backdrop-filter: blur(12px); }
+.step-nav { position: sticky; top: var(--topbar-h); z-index: 34; margin: 0 calc(-1 * var(--page-gutter)); padding: var(--space-1) var(--page-gutter) var(--space-3); background: color-mix(in oklch, var(--background) 85%, transparent); backdrop-filter: blur(12px); }
 .stepper ol { list-style: none; margin: 0; padding: 8px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-card); }
 .stepper button { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0; border-radius: 12px; background: none; font: inherit; color: var(--foreground); cursor: pointer; text-align: left; transition: background-color 0.15s; }
 .stepper button:hover { background: var(--hover); }
@@ -52,14 +52,14 @@
 .step { display: flex; flex-direction: column; gap: var(--gap-group); padding-top: var(--space-2); scroll-margin-top: calc(var(--topbar-h) + 84px); }
 .app-layout { display: flex; flex-direction: column; gap: var(--gap-group); }
 @media (min-width: 1024px) {
-  .app-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--gap-group); align-items: start; }
+  .app-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--gap-group); align-items: start; }
   .app-side { position: sticky; top: calc(var(--topbar-h) + 96px); }
 }
+.app-side { display: flex; flex-direction: column; gap: var(--space-4); }
 .flow { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 /* The one next action: a white card, the most visible thing on screen */
-.next { background: var(--card); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow-card); padding: var(--space-8); display: flex; flex-direction: column; gap: var(--gap-pair); scroll-margin-top: calc(var(--topbar-h) + 100px); }
-@media (max-width: 639px) { .next { padding: var(--space-5); border-radius: 20px; } }
+.next { background: var(--card); border: 1px solid var(--border); border-radius: var(--stage-radius); box-shadow: var(--shadow-card); padding: var(--stage-pad); display: flex; flex-direction: column; gap: var(--gap-pair); scroll-margin-top: calc(var(--topbar-h) + 100px); }
 .next-top { display: flex; align-items: center; gap: 12px; }
 .task-icon { width: 44px; height: 44px; flex: none; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; background: var(--muted); color: var(--foreground); }
 .next-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -98,7 +98,7 @@
 }
 
 /* This part at a glance */
-.step-outline { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); box-shadow: var(--shadow-card); }
+.step-outline { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); display: flex; flex-direction: column; gap: var(--space-4); box-shadow: var(--shadow-card); }
 .outline-head { display: flex; flex-direction: column; gap: 12px; }
 .outline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .outline-list { gap: 2px; }
@@ -127,8 +127,9 @@
 .readiness-next { font-weight: 400; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .readiness-text { text-decoration: underline; text-decoration-color: color-mix(in oklch, currentColor 30%, transparent); text-underline-offset: 4px; }
 .readiness-icon { display: inline-flex; flex-shrink: 0; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 1000px; background: var(--muted); color: var(--muted-foreground); }
-.readiness[data-verdict='ready_with_warnings'] .readiness-icon { background: var(--warning-surface); color: var(--warning); }
-.readiness[data-verdict='ready'] .readiness-icon, .readiness[data-verdict='submitted'] .readiness-icon { background: var(--success-surface); color: var(--success); }
+.readiness[data-tone='error'] .readiness-icon { background: var(--error-surface); color: var(--error); }
+.readiness[data-tone='warning'] .readiness-icon { background: var(--warning-surface); color: var(--warning); }
+.readiness[data-tone='complete'] .readiness-icon { background: var(--success-surface); color: var(--success); }
 /* The drawer: errors, warnings and good to know, never mixed. No lines between rows: each row is its own hover. */
 .drawer-group { display: flex; flex-direction: column; gap: var(--gap-pair); }
 .drawer-group + .drawer-group { margin-top: var(--space-4); }
@@ -248,7 +249,7 @@ button.drawer-row:hover { background: var(--hover); }
 .next-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 
 /* Check and submit: every part in one list */
-.review-list { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 8px; }
+.review-list { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 8px; }
 .review-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .review-list li + li { border-top: 1px solid var(--border); }
 .review-list button { width: 100%; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 8px 4px; background: none; border: 0; font: inherit; color: var(--foreground); cursor: pointer; text-align: left; border-radius: 12px; }
@@ -285,3 +286,23 @@ button.drawer-row:hover { background: var(--hover); }
 .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .timeline li { display: flex; gap: 12px; align-items: center; }
 .timeline-dot { width: 28px; height: 28px; flex: none; border-radius: 1000px; display: inline-flex; align-items: center; justify-content: center; background: var(--muted); color: var(--foreground); font-size: 0.8125rem; font-weight: 600; }
+
+/* Kept from last year: closed by default, quiet zebra rows, no colour, so it never competes with the next action */
+.kept { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); overflow: hidden; }
+.kept-head { width: 100%; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--panel-pad); min-height: 56px; border: 0; background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
+.kept-head:hover { background: var(--hover); }
+.kept-icon { width: 32px; height: 32px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--row-radius); background: var(--muted); color: var(--muted-foreground); }
+.kept-titles { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.kept-title { font-size: 0.875rem; font-weight: 600; }
+.kept-hint { font-size: 0.8125rem; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kept-chevron { display: inline-flex; color: var(--muted-foreground); transition: transform 0.15s; }
+.kept[data-open] .kept-chevron { transform: rotate(180deg); }
+.kept-note { margin: 0; padding: 0 var(--panel-pad) var(--space-3); font-size: 0.8125rem; color: var(--muted-foreground); }
+.kept-rows { margin: 0; display: flex; flex-direction: column; }
+.kept-row { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--panel-pad); }
+.kept-row:nth-child(odd) { background: var(--muted); }
+.kept-row dt { font-size: 0.8125rem; color: var(--muted-foreground); }
+.kept-row dd { margin: 0; }
+.kept-value { font-weight: 500; }
+.kept-action { font-size: 0.875rem; }
+.kept-action button { min-height: 0; height: auto; padding: 2px 0; font-size: 0.8125rem; }

@@ -1,16 +1,14 @@
 import { useRef, useState } from 'react'
-import { en, proto } from '../copy/en'
-import { SCENARIO_IDS } from '../data/scenarios'
+import { proto } from '../copy/en'
 import type { Role } from '../state/actions'
 import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
 import { Drawer } from '../ui/Drawer'
-import { Stack, Text } from '../ui/Layout'
+import { Stack } from '../ui/Layout'
 import { RadioGroup } from '../ui/RadioGroup'
-import { Toggle } from '../ui/Toggle'
 import { useApp } from './AppContext'
 
-/** Clearly separate from GSA: scenario, role, design notes, reset. */
+/** Only what a reviewer needs: whose eyes to see it through, and a fresh start. */
 export function PrototypeControls() {
   const { state, dispatch, go } = useApp()
   const [open, setOpen] = useState(false)
@@ -26,18 +24,6 @@ export function PrototypeControls() {
       </div>
       <Drawer open={open} title={proto.title} variant="prototype" onClose={() => setOpen(false)} returnFocusTo={opener}>
         <Stack gap="md">
-          <Text variant="strong">{proto.notPart}</Text>
-          <div>
-            <RadioGroup
-              legend={proto.scenario}
-              value={state.scenarioId}
-              options={SCENARIO_IDS.map((id) => ({ value: id, label: en.scenarios[id] }))}
-              onChange={(scenarioId) => {
-                dispatch({ type: 'set_scenario', scenarioId })
-                go('welcome')
-              }}
-            />
-          </div>
           <RadioGroup<Role>
             legend={proto.signInAs}
             value={state.role}
@@ -50,7 +36,6 @@ export function PrototypeControls() {
               go(role === 'advisor' ? 'queue' : 'welcome')
             }}
           />
-          <Toggle label={proto.notes} checked={state.prototype.showNotes} onChange={(show) => dispatch({ type: 'set_notes', show })} />
           <div>
             <Button
               onClick={() => {

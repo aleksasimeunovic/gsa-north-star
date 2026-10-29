@@ -13,7 +13,6 @@ describe('status per item', () => {
       ['bank', 'action_required'],
       ['herd', 'action_required'],
       ['pigs', 'action_required'],
-      ['calvings', 'action_required'],
       ['field_river', 'action_required'],
       ['field_road', 'action_required'],
       ['field_upper', 'action_required'],
@@ -31,7 +30,7 @@ describe('status per item', () => {
   })
 
   it('cows that calved: confirmed, or checked by the registry without blocking', () => {
-    expect(item(run('second_year', { type: 'confirm', what: 'calvings' }), 'calvings').status).toBe('complete')
+    expect(run('second_year').items.some((i) => i.id === 'calvings')).toBe(false)
     expect(item(run('second_year', { type: 'ask_record_check', itemId: 'calvings' }), 'calvings').status).toBe('awaiting_verification')
   })
 
@@ -108,11 +107,6 @@ describe('status per item', () => {
     expect(r.status).toBe('awaiting_verification')
     expect(r.conflict).toEqual({ record: 1.68, his: 1.8, owner: 'land_map' })
     expect(r.paymentImpact?.reason).toBe('road_pending_correction')
-  })
-
-  it('missing receipts need action until uploaded; uploading confirms them', () => {
-    expect(item(run('missing_document'), 'receipts').detail).toBe('receipts_missing')
-    expect(item(run('missing_document', { type: 'attach_document', documentId: 'input_receipts' }), 'receipts').status).toBe('complete')
   })
 
   it('orders fitting measures first and keeps the full list: 10 fit, 2 do not', () => {

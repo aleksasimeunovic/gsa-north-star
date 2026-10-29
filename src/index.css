@@ -88,6 +88,20 @@
   --gap-group: var(--space-6);
   --gap-section: var(--space-10);
 
+  /*
+   * Layout: three surfaces, each with one padding and one radius, so every screen keeps the same rhythm.
+   * Page: the gutter. Stage: the one next action, the largest surface. Panel: what supports it (the part's
+   * outline, kept from last year, review rows). Row: one line inside a panel.
+   */
+  --page-gutter: var(--space-4);
+  --stage-pad: var(--space-8);
+  --stage-radius: 24px;
+  --panel-pad: var(--space-5);
+  --panel-radius: 20px;
+  --row-pad-x: var(--space-3);
+  --row-pad-y: var(--space-2);
+  --row-radius: 12px;
+
   --radius: 0.75rem;
   --shadow-card: 0 1px 2px rgb(28 42 34 / 0.04), 0 4px 16px -8px rgb(28 42 34 / 0.08);
   --topbar-h: 64px;
@@ -99,7 +113,7 @@
 }
 [data-density='compact'] { --control-h: 34px; --gap-section: var(--space-6); }
 @media (max-width: 1023px) { :root { --stepper-h: 52px; } }
-@media (max-width: 639px) { :root { --gap-section: var(--space-8); --bar-h: 118px; } }
+@media (max-width: 639px) { :root { --gap-section: var(--space-8); --bar-h: 118px; --stage-pad: var(--space-5); --stage-radius: 20px; --panel-pad: var(--space-4); } }
 
 @theme inline {
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;

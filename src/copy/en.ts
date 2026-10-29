@@ -40,6 +40,8 @@ export const en = {
     headline: {
       renewal: 'Renew your status before you can submit',
       blocked: 'Not ready to submit yet',
+      fix: (n: number) => (n === 1 ? '1 thing to fix' : `${n} things to fix`),
+      look: (n: number) => (n === 1 ? '1 thing to look at' : `${n} things to look at`),
       count: (n: number) => (n === 1 ? '1 thing to do before you can submit' : `${n} things to do before you can submit`),
       ready_with_warnings: (n: number) => (n === 1 ? 'Ready to submit, 1 thing to look at' : `Ready to submit, ${n} things to look at`),
       ready: 'Ready to submit',
@@ -117,8 +119,6 @@ export const en = {
 
   scenarios: {
     second_year: 'Second year',
-    second_year_not_renewed: 'Second year, not renewed',
-    missing_document: 'Missing receipts',
   } satisfies Record<ScenarioId, string>,
 }
 
@@ -133,7 +133,9 @@ export const home = {
   continueTo: (step: string) => `Continue: ${step}`,
   now: 'Now',
   /** What's left in this part. */
-  outline: (left: number) => (left === 0 ? 'Nothing left to do' : left === 1 ? '1 thing to do' : `${left} things to do`),
+  /** How far along the part is: a fixed number he works down, never what's left, which can seem to grow. */
+  outline: (done: number, of: number) => `${done} of ${of} done`,
+  stepFinished: (step: string) => `${step}: done`,
   submitted: 'Your application is submitted.',
   seeReceipt: 'See your receipt',
   // Said to screen readers when the list changes.
@@ -575,15 +577,23 @@ export const finish = {
   },
 }
 
+/** What GSA kept from last year and reuses without asking: shown on request, changed only if something did. */
+export const kept = {
+  title: 'Kept from last year',
+  hint: "GSA reuses these, so there's nothing to do unless something changed",
+  change: 'Something changed? Ask for a correction',
+  calvings: 'Cows that calved, 1 April 2025 to 31 March 2026, from the animal registry',
+  calvingsShort: (n: number) => `${n} cows that calved`,
+  calvingsValue: (n: number, total: string) => `${n}, about ${total}`,
+  askRegistry: 'Something wrong? Ask the registry to check',
+}
+
 export const proto = {
   open: 'Prototype',
-  title: 'Prototype controls',
-  notPart: 'Not part of GSA',
-  scenario: 'Scenario',
-  signInAs: 'Sign in as',
+  title: 'Prototype',
+  signInAs: 'Persona',
   milan: 'Milan (farmer)',
   jelena: 'Jelena (advisor)',
-  notes: 'Show design notes',
   reset: 'Reset this scenario',
 }
 

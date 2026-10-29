@@ -25,7 +25,6 @@ export const ready: Action[] = [
   { type: 'answer_bank', answer: 'yes' },
   { type: 'answer_herd', answer: 'yes' },
   { type: 'answer_pigs', answer: 'yes' },
-  { type: 'confirm', what: 'calvings' },
   { type: 'answer_river', answer: 'yes' },
   halfSplit(),
   { type: 'answer_road', answer: 'yes' },

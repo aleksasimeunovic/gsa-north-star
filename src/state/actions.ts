@@ -70,11 +70,9 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 9
+  version: 10
   scenarioId: ScenarioId
   role: Role
-  /** Prototype only, not part of GSA. */
-  prototype: { showNotes: boolean }
   /** Jelena's work on escalated cases. */
   advisor: { log: AdvisorLogEntry[] }
   answers: Answers
@@ -86,7 +84,6 @@ export interface AppState {
 export type Action =
   | { type: 'set_scenario'; scenarioId: ScenarioId }
   | { type: 'set_role'; role: Role }
-  | { type: 'set_notes'; show: boolean }
   | { type: 'advisor_act'; caseId: string; act: AdvisorAct; outcome?: Outcome }
   | { type: 'answer_herd'; answer: YesNo }
   | { type: 'set_herd_count'; count: number | null }

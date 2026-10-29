@@ -7,14 +7,13 @@ describe('application state', () => {
   it('action required until every task is done', () => {
     const r = run('second_year').readiness
     expect(r.state).toBe('action_required')
-    expect(r.counts.action_required).toBe(11)
+    expect(r.counts.action_required).toBe(10)
     expect(r.canSubmit).toBe(false)
   })
 
   it('counts every thing left, across the parts', () => {
-    expect(run('second_year').list.todo).toHaveLength(11)
-    // Missing receipts are the same one task, as an upload.
-    expect(run('missing_document').list.todo).toHaveLength(11)
+    // Cows that calved are the registry's record: reused, not asked (round 10, Aleksa).
+    expect(run('second_year').list.todo).toHaveLength(10)
   })
 
   it('ready to submit once nothing needs his action', () => {
@@ -40,11 +39,6 @@ describe('application state', () => {
     expect(run('second_year', ...ready, chosen, saved).readiness.state).toBe('ready_to_submit')
   })
 
-  it('no renewal blocks, even when everything else is ready', () => {
-    expect(run('second_year_not_renewed', ...ready).readiness.state).toBe('waiting_for_renewal')
-    expect(run('second_year_not_renewed', ...ready, { type: 'renew' }).readiness.state).toBe('ready_to_submit')
-  })
-
   it('submitted after submit', () => {
     expect(run('second_year', ...ready, { type: 'sign_declarations', signed: true }, { type: 'submit' }).readiness.state).toBe('submitted')
   })
@@ -60,18 +54,13 @@ describe('readiness verdict', () => {
   it("work not done yet is to do, not an error, and still stops him submitting; only the blurry receipt is an error", () => {
     const r = run('second_year').report
     expect(r.verdict).toBe('blocked')
-    expect(r.todo).toHaveLength(10)
+    expect(r.todo).toHaveLength(9)
     expect(r.errors).toEqual(['receipts'])
   })
 
-  it('a missing required document and a ruled-out measure are errors', () => {
-    expect(run('missing_document').report.errors).toEqual(['receipts'])
+  it('a ruled-out measure is an error', () => {
     const r = run('second_year', { type: 'choose_measures', chosen: ['breeding_cattle'], inputs: { 'breeding_cattle.herd_book': 'no' } }).report
     expect(r.errors).toContain('measures')
-  })
-
-  it('no renewal comes first', () => {
-    expect(run('second_year_not_renewed').report.verdict).toBe('renewal')
   })
 
   it('the road and the neighbour line lower the payment: ready, with two things to look at', () => {

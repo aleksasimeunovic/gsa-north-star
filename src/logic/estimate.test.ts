@@ -59,10 +59,6 @@ describe('estimate', () => {
     expect(e.pending).toEqual([])
   })
 
-  it('missing receipts keep it provisional too', () => {
-    expect(run('missing_document', lastYear).estimate.pending).toContain('receipts')
-  })
-
   it('leaving the meadow out takes 1.50 ha: 7.50 ha × 18,000 + 280,000 = 415,000', () => {
     expect(run('second_year', lastYear, { type: 'answer_meadow', answer: 'no' }).estimate.totalDinars).toBe(415_000)
   })

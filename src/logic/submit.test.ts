@@ -9,10 +9,6 @@ describe('submit', () => {
     expect(submitCheck(run('second_year', ...ready).readiness, true).canSubmit).toBe(true)
   })
 
-  it('blocked by renewal', () => {
-    expect(submitCheck(run('second_year_not_renewed', ...ready).readiness, true).reasons).toEqual(['renewal'])
-  })
-
   it('awaiting verification does not block', () => {
     const r = run('second_year', ...ready, { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }).readiness
     expect(submitCheck(r, true)).toEqual({ canSubmit: true, reasons: [] })

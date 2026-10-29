@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { after as copy, home, steps, tasks } from '../copy/en'
 import type { TaskId } from '../logic/application'
+import { stepOf } from '../logic/application'
 import { Button } from '../ui/Button'
 import { Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
@@ -88,7 +89,10 @@ export function AfterAnswerToast({ flow }: { flow: Flow }) {
   }
   if (!a || a === seen) return null
   const outcome = (id: TaskId) => taskSummary(id, derived, state)
+  // A part his answer finished is said first, as progress he can feel: "Your details: done".
+  const finished = derived.list.steps.filter((st) => st.id !== 'submit' && st.left === 0 && a.done.some((id) => stepOf(id) === st.id))
   const lines = [
+    ...finished.map((st) => home.stepFinished(steps.name[st.id])),
     ...a.more.map(({ work }) => copy.more(tasks.work[work.id], copy.why[work.id] ?? '')),
     ...a.done.map((id) => copy.done(flow.title(id), outcome(id))),
     ...a.waiting.map((id) => copy.done(flow.title(id), outcome(id))),

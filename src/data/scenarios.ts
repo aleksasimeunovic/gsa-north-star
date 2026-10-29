@@ -119,7 +119,7 @@ export interface GeneralData {
   account: { ending: string; closedOn: string; newEnding: string } | null
 }
 
-export type ScenarioId = 'second_year' | 'second_year_not_renewed' | 'missing_document'
+export type ScenarioId = 'second_year'
 
 export interface Scenario {
   id: ScenarioId
@@ -316,11 +316,8 @@ const BASE: Scenario = {
 
 export const SCENARIOS: Record<ScenarioId, Scenario> = {
   second_year: BASE,
-  second_year_not_renewed: { ...BASE, id: 'second_year_not_renewed', renewed: false },
-  missing_document: { ...BASE, id: 'missing_document', documents: [{ id: 'input_receipts', attached: false, files: [] }] },
 }
 
-export const SCENARIO_IDS = Object.keys(SCENARIOS) as ScenarioId[]
 
 // Advisor mode: only escalated problems reach Jelena.
 export type CaseKind = 'herd_discrepancy' | 'inherited_parcel'

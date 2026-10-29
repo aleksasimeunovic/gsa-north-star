@@ -2,6 +2,7 @@ import { bar, home, steps } from '../copy/en'
 import { isMapChange } from '../logic/application'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
+import { Kept } from '../components/Kept'
 import { StepOutline } from '../components/StepOutline'
 import { Stepper } from '../components/Stepper'
 import { AfterAnswerToast, StepView } from '../components/StepView'
@@ -69,6 +70,7 @@ export function Application({ target, review }: { target: string | null; review?
             <StepView flow={flow} />
             <aside className="app-side">
               <StepOutline flow={flow} />
+              <Kept step={step.id} />
             </aside>
           </div>
         )}

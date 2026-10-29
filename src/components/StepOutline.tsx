@@ -15,10 +15,9 @@ export function StepOutline({ flow }: { flow: Flow }) {
   return (
     <section className="step-outline" aria-labelledby="outline-title">
       <div className="outline-head">
-        <h3 id="outline-title" className="group-title">{home.outline(count('action_required'))}</h3>
+        <h3 id="outline-title" className="group-title">{home.outline(tasks.length - count('action_required'), tasks.length)}</h3>
         <div className="outline-progress">
           <Progress value={tasks.length - count('action_required')} max={tasks.length} />
-          <span className="outline-count" aria-hidden="true">{tasks.length - count('action_required')}/{tasks.length}</span>
         </div>
       </div>
       <ul className="outline-list">

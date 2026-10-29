@@ -24,10 +24,9 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 9,
+  version: 10,
   scenarioId: 'second_year',
   role: 'farmer',
-  prototype: { showNotes: false },
   advisor: { log: [] },
   answers: emptyAnswers(),
   past: [],
@@ -112,11 +111,10 @@ type Stamped = { action: Action; at: string }
 
 export function reducer(state: AppState, { action, at }: Stamped): AppState {
   // Prototype controls: keep role and notes, start the scenario fresh.
-  const keep = { role: state.role, prototype: state.prototype }
+  const keep = { role: state.role }
   if (action.type === 'reset') return { ...fresh(state.scenarioId), ...keep }
   if (action.type === 'set_scenario') return { ...fresh(action.scenarioId), ...keep }
   if (action.type === 'set_role') return { ...state, role: action.role }
-  if (action.type === 'set_notes') return { ...state, prototype: { showNotes: action.show } }
   if (action.type === 'advisor_act') {
     // Resolved needs the record owner's decision, and only after the case was referred to that owner.
     if (action.act === 'owner_decided' && (!action.outcome || caseState(state.advisor.log, action.caseId) !== 'waiting_office')) return state

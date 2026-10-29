@@ -224,11 +224,15 @@ function bankItem(s: Scenario, a: Answers): Item | null {
   return account ? { id: 'bank', status: 'complete', detail: 'bank_own' } : { id: 'bank', status: 'action_required', detail: 'bank_needs_account' }
 }
 
-/** The calvings the cow payment is worked out on, from the registry: confirmed, or checked by the registry. */
+/**
+ * The calvings the cow payment is worked out on are the animal registry's official record, which he can't
+ * change, only ask to be checked. So they're reused without asking (shown in "Kept from last year" in Animals)
+ * and become an item only once he asks the registry to check, which then waits for the registry.
+ */
 function calvingsItem(s: Scenario, a: Answers): Item | null {
   if (!s.herd) return null
   if (a.requests.some((r) => r.kind === 'record_check' && r.itemId === 'calvings')) return { id: 'calvings', status: 'awaiting_verification', detail: 'calvings_check' }
-  return confirmedItem('calvings', a.confirmed.includes('calvings'), 'calvings_to_confirm', 'calvings_confirmed')
+  return null
 }
 
 function confirmedItem(id: ItemId, done: boolean, todo: ItemDetail, ok: ItemDetail): Item {

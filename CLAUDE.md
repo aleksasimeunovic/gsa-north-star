@@ -148,7 +148,7 @@ Structure by what Milan has to accomplish, not by the smallest step count. There
 
 Use exactly these facts. Don't invent research findings or extra numbers.
 
-- **Farm:** active farmer status renewed (scenario toggle can make it not renewed). Application window: 10 April to 26 May; show days left.
+- **Farm:** active farmer status renewed. One scenario only. Application window: 10 April to 26 May; show days left.
 - **Pigs:** the animal registry shows 3 pigs; none declared last year. Question: only for the household? (household pigs needing no declaration is an assumption).
 - **Herd:** last year declared 41 cattle. Animal registry today: 38 (registry has headcount only, no history, so never show a breakdown of movements). Milan knows why: 4 sold, 2 slaughtered, 3 calves born. 14 cows calved between 1 April 2025 and 31 March 2026.
 - **Land:** five fields, 9.00 ha total. Use local-style names:
@@ -254,7 +254,7 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 10 (Earl, 26 Oct, on 558f96d): fewer decisions, not easier ones.** Phases: (1) CLAUDE.md; (2) fewer decisions on return: reuse without asking, confirm every year, only when changed; (3) know, suspect, don't know (river, meadow, measures, herd); (4) one status system, three severities, three estimate states, review is not submit; (5) parcel delineation as the hero, the upper field's edge moved as one line; (6) Jelena's states, colour, spacing, content pass, `docs/acceptance.md`, deploy.
 
-Prototype controls (floating "Prototype" button, clearly separated panel, "Not part of GSA"): scenario, sign in as Milan or Jelena, show design notes, reset. No new scenarios.
+Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset, nothing else (round 10b, Aleksa). Design notes are not shown in the prototype; tested, mandate and assumption distinctions live in `docs/decisions.md`.
 
 ## 11. Design system
 
