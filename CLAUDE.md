@@ -217,7 +217,7 @@ Paths:
 - Renewal gate (scenario): first screen says renewal is needed, links to it (mock), lets him prepare but not submit; after renewal: "You're an active farmer. Next: your application."
 
 ### Jelena (advisor mode): small, don't let it grow
-- Sign in as Jelena via prototype controls. A queue of only escalated problems (Milan's herd discrepancy with both values and his note; the neighbour's inherited parcel), each with full context.
+- Sign in as Jelena via prototype controls. A queue of only escalated problems (the neighbour's inherited parcel; since round 11 Milan's herd disagreement stays with the animal registry and doesn't reach her), each with full context.
 - Case states name who acts next: **needs Jelena**, **referred to <office>** (awaiting its response), **needs farmer action**, **resolved**. A referral moves responsibility; resolved needs the record owner's decision recorded as the outcome, never right after a referral. Show when she should follow up, worked out from the application deadline. Each case carries enough to decide without opening the application (parcel dispute: map preview, registry record, farmer's explanation, deadline).
 - Desktop first (checked at 1280 px). Grouped by state; within hers: blocks submission, then close to the deadline. The national deadline shows only within 7 days.
 - Milan sees the same state on his item, e.g. "Jelena asked the animal registry to check."
