@@ -12,7 +12,7 @@ export function detectChanges(s: Scenario): ChangeId[] {
     if (f.signal?.kind === 'satellite_difference') changes.push('river')
     if (f.signal?.kind === 'road_strip') changes.push('road')
     if (f.signal?.kind === 'overlap') changes.push('upper')
-    if (f.signal?.kind === 'not_mown') changes.push('meadow')
+    if (f.signal?.kind === 'yearly_use') changes.push('meadow')
   }
   return changes
 }

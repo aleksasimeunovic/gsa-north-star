@@ -4,8 +4,8 @@ import { polygonAreaHa, roundHa, splitPolygon } from './geometry'
 import { fitting, riverSplitComplete, type Item, type ItemId } from './status'
 
 /**
- * Where a line of his farm comes from: a government record he hasn't confirmed yet,
- * his own confirmation, or his answer and a record both kept until the record's owner checks.
+ * Where a line of his farm stands: not confirmed by him yet, confirmed by him, or his answer
+ * and a record both kept until the record's owner checks.
  */
 export type Source = 'records' | 'confirmed' | 'checking'
 
@@ -32,7 +32,7 @@ const sourceOf = (items: (Item | undefined)[]): Source => {
 
 /**
  * The working picture of his farm as GSA knows it right now, updated by every answer, with where each
- * line comes from. Areas are what counts for payment: a field loses what its payment impact takes.
+ * line stands. Areas are what counts for payment: a field loses what its payment impact takes.
  */
 export function farmPicture(s: Scenario, a: Answers, items: Item[]): FarmPicture {
   const item = (id: ItemId) => items.find((i) => i.id === id)

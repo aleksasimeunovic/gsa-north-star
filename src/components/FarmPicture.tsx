@@ -8,7 +8,7 @@ import { useApp } from './AppContext'
 
 /**
  * His farm as GSA knows it right now, in one line, with how much of it he has confirmed. Every answer
- * changes it. Each part and where it comes from (government records, confirmed by you, waiting for a check)
+ * changes it. Each part and where it stands (unconfirmed, confirmed by you, waiting for a check)
  * opens on request, so nothing looks settled before it is and nothing competes with the next action.
  */
 export function FarmPicture({ detailed = false }: { detailed?: boolean }) {
@@ -56,7 +56,7 @@ export function FarmPicture({ detailed = false }: { detailed?: boolean }) {
     </dl>
   )
 
-  // Before submitting he sees every part and where it comes from; elsewhere one line, the rest on request.
+  // Before submitting he sees every part and where it stands; elsewhere one line, the rest on request.
   return (
     <Card id="farm" title={copy.title} headingLevel={3} emphasis="low">
       {detailed ? (

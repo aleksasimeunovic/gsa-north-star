@@ -129,12 +129,17 @@ describe('status per item', () => {
     expect(u.paymentImpact).toEqual({ amountDinars: -1_800, areaHa: 0.1, reason: 'overlap_removed' })
   })
 
-  it('upper no: needs his drawing; a line clear of the neighbour completes it, one still over it waits for a check', () => {
-    expect(item(run('second_year', { type: 'answer_upper', answer: 'no' }), 'field_upper').detail).toBe('upper_needs_drawing')
-    const clear = item(run('second_year', { type: 'answer_upper', answer: 'no' }, { type: 'set_upper_drawing', polygon: rect(95) }), 'field_upper')
-    expect(clear).toMatchObject({ status: 'complete', detail: 'upper_drawn', paymentImpact: { areaHa: 0.1, reason: 'redrawn' } })
-    const over = item(run('second_year', { type: 'answer_upper', answer: 'no' }, { type: 'set_upper_drawing', polygon: rect(100) }), 'field_upper')
-    expect(over).toMatchObject({ status: 'awaiting_verification', detail: 'upper_drawn_overlaps', paymentImpact: { areaHa: 0.1, reason: 'overlap_pending' } })
+  it('upper no: both declarations are kept and it waits for a check, without blocking', () => {
+    expect(item(run('second_year', { type: 'answer_upper', answer: 'no' }), 'field_upper')).toMatchObject({ status: 'awaiting_verification', detail: 'upper_disputed', paymentImpact: { areaHa: 0.1, reason: 'overlap_pending' } })
+  })
+
+  it('changing a measure after applying means applying again, and nothing he typed is lost', () => {
+    const applied = play('second_year', { type: 'choose_measures', chosen: ['plant_production'] })
+    const r = play('second_year', { type: 'choose_measures', chosen: ['plant_production'] }, { type: 'draft_measures', chosen: ['plant_production', 'insurance'], inputs: { 'insurance.insurer': 'DDOR' } })
+    expect(applied.answers.measures.confirmed).toBe(true)
+    expect(r.answers.measures).toEqual({ chosen: ['plant_production', 'insurance'], inputs: { 'insurance.insurer': 'DDOR' }, confirmed: false })
+    expect(r.past).toHaveLength(applied.past.length)
+    expect(item(derive(r), 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_incomplete', missing: ['insurance'] })
   })
 
   it('a measure lists what he still has to add, including what an earlier answer makes needed', () => {
@@ -160,14 +165,14 @@ describe('status per item', () => {
     expect(item(r, 'herd')).toMatchObject({ status: 'action_required', detail: 'herd_jelena_asks' })
   })
 
-  it('the parcel he bought: a question; yes needs the field drawn and saved, no leaves it out', () => {
+  it('the parcel he bought: a question; yes needs the field saved, no leaves it out', () => {
     expect(item(run('second_year'), 'field_bought').detail).toBe('bought_unanswered')
     expect(item(run('second_year', { type: 'answer_bought', answer: 'no' }), 'field_bought')).toEqual({ id: 'field_bought', status: 'complete', detail: 'bought_not_farmed' })
     expect(item(run('second_year', { type: 'answer_bought', answer: 'yes' }), 'field_bought').detail).toBe('bought_needs_field')
     const field = { id: 'bought', landId: 'bought', polygon: rect(60), name: 'Lower field', crop: 'maize' as const, measures: [] }
     const saved = run('second_year', { type: 'answer_bought', answer: 'yes' }, { type: 'save_field', field })
     expect(item(saved, 'field_bought').status).toBe('complete')
-    // No takes the drawn field out again.
+    // No takes the field out again.
     expect(play('second_year', { type: 'answer_bought', answer: 'yes' }, { type: 'save_field', field }, { type: 'answer_bought', answer: 'no' }).answers.newFields).toEqual([])
   })
 

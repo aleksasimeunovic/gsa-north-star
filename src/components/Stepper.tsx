@@ -23,7 +23,7 @@ export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (
     <nav aria-label={copy.label} className="stepper">
       {/* On a phone: the part he is in and how far along it he is. */}
       <p className="stepper-compact" aria-hidden="true">
-        <strong>{copy.name[part.id]}</strong> <span>{part.id === 'submit' ? copy.of(at, list.length) : copy.status(part.left)}</span>
+        <strong>{copy.name[part.id]}</strong> <span>{part.id === 'submit' ? copy.of(at, list.length) : copy.status(part.tasks.length - part.left, part.tasks.length)}</span>
       </p>
       <div className="stepper-bar">
         {part.id === 'submit' ? <Progress value={at} max={list.length} /> : <Progress value={part.tasks.length - part.left} max={part.tasks.length} />}
@@ -32,8 +32,8 @@ export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (
         {list.map((s, i) => {
           const current = s.id === flow.step.id
           const mark = stepMark(s, flow.step.id)
-          // What's left is said for the part he is in; elsewhere only what to fix or look at.
-          const status = current && s.id !== 'submit' ? copy.status(s.left) : mark === 'error' ? en.mark.error : mark === 'look' ? (s.waiting ? en.mark.waiting : en.mark.payment) : ''
+          // How far along is said for the part he is in; elsewhere only what to fix or look at.
+          const status = current && s.id !== 'submit' ? copy.status(s.tasks.length - s.left, s.tasks.length) : mark === 'error' ? en.mark.error : mark === 'look' ? (s.waiting ? en.mark.waiting : en.mark.payment) : ''
           return (
             <li key={s.id} data-state={current ? 'current' : 'todo'} data-mark={mark}>
               <button type="button" aria-current={current ? 'step' : undefined} onClick={() => onStep(s.id)}>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { finish, formatDateYear, formatTime } from '../copy/en'
+import { en, finish, formatDateYear, formatTime } from '../copy/en'
 import { useApp } from '../components/AppContext'
 import { taskSummary } from '../components/TaskBodies'
 import { taskTitle } from '../components/useApplicationFlow'
@@ -63,7 +63,7 @@ export function Receipt() {
 
       {awaiting.length > 0 && (
         <section className="receipt-section" aria-labelledby="still-title">
-          <h2 id="still-title">{finish.submit.awaitingTitle}</h2>
+          <h2 id="still-title">{en.mark.waiting}</h2>
           <ul className="status-list">
             {awaiting.map((i) => (
               <li key={i.id}>

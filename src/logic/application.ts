@@ -10,9 +10,9 @@ export type TaskId = 'renewal' | ItemId
  * Work a change could still need. It starts as possible; his answer makes it needed or
  * removes it with a reason. This is what makes the application shrink as he answers.
  */
-export type WorkId = 'river_split' | 'road_redraw' | 'upper_redraw' | 'pigs_declare' | 'bank_enter' | 'bought_draw'
+export type WorkId = 'river_split' | 'road_redraw' | 'pigs_declare' | 'bank_enter' | 'bought_add'
 export type WorkState = 'possible' | 'needed' | 'done' | 'removed'
-export type RemovalReason = 'one_crop' | 'edge_moved' | 'kept_until_checked' | 'neighbour_line' | 'household' | 'bank_sent' | 'not_farmed'
+export type RemovalReason = 'one_crop' | 'edge_moved' | 'kept_until_checked' | 'household' | 'bank_sent' | 'not_farmed'
 
 export interface Work {
   id: WorkId
@@ -114,13 +114,8 @@ function workFor(id: TaskId, a: Answers, item: Item | undefined): Work[] {
     return [{ id: 'road_redraw', state: 'possible' }]
   }
   if (id === 'field_bought') {
-    if (a.bought.answer === 'no') return [removed('bought_draw', 'not_farmed')]
-    return [{ id: 'bought_draw', state: a.bought.answer === 'yes' ? (item?.status === 'complete' ? 'done' : 'needed') : 'possible' }]
-  }
-  if (id === 'field_upper') {
-    if (a.upper.answer === 'yes') return [removed('upper_redraw', 'neighbour_line')]
-    if (a.upper.answer === 'no') return [{ id: 'upper_redraw', state: item?.status === 'action_required' ? 'needed' : 'done' }]
-    return [{ id: 'upper_redraw', state: 'possible' }]
+    if (a.bought.answer === 'no') return [removed('bought_add', 'not_farmed')]
+    return [{ id: 'bought_add', state: a.bought.answer === 'yes' ? (item?.status === 'complete' ? 'done' : 'needed') : 'possible' }]
   }
   return []
 }

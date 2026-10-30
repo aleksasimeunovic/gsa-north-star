@@ -1,7 +1,7 @@
 import {
   ArrowRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Copy, CircleAlert, CircleCheck,
-  CircleX, Clock, Database, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, Map, Maximize2, Minimize2, Minus,
-  PencilLine, PiggyBank, Plus, Receipt, Satellite, Send, Sprout, Undo2, Upload, Wheat, X, type LucideIcon,
+  CircleX, Clock, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, Map, Maximize2, Minimize2, Minus,
+  PencilLine, PiggyBank, Plus, Receipt, Satellite, Send, Sprout, Target, Undo2, Upload, Wheat, X, type LucideIcon,
 } from 'lucide-react'
 import { useDensity } from './Density'
 
@@ -14,7 +14,6 @@ const ICONS = {
   complete: CheckCircle2,
   action_required: CircleAlert,
   awaiting_verification: Clock,
-  records: Database,
   kept: History,
   error: CircleX,
   warning: CircleAlert,
@@ -52,6 +51,7 @@ const ICONS = {
   meadow: Sprout,
   map: Map,
   measures: HandCoins,
+  goal: Target,
   documents: FileText,
   receipt: Receipt,
   submit: Send,

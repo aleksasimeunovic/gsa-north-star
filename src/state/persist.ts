@@ -8,7 +8,7 @@ export function loadState(): AppState | null {
     const raw = window.localStorage.getItem(KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as AppState
-    return parsed.version === 11 ? parsed : null
+    return parsed.version === 12 ? parsed : null
   } catch {
     return null
   }

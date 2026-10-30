@@ -17,12 +17,22 @@ const ICON = { error: 'error', todo: 'todo', look: 'warning', info: 'info' } as 
  * place it is about.
  */
 export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open: boolean; onClose: () => void; onPick: (id: TaskId) => void; returnFocusTo: RefObject<HTMLElement> }) {
+  const { derived } = useApp()
+  return (
+    <Drawer open={open} title={readinessCount(derived.report)} onClose={onClose} returnFocusTo={returnFocusTo}>
+      <ActionPoints onPick={onPick} />
+    </Drawer>
+  )
+}
+
+/** The action points themselves: the same rows in the drawer and on Check and submit. */
+export function ActionPoints({ onPick }: { onPick: (id: TaskId) => void }) {
   const { derived, state } = useApp()
   const r = derived.report
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
   const title = (id: TaskId) => taskTitle(id, receiptsMissing)
   return (
-    <Drawer open={open} title={readinessCount(r)} onClose={onClose} returnFocusTo={returnFocusTo}>
+    <>
       {r.errors.length > 0 && (
         <Group severity="error">
           {r.errors.map((id) => (
@@ -33,17 +43,11 @@ export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open
       {r.warnings.length > 0 && (
         <Group severity="look">
           {r.warnings.map((w) => (
-            <Row
-              key={w.id}
-              severity="look"
-              title={title(w.id)}
-              hint={taskSummary(w.id, derived, state)}
-              onClick={() => onPick(w.id)}
-            />
+            <Row key={w.id} severity="look" title={title(w.id)} hint={taskSummary(w.id, derived, state)} onClick={() => onPick(w.id)} />
           ))}
         </Group>
       )}
-    </Drawer>
+    </>
   )
 }
 

@@ -10,7 +10,7 @@ export const emptyAnswers = (): Answers => ({
   herd: { answer: null, ownCount: null },
   river: { answer: null, split: null },
   road: { answer: null },
-  upper: { answer: null, drawn: null },
+  upper: { answer: null },
   pigs: { answer: null },
   bank: { answer: null, account: null },
   meadow: { answer: null },
@@ -26,7 +26,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 11,
+  version: 12,
   scenarioId: 'second_year',
   role: 'farmer',
   advisor: { log: [] },
@@ -40,7 +40,7 @@ export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(),
 
 /** Answers that can be taken back with Undo. Prototype, advisor and submit actions can't. */
 const UNDOABLE = new Set<Action['type']>([
-  'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper', 'set_upper_drawing',
+  'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper',
   'answer_pigs', 'confirm', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
   'answer_bank', 'set_bank_account', 'answer_meadow', 'answer_bought', 'save_field', 'remove_field',
 ])
@@ -72,10 +72,7 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
     case 'answer_road':
       return { ...a, road: { ...a.road, answer: action.answer } }
     case 'answer_upper':
-      // "No" always asks him to draw afresh.
-      return { ...a, upper: { answer: action.answer, drawn: action.answer === 'no' ? a.upper.drawn : null } }
-    case 'set_upper_drawing':
-      return { ...a, upper: { ...a.upper, drawn: action.polygon } }
+      return { ...a, upper: { answer: action.answer } }
     case 'answer_pigs':
       return { ...a, pigs: { answer: action.answer } }
     case 'answer_bank':
@@ -94,7 +91,7 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, newFields: a.newFields.filter((f) => f.id !== action.id) }
     case 'choose_measures':
       // Nothing is filled in for him: GSA prepares, only Milan declares. A suggestion's fields are one tap away.
-      return { ...a, measures: { ...a.measures, chosen: action.chosen, confirmed: true, inputs: { ...a.measures.inputs, ...action.inputs } } }
+      return { ...a, measures: { chosen: action.chosen, confirmed: true, inputs: action.inputs ?? a.measures.inputs } }
     case 'save_measure':
       return { ...a, measures: { ...a.measures, inputs: { ...a.measures.inputs, ...action.inputs } } }
     case 'reply_to_jelena':
@@ -142,6 +139,10 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
       advisor: { log: [...state.advisor.log, { caseId: MILAN_CASE.id, act: 'farmer_replied', at, note: action.note }] },
       history: [...state.history, { at, actor: 'Milan', action: action.type }],
     }
+  }
+  // Kept as he types, so it is neither an answer to undo nor a line in the history. Changing anything means applying again.
+  if (action.type === 'draft_measures') {
+    return { ...state, answers: { ...state.answers, measures: { chosen: action.chosen, inputs: action.inputs, confirmed: false } } }
   }
   if (action.type === 'undo') {
     const prev = state.past[state.past.length - 1]

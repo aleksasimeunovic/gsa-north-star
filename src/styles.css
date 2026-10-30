@@ -151,26 +151,28 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-group { display: flex; flex-direction: column; gap: 8px; }
 .measure-group[data-suggested] .group-title { display: inline-flex; align-items: center; gap: 8px; }
 /* A chosen measure: selected, with what it needs from him right under it */
-.measure-option { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; background: var(--card); transition: border-color 0.15s, background-color 0.15s; }
+.measure-option { scroll-margin-top: calc(var(--topbar-h) + 100px); display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; background: var(--card); transition: border-color 0.15s, background-color 0.15s; }
 .measure-option:hover { border-color: var(--hover-border); }
 .measure-option[data-on] { border-color: var(--foreground); background: var(--muted); }
-.measure-option > label { border: 0 !important; background: none !important; }
 .measure-fields { display: flex; flex-direction: column; gap: var(--space-4); margin: 0 var(--space-4) var(--space-4); padding: var(--space-4); border-radius: 12px; background: var(--card); }
 .measure-fields .auto-line { padding: 0; background: none; }
 .auto-mark { display: inline-flex; color: var(--muted-foreground); }
 .measure-state { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.875rem; font-weight: 500; }
 .measure-state[data-ready] { color: var(--success); }
-.measure-state:not([data-ready]) { color: var(--warning-text); }
+.measure-progress { margin: 0 0 var(--space-2); font-size: 0.875rem; color: var(--muted-foreground); }
 .measure-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .measure-line { display: block; }
 .measure-line[data-strong] { color: var(--foreground); }
-.measure-source { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--muted-foreground); font-size: 0.8125rem; }
-.measure-again { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); }
+.measure-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); }
+.measure-text { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.measure-name { font-weight: 500; line-height: 1.375; }
 .auto-line { display: flex; gap: 8px; align-items: flex-start; padding: 12px 16px; border-radius: 12px; background: var(--muted); }
 
 /* Maps: the real satellite photo */
 .map-figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
-.map-frame { display: flex; flex-direction: column; gap: 8px; }
+.map-frame { position: relative; display: flex; flex-direction: column; gap: 8px; }
+/* When the photo was taken: on every map, over the photo */
+.map-date { position: absolute; left: 8px; bottom: 8px; z-index: 1; margin: 0; padding: 2px 8px; border-radius: 8px; background: rgb(0 0 0 / 0.65); color: #fff; font-size: 0.75rem; line-height: 1.5; pointer-events: none; }
 .map-link { cursor: pointer; border-radius: 16px; transition: box-shadow 0.15s; }
 .map-link:hover { box-shadow: 0 0 0 3px var(--border); }
 .farm-map { width: 100%; height: 220px; position: relative; background: var(--foreground); border-radius: 16px; overflow: hidden; }
@@ -189,9 +191,6 @@ button.drawer-row:hover { background: var(--hover); }
 /* Map handles are controls, not actions: white and dark, never the primary green */
 .map-handle { width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 4px solid var(--foreground); box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); cursor: grab; touch-action: none; }
 .map-grip { min-width: 64px; height: 48px; padding: 0 16px; border-radius: 24px; background: #fff; color: var(--foreground); border: 3px solid var(--foreground); box-shadow: 0 2px 8px rgb(0 0 0 / 0.35); font: 700 1.375rem/1 var(--font-sans, sans-serif); cursor: grab; touch-action: none; }
-.edge-stepper { display: inline-flex; align-items: center; gap: var(--space-3); }
-.edge-stepper button { min-width: 48px; font-size: 1.25rem; }
-.edge-stepper output { min-width: 4rem; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 .map-handle:focus-visible, .map-grip:focus-visible { outline: 3px dashed #fff; outline-offset: 3px; }
 
 /* A large map with the question built in: the map fills the screen between the stepper and the action bar */
@@ -223,6 +222,9 @@ button.drawer-row:hover { background: var(--hover); }
 .stage-action { position: sticky; bottom: 0; z-index: 1; margin-top: auto; padding: var(--space-4) 0 var(--space-4); background: var(--card); box-shadow: 0 -12px 12px -12px rgb(28 42 34 / 0.12); }
 .next .stage-action { bottom: var(--bar-h); margin: 0 calc(-1 * var(--space-8)); padding: var(--space-4) var(--space-8); }
 @media (max-width: 639px) { .next .stage-action { margin: 0 calc(-1 * var(--space-5)); padding: var(--space-4) var(--space-5); } }
+/* An action that ends the card ends it: the card's own padding doesn't add to the action's. */
+.next:has(.stage-action:last-child) { padding-bottom: 0; }
+.next .stage-action:last-child { padding-bottom: var(--space-5); border-radius: 0 0 var(--stage-radius) var(--stage-radius); }
 
 /* His farm and the estimate, on the last part */
 .farm { margin: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -248,21 +250,10 @@ button.drawer-row:hover { background: var(--hover); }
 .next-top { align-items: flex-start; gap: 16px; }
 .next-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 
-/* Check and submit: every part in one list */
-.review-list { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 8px; }
-.review-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.review-list li + li { border-top: 1px solid var(--border); }
-.review-list button { width: 100%; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 8px 4px; background: none; border: 0; font: inherit; color: var(--foreground); cursor: pointer; text-align: left; border-radius: 12px; }
-.review-list button:hover { background: var(--hover); }
-.review-icon { width: 36px; height: 36px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--muted); color: var(--foreground); }
-.review-list li[data-mark='done'] .review-icon { background: var(--success-surface); color: var(--success); }
-.review-list li[data-mark='look'] .review-icon { background: var(--warning-surface); color: var(--warning); }
-.review-list li[data-mark='error'] .review-icon { background: var(--error-surface); color: var(--error); }
-.review-text { display: flex; flex-direction: column; flex: 1; }
-.review-name { font-weight: 500; }
-.review-status { font-size: 0.8125rem; color: var(--muted-foreground); }
-.review-list li[data-mark='look'] .review-status { color: var(--warning-text); }
-.review-list li[data-mark='error'] .review-status { color: var(--error); }
+/* Check and submit: only what to fix or look at, a small panel, never the stepper again */
+.action-points { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--space-3) var(--panel-pad); display: flex; flex-direction: column; gap: var(--space-1); }
+.action-points .drawer-group + .drawer-group { margin-top: 0; }
+.action-points .drawer-row { padding: var(--space-2) var(--space-3); }
 .status-section { display: flex; flex-direction: column; gap: 4px; }
 .status-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .status-list li { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: start; }
@@ -306,6 +297,3 @@ button.drawer-row:hover { background: var(--hover); }
 .records-form { display: flex; flex-direction: column; gap: var(--space-3); }
 .records-form-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .records-foot { border-top: 1px solid var(--border); padding-top: var(--space-2); margin: 0 -8px; }
-.side-steps summary { cursor: pointer; font-weight: 500; min-height: 44px; display: flex; align-items: center; }
-.side-steps ul { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
-.side-steps li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--space-2); }

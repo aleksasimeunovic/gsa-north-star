@@ -17,7 +17,7 @@ import VectorSource from 'ol/source/Vector'
 import XYZ from 'ol/source/XYZ'
 import { en, formatHa, map as copy } from '../../copy/en'
 import type { FieldId, Point, Polygon, Scenario } from '../../data/scenarios'
-import { bounds, centroid, landOf } from '../../logic/geometry'
+import { bounds, centroid } from '../../logic/geometry'
 import { fromMercator, toMercator } from '../../logic/geo'
 import { labelStyle, mapStyle, type MapRole } from '../../ui/mapStyles'
 
@@ -31,10 +31,6 @@ export interface FarmMapOptions {
   focus?: FieldId
   /** Draw only these fields. */
   only?: FieldId[]
-  /** Drawing where the field ends: the field itself is left out (he draws it) and registered farmland is shown. */
-  editing?: boolean
-  /** His own drawing of the field in question, shown instead of last year's line. */
-  drawn?: Polygon | null
   /** Someone else's parcel, shown alone and framed. */
   parcel?: Polygon
   /** Fields he added this year, drawn and named like the rest. */
@@ -43,13 +39,11 @@ export interface FarmMapOptions {
   spot?: { polygon: Polygon; label: string }
   /** Registered farmland he can put a field on, outlined and named so he can tap it. */
   lands?: { id: string; polygon: Polygon; label: string }[]
-  /** Leave this added field out: it is being drawn. */
+  /** Leave this added field out: it is the one being changed. */
   skip?: string
 }
 
 export type FarmMap = ReturnType<typeof createFarmMap>
-
-export { landOf }
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -82,13 +76,10 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   const fields = opts.parcel ? [] : opts.only ? s.fields.filter((f) => opts.only!.includes(f.id)) : s.fields
   if (opts.parcel) shape(opts.parcel, 'field')
 
-  // Registered farmland is drawn but not labelled: it explains itself when it stops a corner.
-  if (opts.editing && focused) shape(landOf(s, focused), 'land')
   for (const f of fields) {
-    if (opts.editing && f.id === focused?.id) continue
     // With a place in question (a parcel, farmland to pick), his fields are only there for orientation.
     const strong = (!focused && !opts.spot && !opts.lands?.length) || f.id === focused?.id
-    shape(f.id === focused?.id && opts.drawn ? opts.drawn : f.polygon, strong ? 'field' : 'faint')
+    shape(f.polygon, strong ? 'field' : 'faint')
     // On a still preview only the field in question is named; on a map he moves around, every field is.
     if (strong || opts.interactive) {
       const b = bounds(f.polygon)
@@ -118,16 +109,12 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
 
   // What changed, in place: the satellite flag, the road strip, the neighbour's line.
   const signal = focused?.signal
-  if (signal?.kind === 'satellite_difference' && !opts.editing) {
+  if (signal?.kind === 'satellite_difference') {
     shape(signal.flagPolygon, 'flag')
     const b = bounds(signal.flagPolygon)
     label(notes, { x: (b.minX + b.maxX) / 2, y: b.maxY - 4 }, copy.flag, { above: true, size: 14 })
   }
-  if (signal?.kind === 'not_mown' && focused) {
-    shape(focused.polygon, 'flag')
-    label(notes, centroid(focused.polygon), copy.notMown)
-  }
-  if (signal?.kind === 'road_strip' && !opts.editing) {
+  if (signal?.kind === 'road_strip') {
     shape(signal.stripPolygon, 'strip')
     const b = bounds(signal.stripPolygon)
     label(notes, { x: (b.minX + b.maxX) / 2, y: b.minY - 14 }, copy.strip(formatHa(signal.stripHa)))
@@ -135,11 +122,9 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   if (signal?.kind === 'overlap') {
     shape(signal.neighbourPolygon, 'neighbour')
     label(notes, centroid(signal.neighbourPolygon), copy.neighbour, { strong: false, size: 13 })
-    if (!opts.editing && !opts.drawn) {
-      shape(signal.overlapPolygon, 'overlap')
-      const b = bounds(signal.overlapPolygon)
-      label(notes, { x: (b.minX + b.maxX) / 2, y: b.minY - 14 }, copy.both(formatHa(signal.overlapHa)))
-    }
+    shape(signal.overlapPolygon, 'overlap')
+    const b = bounds(signal.overlapPolygon)
+    label(notes, { x: (b.minX + b.maxX) / 2, y: b.minY - 14 }, copy.both(formatHa(signal.overlapHa)))
   }
 
   const extentOf = (polys: Polygon[]) => boundingExtent(polys.flat().map(coord))

@@ -1,9 +1,9 @@
-import { lazy, Suspense, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import { draw, en, finish, formatDate, formatDateYear, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
 import type { FieldId } from '../data/scenarios'
 import { milanCaseState, milanOutcome } from '../logic/advisor'
 import { isMapChange, type Task, type TaskId } from '../logic/application'
-import { partNames, polygonAreaHa, roundHa, splitPolygon } from '../logic/geometry'
+import { partNames, roundHa, splitPolygon } from '../logic/geometry'
 import { impactOf, type Item, type ItemId } from '../logic/status'
 import type { Confirmable, YesNo } from '../state/actions'
 import { Banner } from '../ui/Banner'
@@ -12,7 +12,7 @@ import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Compare, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Problem } from '../ui/Problem'
-import { Answers, Fact } from '../ui/Fact'
+import { Answers } from '../ui/Fact'
 import { Note } from '../ui/Note'
 import { StageAction } from '../ui/MapStage'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
@@ -188,11 +188,6 @@ function PigsBody() {
         answer={a.answer === 'yes' ? tasks.pigs.answerYes : tasks.pigs.answerNo}
         onAnswer={(answer) => dispatch({ type: 'answer_pigs', answer })}
       />
-      {a.answer === null && (
-        <Text variant="small">
-          <Note kind="assumption" />
-        </Text>
-      )}
     </Stack>
   )
 }
@@ -225,27 +220,12 @@ export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upp
 /** The herd disagreement's four answers, in the same words wherever they appear. */
 export const herdSettled = (jelena: boolean, reg: number) => tasks.herd.settled(reg, jelena ? tasks.herd.withJelena : tasks.herd.registryOnly)
 
-/** What GSA found, said in one line, before he answers. */
-export const mapContext = (id: 'field_river' | 'field_road' | 'field_upper') =>
-  id === 'field_river' ? tasks.river.context : id === 'field_road' ? tasks.road.context : tasks.upper.context
-
-/** Where a map change's fact comes from, and when. */
-export function mapSource(s: Derived['scenario'], id: 'field_river' | 'field_road' | 'field_upper' | 'field_meadow') {
+/** What GSA found, said in one line, with when: a possibility at most, never what it means. */
+export function mapContext(s: Derived['scenario'], id: 'field_river' | 'field_road' | 'field_upper') {
   const sig = s.fields.find((f) => `field_${f.id}` === id)?.signal
-  if (!sig) return ''
-  if (sig.kind === 'not_mown') return en.source.summer(sig.summer)
-  const d = formatDateYear(sig.seen)
-  return sig.kind === 'satellite_difference' ? en.source.photo(d) : sig.kind === 'road_strip' ? en.source.landMap(d) : en.source.neighbour(d)
-}
-
-/** What GSA knows about a map change: the fact and its source. */
-export const MapFact = ({ id, children }: { id: 'field_river' | 'field_road' | 'field_upper'; children?: ReactNode }) => {
-  const { derived } = useApp()
-  return (
-    <Fact source={mapSource(derived.scenario, id)}>
-      {mapContext(id)} {children}
-    </Fact>
-  )
+  if (sig?.kind === 'road_strip') return tasks.road.context(formatDateYear(sig.seen))
+  if (sig?.kind === 'overlap') return tasks.upper.context(formatDateYear(sig.seen))
+  return tasks.river.context
 }
 
 /**
@@ -258,22 +238,11 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
   const item = itemOf(derived, id)
   const unanswered = item.detail.endsWith('_unanswered')
   const review = () => go('review', id)
-  const action =
-    item.detail === 'river_needs_split' ? tasks.reviewSplit : item.detail === 'upper_needs_drawing' ? tasks.reviewDraw : tasks.review
+  const action = item.detail === 'river_needs_split' ? tasks.reviewSplit : tasks.review
 
   return (
     <Stack gap="section">
-      {unanswered ? (
-        <MapFact id={id}>
-          {id === 'field_river' && (
-            <>
-              <Note kind="eu_mandate" /> <Note kind="ai" />
-            </>
-          )}
-        </MapFact>
-      ) : (
-        <Text>{taskSummary(id, derived, state)}</Text>
-      )}
+      <Text>{taskSummary(id, derived, state)}</Text>
       <figure className="map-figure">
         <div className="map-link" onClick={review}>
           <Suspense fallback={<MapFallback mode="preview" />}>
@@ -281,8 +250,7 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
               scenario={derived.scenario}
               focus={fieldId}
               mode="preview"
-              drawn={id === 'field_upper' ? state.answers.upper.drawn : null}
-              label={`${map.title}: ${en.fields[fieldId]}. ${mapContext(id)}`}
+              label={`${map.title}: ${en.fields[fieldId]}. ${mapContext(derived.scenario, id)}`}
             />
           </Suspense>
         </div>
@@ -445,10 +413,7 @@ function CalvingsBody() {
   )
 }
 
-/**
- * What the state checks for this year's payment leads, and the question is about this year. Last summer's
- * photo is only why GSA asks, labelled as last summer.
- */
+/** What the state checks this year, and the question about this year: one timeframe. */
 function MeadowBody() {
   const { derived, state, dispatch } = useApp()
   const a = state.answers.meadow
@@ -462,14 +427,9 @@ function MeadowBody() {
       )}
       <figure className="map-figure">
         <Suspense fallback={<MapFallback mode="preview" />}>
-          <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}. ${m.why}`} />
+          <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}`} />
         </Suspense>
       </figure>
-      {a.answer === null && (
-        <Fact source={mapSource(derived.scenario, 'field_meadow')}>
-          {m.why} <Note kind="ai" />
-        </Fact>
-      )}
       <Question
         legend={m.question}
         value={a.answer}
@@ -554,14 +514,14 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
         return tasks.river.split(x, y)
       }
       if (item.detail === 'river_one_crop') return `${tasks.river.oneCrop}, ${tasks.river.mayCheck}`
-      return tasks.river.context
+      return mapContext(s, id)
     }
     case 'field_road': {
       const f = s.fields.find((x) => x.id === 'road')!
       const strip = f.signal?.kind === 'road_strip' ? f.signal.stripHa : 0
       if (done && item.paymentImpact) return `${tasks.road.done(formatHa(roundHa(f.areaHa - strip)))}, ${tasks.road.payment(about(item.paymentImpact.amountDinars)).toLowerCase()}`
       if (item.status === 'awaiting_verification') return tasks.road.correctionAsked
-      return tasks.road.context
+      return mapContext(s, id)
     }
     case 'pigs':
       if (item.detail === 'pigs_household') return tasks.pigs.household
@@ -569,12 +529,9 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       return tasks.pigs.context(s.pigs!.registryCount)
     case 'field_upper': {
       const f = s.fields.find((x) => x.id === 'upper')!
-      const drawn = state.answers.upper.drawn
       if (item.detail === 'upper_moved' && f.signal?.kind === 'overlap') return tasks.upper.moved(formatHa(roundHa(f.areaHa - f.signal.overlapHa)))
-      if (item.detail === 'upper_drawn' && drawn) return tasks.upper.drawn(formatHa(roundHa(polygonAreaHa(drawn))))
-      if (item.detail === 'upper_drawn_overlaps') return tasks.upper.drawnOverlaps
-      if (item.detail === 'upper_needs_drawing') return tasks.work.upper_redraw
-      return tasks.upper.context
+      if (item.detail === 'upper_disputed') return tasks.upper.disputed
+      return mapContext(s, id)
     }
     case 'fields_other': {
       const names = s.fields.filter((f) => !f.signal).map((f) => en.fields[f.id]).join(', ')
@@ -582,7 +539,7 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
     }
     case 'field_bought':
       if (item.detail === 'bought_not_farmed') return tasks.bought.notFarmed
-      if (item.detail === 'bought_needs_field') return tasks.work.bought_draw
+      if (item.detail === 'bought_needs_field') return tasks.work.bought_add
       return tasks.bought.context(formatDateYear(s.bought!.on))
     case 'details':
       return tasks.details.asked

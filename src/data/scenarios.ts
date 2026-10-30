@@ -13,12 +13,12 @@ export type FieldId = 'river' | 'road' | 'upper' | 'meadow' | 'house'
 
 /** Each signal is a fact with its source's date (prototype placeholders): GSA says what it saw and when. */
 export type FieldSignal =
-  | { kind: 'satellite_difference'; flagPolygon: Polygon; flagHa: number; seen: string }
+  | { kind: 'satellite_difference'; flagPolygon: Polygon; flagHa: number }
   | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number; seen: string }
   /** Last year's drawing runs into a neighbour's declared field. */
   | { kind: 'overlap'; neighbourPolygon: Polygon; overlapPolygon: Polygon; overlapHa: number; seen: string }
-  /** Satellite photos saw no mowing or grazing on grassland last summer: only why GSA asks about this year. */
-  | { kind: 'not_mown'; summer: number }
+  /** Grassland the state checks is mowed or grazed this year: he says whether it will be. */
+  | { kind: 'yearly_use' }
 
 export interface Field {
   id: FieldId
@@ -65,6 +65,8 @@ export interface Requirement {
   blocks?: string
 }
 
+export type GoalKind = 'organic_months' | 'dairy_cows'
+
 export interface Measure {
   id: MeasureId
   /** Only the two real 2026 rates are numbers; the rest are worked out after checks. */
@@ -73,6 +75,8 @@ export interface Measure {
   fits: boolean
   lastYear: boolean
   requirements: Requirement[]
+  /** What he still lacks to be eligible, for a measure that doesn't fit yet (prototype placeholder). */
+  goal?: { kind: GoalKind; left: number }
 }
 
 export interface Document {
@@ -93,8 +97,6 @@ export interface Suggestion {
   evidence: 'green_all_winter' | 'inseminations'
   /** Fields the evidence is about, suggested to him; he uses them with one tap. Never ticked for him. */
   fields?: FieldId[]
-  /** When the evidence is from: the winter the photos cover, or the registry's period. */
-  winter?: number
   count?: number
 }
 
@@ -135,6 +137,8 @@ export interface Scenario {
   window: { opens: string; closes: string }
   // Prototype clock (assumption), so "days left" means something.
   today: string
+  /** When the satellite photo on every map was taken (prototype placeholder). */
+  photoTaken: string
   generalData: GeneralData
   /** Where the fields sit on the satellite photo: north of a real road west of Bečanj (prototype placement). */
   place: Placement
@@ -169,7 +173,7 @@ const FIELDS: Field[] = [
     arable: true,
     polygon: rect(0, 0, 200, 120),
     // The lower half floods every spring; satellite sees it differently.
-    signal: { kind: 'satellite_difference', flagPolygon: rect(0, 60, 200, 60), flagHa: 1.2, seen: '2026-04-21' },
+    signal: { kind: 'satellite_difference', flagPolygon: rect(0, 60, 200, 60), flagHa: 1.2 },
   },
   {
     id: 'road',
@@ -190,7 +194,7 @@ const FIELDS: Field[] = [
     // The neighbour's new declaration starts 5 m inside last year's drawing.
     signal: { kind: 'overlap', neighbourPolygon: rect(0, 235, 200, 55), overlapPolygon: rect(0, 235, 200, 5), overlapHa: 0.1, seen: '2026-04-15' },
   },
-  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100), signal: { kind: 'not_mown', summer: 2025 } },
+  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100), signal: { kind: 'yearly_use' } },
   { id: 'house', name: 'House field', areaHa: 1.3, cropLastYear: 'maize', arable: true, polygon: rect(390, 0, 130, 100) },
 ]
 
@@ -297,8 +301,8 @@ const MEASURES: Measure[] = [
       { id: 'how_water', kind: 'longtext' },
     ],
   },
-  { id: 'organic', fits: false, lastYear: false, requirements: [] },
-  { id: 'milk', fits: false, lastYear: false, requirements: [] },
+  { id: 'organic', fits: false, lastYear: false, requirements: [], goal: { kind: 'organic_months', left: 2 } },
+  { id: 'milk', fits: false, lastYear: false, requirements: [], goal: { kind: 'dairy_cows', left: 2 } },
 ]
 
 const RECEIPTS = [
@@ -315,6 +319,7 @@ const BASE: Scenario = {
   renewed: true,
   window: { opens: '2026-04-10', closes: '2026-05-26' },
   today: '2026-04-28',
+  photoTaken: '2026-04-21',
   generalData: {
     holder: 'Milan Dragović',
     place: 'Bečanj, near Čačak',
@@ -331,7 +336,7 @@ const BASE: Scenario = {
   otherLand: OTHER_LAND,
   measures: MEASURES,
   suggestions: [
-    { measureId: 'green_cover', evidence: 'green_all_winter', fields: ['river', 'upper'], winter: 2025 },
+    { measureId: 'green_cover', evidence: 'green_all_winter', fields: ['river', 'upper'] },
     { measureId: 'insemination', evidence: 'inseminations', count: 9 },
   ],
   documents: [{ id: 'input_receipts', attached: true, files: RECEIPTS, unreadable: 'Diesel receipt.jpg' }],

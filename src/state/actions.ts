@@ -17,7 +17,7 @@ export interface Split {
 
 /**
  * A field he adds this year: the parcel he bought, or land he farms that isn't in his application yet.
- * Saved whole, once he has drawn it, named it, given its crop and chosen its measures.
+ * Saved whole, once he has named it, given its crop and chosen its measures.
  */
 export interface NewField {
   id: string
@@ -35,8 +35,8 @@ export interface Answers {
   river: { answer: YesNo | null; split: Split | null }
   /** No sends the correction: the land map's area counts until it is checked. */
   road: { answer: YesNo | null }
-  /** Yes: GSA moves his edge back to the neighbour's line. No: he draws where his field ends. */
-  upper: { answer: YesNo | null; drawn: Polygon | null }
+  /** Yes: GSA moves his edge back to the neighbour's line. No: both declarations are kept until the payments office checks. */
+  upper: { answer: YesNo | null }
   /** Yes: household only, nothing to declare. */
   pigs: { answer: YesNo | null }
   /** Yes: payments go to the new account the bank reported. No: he gives the account. */
@@ -46,7 +46,7 @@ export interface Answers {
   /** Yes: he farms the parcel he bought, and adds it as a field. No: it stays out of this application. */
   bought: { answer: YesNo | null }
   newFields: NewField[]
-  /** Chosen measures and what each needs, keyed `${measureId}.${requirementId}`. */
+  /** Chosen measures and what each needs, keyed `${measureId}.${requirementId}`. `confirmed`: he has applied. */
   measures: { chosen: MeasureId[]; confirmed: boolean; inputs: Record<string, MeasureValue> }
   confirmed: Confirmable[]
   /** One specific problem sent on: to Jelena, or to the record's owner to check. */
@@ -89,7 +89,7 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 11
+  version: 12
   scenarioId: ScenarioId
   role: Role
   /** Jelena's work on escalated cases. */
@@ -113,7 +113,6 @@ export type Action =
   | { type: 'set_split'; split: Split | null }
   | { type: 'answer_road'; answer: YesNo }
   | { type: 'answer_upper'; answer: YesNo }
-  | { type: 'set_upper_drawing'; polygon: Polygon | null }
   | { type: 'answer_pigs'; answer: YesNo }
   | { type: 'answer_bank'; answer: YesNo }
   | { type: 'set_bank_account'; account: string }
@@ -121,8 +120,10 @@ export type Action =
   | { type: 'answer_bought'; answer: YesNo }
   | { type: 'save_field'; field: NewField }
   | { type: 'remove_field'; id: string }
-  /** With what he already added for them, so choosing and filling in is one step. */
+  /** Applying: only once everything each chosen measure needs is in. */
   | { type: 'choose_measures'; chosen: MeasureId[]; inputs?: Record<string, MeasureValue> }
+  /** What he has chosen and typed so far, kept as he goes. Not applied until he applies. */
+  | { type: 'draft_measures'; chosen: MeasureId[]; inputs: Record<string, MeasureValue> }
   | { type: 'save_measure'; measureId: MeasureId; inputs: Record<string, MeasureValue> }
   | { type: 'reply_to_jelena'; note: string }
   | { type: 'undo' }

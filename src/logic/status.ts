@@ -1,7 +1,7 @@
 import type { FieldId, Measure, Requirement, Scenario } from '../data/scenarios'
 import type { Answers, MeasureValue } from '../state/actions'
 import type { CaseState } from './advisor'
-import { overlapHa, polygonAreaHa, roundHa, splitPolygon } from './geometry'
+import { roundHa, splitPolygon } from './geometry'
 
 export type Status = 'complete' | 'action_required' | 'awaiting_verification'
 export type ItemId =
@@ -18,7 +18,7 @@ export type ItemId =
   | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
-export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'redrawn' | 'overlap_pending' | 'meadow_out'
+export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'overlap_pending' | 'meadow_out'
 export interface PaymentImpact {
   amountDinars: number // negative = less payment
   areaHa: number
@@ -51,9 +51,7 @@ export type ItemDetail =
   | 'road_correction_requested'
   | 'upper_unanswered'
   | 'upper_moved'
-  | 'upper_needs_drawing'
-  | 'upper_drawn'
-  | 'upper_drawn_overlaps' // his line and the neighbour's both kept
+  | 'upper_disputed' // he says the strip is his: both declarations kept until the payments office checks
   | 'pigs_unanswered'
   | 'pigs_household'
   | 'pigs_declared'
@@ -160,8 +158,8 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
       conflict: { record: roundHa(field.areaHa - signal.stripHa), his: field.areaHa, owner: 'land_map' },
     }
   }
-  if (signal?.kind === 'not_mown') {
-    // Satellite only flags; he says whether he will look after it. No leaves the meadow out, with its payment.
+  if (signal?.kind === 'yearly_use') {
+    // What the state checks this year, asked about this year. No leaves the meadow out, with its payment.
     if (a.meadow.answer === null) return { id: itemId, status: 'action_required', detail: 'meadow_unanswered' }
     if (a.meadow.answer === 'yes') return { id: itemId, status: 'complete', detail: 'meadow_kept' }
     return { id: itemId, status: 'complete', detail: 'meadow_out', paymentImpact: impactOf(s, field.areaHa, 'meadow_out') }
@@ -172,15 +170,8 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
     if (u.answer === 'yes') {
       return { id: itemId, status: 'complete', detail: 'upper_moved', paymentImpact: impactOf(s, signal.overlapHa, 'overlap_removed') }
     }
-    if (!u.drawn) return { id: itemId, status: 'action_required', detail: 'upper_needs_drawing' }
-    const drawnHa = roundHa(polygonAreaHa(u.drawn))
-    const lost = roundHa(field.areaHa - drawnHa)
-    // His line still runs into the neighbour's: both declarations are kept until the payments office checks.
-    const still = overlapHa(u.drawn, signal.neighbourPolygon)
-    if (still >= 0.01) {
-      return { id: itemId, status: 'awaiting_verification', detail: 'upper_drawn_overlaps', paymentImpact: impactOf(s, roundHa(lost + still), 'overlap_pending') }
-    }
-    return { id: itemId, status: 'complete', detail: 'upper_drawn', ...(lost !== 0 ? { paymentImpact: impactOf(s, lost, 'redrawn') } : {}) }
+    // The strip stays declared by both until the payments office checks, and it doesn't count until then.
+    return { id: itemId, status: 'awaiting_verification', detail: 'upper_disputed', paymentImpact: impactOf(s, signal.overlapHa, 'overlap_pending') }
   }
   return null
 }
@@ -200,26 +191,28 @@ export function measureGaps(m: Measure, inputs: Answers['measures']['inputs']): 
   }
 }
 
+/** Everything a measure needs is in, so he can apply for it. */
+export function readyToApply(m: Measure, inputs: Answers['measures']['inputs']) {
+  const g = measureGaps(m, inputs)
+  return !g.ruledOut && g.missing.length === 0
+}
+
 /** Measures that fit his farm. */
 export const fitting = (s: Scenario) => s.measures.filter((m) => m.fits)
 
 /**
- * Choosing measures and adding what each needs is one task. It is done only once every chosen measure
- * has everything it needs: a measure he ticked but didn't finish keeps the task open (and blocks
- * submission), however many he finished. `missing` lists the measures that still need him.
+ * Choosing measures and filling in what each needs is one task, and it is done only when he has applied.
+ * He can apply only once every chosen measure has everything it needs; until then `missing` lists the ones
+ * that still need him. What he typed is kept as he goes, and changing anything means applying again.
  */
 export function measuresItem(s: Scenario, a: Answers): Item {
   const m = a.measures
-  if (!m.confirmed) return { id: 'measures', status: 'action_required', detail: 'measures_to_choose' }
-  const open = fitting(s).filter((x) => {
-    if (!m.chosen.includes(x.id)) return false
-    const g = measureGaps(x, m.inputs)
-    return g.ruledOut || g.missing.length > 0
-  })
-  const ruledOut = open.some((x) => measureGaps(x, m.inputs).ruledOut)
-  return open.length
-    ? { id: 'measures', status: 'action_required', detail: 'measures_incomplete', missing: open.map((x) => x.id), ...(ruledOut ? { problem: true as const } : {}) }
-    : { id: 'measures', status: 'complete', detail: 'measures_chosen' }
+  const open = fitting(s).filter((x) => m.chosen.includes(x.id) && !readyToApply(x, m.inputs))
+  if (open.length) {
+    const ruledOut = open.some((x) => measureGaps(x, m.inputs).ruledOut)
+    return { id: 'measures', status: 'action_required', detail: 'measures_incomplete', missing: open.map((x) => x.id), ...(ruledOut ? { problem: true as const } : {}) }
+  }
+  return m.confirmed ? { id: 'measures', status: 'complete', detail: 'measures_chosen' } : { id: 'measures', status: 'action_required', detail: 'measures_to_choose' }
 }
 
 /** The bank closed the account payments go to and reported a new one: one question, his own account only if No. */

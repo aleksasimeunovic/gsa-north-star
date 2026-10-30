@@ -24,15 +24,16 @@ export interface RecordRow {
   value: string
   /** A second line: the period it covers, or his value next to the record's. */
   sub?: string
-  source: Source
-  sourceText: string
+  /** Where the line stands. Nothing for what GSA reuses without asking: there's nothing to confirm. */
+  source?: Source
   edit?: Edit
 }
 
 /**
  * What GSA knows about this part of his farm right now, from government records and his own answers,
- * updated as he answers: the state of the registers, not last year's copy. Each line says where it comes
- * from, and a pen changes it, in the place that asks about it or as a correction to the record's owner.
+ * updated as he answers: the state of the registers, not last year's copy. He cares whether a line is true,
+ * so it says whether he has confirmed it, and a pen changes it, in the place that asks about it or as a
+ * correction to the record's owner.
  */
 export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) => void }) {
   const rows = useRecordRows(step)
@@ -40,9 +41,7 @@ export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) =
   if (!rows) return null
   return (
     <section className="records" aria-labelledby={`records-${step}`}>
-      <h3 id={`records-${step}`} className="records-title">
-        <Icon name="records" size="sm" /> {copy.title}
-      </h3>
+      <h3 id={`records-${step}`} className="records-title">{copy.title}</h3>
       <RecordList rows={rows} onOpen={onOpen} />
       {step === 'land' && (
         <div className="records-foot">
@@ -92,9 +91,11 @@ function Row({ row, onOpen }: { row: RecordRow; onOpen: (id: TaskId) => void }) 
         <dt>{row.label}</dt>
         <dd className="records-value">{row.value}</dd>
         {row.sub && <dd className="records-sub">{row.sub}</dd>}
-        <dd>
-          <SourceTag source={row.source}>{row.sourceText}</SourceTag>
-        </dd>
+        {row.source && (
+          <dd>
+            <SourceTag source={row.source}>{copy.state[row.source]}</SourceTag>
+          </dd>
+        )}
       </div>
       {e && (
         <button type="button" className="records-pen" onClick={pen} aria-label={copy.edit(row.label)} title={copy.edit(row.label)}>
@@ -128,18 +129,15 @@ function CorrectionForm({ label, initial, numeric, onSave, onCancel }: { label: 
   )
 }
 
-const SOURCE_TEXT: Record<Source, string> = { records: '', confirmed: copy.confirmed, checking: en.mark.waiting }
-
 /** The rows for one part, from the scenario's records and his answers so far. */
 export function useRecordRows(step: StepId): RecordRow[] | null {
   const { derived, state } = useApp()
   const s = derived.scenario
   const a = state.answers
   const item = (id: string) => derived.items.find((i) => i.id === id)
-  const sourceOf = (id: string, recordText: string): [Source, string] => {
+  const sourceOf = (id: string): Source => {
     const st = item(id)?.status
-    const src: Source = st === 'complete' ? 'confirmed' : st === 'awaiting_verification' ? 'checking' : 'records'
-    return [src, src === 'records' ? recordText : SOURCE_TEXT[src]]
+    return st === 'complete' ? 'confirmed' : st === 'awaiting_verification' ? 'checking' : 'records'
   }
 
   if (step === 'details') return detailRows(derived, a)
@@ -148,12 +146,10 @@ export function useRecordRows(step: StepId): RecordRow[] | null {
     if (!s.herd) return null
     const rows: RecordRow[] = []
     const herd = item('herd')
-    const [hs, ht] = sourceOf('herd', copy.from.animals)
-    rows.push({ key: 'herd', label: copy.cattle, value: String(s.herd.registryCount), sub: herdLine(herd), source: hs, sourceText: ht, edit: { open: 'herd' } })
+    rows.push({ key: 'herd', label: copy.cattle, value: String(s.herd.registryCount), sub: herdLine(herd), source: sourceOf('herd'), edit: { open: 'herd' } })
     if (s.pigs && s.pigs.registryCount > 0) {
-      const [ps, pt] = sourceOf('pigs', copy.from.animals)
       const pigs = item('pigs')
-      rows.push({ key: 'pigs', label: copy.pigs, value: String(s.pigs.registryCount), sub: pigs?.status === 'complete' ? taskSummary('pigs', derived, state) : undefined, source: ps, sourceText: pt, edit: { open: 'pigs' } })
+      rows.push({ key: 'pigs', label: copy.pigs, value: String(s.pigs.registryCount), sub: pigs?.status === 'complete' ? taskSummary('pigs', derived, state) : undefined, source: sourceOf('pigs'), edit: { open: 'pigs' } })
     }
     const asked = correctionOf(a, 'calvings')
     rows.push({
@@ -161,8 +157,7 @@ export function useRecordRows(step: StepId): RecordRow[] | null {
       label: copy.calvings,
       value: String(s.herd.cowsCalved),
       sub: asked ? copy.youSaid(asked) : copy.period(formatDateYear(s.herd.calvingPeriod.from), formatDateYear(s.herd.calvingPeriod.to)),
-      source: asked ? 'checking' : 'records',
-      sourceText: asked ? en.mark.waiting : copy.from.animalsShort,
+      source: asked ? 'checking' : undefined,
       edit: { correct: { itemId: 'calvings', numeric: true, value: asked ?? String(s.herd.cowsCalved) } },
     })
     return rows
@@ -173,7 +168,6 @@ export function useRecordRows(step: StepId): RecordRow[] | null {
       const id = f.signal ? `field_${f.id}` : 'fields_other'
       const it = item(id)
       const lost = it?.status === 'complete' ? (it.paymentImpact?.areaHa ?? 0) : 0
-      const [src, text] = sourceOf(id, copy.from.landMap)
       const out = it?.detail === 'meadow_out'
       const split = it?.detail === 'river_split_done'
       return {
@@ -181,8 +175,7 @@ export function useRecordRows(step: StepId): RecordRow[] | null {
         label: en.fields[f.id],
         value: out ? copy.leftOut : split ? taskSummary(id as TaskId, derived, state) : copy.fieldValue(formatHa(roundHa(f.areaHa - lost)), en.crops[f.cropLastYear].toLowerCase()),
         sub: it?.status === 'awaiting_verification' ? taskSummary(id as TaskId, derived, state) : undefined,
-        source: src,
-        sourceText: text,
+        source: sourceOf(id),
         edit: { open: id as TaskId },
       }
     })
@@ -203,8 +196,7 @@ export function detailRows(derived: ReturnType<typeof useApp>['derived'], a: Ret
       label: c[w],
       value: value[w],
       sub: asked ? copy.youSaid(asked) : undefined,
-      source: asked ? 'checking' : 'records',
-      sourceText: asked ? en.mark.waiting : copy.from.register,
+      source: asked ? 'checking' : undefined,
       // Active farmer status is renewed, not corrected.
       edit: w === 'active' ? undefined : { correct: { itemId: 'details', what: w, value: asked ?? value[w] } },
     }
@@ -217,7 +209,6 @@ export function detailRows(derived: ReturnType<typeof useApp>['derived'], a: Ret
       label: tasks.title.bank,
       value: tasks.bank.ending(ending),
       source: bank?.status === 'complete' ? 'confirmed' : 'records',
-      sourceText: bank?.status === 'complete' ? copy.confirmed : copy.from.bank(formatDateYear(g.account.closedOn)),
       edit: { open: 'bank' },
     })
   }

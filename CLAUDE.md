@@ -15,7 +15,7 @@ This file is the single source of truth. Read it fully before planning. If somet
 
 **Fewer decisions, not easier ones (Earl, 26 Oct).** Before a task exists, ask whether it needs Milan's input this year. If not, GSA reuses it without asking.
 
-**Know, suspect, don't know.** A photo or record is a fact, with its source and date. What it might mean is worded as a possibility, or left out. What GSA can't know becomes his question.
+**Know, suspect, don't know.** A photo or record is a fact, with its date. What it might mean is worded as a possibility, or left out. What GSA can't know becomes his question.
 
 **GSA prepares, only Milan declares.** Nothing counts as declared without his tap.
 
@@ -154,7 +154,7 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Land:** five fields, 9.00 ha total. Use local-style names:
   - River field, 2.40 ha, wheat last year. Satellite photo: lower part looks different. The lower half floods every spring; this year sunflowers there, wheat on the rest.
   - Road field, 1.80 ha, maize. Land map: 0.12 ha strip now marked as road (wider road).
-  - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's drawing. Yes: GSA moves his edge (about 1,800 dinars less). No: he moves the shared edge as one line.
+  - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's field. Yes: GSA moves his edge (about 1,800 dinars less). No: both declarations are kept until the payments office checks; the strip doesn't count until then.
   - Meadow, 1.50 ha, grassland/fodder. Unchanged.
   - House field, 1.30 ha, maize. Unchanged.
 - **Measures:** 12 in the list, 10 fit his farm, 2 don't (organic, milk premium). Last year he had the first two:
@@ -167,12 +167,13 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Added in round 5 at Aleksa's request (more problems per part):**
   - Your details: the bank closed the farm account ending 0417 on 3 March 2026 and reported a new one in his name ending 2291 (Yes: paid there; No: he types the 18-digit account). Round 10 cut the household question (grandson Luka): it changes nothing in this application.
   - Animals: the 14 cows that calved come from the animal registry; he confirms them, seeing they pay about 280,000 dinars, or asks the registry to check.
-  - Land: the state checks by satellite that the meadow is mowed or grazed at least once this year (assumption; no invented date). Last summer's photos saw none, which is only why GSA asks. Yes, he will; No leaves the meadow out (1.50 ha, about 27,000 dinars less).
+  - Land: the state checks by satellite that the meadow is mowed or grazed at least once this year (assumption; no invented date). One timeframe: no imagery from last summer. Yes, he will; No leaves the meadow out (1.50 ha, about 27,000 dinars less).
   - Measures: GSA suggests green cover over winter (satellite: the river and upper fields stayed green all winter; suggested, with one tap "Use these fields"; the photo justifies the suggestion, never eligibility) and artificial insemination (registry: 9 inseminations by his vet since last April). Never a rate.
   - Documents: Diesel receipt.jpg is too blurry to read the amount: an error inside "Your input receipts", "Send a clearer diesel receipt".
 - **Added in round 11 at Aleksa's request (new land):**
-  - Land: the land registry shows a parcel in his name since 12 February 2026, 0.80 ha above the road field (prototype placeholder). Question: will he farm it this year? Yes: he draws it from GSA's outline, names it, gives its crop and chooses its measures. No: left out.
-  - Land: registered farmland south of the meadow (0.90 ha) is where a field he adds himself can go ("Add a field").
+  - Land: the land registry shows a parcel in his name since 12 February 2026, 0.80 ha above the road field (prototype placeholder). Question: will he farm it this year? Yes: GSA adds the whole parcel; he names it, gives its crop and chooses its measures. No: left out.
+  - Land: registered farmland south of the meadow (0.90 ha) is where a field he adds himself can go ("Add a field"); the land is taken whole.
+- **Added in round 12 at Aleksa's request (prototype placeholders):** what he lacks for the two measures that don't fit: keep his land organic for 2 more months; 2 more dairy cows. Every map shows when the photo was taken: 21 April 2026.
 
 ## 8. Milan's journey (one connected flow)
 
@@ -188,7 +189,7 @@ Earl: one connected experience, not separate features. How the application chang
 - **Progressive disclosure:** only the open part is shown; detail opens on request.
 - Each change is asked as GSA's best guess from a record, so the usual answer is one tap.
 - After each decision, the next action takes the top slot, done work collapses, and unneeded work leaves with a one-line reason (a toast, with Undo). This visible change is the defining interaction. Announced with `aria-live`.
-- **"Your farm this year", the estimate and "Unchanged since last year" are on Check and submit.** The farm shows every part and where it comes from ("From government records", "Confirmed by you", "Waiting for a check").
+- **"Your farm this year", the estimate and "Unchanged since last year" are on Check and submit.** The farm shows every part and where it stands ("Unconfirmed", "Confirmed by you", "Waiting for a check"). He cares whether a line is true, not where it came from, except the date of the photo, which is on every map.
 - The estimate is a separate block, never mixed with status, in three states (pure, tested): **no basis yet** (no number; "Your estimate appears once you choose your measures"), **provisional** (amount and what it waits for), **current** (amount and caveat). Never "About 0 dinars".
 
 ### Change cards: evidence before the question
@@ -204,14 +205,14 @@ Paths:
 
 ### Land: real maps in plain language, and the suggested split
 - Every map is OpenLayers on the real satellite photo (loaded only when a map is shown). He can pan, zoom (buttons, pinch, wheel, keyboard), go back to the field or see the whole farm. Card previews are small still pictures; the review map fills the screen with the question beside it.
-- Plain labels and clearly different boundary styles, e.g. "Land the government has registered" vs "Draw the area you actually farm". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
+- Plain labels and clearly different boundary styles, e.g. "Land the government has registered". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
 - When a boundary stops an action, explain why at that moment, in place.
 - **Split:** GSA proposes the line along the flagged area. Milan accepts it or nudges it: large handles, drag the whole line. Keep the guardrail (line clipped to eligible land), live areas, undo (once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
-- **Upper field No:** he moves the shared edge as one line, the split's interaction: a large handle, a metre stepper as the alternative, live area, guardrail, undo. No precise point placement anywhere. River and road are the hero moments; check at 360 px, then 1280.
+- **No moving a field's edges (round 12, Aleksa):** no dragging of sides or edges anywhere, for the upper field, the parcel he bought or a field he adds; the land is taken whole as the record has it. Aleksa decides if anything about parcel boundaries comes back. The river field's split line stays. River and road are the hero moments; check at 360 px, then 1280.
 
 ### Readiness through submit
 - Readiness is the application list itself, with a one-line verdict on every screen, text plus icon shape, announced politely.
-- Measures are decision support: each suggested one says why GSA thinks it fits (evidence, source), what the state still checks and what he must provide. Last year's come first as "You applied for these last year", unticked, each with "Apply again".
+- Measures are decision support: each one GSA recommends says why it may fit, what the state still checks and what he must provide. Last year's come first as "You applied for these last year", unchosen, each with "Choose again". Choosing opens what a measure needs; each says where it stands (still to fill in, ready to apply, applied); the one action is "Fill in what's missing" until everything is in, then "Apply for N measures". Under the progress widget, "What you need for more support" says what he lacks for the measures that don't fit yet, as things to do.
 - **Submit:** what's complete, what's awaiting verification and that it doesn't block (assumption), what the state will still check, declaration signed once ("I confirm under full criminal and material liability..."), one clear Submit button.
 - **Receipt:** "Your application is submitted." Date, reference number, what happens next, what's still awaiting verification, how to amend until the national deadline. Never ambiguous.
 - Renewal gate (scenario): first screen says renewal is needed, links to it (mock), lets him prepare but not submit; after renewal: "You're an active farmer. Next: your application."
@@ -259,6 +260,8 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 11 (Aleksa, 29 Oct):** readiness drawer shows only errors and warnings; "What GSA knows" per part with a pen per line; no Jelena button once the herd is his part done; the bought parcel and adding a field on the map.
 
+**Round 12 (Aleksa, 30 Oct):** no edge moving; no sources or database icons (states only, the photo's date on every map); measures apply only when filled in; goals widget; action points instead of "Before you submit"; meadow in one timeframe.
+
 Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset, nothing else (round 10b, Aleksa). Design notes are not shown in the prototype; tested, mandate and assumption distinctions live in `docs/decisions.md`.
 
 ## 11. Design system
@@ -287,7 +290,7 @@ shadcn/ui components live in `src/ui/shadcn/` and our semantic primitives in `sr
 - [ ] One list: after each answer, done work collapses, unneeded work leaves with a reason, the next action gets focus.
 - [ ] No "Everything else". Unchanged things with nothing to declare are reused without asking; yearly declarations are separate one-tap confirmations; changes are their own tasks.
 - [ ] Map in plain words; no technical land terms; cadastral parcels hidden by default; a boundary explains itself when it stops an action.
-- [ ] The split line is proposed from the satellite flag; Milan accepts or nudges it with large handles; slider, undo, guardrail and live areas remain.
+- [ ] The split line is proposed from the satellite flag; Milan accepts or nudges it with large handles; slider, undo, guardrail and live areas remain. No other edge moves anywhere.
 - [ ] Milan's journey runs end to end: welcome back, changes, land, readiness, submit, receipt.
 - [ ] Status (complete / action required / awaiting verification) is separate from payment impact.
 - [ ] "Ready to submit", never "safe"; ready isn't approved; what the state still checks is listed.
@@ -300,7 +303,7 @@ shadcn/ui components live in `src/ui/shadcn/` and our semantic primitives in `sr
 - [ ] `src/copy/en.ts` is shorter than at the start of the round.
 - [ ] Welcome back leads with one obvious next action, then what's done, then what can wait; a stepper of parts generated around his farm.
 - [ ] River, road and upper field cards show the place on the satellite photo; "Review this boundary" opens a map he can pan and zoom.
-- [ ] "Your farm this year" says per item what comes from records and what he confirmed.
+- [ ] "Your farm this year" says per item where it stands: unconfirmed, confirmed by him, or waiting for a check.
 - [ ] Round 10: fewer decisions on arrival (count logged before and after); progress leads with the verdict; added work is announced with its reason.
 - [ ] Facts carry source and date; meanings are possibilities; what GSA can't know is his question (river, meadow, measures).
 - [ ] The herd disagreement answers: your part is done, who settles it, do you need to act, what happens next; same words everywhere.

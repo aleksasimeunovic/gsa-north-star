@@ -45,8 +45,7 @@ describe('application list', () => {
       ['pigs_declare', 'possible'],
       ['river_split', 'possible'],
       ['road_redraw', 'possible'],
-      ['upper_redraw', 'possible'],
-      ['bought_draw', 'possible'],
+      ['bought_add', 'possible'],
     ])
   })
 
@@ -85,11 +84,6 @@ describe('application list', () => {
     const no = run('second_year', { type: 'answer_road', answer: 'no' })
     expect(work(no, 'road_redraw').reason).toBe('kept_until_checked')
     expect(ids(no.list.waiting)).toEqual(['field_road'])
-  })
-
-  it("upper: yes moves his edge to the neighbour's line; no makes redrawing needed until he draws", () => {
-    expect(work(run('second_year', { type: 'answer_upper', answer: 'yes' }), 'upper_redraw').reason).toBe('neighbour_line')
-    expect(work(run('second_year', { type: 'answer_upper', answer: 'no' }), 'upper_redraw').state).toBe('needed')
   })
 
   it('measures stay one task, open until every chosen measure has what it needs', () => {

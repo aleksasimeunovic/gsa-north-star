@@ -1,5 +1,5 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
-import type { Crop, FieldId, MeasureId, Office, ScenarioId } from '../data/scenarios'
+import type { Crop, FieldId, GoalKind, MeasureId, Office, ScenarioId } from '../data/scenarios'
 import type { RemovalReason, StepId, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
@@ -84,7 +84,6 @@ export const en = {
     road_took_area: (ha: string, about: string) => `The road took ${ha}, about ${about} less`,
     road_pending_correction: (ha: string, about: string) => `${ha} doesn't count until checked, about ${about} less`,
     overlap_removed: (ha: string, about: string) => `Your neighbour's line took ${ha}, about ${about} less`,
-    redrawn: (ha: string, about: string) => `Your new line takes ${ha} off the field, about ${about} less`,
     overlap_pending: (ha: string, about: string) => `${ha} doesn't count until checked, about ${about} less`,
     meadow_out: (ha: string, about: string) => `The meadow is left out: ${ha}, about ${about} less`,
   } satisfies Record<ImpactReason, (ha: string, about: string) => string>,
@@ -103,17 +102,6 @@ export const en = {
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} = ${total}`,
   },
 
-  /** Where a fact comes from, and when. */
-  source: {
-    photo: (d: string) => `Satellite photo, ${d}`,
-    landMap: (d: string) => `Land map, ${d}`,
-    neighbour: (d: string) => `Your neighbour's declaration, ${d}`,
-    summer: (y: number) => `Satellite photos, summer ${y}`,
-    winter: (y: number) => `Satellite photos, winter ${y} to ${y + 1}`,
-    registry: 'Animal registry',
-    landRegistry: (d: string) => `Land registry, ${d}`,
-  },
-
   scenarios: {
     second_year: 'Second year',
   } satisfies Record<ScenarioId, string>,
@@ -129,7 +117,6 @@ export const home = {
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check. You can still submit' : `${n} things wait for a check. You can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
   now: 'Now',
-  /** What's left in this part. */
   /** How far along the part is: a fixed number he works down, never what's left, which can seem to grow. */
   outline: (done: number, of: number) => `${done} of ${of} done`,
   stepFinished: (step: string) => `${step}: done`,
@@ -152,9 +139,8 @@ export const after = {
   more: (work: string, why: string) => `1 more thing: ${work.toLowerCase()}, because ${why}`,
   why: {
     river_split: 'something else is growing in the lower part',
-    upper_redraw: 'you said the strip is yours',
     bank_enter: "the new account isn't the right one",
-    bought_draw: 'you farm it this year',
+    bought_add: 'you farm it this year',
   } as Partial<Record<WorkId, string>>,
   undo: 'Undo',
   undoLabel: 'Undo your last answer',
@@ -199,21 +185,18 @@ export const tasks = {
   confirm: "Yes, that's right",
   review: 'Review this boundary',
   reviewSplit: 'Split the field on the map',
-  reviewDraw: 'Move the edge on the map',
 
   work: {
     river_split: 'Split the field',
     road_redraw: 'Redraw the field',
-    upper_redraw: 'Move the edge to where your field ends',
     pigs_declare: 'Declare your pigs',
     bank_enter: 'Type in your account number',
-    bought_draw: 'Draw the field and choose its measures',
+    bought_add: 'Name the field and choose its measures',
   } satisfies Record<WorkId, string>,
   reason: {
     one_crop: 'one crop in the whole field (the state may still check it)',
     edge_moved: 'GSA moved the edge to the road for you',
     kept_until_checked: 'we asked for a correction instead',
-    neighbour_line: "GSA moved your edge to your neighbour's line",
     not_farmed: "you don't farm it this year",
     household: "household pigs don't need declaring",
     bank_sent: 'your bank sent the new one',
@@ -247,7 +230,6 @@ export const tasks = {
   meadow: {
     rule: 'The state checks by satellite that the meadow is mowed or grazed at least once this year',
     question: 'Will you mow or graze the meadow at least once this year?',
-    why: 'Last summer the photos showed no mowing or grazing',
     answerYes: 'Yes, I will',
     answerNo: 'No, not this year',
     kept: "You'll mow or graze it, and the state checks by satellite",
@@ -320,7 +302,7 @@ export const tasks = {
 
   river: {
     /** What the photo shows, no more. */
-    context: 'The lower strip is greening later than the wheat above it',
+    context: 'The lower strip is greening later than the wheat above it, so it may need attention',
     question: "What's growing in the lower part this year?",
     same: 'The same as the rest of the field',
     other: 'Something else',
@@ -331,7 +313,7 @@ export const tasks = {
   },
 
   road: {
-    context: 'The land map now marks a strip of this field as road',
+    context: (d: string) => `Since ${d} the land map marks a strip of this field as road`,
     area: (from: string, to: string) => `${from} becomes ${to}`,
     payment: (about: string) => `About ${about} less`,
     question: 'Did the road take part of this field?',
@@ -342,7 +324,7 @@ export const tasks = {
   },
 
   upper: {
-    context: 'Your neighbour declared a strip along the bottom of this field this year',
+    context: (d: string) => `On ${d} your neighbour declared a strip along the bottom of this field`,
     overlap: (ha: string) => `${ha} declared by both of you`,
     question: "Should we move your edge back to your neighbour's line?",
     yes: 'Yes, move my edge',
@@ -350,9 +332,7 @@ export const tasks = {
     answerYes: "Moved to the neighbour's line",
     answerNo: 'The strip is mine',
     moved: (ha: string) => `Now ${ha}`,
-    drawn: (ha: string) => `Your edge, ${ha}`,
-    drawnOverlaps: "Your line and your neighbour's are both kept until the payments office checks them",
-    redraw: 'Move the edge again',
+    disputed: "Your declaration and your neighbour's are both kept, and the payments office checks them",
   },
 
   bought: {
@@ -360,7 +340,7 @@ export const tasks = {
     question: 'Will you farm it this year?',
     yes: 'Yes, I farm it',
     no: 'No, not this year',
-    draw: 'Draw the field on the map',
+    draw: 'Add it to your fields',
     notFarmed: 'Not farmed this year',
   },
 
@@ -390,16 +370,24 @@ export const tasks = {
   },
 
   measures: {
-    lead: (fit: number) => `You can apply for ${fit} measures this year`,
+    lead: (fit: number) => `You can apply for ${fit} measures this year, and each one counts once you've filled in everything it needs`,
     groupLast: 'You applied for these last year',
-    applyAgain: 'Apply again',
-    applying: "You're applying again",
-    groupSuggested: (n: number) => (n === 1 ? 'GSA found 1 more that fits your farm' : `GSA found ${n} more that fit your farm`),
+    choose: 'Choose',
+    chooseAgain: 'Choose again',
+    groupSuggested: 'GSA recommends for your farm',
     groupMore: (n: number) => `${n} more measures you can apply for`,
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
-    others: (list: string) => `Not for your farm: ${list}`,
+    notApplied: (ready: number, n: number, next: string) => `Not applied yet, ${ready} of ${n} filled in, next is ${next}`,
+    allFilled: 'Everything is filled in, so you can apply now',
+    fillIn: "Fill in what's missing",
+    appliedFor: (n: number) => (n === 1 ? 'Applied for 1 measure' : `Applied for ${n} measures`),
+    goalsTitle: 'What you need for more support',
+    goal: {
+      organic_months: (n: number) => `Keep your land organic for ${n} more months`,
+      dairy_cows: (n: number) => `You need ${n} more dairy cows`,
+    } satisfies Record<GoalKind, (n: number) => string>,
     confirm: (n: number) => (n === 1 ? 'Apply for 1 measure' : `Apply for ${n} measures`),
     pays: {
       fertiliser: 'Part of the cost of mineral fertiliser',
@@ -422,13 +410,12 @@ export const tasks = {
       insemination: 'Your cows calved this year',
       green_cover: 'You have arable fields',
       irrigation: 'The river field is next to the river',
-      organic: 'Needs a certified organic farm',
-      milk: 'Needs milk sold to a dairy',
-    } satisfies Record<MeasureId, string>,
-    add: (list: string) => `To apply, add ${list}`,
-    ready: 'Everything is added',
+    } as Partial<Record<MeasureId, string>>,
+    stillToFill: (list: string) => `Still to fill in: ${list}`,
+    ready: 'Ready to apply',
+    applied: 'Applied',
     ruledOut: "Can't be paid this year",
-    leaveOut: 'Leave this measure out',
+    leaveOut: 'Leave out',
     attached: (name: string) => `Attached: ${name}`,
     error: {
       upload: 'Add a photo or PDF',
@@ -437,7 +424,7 @@ export const tasks = {
       longtext: 'Fill this in',
       choice: 'Choose one',
       fields: 'Choose at least one field',
-      confirm: 'Tick the box to apply',
+      confirm: 'Tick the box',
       auto: '',
     },
   },
@@ -468,10 +455,10 @@ export const tasks = {
   } as Record<string, { label: string; short: string; hint?: string; options?: Record<string, string>; ruledOut?: string }>,
 
   auto: {
-    land: (ha: string, n: number) => `${ha} in ${n} fields, from the land map`,
+    land: (ha: string, n: number) => `${ha} in ${n} fields`,
     receipts: (n: number) => `${n} files you uploaded`,
     receiptsMissing: 'Still to upload',
-    calvings: (n: number) => `${n} cows calved, from the animal registry`,
+    calvings: (n: number) => `${n} cows calved`,
     fertiliser_receipt: 'Found in your receipts',
   },
 
@@ -486,7 +473,7 @@ export const tasks = {
 export const map = {
   title: 'Map of your fields',
   flag: 'Greening later',
-  notMown: 'No mowing seen',
+  photoDate: (d: string) => `Satellite photo, ${d}`,
   strip: (ha: string) => `${ha} now road`,
   edge: "The line stops at your field's edge, because land outside it can't get support",
   neighbour: "Neighbour's field",
@@ -503,19 +490,8 @@ export const map = {
   back: 'Back to your application',
 }
 
-/** Where a field ends, moved as one line on a real map. */
 export const draw = {
-  area: (ha: string) => `Your field: ${ha}`,
   loading: 'Loading the map',
-  stillOverlaps: (ha: string) => `Still ${ha} in your neighbour's field. Save it and the payments office checks both lines`,
-  stepperLabel: 'Where your field ends, in metres from the top',
-  metres: (n: number) => `${n} m`,
-  up: 'Move the edge up 1 metre',
-  down: 'Move the edge down 1 metre',
-  moveEdge: 'Drag to move where your field ends',
-  keys: 'Arrow keys move it',
-  undo: 'Undo',
-  save: 'Save my field',
 }
 
 export const split = {
@@ -540,9 +516,8 @@ export const split = {
 export const finish = {
   submit: {
     readyTitle: 'Ready to submit. The state still checks:',
-    blockedTitle: 'Before you submit',
+    blockedTitle: 'Not ready to submit yet',
     goTo: (what: string) => `Go to: ${what}`,
-    awaitingTitle: 'Waiting for a check',
     awaitingNote: 'You can still submit',
     checks: {
       eligibility: 'That you and each measure are eligible',
@@ -581,7 +556,7 @@ export const finish = {
   },
 }
 
-/** What GSA knows about each part of his farm right now, from records and his answers, each line changed with a pen. */
+/** What GSA knows about each part of his farm right now, each line changed with a pen. */
 export const records = {
   title: 'What GSA knows',
   edit: (what: string) => `Change: ${what}`,
@@ -591,15 +566,7 @@ export const records = {
   numberError: 'Enter a whole number, like 14',
   textError: 'Enter the right value',
   youSaid: (v: string) => `You said ${v}`,
-  confirmed: 'Confirmed by you',
-  added: 'Added by you',
-  from: {
-    register: 'Farm register',
-    bank: (d: string) => `Your bank, ${d}`,
-    animals: 'Animal registry, today',
-    animalsShort: 'Animal registry',
-    landMap: 'Land map',
-  },
+  state: { records: 'Unconfirmed', confirmed: 'Confirmed by you', checking: 'Waiting for a check' } satisfies Record<Source, string>,
   cattle: 'Cattle',
   pigs: 'Pigs',
   calvings: 'Cows that calved',
@@ -609,7 +576,7 @@ export const records = {
   addField: 'Add a field',
 }
 
-/** Adding a field on the map: where, its outline, its name and crop, its measures. */
+/** Adding a field on the map: where, its name and crop, its measures. */
 export const fieldEdit = {
   titleNew: 'Add a field',
   yourField: 'Your field',
@@ -619,19 +586,6 @@ export const fieldEdit = {
   landLabel: 'Registered farmland',
   landNames: { block_5: 'Farmland south of the meadow' } as Record<string, string>,
   landChoice: (name: string, ha: string) => `${name}, ${ha}`,
-  boughtLabel: 'Bought',
-  outline: 'Is this the area you farm?',
-  fromParcel: 'Drawn from the land registry, so move a side if you farm less or more of it',
-  fromLand: 'Drawn from the land map, so move a side to where your field ends',
-  yours: 'Move a side to change your field',
-  fromFarmland: 'Land map',
-  moveSide: 'Drag a handle to move that side',
-  keys: 'Arrow keys move it by a metre, with Shift by 5',
-  sides: { top: 'Top side', right: 'Right side', bottom: 'Bottom side', left: 'Left side' } as Record<'top' | 'right' | 'bottom' | 'left', string>,
-  stepByStep: 'Move a side step by step',
-  in: '1 m in',
-  out: '1 m out',
-  useOutline: 'Use this outline',
   details: 'About the field',
   name: 'Name',
   nameHint: 'So you recognise it, for example Lower field',
@@ -710,7 +664,6 @@ export const advisor = {
     set_split: 'Split the river field',
     answer_road: 'Answered: road field',
     answer_upper: 'Answered: upper field',
-    set_upper_drawing: 'Moved the upper field edge',
     answer_pigs: 'Answered: pigs',
     choose_measures: 'Chose measures',
     save_measure: 'Added what a measure needs',
@@ -745,8 +698,8 @@ export const steps = {
     submit: 'Check and submit',
   } satisfies Record<StepId, string>,
   of: (i: number, n: number) => `Step ${i} of ${n}`,
-  /** Under each part's name in the stepper. */
-  status: (left: number) => (left === 1 ? '1 thing to do' : left ? `${left} things to do` : 'Done'),
+  /** Under the open part's name in the stepper: how far along, a number he works down, never what's left. */
+  status: (done: number, of: number) => (done === of ? 'Done' : `${done} of ${of} done`),
 }
 
 export const bar = {
@@ -769,7 +722,7 @@ export const farm = {
   pigs: (n: number) => `${n} pigs`,
   pigsHousehold: (n: number) => `${n} pigs for the household`,
   measuresValue: (n: number, fit: number) => `${n} of ${fit} you can apply for`,
-  source: { records: 'From government records', confirmed: 'Confirmed by you', checking: 'Waiting for a check' } satisfies Record<Source, string>,
+  source: records.state,
   partly: (n: number, of: number) => `${n} of ${of} confirmed by you`,
   details: 'See each part',
 }

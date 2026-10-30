@@ -1,14 +1,12 @@
 import { Suspense, useEffect, useState } from 'react'
-import { bar, draw, en, fieldEdit as copy, formatDateYear, formatHa, formatNumber, map, records, tasks } from '../copy/en'
+import { bar, en, fieldEdit as copy, formatDateYear, formatHa, formatNumber, map, records, tasks } from '../copy/en'
 import { CROPS, LAND_MEASURES, type Crop, type MeasureId, type Polygon } from '../data/scenarios'
 import type { TaskId } from '../logic/application'
-import { bounds, landOf, moveSide, polygonAreaHa, roundHa, type Side } from '../logic/geometry'
+import { polygonAreaHa, roundHa } from '../logic/geometry'
 import type { Item } from '../logic/status'
 import type { NewField } from '../state/actions'
-import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Checkbox } from '../ui/Checkbox'
-import { Fact } from '../ui/Fact'
 import { Field } from '../ui/Field'
 import { Inline, Stack, Text } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
@@ -21,39 +19,6 @@ import type { Flow } from './useApplicationFlow'
 
 type Derived = AppCtx['derived']
 type State = AppCtx['state']
-
-/** The outline he farms, as four sides he moves one at a time, kept on registered farmland; undo walks back. */
-export function useOutlineDraft(start: Polygon, land: Polygon) {
-  const [polygon, setPolygon] = useState(start)
-  const [past, setPast] = useState<Polygon[]>([])
-  const [clamped, setClamped] = useState(false)
-  const b = bounds(polygon)
-  const sideAt = (side: Side) => (side === 'top' ? b.minY : side === 'bottom' ? b.maxY : side === 'left' ? b.minX : b.maxX)
-  const move = (side: Side, to: number, record = true) => {
-    const r = moveSide(polygon, land, side, to)
-    if (record) setPast((p) => [...p, polygon])
-    setPolygon(r.polygon)
-    setClamped(r.clamped)
-  }
-  return {
-    polygon,
-    areaHa: roundHa(polygonAreaHa(polygon)),
-    clamped,
-    sideAt,
-    move,
-    remember: () => setPast((p) => [...p, polygon]),
-    undo: () => {
-      if (!past.length) return
-      setPolygon(past[past.length - 1])
-      setPast(past.slice(0, -1))
-      setClamped(false)
-    },
-    canUndo: past.length > 0,
-  }
-}
-export type OutlineDraft = ReturnType<typeof useOutlineDraft>
-
-const OUT: Record<Side, number> = { top: -1, right: 1, bottom: 1, left: -1 }
 
 /** A new field in one line: its name, area and crop. */
 export const fieldLine = (f: NewField) => copy.line(f.name, formatHa(roundHa(polygonAreaHa(f.polygon))), en.crops[f.crop].toLowerCase())
@@ -71,17 +36,16 @@ export function newFieldRows(derived: Derived, state: State): RecordRow[] {
   const rows: RecordRow[] = []
   if (s.bought) {
     const field = a.newFields.find((f) => f.landId === 'bought')
-    const from = en.source.landRegistry(formatDateYear(s.bought.on))
     rows.push(
       field
-        ? { key: 'bought', label: field.name, value: fieldLine(field).slice(field.name.length + 2), source: 'confirmed', sourceText: records.confirmed, edit: { screen: 'field/bought' } }
+        ? { key: 'bought', label: field.name, value: fieldLine(field).slice(field.name.length + 2), source: 'confirmed', edit: { screen: 'field/bought' } }
         : a.bought.answer === 'no'
-          ? { key: 'bought', label: tasks.title.field_bought, value: tasks.bought.notFarmed, source: 'confirmed', sourceText: records.confirmed, edit: { open: 'field_bought' } }
-          : { key: 'bought', label: tasks.title.field_bought, value: formatHa(s.bought.areaHa), source: 'records', sourceText: from, edit: { open: 'field_bought' } },
+          ? { key: 'bought', label: tasks.title.field_bought, value: tasks.bought.notFarmed, source: 'confirmed', edit: { open: 'field_bought' } }
+          : { key: 'bought', label: tasks.title.field_bought, value: formatHa(s.bought.areaHa), source: 'records', edit: { open: 'field_bought' } },
     )
   }
   for (const f of a.newFields.filter((x) => x.landId !== 'bought')) {
-    rows.push({ key: f.id, label: f.name, value: fieldLine(f).slice(f.name.length + 2), source: 'confirmed', sourceText: records.added, edit: { screen: `field/${f.id}` } })
+    rows.push({ key: f.id, label: f.name, value: fieldLine(f).slice(f.name.length + 2), source: 'confirmed', edit: { screen: `field/${f.id}` } })
   }
   return rows
 }
@@ -91,7 +55,7 @@ function BoughtPreview({ field }: { field?: NewField }) {
   const { derived } = useApp()
   const s = derived.scenario
   // Once he has drawn it, his field and its name; before that, the parcel as the land registry has it.
-  const spot = field ? { polygon: field.polygon, label: field.name } : { polygon: s.bought!.polygon, label: copy.boughtLabel }
+  const spot = field ? { polygon: field.polygon, label: field.name } : { polygon: s.bought!.polygon, label: tasks.title.field_bought }
   return (
     <figure className="map-figure">
       <Suspense fallback={<MapFallback mode="preview" />}>
@@ -102,8 +66,8 @@ function BoughtPreview({ field }: { field?: NewField }) {
 }
 
 /**
- * The land registry shows a parcel in his name since last year. The fact and its source, the place on the
- * photo, and his question: does he farm it this year? Yes opens the map to draw it; No leaves it out.
+ * The land registry shows a parcel in his name since last year. The fact, the place on the photo, and his
+ * question: does he farm it this year? Yes adds the whole parcel as a field; No leaves it out.
  */
 export function BoughtBody({ Question }: { Question: (p: { legend: string; value: 'yes' | 'no' | null; answer?: string; onAnswer: (a: 'yes' | 'no') => void }) => JSX.Element }) {
   const { derived, state, dispatch, go } = useApp()
@@ -114,7 +78,7 @@ export function BoughtBody({ Question }: { Question: (p: { legend: string; value
   return (
     <Stack gap="section">
       {a.answer === null ? (
-        <Fact source={en.source.landRegistry(formatDateYear(s.bought!.on))}>{b.context(formatDateYear(s.bought!.on))}</Fact>
+        <Text>{b.context(formatDateYear(s.bought!.on))}</Text>
       ) : (
         field && <Text>{fieldLine(field)}</Text>
       )}
@@ -151,12 +115,12 @@ export function AddedBody({ id }: { id: string }) {
   )
 }
 
-type Stage = 'place' | 'outline' | 'details' | 'measures'
+type Stage = 'place' | 'details' | 'measures'
 
 /**
- * Adding a field, on the satellite photo: where it is (the parcel he bought, or registered farmland he taps),
- * the outline GSA proposes from the record, which he accepts or moves a side of, then its name and crop,
- * then the measures he applies for on it. Saved whole at the end, so nothing half-drawn counts.
+ * Adding a field on the satellite photo, the land taken whole as the record has it: where it is (the parcel
+ * he bought, or registered farmland he taps), its name and crop, then the measures he applies for on it.
+ * Saved whole at the end, so nothing half-done counts.
  */
 export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const { derived, state, dispatch, go } = useApp()
@@ -164,14 +128,15 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const existing = state.answers.newFields.find((f) => f.id === id || (id === 'bought' && f.landId === 'bought'))
   const isBought = id === 'bought'
   const [landId, setLandId] = useState<string | null>(existing?.landId ?? (isBought ? 'bought' : null))
-  const land = landId === 'bought' ? landOf(s, { polygon: s.bought!.polygon }) : s.otherLand.find((l) => l.id === landId)?.polygon
-  const startShape = existing?.polygon ?? (landId === 'bought' ? s.bought!.polygon : land)
-  const [stage, setStage] = useState<Stage>(landId ? 'outline' : 'place')
+  const polygon = existing?.polygon ?? (landId === 'bought' ? s.bought!.polygon : s.otherLand.find((l) => l.id === landId)?.polygon)
+  const [stage, setStage] = useState<Stage>(polygon ? 'details' : 'place')
   const [name, setName] = useState(existing?.name ?? '')
   const [nameError, setNameError] = useState<string>()
   const [crop, setCrop] = useState<Crop | null>(existing?.crop ?? null)
   const [chosen, setChosen] = useState<MeasureId[]>(existing?.measures ?? [])
-  const step = stage === 'place' || stage === 'outline' ? 1 : stage === 'details' ? 2 : 3
+  // With the land already known, there is no place to pick.
+  const of = isBought || existing ? 2 : 3
+  const step = stage === 'place' ? 1 : stage === 'details' ? of - 1 : of
   const title = existing?.name ?? (isBought ? tasks.title.field_bought : copy.yourField)
   const back = () => go('welcome')
 
@@ -181,8 +146,8 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
     document.getElementById('field-title')?.focus({ preventScroll: true })
   }, [stage])
 
-  const save = (polygon: Polygon) => {
-    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon, name: name.trim(), crop: crop!, measures: chosen }
+  const save = (shape: Polygon) => {
+    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, name: name.trim(), crop: crop!, measures: chosen }
     dispatch({ type: 'save_field', field })
     const task: TaskId = isBought ? 'field_bought' : `added_${field.id}`
     go('welcome')
@@ -191,90 +156,91 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
 
   const head = (
     <header className="review-head">
-      <p className="hint">{copy.step(step, 3)}</p>
-      <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : stage === 'outline' ? copy.outline : stage === 'details' ? copy.details : copy.measures}</h2>
+      <p className="hint">{copy.step(step, of)}</p>
+      <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : stage === 'details' ? copy.details : copy.measures}</h2>
+      {polygon && <p className="hint">{formatHa(roundHa(polygonAreaHa(polygon)))}</p>}
     </header>
   )
 
   return (
     <>
-      {land && startShape ? (
-        <Drawing key={landId} land={land} start={startShape} skip={existing?.id} stage={stage} head={head} title={name.trim() || title}>
-          {(d) =>
-            stage === 'outline' ? (
-              <>
-                <Fact source={isBought ? en.source.landRegistry(formatDateYear(s.bought!.on)) : copy.fromFarmland}>{existing ? copy.yours : isBought ? copy.fromParcel : copy.fromLand}</Fact>
-                <div aria-live="polite">
-                  <Text variant="strong">{draw.area(formatHa(d.areaHa))}</Text>
-                  {d.clamped && <Banner tone="attention">{map.edge}</Banner>}
+      {polygon ? (
+        <MapStage
+          label={title}
+          map={
+            <Suspense fallback={<MapFallback mode="explore" fill />}>
+              <FarmMap scenario={s} mode="explore" fill label={`${map.title}: ${title}`} spot={{ polygon, label: title }} skip={existing?.id} />
+            </Suspense>
+          }
+        >
+          {head}
+          {stage === 'measures' ? (
+            <>
+              <div className="flex flex-col gap-2">
+                {LAND_MEASURES.filter((m) => s.measures.find((x) => x.id === m)?.fits).map((m) => {
+                  const rate = s.measures.find((x) => x.id === m)?.rateDinars
+                  return (
+                    <Checkbox
+                      key={m}
+                      card
+                      label={en.measures[m]}
+                      hint={rate ? copy.perHa(formatNumber(rate)) : tasks.measures.pays[m]}
+                      checked={chosen.includes(m)}
+                      onChange={(on) => setChosen(on ? [...chosen, m] : chosen.filter((x) => x !== m))}
+                    />
+                  )
+                })}
+              </div>
+              <StageAction>
+                <Inline>
+                  <Button onClick={() => setStage('details')}>{bar.back}</Button>
+                  <Button variant="primary" onClick={() => save(polygon)}>{existing ? copy.saveChanges : chosen.length ? copy.save : copy.saveNone}</Button>
+                </Inline>
+              </StageAction>
+            </>
+          ) : (
+            <form
+              className="flex flex-col gap-6"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!name.trim()) return setNameError(copy.nameError)
+                setNameError(undefined)
+                if (crop) setStage('measures')
+              }}
+            >
+              <Field label={copy.name} hint={copy.nameHint} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
+              <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} onChange={setCrop} />
+              {existing && !isBought && (
+                <div>
+                  <Button
+                    variant="link"
+                    onClick={() => {
+                      dispatch({ type: 'remove_field', id: existing.id })
+                      back()
+                    }}
+                  >
+                    {copy.remove}
+                  </Button>
                 </div>
-                <SideSteps d={d} />
-                {existing && !isBought && (
-                  <div>
+              )}
+              <StageAction>
+                <Inline>
+                  {of === 3 && (
                     <Button
-                      variant="link"
                       onClick={() => {
-                        dispatch({ type: 'remove_field', id: existing.id })
-                        back()
+                        setLandId(null)
+                        setStage('place')
                       }}
                     >
-                      {copy.remove}
+                      {bar.back}
                     </Button>
-                  </div>
-                )}
-                <StageAction>
-                  <Inline>
-                    {d.canUndo && <Button onClick={d.undo}>{draw.undo}</Button>}
-                    <Button variant="primary" onClick={() => setStage('details')}>{copy.useOutline}</Button>
-                  </Inline>
-                </StageAction>
-              </>
-            ) : stage === 'details' ? (
-              <form
-                className="flex flex-col gap-6"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (!name.trim()) return setNameError(copy.nameError)
-                  setNameError(undefined)
-                  if (crop) setStage('measures')
-                }}
-              >
-                <Field label={copy.name} hint={copy.nameHint} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
-                <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} onChange={setCrop} />
-                <StageAction>
-                  <Inline>
-                    <Button onClick={() => setStage('outline')}>{bar.back}</Button>
-                    <Button type="submit" variant="primary" disabled={!crop}>{copy.next}</Button>
-                  </Inline>
-                </StageAction>
-              </form>
-            ) : (
-              <>
-                <div className="flex flex-col gap-2">
-                  {LAND_MEASURES.filter((m) => s.measures.find((x) => x.id === m)?.fits).map((m) => {
-                    const rate = s.measures.find((x) => x.id === m)?.rateDinars
-                    return (
-                      <Checkbox
-                        key={m}
-                        card
-                        label={en.measures[m]}
-                        hint={rate ? copy.perHa(formatNumber(rate)) : tasks.measures.pays[m]}
-                        checked={chosen.includes(m)}
-                        onChange={(on) => setChosen(on ? [...chosen, m] : chosen.filter((x) => x !== m))}
-                      />
-                    )
-                  })}
-                </div>
-                <StageAction>
-                  <Inline>
-                    <Button onClick={() => setStage('details')}>{bar.back}</Button>
-                    <Button variant="primary" onClick={() => save(d.polygon)}>{existing ? copy.saveChanges : chosen.length ? copy.save : copy.saveNone}</Button>
-                  </Inline>
-                </StageAction>
-              </>
-            )
-          }
-        </Drawing>
+                  )}
+                  <Button type="submit" variant="primary" disabled={!crop}>{copy.next}</Button>
+                </Inline>
+              </StageAction>
+            </form>
+          )}
+        </MapStage>
       ) : (
         <MapStage
           label={copy.titleNew}
@@ -288,7 +254,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                 lands={s.otherLand.map((l) => ({ id: l.id, polygon: l.polygon, label: copy.landLabel }))}
                 onPickLand={(lid) => {
                   setLandId(lid)
-                  setStage('outline')
+                  setStage('details')
                 }}
               />
             </Suspense>
@@ -304,7 +270,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                   variant="choice"
                   onClick={() => {
                     setLandId(l.id)
-                    setStage('outline')
+                    setStage('details')
                   }}
                 >
                   {copy.landChoice(copy.landNames[l.id] ?? copy.landLabel, formatHa(roundHa(polygonAreaHa(l.polygon))))}
@@ -316,72 +282,5 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
       )}
       <ActionBar back={{ label: map.back, onClick: back }} forwardIsPrimary={false} next={null} onPick={(task) => flow.show(task)} />
     </>
-  )
-}
-
-/** The map and the panel while he draws: the outline keeps its sides through the later steps. */
-function Drawing({
-  land,
-  start,
-  skip,
-  stage,
-  head,
-  title,
-  children,
-}: {
-  land: Polygon
-  start: Polygon
-  skip?: string
-  stage: Stage
-  head: JSX.Element
-  title: string
-  children: (d: OutlineDraft) => JSX.Element
-}) {
-  const { derived } = useApp()
-  const d = useOutlineDraft(start, land)
-  const drawing = stage === 'outline'
-  return (
-    <MapStage
-      label={title}
-      working={drawing}
-      map={
-        <Suspense fallback={<MapFallback mode="explore" fill />}>
-          <FarmMap
-            scenario={derived.scenario}
-            mode="explore"
-            fill
-            label={`${map.title}: ${title}. ${copy.moveSide}`}
-            spot={drawing ? { polygon: land, label: '' } : { polygon: d.polygon, label: title }}
-            outline={drawing ? { d, label: title } : undefined}
-            skip={skip}
-          />
-        </Suspense>
-      }
-    >
-      {head}
-      {children(d)}
-    </MapStage>
-  )
-}
-
-/** Moving a side without dragging: a metre in or out at a time. */
-function SideSteps({ d }: { d: OutlineDraft }) {
-  return (
-    <details className="side-steps">
-      <summary>{copy.stepByStep}</summary>
-      <ul>
-        {(['top', 'right', 'bottom', 'left'] as Side[]).map((side) => (
-          <li key={side}>
-            <span>{copy.sides[side]}</span>
-            <Button onClick={() => d.move(side, d.sideAt(side) - OUT[side])} aria-label={`${copy.sides[side]}: ${copy.in}`}>
-              {copy.in}
-            </Button>
-            <Button onClick={() => d.move(side, d.sideAt(side) + OUT[side])} aria-label={`${copy.sides[side]}: ${copy.out}`}>
-              {copy.out}
-            </Button>
-          </li>
-        ))}
-      </ul>
-    </details>
   )
 }

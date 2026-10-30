@@ -2,23 +2,20 @@ import { bar, finish } from '../copy/en'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
-import { StepReview } from '../components/StepReview'
+import { ActionPoints } from '../components/ReadinessDrawer'
 import { FarmPicture } from '../components/FarmPicture'
 import { UnchangedReview } from '../components/UnchangedReview'
-import { taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
 import { Icon } from '../ui/Icon'
 import { Card } from '../ui/Card'
 import { Checkbox } from '../ui/Checkbox'
-import { Stack, Text } from '../ui/Layout'
-import { Note } from '../ui/Note'
-import { StatusBadge } from '../ui/StatusBadge'
-import { markOf } from '../logic/severity'
+import { Stack } from '../ui/Layout'
 
 /**
- * The last part: his farm as he is about to declare it and the estimate, then an unambiguous submission:
- * what's left or what waits, what the state still checks, the declaration, one primary action.
+ * The last part: whether he can submit, only what to fix or look at (the stepper already shows the rest),
+ * his farm as he is about to declare it and the estimate, then an unambiguous submission: what the state
+ * still checks, the declaration, one primary action.
  */
 export function SubmitStep({ flow }: { flow: Flow }) {
   const { derived, state, dispatch, go } = useApp()
@@ -30,7 +27,12 @@ export function SubmitStep({ flow }: { flow: Flow }) {
 
   return (
     <Stack gap="lg">
-      {left.length > 0 && <StepReview flow={flow} title={finish.submit.blockedTitle} />}
+      {(left.length > 0 || derived.report.warnings.length > 0) && (
+        <section className="action-points" aria-label={finish.submit.blockedTitle}>
+          {left.length > 0 && <h3 className="group-title">{finish.submit.blockedTitle}</h3>}
+          <ActionPoints onPick={goTo} />
+        </section>
+      )}
 
       <div className="submit-picture">
         <FarmPicture detailed />
@@ -39,26 +41,6 @@ export function SubmitStep({ flow }: { flow: Flow }) {
           <UnchangedReview />
         </div>
       </div>
-
-      {readiness.awaiting.length > 0 && (
-        <section className="status-section" aria-labelledby="awaiting-title">
-          <h3 id="awaiting-title">{finish.submit.awaitingTitle}</h3>
-          <Text variant="secondary">
-            {finish.submit.awaitingNote} <Note kind="assumption" />
-          </Text>
-          <ul className="status-list">
-            {readiness.awaiting.map((i) => (
-              <li key={i.id}>
-                <StatusBadge mark={markOf(i)} iconOnly />
-                <span>
-                  <strong>{flow.title(i.id)}</strong>
-                  <span className="hint">{taskSummary(i.id, derived, state)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {left.length === 0 && (
         <>

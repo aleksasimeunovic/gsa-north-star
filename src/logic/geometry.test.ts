@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { centroid, clampToField, clipLineToPolygon, fractionOfLine, inArea, lineAtFraction, moveBottomEdge, moveSide, overlapHa, partNames, polygonAreaHa, proposedSplitLine, splitPolygon, translateLine } from './geometry'
+import { centroid, clampToField, clipLineToPolygon, fractionOfLine, inArea, lineAtFraction, partNames, polygonAreaHa, proposedSplitLine, splitPolygon, translateLine } from './geometry'
 
 const fields = SCENARIOS.second_year.fields
 const river = fields.find((f) => f.id === 'river')!.polygon
@@ -90,45 +90,3 @@ describe('map helpers', () => {
     expect(fractionOfLine(river, lineAtFraction(river, 0.5))).toBe(0.5)
   })
 })
-
-describe('drawing a field', () => {
-  const s = SCENARIOS.second_year
-  const upper = s.fields.find((f) => f.id === 'upper')!
-  const signal = upper.signal?.kind === 'overlap' ? upper.signal : null!
-  const land = s.blocks.find((b) => b.id === 'block_2')!.polygon
-
-  it("last year's drawing overlaps the neighbour by 0.10 ha", () => {
-    expect(overlapHa(upper.polygon, signal.neighbourPolygon)).toBe(0.1)
-    expect(polygonAreaHa(signal.overlapPolygon)).toBeCloseTo(signal.overlapHa, 6)
-  })
-
-  it('moving the edge 5 m up clears the overlap', () => {
-    expect(overlapHa(moveBottomEdge(upper.polygon, land, 235).polygon, signal.neighbourPolygon)).toBe(0)
-  })
-})
-
-describe('moving the shared edge as one line', () => {
-  const field = [{ x: 0, y: 140 }, { x: 200, y: 140 }, { x: 200, y: 240 }, { x: 0, y: 240 }]
-  const land = [{ x: 0, y: 140 }, { x: 370, y: 140 }, { x: 370, y: 240 }, { x: 0, y: 240 }]
-  it('moves both bottom corners together, with the live area', () => {
-    const r = moveBottomEdge(field, land, 235)
-    expect(r.polygon).toEqual([{ x: 0, y: 140 }, { x: 200, y: 140 }, { x: 200, y: 235 }, { x: 0, y: 235 }])
-    expect(polygonAreaHa(r.polygon)).toBeCloseTo(1.9)
-    expect(r.clamped).toBe(false)
-  })
-  it('stops at his registered land, and says so', () => {
-    const r = moveBottomEdge(field, land, 260)
-    expect(r.y).toBe(240)
-    expect(r.clamped).toBe(true)
-  })
-
-  it('moves one side of an outline as one line, kept on its farmland and 10 m from the other side', () => {
-    const land = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }, { x: 0, y: 50 }]
-    const rect = [{ x: 10, y: 10 }, { x: 90, y: 10 }, { x: 90, y: 40 }, { x: 10, y: 40 }]
-    expect(moveSide(rect, land, 'right', 95)).toMatchObject({ value: 95, clamped: false })
-    expect(moveSide(rect, land, 'right', 120)).toMatchObject({ value: 100, clamped: true })
-    expect(moveSide(rect, land, 'top', 35)).toMatchObject({ value: 30, clamped: true })
-    expect(moveSide(rect, land, 'left', 0).polygon[0]).toEqual({ x: 0, y: 10 })
-  })
-})
-

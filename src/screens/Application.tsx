@@ -2,6 +2,7 @@ import { bar, home, steps } from '../copy/en'
 import { isMapChange } from '../logic/application'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
+import { MeasureGoals } from '../components/MeasureBodies'
 import { Records } from '../components/Records'
 import { FieldEditor } from '../components/NewField'
 import { StepOutline } from '../components/StepOutline'
@@ -77,6 +78,7 @@ export function Application({ target, review, field }: { target: string | null; 
             <aside className="app-side">
               <StepOutline flow={flow} />
               <Records step={step.id} onOpen={(id) => flow.show(id)} />
+              {step.id === 'measures' && <MeasureGoals />}
             </aside>
           </div>
         )}

@@ -65,14 +65,13 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
 /**
  * - field: his field in question, or every field on the whole-farm map
  * - faint: his other fields, for orientation
- * - land: land the government has registered as farmland (shown only when drawing)
+ * - land: registered farmland he can put a field on
  * - neighbour: the neighbour's declared field
  * - flag / strip / overlap: what changed, patterned so it never relies on colour
- * - mine: his field as he moves its edge
  * - split: the line that splits a field
  * - spot: land in question that isn't his field yet (the parcel he bought)
  */
-export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'mine' | 'split' | 'spot'
+export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'split' | 'spot'
 
 export function mapStyle(role: MapRole): Style[] {
   switch (role) {
@@ -89,8 +88,6 @@ export function mapStyle(role: MapRole): Style[] {
     case 'strip':
     case 'overlap':
       return [new Style({ fill: new Fill({ color: fills().hatch }) }), ...line(2)]
-    case 'mine':
-      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.12)' }) }), ...line(3)]
     case 'split':
       return line(4)
     case 'spot':
