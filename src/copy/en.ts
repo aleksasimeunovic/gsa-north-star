@@ -77,6 +77,7 @@ export const en = {
     irrigation: 'Watering your fields',
     organic: 'Organic production',
     milk: 'Milk premium',
+    fattening: 'Fattening cattle',
   } satisfies Record<MeasureId, string>,
   offices: { animal_registry: 'the animal registry', land_registry: 'the land registry' } satisfies Record<Office, string>,
 
@@ -387,7 +388,40 @@ export const tasks = {
     goal: {
       organic_months: (n: number) => `Keep your land organic for ${n} more months`,
       dairy_cows: (n: number) => `You need ${n} more dairy cows`,
+      fattening_cattle: (n: number) => `You need ${n} more cattle in fattening`,
     } satisfies Record<GoalKind, (n: number) => string>,
+    gain: (about: string) => `About ${about} more a year for your household`,
+    goalOpen: (name: string) => `All about ${name}`,
+    /** The side panel: everything about a measure he can't apply for yet. */
+    goalPanel: {
+      household: 'What it could mean for your household',
+      working: { ha: (qty: string, rate: string) => `${qty} ha × ${rate} dinars`, animal: (qty: string, rate: string) => `${qty} animals × ${rate} dinars` },
+      caveat: "This is an estimate, and the final amount depends on that year's rates and the state's checks",
+      need: 'What you need to do',
+      then: "Once that's done, you can apply in next year's application",
+      checks: 'What the state checks',
+      provide: "What you'd provide",
+    },
+    goalAbout: {
+      organic: {
+        pays: 'Extra support for each hectare farmed without synthetic fertiliser or sprays',
+        steps: ['Have a certification body confirm your land is organic'],
+        checks: 'That a certification body has approved your land, and that it stays organic',
+        provide: 'Your organic certificate',
+      },
+      milk: {
+        pays: 'Support for each dairy cow whose milk you sell to a dairy',
+        steps: ['Sign a contract with a dairy'],
+        checks: 'Your cows in the animal registry, and the milk the dairy reports',
+        provide: 'Your contract with the dairy',
+      },
+      fattening: {
+        pays: 'Support for each animal you fatten and sell for slaughter',
+        steps: ['Keep each one on your farm until it is sold', 'Register each one in the animal registry'],
+        checks: 'Each animal in the animal registry, and when it was sold',
+        provide: 'Your sale or slaughter receipts',
+      },
+    } as Partial<Record<MeasureId, { pays: string; steps: string[]; checks: string; provide: string }>>,
     confirm: (n: number) => (n === 1 ? 'Apply for 1 measure' : `Apply for ${n} measures`),
     pays: {
       fertiliser: 'Part of the cost of mineral fertiliser',

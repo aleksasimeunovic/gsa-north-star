@@ -290,6 +290,12 @@ button.drawer-row:hover { background: var(--hover); }
 .records-text dd { margin: 0; }
 .records-value { font-weight: 600; }
 .records-sub { font-size: 0.875rem; color: var(--muted-foreground); }
+.goal-open { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 44px; margin: -10px 0 -8px; padding: 0; border: 0; background: none; font: inherit; color: var(--foreground); font-weight: 500; text-align: left; cursor: pointer; }
+.goal-open:hover { text-decoration: underline; text-underline-offset: 4px; }
+.goal-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+.records-text dd.goal-gain { font-size: 0.875rem; font-weight: 500; }
+.goal-section { display: flex; flex-direction: column; gap: var(--space-1); }
+.goal-steps { margin: 0; padding-left: var(--space-5); list-style: disc; display: flex; flex-direction: column; gap: var(--space-1); }
 .records-pen { flex: none; width: 44px; height: 44px; margin: -6px -10px 0 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .records-pen:hover { border-color: var(--hover-border); color: var(--foreground); }
 .records-pen:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { measureGaps, orderMeasures } from './status'
+import { goalGain, measureGaps, orderMeasures } from './status'
 import { derive } from './derive'
 import { halfSplit, play, run } from './testUtils'
 
@@ -50,6 +50,11 @@ describe('status per item', () => {
     const r = run('second_year', { type: 'choose_measures', chosen: ['plant_production', 'green_cover'] })
     expect(measureGaps(SCENARIOS.second_year.measures.find((m) => m.id === 'green_cover')!, chosen.inputs).missing).toEqual(['cover_fields', 'cover_promise'])
     expect(item(r, 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_incomplete', missing: ['green_cover'] })
+  })
+
+  it('what he lacks is worked out on his own numbers, for every measure that does not fit yet', () => {
+    const goals = SCENARIOS.second_year.measures.filter((m) => !m.fits)
+    expect(goals.map((m) => goalGain(m.goal!))).toEqual([120_000, 128_000, 50_000])
   })
 
   it('an unreadable receipt needs a new photo; sending it does not confirm the receipts for him', () => {
@@ -115,7 +120,7 @@ describe('status per item', () => {
   it('orders fitting measures first and keeps the full list: 10 fit, 2 do not', () => {
     const ordered = orderMeasures([...SCENARIOS.second_year.measures].reverse())
     expect(ordered.filter((m) => m.fits)).toHaveLength(10)
-    expect(ordered.slice(-2).map((m) => m.fits)).toEqual([false, false])
+    expect(ordered.slice(-3).map((m) => m.fits)).toEqual([false, false, false])
   })
 
   it('pigs: household only or declared, both complete', () => {

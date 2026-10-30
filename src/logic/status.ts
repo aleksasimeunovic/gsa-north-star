@@ -1,4 +1,4 @@
-import type { FieldId, Measure, Requirement, Scenario } from '../data/scenarios'
+import type { FieldId, Goal, Measure, Requirement, Scenario } from '../data/scenarios'
 import type { Answers, MeasureValue } from '../state/actions'
 import type { CaseState } from './advisor'
 import { roundHa, splitPolygon } from './geometry'
@@ -196,6 +196,9 @@ export function readyToApply(m: Measure, inputs: Answers['measures']['inputs']) 
   const g = measureGaps(m, inputs)
   return !g.ruledOut && g.missing.length === 0
 }
+
+/** What a measure he can't apply for yet could pay him a year: its rate on his own numbers. */
+export const goalGain = (g: Goal) => g.gain.rateDinars * g.gain.quantity
 
 /** Measures that fit his farm. */
 export const fitting = (s: Scenario) => s.measures.filter((m) => m.fits)

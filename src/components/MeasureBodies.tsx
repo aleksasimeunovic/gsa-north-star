@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { en, formatDinars, formatHa, formatNumber, tasks } from '../copy/en'
 import type { Measure, MeasureId, Requirement } from '../data/scenarios'
-import { fitting, measureGaps, readyToApply, shown } from '../logic/status'
+import { fitting, goalGain, measureGaps, readyToApply, shown } from '../logic/status'
 import { polygonAreaHa, roundHa } from '../logic/geometry'
 import type { MeasureValue, NewField } from '../state/actions'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Checkbox, CheckboxGroup } from '../ui/Checkbox'
 import { Disclosure } from '../ui/Disclosure'
+import { Drawer } from '../ui/Drawer'
 import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Stack, Text } from '../ui/Layout'
@@ -23,6 +24,7 @@ type Inputs = Record<string, MeasureValue>
 const t = tasks.measures
 const req = (r: Requirement) => tasks.requirement[r.id]
 const aboutThousand = (n: number) => formatDinars(Math.round(n / 1000) * 1000)
+const quantity = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2))
 const userReqs = (m: Measure) => m.requirements.filter((r) => r.kind !== 'auto')
 
 /** What the measure pays, worked out on his own numbers where the rate is known. */
@@ -208,10 +210,18 @@ function MeasureFields({ m, inputs, applied, suggestedFields, showErrors, onChan
   )
 }
 
-/** What he still lacks for the measures that don't fit his farm yet: what to do, in one line each. */
+/** A rough figure for his household: the nearest thousand, so it never reads as a promise. */
+const goalAbout = (m: Measure) => aboutThousand(goalGain(m.goal!))
+
+/**
+ * What he still lacks for the measures that don't fit his farm yet: what to do and what it could mean for his
+ * household, in a line each. The name opens everything about the measure in a side panel.
+ */
 export function MeasureGoals() {
   const { derived } = useApp()
   const goals = derived.scenario.measures.filter((m) => m.goal)
+  const [open, setOpen] = useState<Measure | null>(null)
+  const opener = useRef<HTMLElement | null>(null)
   if (!goals.length) return null
   return (
     <section className="records" aria-labelledby="goals-title">
@@ -220,13 +230,63 @@ export function MeasureGoals() {
         {goals.map((m) => (
           <div key={m.id} className="records-row">
             <div className="records-text">
-              <dt>{en.measures[m.id]}</dt>
+              <dt>
+                <button
+                  type="button"
+                  className="goal-open"
+                  aria-haspopup="dialog"
+                  aria-label={t.goalOpen(en.measures[m.id])}
+                  onClick={(e) => {
+                    opener.current = e.currentTarget
+                    setOpen(m)
+                  }}
+                >
+                  {en.measures[m.id]} <Icon name="details_open" size="sm" />
+                </button>
+              </dt>
               <dd className="records-value">{t.goal[m.goal!.kind](m.goal!.left)}</dd>
+              <dd className="goal-gain">{t.gain(goalAbout(m))}</dd>
             </div>
           </div>
         ))}
       </dl>
+      <Drawer open={!!open} title={open ? en.measures[open.id] : ''} onClose={() => setOpen(null)} returnFocusTo={opener}>
+        {open && <GoalPanel m={open} />}
+      </Drawer>
     </section>
+  )
+}
+
+/** Everything about one measure: what it pays, what it could mean for his household, and how to get there. */
+function GoalPanel({ m }: { m: Measure }) {
+  const g = m.goal!
+  const p = t.goalPanel
+  const about = t.goalAbout[m.id]!
+  return (
+    <>
+      <Text>{about.pays}</Text>
+      <section className="goal-section">
+        <h3 className="group-title">{p.household}</h3>
+        <Text variant="strong">{t.gain(goalAbout(m))}</Text>
+        <Text variant="small">{p.working[g.gain.unit](quantity(g.gain.quantity), formatNumber(g.gain.rateDinars))}</Text>
+        <Text variant="small">{p.caveat}</Text>
+      </section>
+      <section className="goal-section">
+        <h3 className="group-title">{p.need}</h3>
+        <ul className="goal-steps">
+          {[t.goal[g.kind](g.left), ...about.steps].map((s) => <li key={s}>{s}</li>)}
+        </ul>
+        <Text variant="small">{p.then}</Text>
+      </section>
+      <section className="goal-section">
+        <h3 className="group-title">{p.checks}</h3>
+        <Text>{about.checks}</Text>
+      </section>
+      <section className="goal-section">
+        <h3 className="group-title">{p.provide}</h3>
+        <Text>{about.provide}</Text>
+      </section>
+    </>
   )
 }
 

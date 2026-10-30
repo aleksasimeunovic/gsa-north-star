@@ -50,6 +50,7 @@ export type MeasureId =
   | 'irrigation'
   | 'organic'
   | 'milk'
+  | 'fattening'
 
 /**
  * What a measure needs. 'auto' is something GSA already has from a record; the rest he adds.
@@ -65,7 +66,14 @@ export interface Requirement {
   blocks?: string
 }
 
-export type GoalKind = 'organic_months' | 'dairy_cows'
+export type GoalKind = 'organic_months' | 'dairy_cows' | 'fattening_cattle'
+
+export interface Goal {
+  kind: GoalKind
+  left: number
+  /** What it could pay a year: a rate for each hectare or animal, on his own numbers. */
+  gain: { rateDinars: number; quantity: number; unit: 'ha' | 'animal' }
+}
 
 export interface Measure {
   id: MeasureId
@@ -75,8 +83,8 @@ export interface Measure {
   fits: boolean
   lastYear: boolean
   requirements: Requirement[]
-  /** What he still lacks to be eligible, for a measure that doesn't fit yet (prototype placeholder). */
-  goal?: { kind: GoalKind; left: number }
+  /** What he still lacks to be eligible and what it could pay him, for a measure that doesn't fit yet (prototype placeholders). */
+  goal?: Goal
 }
 
 export interface Document {
@@ -239,7 +247,7 @@ const HERD: Herd = {
 
 const PIGS: Pigs = { lastYearDeclared: 0, registryCount: 3 }
 
-// Ten fit his farm, two don't. Fitting ones first, the two he applied for last year at the top.
+// Ten fit his farm, three don't. Fitting ones first, the two he applied for last year at the top.
 const MEASURES: Measure[] = [
   {
     id: 'plant_production',
@@ -301,8 +309,10 @@ const MEASURES: Measure[] = [
       { id: 'how_water', kind: 'longtext' },
     ],
   },
-  { id: 'organic', fits: false, lastYear: false, requirements: [], goal: { kind: 'organic_months', left: 2 } },
-  { id: 'milk', fits: false, lastYear: false, requirements: [], goal: { kind: 'dairy_cows', left: 2 } },
+  // Not real rates: what the side panel works out for his household, until the ministry's rates are in.
+  { id: 'organic', fits: false, lastYear: false, requirements: [], goal: { kind: 'organic_months', left: 2, gain: { rateDinars: 16_000, quantity: 7.5, unit: 'ha' } } },
+  { id: 'milk', fits: false, lastYear: false, requirements: [], goal: { kind: 'dairy_cows', left: 2, gain: { rateDinars: 8_000, quantity: 16, unit: 'animal' } } },
+  { id: 'fattening', fits: false, lastYear: false, requirements: [], goal: { kind: 'fattening_cattle', left: 5, gain: { rateDinars: 10_000, quantity: 5, unit: 'animal' } } },
 ]
 
 const RECEIPTS = [

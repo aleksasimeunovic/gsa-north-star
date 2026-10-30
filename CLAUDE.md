@@ -157,7 +157,7 @@ Use exactly these facts. Don't invent research findings or extra numbers.
   - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's field. Yes: GSA moves his edge (about 1,800 dinars less). No: both declarations are kept until the payments office checks; the strip doesn't count until then.
   - Meadow, 1.50 ha, grassland/fodder. Unchanged.
   - House field, 1.30 ha, maize. Unchanged.
-- **Measures:** 12 in the list, 10 fit his farm, 2 don't (organic, milk premium). Last year he had the first two:
+- **Measures:** 13 in the list, 10 fit his farm, 3 don't (organic, milk premium, fattening cattle). Last year he had the first two:
   - Basic support for plant production: 18,000 dinars per hectare (real 2026 rate), justified with input receipts.
   - Cows raising calves for fattening: 20,000 dinars per cow that calved 1 Apr 2025 to 31 Mar 2026 (real 2026 rate). 14 cows calved.
   - Fertiliser, diesel, certified seed, insurance, quality breeding cattle, artificial insemination, green cover over winter, watering fields: no rates (never invent one); each states what it pays for and what it needs (uploads, numbers, text, a choice, fields, a promise). Data in `scenarios.ts`.
@@ -173,7 +173,7 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Added in round 11 at Aleksa's request (new land):**
   - Land: the land registry shows a parcel in his name since 12 February 2026, 0.80 ha above the road field (prototype placeholder). Question: will he farm it this year? Yes: GSA adds the whole parcel; he names it, gives its crop and chooses its measures. No: left out.
   - Land: registered farmland south of the meadow (0.90 ha) is where a field he adds himself can go ("Add a field"); the land is taken whole.
-- **Added in round 12 at Aleksa's request (prototype placeholders):** what he lacks for the two measures that don't fit: keep his land organic for 2 more months; 2 more dairy cows. Every map shows when the photo was taken: 21 April 2026.
+- **Added in round 12 at Aleksa's request (prototype placeholders):** what he lacks for the three measures that don't fit: keep his land organic for 2 more months; 2 more dairy cows; 5 more cattle in fattening. What each could pay him a year, worked out in the side panel: 7.50 ha × 16,000, 16 animals × 8,000, 5 animals × 10,000. These three rates are placeholders, the one exception to never inventing a rate, and only here, never in the estimate. Every map shows when the photo was taken: 21 April 2026.
 
 ## 8. Milan's journey (one connected flow)
 
@@ -212,7 +212,7 @@ Paths:
 
 ### Readiness through submit
 - Readiness is the application list itself, with a one-line verdict on every screen, text plus icon shape, announced politely.
-- Measures are decision support: each one GSA recommends says why it may fit, what the state still checks and what he must provide. Last year's come first as "You applied for these last year", unchosen, each with "Choose again". Choosing opens what a measure needs; each says where it stands (still to fill in, ready to apply, applied); the one action is "Fill in what's missing" until everything is in, then "Apply for N measures". Under the progress widget, "What you need for more support" says what he lacks for the measures that don't fit yet, as things to do.
+- Measures are decision support: each one GSA recommends says why it may fit, what the state still checks and what he must provide. Last year's come first as "You applied for these last year", unchosen, each with "Choose again". Choosing opens what a measure needs; each says where it stands (still to fill in, ready to apply, applied); the one action is "Fill in what's missing" until everything is in, then "Apply for N measures". Under the progress widget, "What you need for more support" says what he lacks for the measures that don't fit yet, as things to do with what each could mean for his household; the arrow beside a name opens everything about that measure in a side panel.
 - **Submit:** what's complete, what's awaiting verification and that it doesn't block (assumption), what the state will still check, declaration signed once ("I confirm under full criminal and material liability..."), one clear Submit button.
 - **Receipt:** "Your application is submitted." Date, reference number, what happens next, what's still awaiting verification, how to amend until the national deadline. Never ambiguous.
 - Renewal gate (scenario): first screen says renewal is needed, links to it (mock), lets him prepare but not submit; after renewal: "You're an active farmer. Next: your application."

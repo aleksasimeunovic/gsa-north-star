@@ -1,5 +1,5 @@
 import {
-  ArrowRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Copy, CircleAlert, CircleCheck,
+  ArrowRight, ArrowUpRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Copy, CircleAlert, CircleCheck,
   CircleX, Clock, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, Map, Maximize2, Minimize2, Minus,
   PencilLine, PiggyBank, Plus, Receipt, Satellite, Send, Sprout, Target, Undo2, Upload, Wheat, X, type LucideIcon,
 } from 'lucide-react'
@@ -52,6 +52,7 @@ const ICONS = {
   map: Map,
   measures: HandCoins,
   goal: Target,
+  details_open: ArrowUpRight,
   documents: FileText,
   receipt: Receipt,
   submit: Send,
