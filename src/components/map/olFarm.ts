@@ -7,6 +7,7 @@ import Zoom from 'ol/control/Zoom'
 import { focusWithTabindex } from 'ol/events/condition'
 import { boundingExtent, buffer } from 'ol/extent'
 import type Geometry from 'ol/geom/Geometry'
+import LineString from 'ol/geom/LineString'
 import OlPoint from 'ol/geom/Point'
 import OlPolygon from 'ol/geom/Polygon'
 import { defaults as defaultInteractions } from 'ol/interaction/defaults'
@@ -41,6 +42,8 @@ export interface FarmMapOptions {
   lands?: { id: string; polygon: Polygon; label: string }[]
   /** Leave this added field out: it is the one being changed. */
   skip?: string
+  /** The river field once he has split it: drawn on every map instead of the flag. */
+  done?: { line: Point[]; parts: { polygon: Polygon; label: string }[] }
 }
 
 export type FarmMap = ReturnType<typeof createFarmMap>
@@ -60,11 +63,12 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   const labels = new VectorSource()
   const notes = new VectorSource()
   const extra = new VectorSource()
+  const flagged = new VectorSource()
 
-  const shape = (poly: Polygon, role: MapRole) => {
+  const shape = (poly: Polygon, role: MapRole, into = shapes) => {
     const f = new Feature<Geometry>(new OlPolygon(ring(poly)))
     f.setStyle(mapStyle(role))
-    shapes.addFeature(f)
+    into.addFeature(f)
   }
   const label = (into: VectorSource, at: Point, text: string, o?: Parameters<typeof labelStyle>[1]) => {
     const f = new Feature<Geometry>(new OlPoint(coord(at)))
@@ -109,10 +113,16 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
 
   // What changed, in place: the satellite flag, the road strip, the neighbour's line.
   const signal = focused?.signal
-  if (signal?.kind === 'satellite_difference') {
-    shape(signal.flagPolygon, 'flag')
+  if (signal?.kind === 'satellite_difference' && !opts.done) {
+    shape(signal.flagPolygon, 'flag', flagged)
     const b = bounds(signal.flagPolygon)
-    label(notes, { x: (b.minX + b.maxX) / 2, y: b.maxY - 4 }, copy.flag, { above: true, size: 14 })
+    label(flagged, { x: (b.minX + b.maxX) / 2, y: b.maxY - 4 }, copy.flag, { above: true, size: 14 })
+  }
+  if (opts.done && !opts.parcel && !opts.lands?.length) {
+    const f = new Feature<Geometry>(new LineString(opts.done.line.map(coord)))
+    f.setStyle(mapStyle(focused?.id === 'river' || !focused ? 'split' : 'faint'))
+    shapes.addFeature(f)
+    if (focused?.id === 'river') opts.done.parts.forEach((p) => label(notes, centroid(p.polygon), p.label, { size: 15 }))
   }
   if (signal?.kind === 'road_strip') {
     shape(signal.stripPolygon, 'strip')
@@ -139,6 +149,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
       ? [focused.polygon, ...(signal?.kind === 'overlap' ? [signal.neighbourPolygon] : [])]
       : fields.map((f) => f.polygon)
 
+  const flagLayer = new VectorLayer({ source: flagged })
   const view = new View({
     maxZoom: 20,
     minZoom: 13,
@@ -151,6 +162,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     layers: [
       new TileLayer({ source: new XYZ({ url: IMAGERY, maxZoom: 18, attributions: copy.imagery }) }),
       new VectorLayer({ source: shapes }),
+      flagLayer,
       new VectorLayer({ source: extra }),
       new VectorLayer({ source: labels, declutter: true }),
       new VectorLayer({ source: notes }),
@@ -166,9 +178,26 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
       : [],
   })
 
-  const padding = opts.interactive ? [56, 56, 56, 56] : [20, 20, 20, 20]
-  const fit = (polys: Polygon[], animate: boolean) =>
-    view.fit(extentOf(polys), { padding, maxZoom: 18.5, duration: animate && !reducedMotion() ? 300 : undefined })
+  const small = target.clientWidth < 640
+  const padding = opts.interactive ? Array(4).fill(small ? 32 : 56) : [20, 20, 20, 20]
+  // Until he moves the map himself, it keeps his field framed when its size changes (the panel beside it grows and shrinks).
+  let framing = false
+  let moved = false
+  view.on('change:center', () => {
+    if (!framing) moved = true
+  })
+  const fit = (polys: Polygon[], animate: boolean) => {
+    framing = true
+    view.fit(extentOf(polys), {
+      padding,
+      maxZoom: 18.5,
+      duration: animate && !reducedMotion() ? 300 : undefined,
+      callback: () => {
+        framing = false
+        moved = false
+      },
+    })
+  }
   // A map inside something closed has no size yet: frame his fields the first time it gets one.
   const frameOnce = () => {
     const size = map.getSize()
@@ -176,6 +205,10 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     else map.once('change:size', frameOnce)
   }
   frameOnce()
+  map.on('change:size', () => {
+    const size = map.getSize()
+    if (!moved && size && size[0] > 0 && size[1] > 0) fit(home, false)
+  })
 
   return {
     map,
@@ -184,6 +217,8 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     coord,
     ring,
     point,
+    /** Shows or hides what the photo flagged, so he can compare it with his field. */
+    showFlag: (on: boolean) => flagLayer.setVisible(on),
     /** Back to the field in question (or the fields shown). */
     fitHome: (animate = true) => fit(home, animate),
     fitFarm: (animate = true) => fit(all, animate),

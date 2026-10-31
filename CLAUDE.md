@@ -52,7 +52,7 @@ Every feature must trace back to one of these problems. If a feature doesn't, do
 | P3 | Answers had to match three registries; he left the app to copy numbers | GSA brings registry data in. He never leaves the app to look anything up |
 | P4 | Matching cadastral parcels to fields; never needed a cadastral number | Map-first, in plain words. No technical land terms. Cadastral parcels hidden by default |
 | P5 | Second year: each sold or lost animal removed by ear tag | One question: "Do you have 38 cattle now?" |
-| P6 | A field turned to sunflowers had to be redrawn with Jelena | GSA proposes the split line from the satellite flag; he accepts or nudges it |
+| P6 | A field turned to sunflowers had to be redrawn with Jelena | GSA proposes the split line along the edge the photo shows; he accepts it or pulls it into place |
 | P7 | Nothing points to what has changed; he checks line by line | GSA shows what may have changed, with the evidence, before asking |
 | P8 | Three or four office visits per subsidy | He sends Jelena one specific problem from inside GSA, only if needed, and sees who acts next |
 | P9 | Used too rarely to remember | One list that always shows the next action, plain language, autosave and resume |
@@ -152,7 +152,7 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Pigs:** the animal registry shows 3 pigs; none declared last year. Question: only for the household? (household pigs needing no declaration is an assumption).
 - **Herd:** last year declared 41 cattle. Animal registry today: 38 (registry has headcount only, no history, so never show a breakdown of movements). Milan knows why: 4 sold, 2 slaughtered, 3 calves born. 14 cows calved between 1 April 2025 and 31 March 2026.
 - **Land:** five fields, 9.00 ha total. Use local-style names:
-  - River field, 2.40 ha, wheat last year. Satellite photo: lower part looks different. The lower half floods every spring; this year sunflowers there, wheat on the rest.
+  - River field, 2.40 ha, wheat last year. Satellite photo: lower part looks different (about 1.18 ha; the edge is a prototype placeholder in `scenarios.ts`). The lower part floods every spring; this year sunflowers there, wheat on the rest (1.22 ha along GSA's line).
   - Road field, 1.80 ha, maize. Land map: 0.12 ha strip now marked as road (wider road).
   - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's field. Yes: GSA moves his edge (about 1,800 dinars less). No: both declarations are kept until the payments office checks; the strip doesn't count until then.
   - Meadow, 1.50 ha, grassland/fodder. Unchanged.
@@ -161,7 +161,8 @@ Use exactly these facts. Don't invent research findings or extra numbers.
   - Basic support for plant production: 18,000 dinars per hectare (real 2026 rate), justified with input receipts.
   - Cows raising calves for fattening: 20,000 dinars per cow that calved 1 Apr 2025 to 31 Mar 2026 (real 2026 rate). 14 cows calved.
   - Fertiliser, diesel, certified seed, insurance, quality breeding cattle, artificial insemination, green cover over winter, watering fields: no rates (never invent one); each states what it pays for and what it needs (uploads, numbers, text, a choice, fields, a promise). Data in `scenarios.ts`.
-- **Estimate:** 9.00 × 18,000 + 14 × 20,000 = 442,000. After the road: 8.88 × 18,000 + 280,000 = 439,840, shown as "about 440,000", with "The road took 0.12 ha. About 2,200 dinars less." Splitting the river field doesn't change the estimate (same rate per hectare). Label: "Estimated subsidy based on current information", covers only this application, assumptions visible on request (rates, eligible area, cows that calved), "The payment still depends on inspection and final eligibility."
+- **Round 13:** a part of the river field can be left unsown: it stops counting for plant production (assumption), with the reason. A part must be at least 0.10 ha (placeholder, assumption).
+- **Estimate:** 9.00 × 18,000 + 14 × 20,000 = 442,000. After the road: 8.88 × 18,000 + 280,000 = 439,840, shown as "about 440,000", with "The road took 0.12 ha. About 2,200 dinars less." Splitting the river field doesn't change the estimate (same rate per hectare), unless a part is left unsown. Label: "Estimated subsidy based on current information", covers only this application, assumptions visible on request (rates, eligible area, cows that calved), "The payment still depends on inspection and final eligibility."
 - **Jelena:** PSSS advisor in Čačak, about 20 applications a day, studied agronomy.
 - **Neighbour (advisor mode only):** has a parcel still in his late father's name; he sent just that problem to Jelena. Referring it to the land registry means waiting for that office, not handled.
 - **Added in round 5 at Aleksa's request (more problems per part):**
@@ -199,16 +200,18 @@ A card is one line of context (what GSA found, and where), the evidence, the que
 
 Paths:
 - Herd yes → herd complete. Herd no → "How many cattle do you have today?" → he enters 41 → **registry 38 | you declared 41** side by side, "The registry stays the official record until it's checked", awaiting verification. The one exception and the best-designed state: it says plainly that his part is done; who settles it (the animal registry, and Jelena if he sent it); that he needs to do nothing unless they contact him; what happens next (the registry checks, its 38 counts until then, he can still submit, the result appears here). Same words wherever the herd appears.
-- River: the lower strip is greening later than the wheat above (fact). "What's growing in the lower part this year?" The same as the rest → complete. Something else → suggested split, a crop for each part. No third branch.
-- Road yes → complete; area and estimate drop with the reason shown. Road no → the correction is sent in the same step (awaiting verification); the land map's area counts until checked.
+- River: the lower strip is greening later than the wheat above (fact). He compares last year's field with what the photo shows. "What's growing in the lower part this year?" The same as the rest → complete. Something else → three steps: where the crop changes, what grows in each part, what this changes. No third branch.
+- Road yes → complete; area and estimate drop with the reason shown. Road no → both areas kept side by side, awaiting verification, and the herd's four answers (your part, who settles it, do you need to do anything, what happens next) plus what he gains if they agree. He stays on the map to read it. The land map's area counts until checked.
 - Answers stay editable; changing one re-runs the list rules.
 
 ### Land: real maps in plain language, and the suggested split
 - Every map is OpenLayers on the real satellite photo (loaded only when a map is shown). He can pan, zoom (buttons, pinch, wheel, keyboard), go back to the field or see the whole farm. Card previews are small still pictures; the review map fills the screen with the question beside it.
 - Plain labels and clearly different boundary styles, e.g. "Land the government has registered". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
 - When a boundary stops an action, explain why at that moment, in place.
-- **Split:** GSA proposes the line along the flagged area. Milan accepts it or nudges it: large handles, drag the whole line. Keep the guardrail (line clipped to eligible land), live areas, undo (once there is something to undo) and the slider as the accessible alternative. Then a crop for each part. On confirm: river field complete.
-- **No moving a field's edges (round 12, Aleksa):** no dragging of sides or edges anywhere, for the upper field, the parcel he bought or a field he adds; the land is taken whole as the record has it. Aleksa decides if anything about parcel boundaries comes back. The river field's split line stays. River and road are the hero moments; check at 360 px, then 1280.
+- **Split (round 13, the hero):** GSA's line runs along the edge the photo shows. He presses anywhere on the line and pulls, and it bends there; round handles move bends; square handles at the ends slide along the field's edge. Near the photo's edge a bend joins it. Help: follow the edge in the photo, make the line straight, take out a bend, a slider for the whole line, arrow keys, Delete. He never places a point. A move that would make a bad line (outside the field, crossing itself, a part under 0.10 ha) stops at the last good position and the panel says why, so an invalid shape can't exist. Live areas on the map, undo once there is something to undo. Then a crop for each part (tap a part on the map; nothing sown is a choice). Then what this changes in his application, before he confirms. Nothing counts until he confirms.
+- **The split carries through:** every map draws it, the land list and crops show it, measures offer each part (a choice of the river field carries to both, and back), the estimate and readiness follow, all derived.
+- **No moving a field's edges (round 12, Aleksa):** no dragging of sides or edges for the upper field, the parcel he bought or a field he adds; the land is taken whole as the record has it. River and road are the hero moments; check at 360 px, then 1280.
+- **New land stays small (round 13, Earl):** adding a field is its place, name and crop. It joins his land, so measures cover it like the rest; there is no measures step of its own.
 
 ### Readiness through submit
 - Readiness is the application list itself, with a one-line verdict on every screen, text plus icon shape, announced politely.
@@ -262,7 +265,9 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 12 (Aleksa, 30 Oct):** no edge moving; no sources or database icons (states only, the photo's date on every map); measures apply only when filled in; goals widget; action points instead of "Before you submit"; meadow in one timeframe.
 
-Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset, nothing else (round 10b, Aleksa). Design notes are not shown in the prototype; tested, mandate and assumption distinctions live in `docs/decisions.md`.
+**Round 13 (Earl, 31 Oct):** go deep on one parcel delineation workflow, one meaningful exception, and how both connect to the rest of the application; no suite of GIS tools. River field in three steps with a line he pulls, the road dispute with its owner and next steps, new land reduced, exploration in `docs/parcel-exploration.html`. Next from Earl: record a walkthrough with the after story; case study needs the original interaction and observations from the 44 sessions; claims about usability need new validation.
+
+Prototype controls (floating "Prototype" button): persona (Milan or Jelena), design notes (off by default, so unconfirmed rules are labelled, Earl 31 Oct) and reset.
 
 ## 11. Design system
 
@@ -290,7 +295,9 @@ shadcn/ui components live in `src/ui/shadcn/` and our semantic primitives in `sr
 - [ ] One list: after each answer, done work collapses, unneeded work leaves with a reason, the next action gets focus.
 - [ ] No "Everything else". Unchanged things with nothing to declare are reused without asking; yearly declarations are separate one-tap confirmations; changes are their own tasks.
 - [ ] Map in plain words; no technical land terms; cadastral parcels hidden by default; a boundary explains itself when it stops an action.
-- [ ] The split line is proposed from the satellite flag; Milan accepts or nudges it with large handles; slider, undo, guardrail and live areas remain. No other edge moves anywhere.
+- [ ] The split line is proposed along the photo's edge; Milan accepts it or pulls it with large handles; slider, undo, guardrail and live areas remain; an invalid line can't exist. No other edge moves anywhere.
+- [ ] Before confirming a split he sees what it changes in the application, with reasons; afterwards land, crops, measures, estimate and readiness all reflect it.
+- [ ] Road dispute: both areas kept, who settles it, what he must do, what happens next, what he gains if they agree; assumptions labelled.
 - [ ] Milan's journey runs end to end: welcome back, changes, land, readiness, submit, receipt.
 - [ ] Status (complete / action required / awaiting verification) is separate from payment impact.
 - [ ] "Ready to submit", never "safe"; ready isn't approved; what the state still checks is listed.

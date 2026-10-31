@@ -1,6 +1,6 @@
-import type { Crop, Scenario } from '../data/scenarios'
+import type { Crop, PartCrop, Polygon, Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import { polygonAreaHa, roundHa, splitPolygon } from './geometry'
+import { partNames, polygonAreaHa, roundHa, splitField, type PartName, type SplitLine } from './geometry'
 import { fitting, riverSplitComplete, type Item, type ItemId } from './status'
 
 /**
@@ -30,6 +30,79 @@ const sourceOf = (items: (Item | undefined)[]): Source => {
   return known.length > 0 && known.every((i) => i.status === 'complete') ? 'confirmed' : 'records'
 }
 
+export interface RiverPart {
+  id: string
+  name: PartName
+  ha: number
+  crop: PartCrop
+  polygon: Polygon
+}
+
+/** The two parts of the river field once he has split it, top first, as on the map. Null until then. */
+export function riverParts(s: Scenario, a: Answers): RiverPart[] | null {
+  const field = s.fields.find((f) => f.id === 'river')
+  const split = a.river.split
+  if (!field || !split || a.river.answer !== 'yes' || !riverSplitComplete(s, a)) return null
+  return partsOf(field.polygon, split.line, split.crops as [PartCrop, PartCrop])
+}
+
+function partsOf(polygon: Polygon, line: SplitLine, crops: [PartCrop, PartCrop]): RiverPart[] | null {
+  const r = splitField(polygon, line)
+  if (!r) return null
+  const names = partNames(r.parts)
+  const parts = ([0, 1] as const).map((i) => ({ id: `river:${names[i]}`, name: names[i], ha: r.areasHa[i], crop: crops[i], polygon: r.parts[i] }))
+  return names[0] === 'top' || names[0] === 'left' ? parts : parts.reverse()
+}
+
+/**
+ * The fields a measure can be applied for on. Once he splits the river field its two parts stand in for it;
+ * a choice he made before the split carries over to both, and comes back together if he undoes it.
+ */
+export function fieldChoices(s: Scenario, a: Answers): { id: string; ha: number; part?: PartName }[] {
+  const parts = riverParts(s, a)
+  return s.fields
+    .filter((f) => f.arable)
+    .flatMap((f) => (f.id === 'river' && parts ? parts.map((p) => ({ id: p.id, ha: p.ha, part: p.name })) : [{ id: f.id as string, ha: f.areaHa }]))
+}
+
+export function carriedFields(chosen: string[], s: Scenario, a: Answers): string[] {
+  const parts = riverParts(s, a)?.map((p) => p.id)
+  const wasRiver = chosen.some((id) => id === 'river' || id.startsWith('river:'))
+  const rest = chosen.filter((id) => id !== 'river' && !id.startsWith('river:'))
+  if (!wasRiver) return rest
+  if (!parts) return ['river', ...rest]
+  const kept = chosen.filter((id) => parts.includes(id))
+  return [...(kept.length ? kept : parts), ...rest]
+}
+
+/** What a split does to the rest of his application, said before he confirms it. Worked out, never stored. */
+export interface SplitEffects {
+  parts: RiverPart[]
+  totalHa: number
+  /** Land that stops counting for plant production, and what that takes off the payment. */
+  lostHa: number
+  lostDinars: number
+  /** The measures it touches, so he hears about the ones he has chosen. */
+  plantChosen: boolean
+  coverChosen: boolean
+}
+
+export function splitEffects(s: Scenario, a: Answers, split: NonNullable<Answers['river']['split']>): SplitEffects | null {
+  const field = s.fields.find((f) => f.id === 'river')!
+  const parts = partsOf(field.polygon, split.line, split.crops as [PartCrop, PartCrop])
+  if (!parts) return null
+  const lostHa = parts.find((p) => p.crop === 'unsown')?.ha ?? 0
+  const rate = s.measures.find((m) => m.id === 'plant_production')?.rateDinars ?? 0
+  return {
+    parts,
+    totalHa: field.areaHa,
+    lostHa,
+    lostDinars: Math.round(lostHa * rate),
+    plantChosen: a.measures.chosen.includes('plant_production'),
+    coverChosen: a.measures.chosen.includes('green_cover'),
+  }
+}
+
 /**
  * The working picture of his farm as GSA knows it right now, updated by every answer, with where each
  * line stands. Areas are what counts for payment: a field loses what its payment impact takes.
@@ -44,12 +117,9 @@ export function farmPicture(s: Scenario, a: Answers, items: Item[]): FarmPicture
   for (const f of s.fields) {
     const ha = roundHa(f.areaHa - lost(f.id))
     total += ha
-    const split = f.id === 'river' && a.river.answer === 'yes' && riverSplitComplete(s, a) ? a.river.split : null
-    const r = split && splitPolygon(f.polygon, split.line[0], split.line[1])
-    if (split && r) {
-      add(split.crops[0]!, r.areasHa[0])
-      add(split.crops[1]!, r.areasHa[1])
-    } else add(f.cropLastYear, ha)
+    const parts = f.id === 'river' ? riverParts(s, a) : null
+    if (parts) parts.forEach((p) => p.crop !== 'unsown' && add(p.crop, p.ha))
+    else add(f.cropLastYear, ha)
   }
 
   // Fields he added this year, the parcel he bought among them.

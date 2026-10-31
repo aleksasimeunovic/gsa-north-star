@@ -41,13 +41,13 @@ const round = (n: number, to: number) => Math.round(n / to) * to
 export type EstimateState = 'none' | 'provisional' | 'current'
 export const estimateState = (e: Estimate): EstimateState => (e.totalDinars <= 0 ? 'none' : e.pending.length ? 'provisional' : 'current')
 
-/** What can change the estimate: area (road, the neighbour's line, the meadow), the measures chosen, the receipts that justify them. */
-const CAN_CHANGE: ItemId[] = ['field_road', 'field_upper', 'field_meadow', 'field_bought', 'measures', 'receipts']
+/** What can change the estimate: area (a part left unsown, road, the neighbour's line, the meadow), the measures chosen, the receipts that justify them. */
+const CAN_CHANGE: ItemId[] = ['field_river', 'field_road', 'field_upper', 'field_meadow', 'field_bought', 'measures', 'receipts']
 
 /**
  * Estimated subsidy based on current information, for this application only.
  * The payment still depends on inspection and final eligibility.
- * Splitting a field changes nothing here: same rate per hectare.
+ * Splitting a field changes nothing here, same rate per hectare, unless a part is left unsown.
  */
 export function estimate(s: Scenario, a: Answers, items: Item[]): Estimate {
   const chosen = (id: MeasureId) => a.measures.chosen.includes(id)
@@ -56,8 +56,8 @@ export function estimate(s: Scenario, a: Answers, items: Item[]): Estimate {
   const plantOn = plant.fits && chosen(plant.id)
 
   // Work in hundredths of a hectare to avoid floating point drift.
-  // Fields he added count where he applies for plant production on them.
-  const addedCentiHa = a.newFields.filter((f) => f.measures.includes('plant_production')).reduce((sum, f) => sum + Math.round(polygonAreaHa(f.polygon) * 100), 0)
+  // Fields he added count with the rest of his land.
+  const addedCentiHa = a.newFields.reduce((sum, f) => sum + Math.round(polygonAreaHa(f.polygon) * 100), 0)
   const declaredCentiHa = s.fields.reduce((sum, f) => sum + Math.round(f.areaHa * 100), 0) + addedCentiHa
   const impacts = items.flatMap((i) => (i.paymentImpact ? [i.paymentImpact] : []))
   const lostCentiHa = impacts.reduce((sum, p) => sum + Math.round(p.areaHa * 100), 0)

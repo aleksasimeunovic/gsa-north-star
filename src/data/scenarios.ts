@@ -8,12 +8,16 @@ export type Polygon = Point[]
 
 export type Crop = 'wheat' | 'maize' | 'sunflower' | 'grassland' | 'barley' | 'soya'
 export const CROPS: Crop[] = ['wheat', 'maize', 'sunflower', 'barley', 'soya', 'grassland']
+/** One part of a split field: a crop, or nothing sown there this year. */
+export type PartCrop = Crop | 'unsown'
+export const PART_CROPS: PartCrop[] = [...CROPS, 'unsown']
 
 export type FieldId = 'river' | 'road' | 'upper' | 'meadow' | 'house'
 
 /** Each signal is a fact with its source's date (prototype placeholders): GSA says what it saw and when. */
 export type FieldSignal =
-  | { kind: 'satellite_difference'; flagPolygon: Polygon; flagHa: number }
+  /** `edge`: where the photo changes, from one side of the field to the other. GSA's line starts here. */
+  | { kind: 'satellite_difference'; edge: Point[]; flagPolygon: Polygon; flagHa: number }
   | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number; seen: string }
   /** Last year's drawing runs into a neighbour's declared field. */
   | { kind: 'overlap'; neighbourPolygon: Polygon; overlapPolygon: Polygon; overlapHa: number; seen: string }
@@ -172,6 +176,15 @@ const rect = (x: number, y: number, w: number, h: number): Polygon => [
   { x, y: y + h },
 ]
 
+// Where the river field's photo changes (prototype placeholder): the lower part floods every spring, and water follows the ground, not a ruler.
+const RIVER_EDGE: Point[] = [
+  { x: 0, y: 54 },
+  { x: 52, y: 66 },
+  { x: 104, y: 58 },
+  { x: 152, y: 64 },
+  { x: 200, y: 60 },
+]
+
 const FIELDS: Field[] = [
   {
     id: 'river',
@@ -181,7 +194,7 @@ const FIELDS: Field[] = [
     arable: true,
     polygon: rect(0, 0, 200, 120),
     // The lower half floods every spring; satellite sees it differently.
-    signal: { kind: 'satellite_difference', flagPolygon: rect(0, 60, 200, 60), flagHa: 1.2 },
+    signal: { kind: 'satellite_difference', edge: RIVER_EDGE, flagPolygon: [...RIVER_EDGE, { x: 200, y: 120 }, { x: 0, y: 120 }], flagHa: 1.18 },
   },
   {
     id: 'road',
@@ -320,9 +333,6 @@ const RECEIPTS = [
   { name: 'Fertiliser receipt.pdf', date: '2026-03-20' },
   { name: 'Diesel receipt.jpg', date: '2026-04-02' },
 ]
-
-/** Measures he applies for field by field, offered when he adds a field. */
-export const LAND_MEASURES: MeasureId[] = ['plant_production', 'green_cover', 'irrigation']
 
 const BASE: Scenario = {
   id: 'second_year',

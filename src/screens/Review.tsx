@@ -1,15 +1,15 @@
 import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
-import { en, finish, map, tasks } from '../copy/en'
-import type { FieldId } from '../data/scenarios'
+import { en, finish, formatHa, map, split, tasks } from '../copy/en'
+import type { Field, FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
-import { SplitControls, useSplitDraft } from '../components/SplitTool'
-import { FarmMap, MapFacts, MapFallback, mapContext, taskSummary } from '../components/TaskBodies'
+import { CropsStep, EffectsStep, LineStep, partLabels, useSplitDraft } from '../components/SplitTool'
+import { FarmMap, MapFacts, MapFallback, RoadDispute, mapContext, taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
 import { Button } from '../ui/Button'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
-import { Text, VisuallyHidden } from '../ui/Layout'
+import { Compare, Text, VisuallyHidden } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
 import { Note } from '../ui/Note'
 
@@ -84,7 +84,14 @@ const options = (yes: string, no: string) => [
 
 type BodyProps = { onAnswer: () => void; head: ReactNode }
 
-/** The satellite flags, Milan decides. Two crops: GSA's line where the photo changes, which he accepts or moves. */
+type RiverStep = 'line' | 'crops' | 'effects'
+const RIVER_STEPS: RiverStep[] = ['line', 'crops', 'effects']
+
+/**
+ * The satellite flags, Milan decides, and the field changes in three steps once he says something else
+ * grows there: where the crop changes (GSA's line, which he pulls), what grows in each part, and what that
+ * does to the rest of his application. Nothing counts until he confirms the split.
+ */
 function RiverReview({ onAnswer, head }: BodyProps) {
   const { derived, state, dispatch } = useApp()
   const field = derived.scenario.fields.find((f) => f.id === 'river')!
@@ -92,18 +99,27 @@ function RiverReview({ onAnswer, head }: BodyProps) {
   const a = state.answers.river
   const draft = useSplitDraft(field, a.split)
   const [asking, setAsking] = useState(a.answer === null)
-  const [editingSplit, setEditingSplit] = useState(false)
-  const splitting = a.answer === 'yes' && !asking && (item.status === 'action_required' || editingSplit)
+  const [step, setStep] = useState<RiverStep | null>(a.answer === 'yes' && item.status === 'action_required' ? 'line' : null)
+  const [flagged, setFlagged] = useState(true)
+  const go = (to: RiverStep | null) => {
+    setStep(to)
+    requestAnimationFrame(() => {
+      document.querySelector('.map-stage-panel')?.scrollTo(0, 0)
+      document.getElementById('split-title')?.focus({ preventScroll: true })
+    })
+  }
   const answer = (v: YesNo) => {
-    onAnswer()
+    if (v === 'no') onAnswer()
     setAsking(false)
     dispatch({ type: 'answer_river', answer: v })
+    go(v === 'yes' ? 'line' : null)
   }
+  const titles = { line: split.lineTitle, crops: split.cropsTitle, effects: split.effectsTitle }
 
   return (
     <MapStage
       label={en.fields.river}
-      working={splitting}
+      working={step !== null}
       map={
         <Suspense fallback={<MapFallback mode="explore" fill />}>
           <FarmMap
@@ -111,46 +127,89 @@ function RiverReview({ onAnswer, head }: BodyProps) {
             focus="river"
             mode="explore"
             fill
+            hideFlag={step === 'crops' || step === 'effects' || !flagged}
             label={`${map.title}: ${en.fields.river}. ${mapContext(derived.scenario, 'field_river')}`}
-            split={a.answer === 'yes' && !asking ? { field, d: draft, interactive: splitting } : undefined}
+            split={
+              step
+                ? {
+                    field,
+                    d: draft,
+                    interactive: step === 'line',
+                    labels: partLabels(draft, step),
+                    onPickPart: step === 'crops' ? (i) => document.getElementById(`part-crop-${i}`)?.focus() : undefined,
+                  }
+                : undefined
+            }
           />
         </Suspense>
       }
     >
-      {head}
-      {asking ? (
-        <StageAction>
-          {/* Asked neutrally: the photo can't see what he planted. "Something else" leads to the split. */}
-          <ChoiceButtons
-            legend={tasks.river.question}
-            options={[
-              { value: 'same' as const, label: tasks.river.same },
-              { value: 'other' as const, label: tasks.river.other },
-            ]}
-            onChoose={(v) => answer(v === 'other' ? 'yes' : 'no')}
-          />
-        </StageAction>
+      {step ? (
+        <header className="split-head">
+          <p className="hint">{split.step(RIVER_STEPS.indexOf(step) + 1)}</p>
+          <h2 id="split-title" tabIndex={-1}>{titles[step]}</h2>
+        </header>
       ) : (
-        <AnswerLine legend={tasks.river.question} answer={a.answer === 'yes' ? tasks.river.other : tasks.river.same} onChange={() => setAsking(true)} />
+        head
       )}
-      {a.answer === 'yes' &&
-        !asking &&
-        (splitting ? (
-          <SplitControls
-            field={field}
-            d={draft}
-            onConfirm={(split) => {
-              onAnswer()
-              dispatch({ type: 'set_split', split })
-              setEditingSplit(false)
-            }}
-          />
+      {!step && a.answer === null && <RiverCompare field={field} flagged={flagged} onFlagged={setFlagged} />}
+      {step === 'line' && <LineStep field={field} d={draft} onNext={() => go('crops')} />}
+      {step === 'crops' && <CropsStep d={draft} onBack={() => go('line')} onNext={() => go('effects')} />}
+      {step === 'effects' && (
+        <EffectsStep
+          d={draft}
+          onBack={() => go('crops')}
+          onConfirm={(s) => {
+            onAnswer()
+            dispatch({ type: 'set_split', split: s })
+            go(null)
+          }}
+        />
+      )}
+      {!step &&
+        (asking ? (
+          <StageAction>
+            {/* Asked neutrally: the photo can't see what he planted. "Something else" leads to the split. */}
+            <ChoiceButtons
+              legend={tasks.river.question}
+              options={[
+                { value: 'same' as const, label: tasks.river.same },
+                { value: 'other' as const, label: tasks.river.other },
+              ]}
+              onChoose={(v) => answer(v === 'other' ? 'yes' : 'no')}
+            />
+          </StageAction>
         ) : (
-          <div>
-            <Button variant="link" onClick={() => setEditingSplit(true)}>{tasks.reviewSplit}</Button>
-          </div>
+          <>
+            <AnswerLine legend={tasks.river.question} answer={a.answer === 'yes' ? tasks.river.other : tasks.river.same} onChange={() => setAsking(true)} />
+            {a.answer === 'yes' && (
+              <div>
+                <Button variant="link" onClick={() => go('line')}>{tasks.changeSplit}</Button>
+              </div>
+            )}
+          </>
         ))}
     </MapStage>
+  )
+}
+
+/** Last year's field beside what the photo flags, and a switch to see each alone on the map. */
+function RiverCompare({ field, flagged, onFlagged }: { field: Field; flagged: boolean; onFlagged: (on: boolean) => void }) {
+  const ha = field.signal?.kind === 'satellite_difference' ? field.signal.flagHa : 0
+  const t = tasks.river
+  return (
+    <>
+      <Compare
+        items={[
+          { label: t.lastYear, value: t.lastYearValue(formatHa(field.areaHa), en.crops[field.cropLastYear].toLowerCase()) },
+          { label: t.different, value: t.differentValue(formatHa(ha)) },
+        ]}
+      />
+      <div className="map-switch" role="group" aria-label={map.title}>
+        <Button aria-pressed={flagged} onClick={() => onFlagged(true)}>{t.showPhoto}</Button>
+        <Button aria-pressed={!flagged} onClick={() => onFlagged(false)}>{t.showField}</Button>
+      </div>
+    </>
   )
 }
 
@@ -160,6 +219,7 @@ function RoadReview({ onAnswer, head }: BodyProps) {
   const a = state.answers.road
   const item = derived.items.find((i) => i.id === 'field_road')!
   const [asking, setAsking] = useState(a.answer === null)
+  const disputed = item.status === 'awaiting_verification' && !asking
   return (
     <MapStage
       label={en.fields.road}
@@ -170,14 +230,15 @@ function RoadReview({ onAnswer, head }: BodyProps) {
       }
     >
       {head}
-      <MapFacts id="field_road" />
+      {asking && <MapFacts id="field_road" />}
       {asking ? (
         <StageAction>
           <ChoiceButtons
             legend={tasks.road.question}
             options={options(tasks.road.yes, tasks.road.no)}
             onChoose={(v) => {
-              onAnswer()
+              // Saying the land map is wrong keeps him here, to see who settles it and what happens next.
+              if (v === 'yes') onAnswer()
               setAsking(false)
               dispatch({ type: 'answer_road', answer: v })
             }}
@@ -186,7 +247,7 @@ function RoadReview({ onAnswer, head }: BodyProps) {
       ) : (
         <AnswerLine legend={tasks.road.question} answer={a.answer === 'yes' ? tasks.road.yes : tasks.road.no} onChange={() => setAsking(true)} />
       )}
-      {item.status === 'awaiting_verification' && !asking && <Text>{tasks.road.correctionAsked}</Text>}
+      {disputed && <RoadDispute />}
     </MapStage>
   )
 }

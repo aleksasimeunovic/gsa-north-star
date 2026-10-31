@@ -1,5 +1,5 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
-import type { Crop, FieldId, GoalKind, MeasureId, Office, ScenarioId } from '../data/scenarios'
+import type { FieldId, PartCrop, GoalKind, MeasureId, Office, ScenarioId } from '../data/scenarios'
 import type { RemovalReason, StepId, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
@@ -63,7 +63,8 @@ export const en = {
     grassland: 'Grassland and fodder',
     barley: 'Barley',
     soya: 'Soya',
-  } satisfies Record<Crop, string>,
+    unsown: 'Nothing sown',
+  } satisfies Record<PartCrop, string>,
   measures: {
     plant_production: 'Basic support for plant production',
     cows_raising_calves: 'Cows raising calves for fattening',
@@ -82,6 +83,7 @@ export const en = {
   offices: { animal_registry: 'the animal registry', land_registry: 'the land registry' } satisfies Record<Office, string>,
 
   impact: {
+    river_unsown: (ha: string, about: string) => `Nothing is sown on ${ha} of the river field, about ${about} less`,
     road_took_area: (ha: string, about: string) => `The road took ${ha}, about ${about} less`,
     road_pending_correction: (ha: string, about: string) => `${ha} doesn't count until checked, about ${about} less`,
     overlap_removed: (ha: string, about: string) => `Your neighbour's line took ${ha}, about ${about} less`,
@@ -94,7 +96,7 @@ export const en = {
     none: 'Your estimate appears once you choose your measures',
     afterChecks: 'Your measures are worked out after checks',
     provisional: (what: string) => `Provisional until you've checked ${what}`,
-    pending: { field_road: 'the road field', field_upper: 'the upper field', field_meadow: 'the meadow', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
+    pending: { field_river: 'the river field', field_road: 'the road field', field_upper: 'the upper field', field_meadow: 'the meadow', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
     about: (d: string) => `About ${d}`,
     unpriced: (n: number) => (n === 1 ? 'Plus 1 more measure, worked out after checks' : `Plus ${n} more measures, worked out after checks`),
     caveat: 'The payment still depends on inspection and final eligibility.',
@@ -186,13 +188,14 @@ export const tasks = {
   confirm: "Yes, that's right",
   review: 'Review this boundary',
   reviewSplit: 'Split the field on the map',
+  changeSplit: 'Change the split',
 
   work: {
     river_split: 'Split the field',
     road_redraw: 'Redraw the field',
     pigs_declare: 'Declare your pigs',
     bank_enter: 'Type in your account number',
-    bought_add: 'Name the field and choose its measures',
+    bought_add: 'Name the field and give its crop',
   } satisfies Record<WorkId, string>,
   reason: {
     one_crop: 'one crop in the whole field (the state may still check it)',
@@ -247,6 +250,7 @@ export const tasks = {
     } as Partial<Record<MeasureId, string>>,
     provide: (list: string) => `You provide: ${list}`,
     useFields: (names: string) => `Use these fields: ${names}`,
+    riverPart: (part: string) => `River field (${part.toLowerCase()})`,
   },
 
   unreadable: {
@@ -304,6 +308,12 @@ export const tasks = {
   river: {
     /** What the photo shows, no more. */
     context: 'The lower strip is greening later than the wheat above it, so it may need attention',
+    lastYear: 'Your field last year',
+    lastYearValue: (ha: string, crop: string) => `${ha}, ${crop}`,
+    different: 'Looks different',
+    differentValue: (ha: string) => `About ${ha}`,
+    showPhoto: 'What the photo shows',
+    showField: 'Your field last year',
     question: "What's growing in the lower part this year?",
     same: 'The same as the rest of the field',
     other: 'Something else',
@@ -321,7 +331,16 @@ export const tasks = {
     yes: "Yes, it's road now",
     no: "No, it's still my field",
     done: (left: string) => `Now ${left}`,
-    correctionAsked: "Correction asked for. Until it's checked, the land map's area counts",
+    correctionAsked: "The land registry checks the strip, and the land map's area counts until then",
+    landMap: 'On the land map',
+    yours: 'You say',
+    settled: (left: string, whole: string, about: string): [string, string][] => [
+      ['Your part', 'Done'],
+      ['Who settles it', 'The land registry'],
+      ['Do you need to do anything?', 'No, unless they contact you'],
+      ['What happens next', `The land registry checks the strip, and the land map's ${left} counts until then. You can still submit, and the result appears here`],
+      ['If they agree with you', `Your field goes back to ${whole}, about ${about} more`],
+    ],
   },
 
   upper: {
@@ -509,7 +528,6 @@ export const map = {
   flag: 'Greening later',
   photoDate: (d: string) => `Satellite photo, ${d}`,
   strip: (ha: string) => `${ha} now road`,
-  edge: "The line stops at your field's edge, because land outside it can't get support",
   neighbour: "Neighbour's field",
   both: (ha: string) => `${ha} declared by both`,
   imagery: 'Imagery © Esri',
@@ -529,21 +547,49 @@ export const draw = {
 }
 
 export const split = {
-  proposed: 'Line placed where the satellite photo changes',
-  moveLine: 'Drag the line to move it',
-  handleStart: 'Left end of the line',
-  handleEnd: 'Right end of the line',
-  keys: 'Arrow keys move it',
+  step: (n: number) => `Step ${n} of 3`,
+  lineTitle: 'Where does the crop change?',
+  proposed: 'GSA drew this line where the photo changes. If the crop changes somewhere else, pull the line there.',
+  following: "The line follows the edge in the photo",
+  yourLine: 'The line follows your changes',
+  bendLabel: (n: number) => `Bend ${n} in the line`,
+  endStart: 'Start of the line, on the edge of the field',
+  endEnd: 'End of the line, on the edge of the field',
+  keys: 'Arrow keys move it, and Delete takes a bend out',
+  follow: "Follow the edge in the photo",
+  straight: 'Make the line straight',
+  removeBend: 'Take out this bend',
+  noMoreBends: 'The line has as many bends as it can take, so move one of them',
   useSlider: 'Use a slider instead',
-  useDrag: 'Drag the line instead',
-  sliderLabel: 'Where the second crop starts, from the top',
-  noCross: 'The line needs to cross the whole field, so move one end',
+  useDrag: 'Pull the line instead',
+  sliderLabel: 'Move the whole line up or down',
+  stopped: {
+    edge: "The line stops at your field's edge, because land outside it can't get support",
+      crosses_itself: "The line can't cross itself, so it stopped here",
+    too_small: 'Each part needs at least 0.10 ha to be declared, so the line stopped here',
+  },
   part: { top: 'Top part', bottom: 'Bottom part', left: 'Left part', right: 'Right part' },
   partArea: (part: string, area: string) => `${part}: ${area}`,
-  cropFor: (part: string, area: string) => `Crop in the ${part.toLowerCase()} (${area})`,
+  cropsTitle: "What's growing in each part?",
+  cropsHint: 'Tap a part on the map, or choose here',
+  cropFor: (part: string, area: string) => `${part}, ${area}`,
   choose: 'Choose a crop',
-  sameError: 'Choose a different crop from the other part',
+  sameError: 'Choose something different from the other part',
+  effectsTitle: 'What this changes in your application',
+  effects: {
+    field: 'River field',
+    fieldValue: (parts: string, ha: string) => `Now two parts, ${parts}, still ${ha} in all`,
+    measures: 'Measures',
+    bothCount: 'Both parts count for basic support for plant production',
+    oneCounts: (ha: string) => `Only ${ha} counts for basic support for plant production, because nothing is sown on the rest`,
+    cover: 'Green cover over winter now lists each part, and you can choose them separately',
+    estimate: 'Your estimate',
+    same: "Stays the same, because every crop here is paid the same per hectare",
+    less: (about: string) => `About ${about} less, because land with nothing sown isn't paid`,
+  },
   undo: 'Undo',
+  next: 'Continue',
+  back: 'Back',
   confirm: 'Confirm the split',
 }
 
@@ -625,11 +671,7 @@ export const fieldEdit = {
   nameHint: 'So you recognise it, for example Lower field',
   nameError: 'Give the field a name',
   crop: 'What are you growing there this year?',
-  next: 'Continue',
-  measures: 'What do you apply for on this field?',
-  perHa: (rate: string) => `${rate} dinars per hectare`,
   save: 'Add the field',
-  saveNone: 'Add the field without measures',
   saveChanges: 'Save the field',
   change: 'Change the field',
   remove: 'Remove this field',
@@ -643,6 +685,7 @@ export const proto = {
   milan: 'Milan (farmer)',
   jelena: 'Jelena (advisor)',
   reset: 'Reset this scenario',
+  notes: 'Show design notes (assumptions, tested, AI)',
 }
 
 export const advisor = {

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { advisor, en, home } from './copy/en'
 import { daysLeft } from './logic/readiness'
 import { AppContext } from './components/AppContext'
@@ -19,6 +20,8 @@ export function App() {
   const derived = derive(state)
   const submitted = !!state.answers.submittedAt
   const left = daysLeft(derived.scenario.today, derived.scenario.window.closes)
+  // Off by default: what's tested, a mandate or an assumption is for reviewers, never for Milan.
+  const [notes, setNotes] = useState(false)
 
   const main =
     screen === 'queue' ? (
@@ -41,7 +44,7 @@ export function App() {
   return (
     <AppContext.Provider value={{ state, derived, dispatch, go }}>
       <DensityContext.Provider value={derived.list.density}>
-        <NotesContext.Provider value={false}>
+        <NotesContext.Provider value={notes}>
           <div className="page" data-screen={screen}>
             <header className="topbar">
               <a href="#/welcome" className="brand">
@@ -63,7 +66,7 @@ export function App() {
                   <Icon name="check" size="sm" /> {en.saved}
                 </span>
               )}
-              <PrototypeControls />
+              <PrototypeControls notes={notes} onNotes={setNotes} />
             </header>
             <main className="main">{main}</main>
           </div>

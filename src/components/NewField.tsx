@@ -1,12 +1,11 @@
 import { Suspense, useEffect, useState } from 'react'
-import { bar, en, fieldEdit as copy, formatDateYear, formatHa, formatNumber, map, records, tasks } from '../copy/en'
-import { CROPS, LAND_MEASURES, type Crop, type MeasureId, type Polygon } from '../data/scenarios'
+import { bar, en, fieldEdit as copy, formatDateYear, formatHa, map, records, tasks } from '../copy/en'
+import { CROPS, type Crop, type Polygon } from '../data/scenarios'
 import type { TaskId } from '../logic/application'
 import { polygonAreaHa, roundHa } from '../logic/geometry'
 import type { Item } from '../logic/status'
 import type { NewField } from '../state/actions'
 import { Button } from '../ui/Button'
-import { Checkbox } from '../ui/Checkbox'
 import { Field } from '../ui/Field'
 import { Inline, Stack, Text } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
@@ -115,12 +114,12 @@ export function AddedBody({ id }: { id: string }) {
   )
 }
 
-type Stage = 'place' | 'details' | 'measures'
+type Stage = 'place' | 'details'
 
 /**
  * Adding a field on the satellite photo, the land taken whole as the record has it: where it is (the parcel
- * he bought, or registered farmland he taps), its name and crop, then the measures he applies for on it.
- * Saved whole at the end, so nothing half-done counts.
+ * he bought, or registered farmland he taps), then its name and crop. Saved whole at the end, so nothing
+ * half-done counts. It joins his land, so the measures he chooses cover it like his other fields.
  */
 export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const { derived, state, dispatch, go } = useApp()
@@ -133,10 +132,9 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const [name, setName] = useState(existing?.name ?? '')
   const [nameError, setNameError] = useState<string>()
   const [crop, setCrop] = useState<Crop | null>(existing?.crop ?? null)
-  const [chosen, setChosen] = useState<MeasureId[]>(existing?.measures ?? [])
   // With the land already known, there is no place to pick.
-  const of = isBought || existing ? 2 : 3
-  const step = stage === 'place' ? 1 : stage === 'details' ? of - 1 : of
+  const of = 2
+  const step = stage === 'place' ? 1 : 2
   const title = existing?.name ?? (isBought ? tasks.title.field_bought : copy.yourField)
   const back = () => go('welcome')
 
@@ -147,7 +145,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   }, [stage])
 
   const save = (shape: Polygon) => {
-    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, name: name.trim(), crop: crop!, measures: chosen }
+    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, name: name.trim(), crop: crop! }
     dispatch({ type: 'save_field', field })
     const task: TaskId = isBought ? 'field_bought' : `added_${field.id}`
     go('welcome')
@@ -156,8 +154,8 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
 
   const head = (
     <header className="review-head">
-      <p className="hint">{copy.step(step, of)}</p>
-      <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : stage === 'details' ? copy.details : copy.measures}</h2>
+      {!(isBought || existing) && <p className="hint">{copy.step(step, of)}</p>}
+      <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : copy.details}</h2>
       {polygon && <p className="hint">{formatHa(roundHa(polygonAreaHa(polygon)))}</p>}
     </header>
   )
@@ -174,38 +172,13 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
           }
         >
           {head}
-          {stage === 'measures' ? (
-            <>
-              <div className="flex flex-col gap-2">
-                {LAND_MEASURES.filter((m) => s.measures.find((x) => x.id === m)?.fits).map((m) => {
-                  const rate = s.measures.find((x) => x.id === m)?.rateDinars
-                  return (
-                    <Checkbox
-                      key={m}
-                      card
-                      label={en.measures[m]}
-                      hint={rate ? copy.perHa(formatNumber(rate)) : tasks.measures.pays[m]}
-                      checked={chosen.includes(m)}
-                      onChange={(on) => setChosen(on ? [...chosen, m] : chosen.filter((x) => x !== m))}
-                    />
-                  )
-                })}
-              </div>
-              <StageAction>
-                <Inline>
-                  <Button onClick={() => setStage('details')}>{bar.back}</Button>
-                  <Button variant="primary" onClick={() => save(polygon)}>{existing ? copy.saveChanges : chosen.length ? copy.save : copy.saveNone}</Button>
-                </Inline>
-              </StageAction>
-            </>
-          ) : (
             <form
               className="flex flex-col gap-6"
               onSubmit={(e) => {
                 e.preventDefault()
                 if (!name.trim()) return setNameError(copy.nameError)
                 setNameError(undefined)
-                if (crop) setStage('measures')
+                if (crop) save(polygon)
               }}
             >
               <Field label={copy.name} hint={copy.nameHint} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
@@ -225,7 +198,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
               )}
               <StageAction>
                 <Inline>
-                  {of === 3 && (
+                  {!(isBought || existing) && (
                     <Button
                       onClick={() => {
                         setLandId(null)
@@ -235,11 +208,10 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                       {bar.back}
                     </Button>
                   )}
-                  <Button type="submit" variant="primary" disabled={!crop}>{copy.next}</Button>
+                  <Button type="submit" variant="primary" disabled={!crop}>{existing ? copy.saveChanges : copy.save}</Button>
                 </Inline>
               </StageAction>
             </form>
-          )}
         </MapStage>
       ) : (
         <MapStage

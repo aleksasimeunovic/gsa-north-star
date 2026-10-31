@@ -1,4 +1,4 @@
-# Acceptance pass (round 10)
+# Acceptance pass (round 10, updated in round 13)
 
 Where each problem and each item in CLAUDE.md section 13 can be checked. Start fresh with Prototype → Reset this scenario. Checked at 360 px and 1280 px.
 
@@ -7,7 +7,7 @@ Where each problem and each item in CLAUDE.md section 13 can be checked. Start f
 1. **Arrival:** the stepper (Your details, Animals, Land, Measures, Documents, Check and submit), then "Start with your account for payments". The readiness bar says "Not ready to submit yet / Next: check your account for payments", no big number. 11 things to do, down from 14: name, address and active farmer are reused without asking; the household question is gone; the blurry receipt lives inside "Your input receipts".
 2. **Your details:** Yes, the new account. The toast says what changed; Animals opens.
 3. **Animals:** Your herd, No, 41: four plain answers (your part: done; who settles it: the animal registry; do you need to do anything: no, unless they contact you; what happens next). The same words in the drawer, the toast and "Your farm this year". Pigs, then cows that calved, one tap.
-4. **Land, the hero:** river field card shows the photo, with its date on the map. Review this boundary → "What's growing in the lower part this year?" → Something else → the toast says "1 more thing: split the field, because something else is growing in the lower part" → GSA's line, nudge it (large handles, or the slider), a crop for each part, Confirm. Road: the hatched 0.12 ha strip, about 2,200 dinars less. Upper field, "No, the strip is mine": both declarations are kept and it waits for a check.
+4. **Land, the hero:** river field card shows the photo, with its date on the map. Review this boundary → "What's growing in the lower part this year?" → compare last year's field with what the photo shows → Something else → the toast says "1 more thing: split the field, because something else is growing in the lower part" → step 1, GSA's line along the photo's edge: pull it anywhere and it bends, drag a bend off the field or across the line and it stops and says why, Undo, Follow the edge in the photo → step 2, tap a part, a crop for each (try Nothing sown) → step 3, what this changes, then Confirm. Road: the hatched 0.12 ha strip, about 2,200 dinars less; No keeps both areas and says who settles it, what he must do, what happens next and what he gains. Upper field, "No, the strip is mine": both declarations are kept and it waits for a check.
 5. **Measures:** "You applied for these last year", each with "Choose again". "GSA recommends for your farm" with the reason, what the state still checks and what he provides. Choose one: it says what's still to fill in, and the one action is "Fill in what's missing" until "Apply for N measures". Under the progress widget, "What you need for more support".
 6. **Documents:** "Send a clearer diesel receipt": the blurry file is red in the list (an error); then confirm the receipts.
 7. **Check and submit:** "Not ready to submit yet" with only what to fix and look at; what's left is the primary action. Then the state's checks, the declaration and Submit. "Unchanged since last year" sits beside the estimate, each line with a pen. Receipt.
@@ -52,6 +52,7 @@ Where each problem and each item in CLAUDE.md section 13 can be checked. Start f
 - [x] Facts with their date; meanings as possibilities; what GSA can't know is his question.
 - [x] One status function on every screen; red only for errors; review is not submit.
 - [x] No point placement with a finger anywhere.
+- [x] Round 13: an invalid split line can't exist; what a split changes is shown before Confirm; land, crops, measures, estimate and readiness follow it; the road dispute names who owns the next step; assumptions labelled (Prototype → Show design notes).
 - [x] Solid green only on the primary action; open part and row neutral and labelled; one content width; the task's action pinned in one place.
 - [x] `src/copy/en.ts`: 4,242 words at the start of round 10, 4,208 at the end.
 

@@ -3,7 +3,8 @@ import { draw, en, finish, formatDate, formatDateYear, formatDinars, formatHa, f
 import type { FieldId } from '../data/scenarios'
 import { milanCaseState, milanOutcome } from '../logic/advisor'
 import { isMapChange, type Task, type TaskId } from '../logic/application'
-import { partNames, roundHa, splitPolygon } from '../logic/geometry'
+import { riverParts } from '../logic/farm'
+import { roundHa } from '../logic/geometry'
 import { impactOf, type Item, type ItemId } from '../logic/status'
 import type { Confirmable, YesNo } from '../state/actions'
 import { Banner } from '../ui/Banner'
@@ -217,6 +218,31 @@ export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upp
   return null
 }
 
+/**
+ * He says the land map is wrong about the strip. Both areas side by side, who settles it, what he has
+ * to do and what happens next, in the same words as the herd. The rule is an assumption.
+ */
+export function RoadDispute() {
+  const { derived } = useApp()
+  const s = derived.scenario
+  const field = s.fields.find((f) => f.id === 'road')!
+  const strip = field.signal?.kind === 'road_strip' ? field.signal.stripHa : 0
+  const left = formatHa(roundHa(field.areaHa - strip))
+  const whole = formatHa(field.areaHa)
+  return (
+    <>
+      <Compare
+        items={[
+          { label: tasks.road.landMap, value: left },
+          { label: tasks.road.yours, value: whole },
+        ]}
+      />
+      <Answers items={tasks.road.settled(left, whole, about(impactOf(s, strip, 'road_pending_correction').amountDinars))} />
+      <Note kind="assumption" />
+    </>
+  )
+}
+
 /** The herd disagreement's four answers, in the same words wherever they appear. */
 export const herdSettled = (jelena: boolean, reg: number) => tasks.herd.settled(reg, jelena ? tasks.herd.withJelena : tasks.herd.registryOnly)
 
@@ -256,7 +282,8 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper
         </div>
       </figure>
       {unanswered && <MapFacts id={id} />}
-      {item.status === 'awaiting_verification' && (
+      {id === 'field_road' && item.status === 'awaiting_verification' && <RoadDispute />}
+      {id !== 'field_road' && item.status === 'awaiting_verification' && (
         <Text variant="secondary">
           {finish.submit.awaitingNote} <Note kind="assumption" />
         </Text>
@@ -505,12 +532,9 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       return item.detail === 'herd_needs_count' ? tasks.herd.countLabel : tasks.herd.summary(h.registryCount, h.lastYearDeclared ?? 0)
     }
     case 'field_river': {
-      const sp = state.answers.river.split
-      const r = sp && splitPolygon(s.fields.find((f) => f.id === 'river')!.polygon, sp.line[0], sp.line[1])
-      if (item.detail === 'river_split_done' && sp && r) {
-        // Top part first, as on the map.
-        const order = partNames(r.parts)[0] === 'top' || partNames(r.parts)[0] === 'left' ? [0, 1] : [1, 0]
-        const [x, y] = order.map((i) => tasks.river.part(en.crops[sp.crops[i]!], formatHa(r.areasHa[i])))
+      const parts = riverParts(s, state.answers)
+      if (item.detail === 'river_split_done' && parts) {
+        const [x, y] = parts.map((p) => tasks.river.part(en.crops[p.crop], formatHa(p.ha)))
         return tasks.river.split(x, y)
       }
       if (item.detail === 'river_one_crop') return `${tasks.river.oneCrop}, ${tasks.river.mayCheck}`

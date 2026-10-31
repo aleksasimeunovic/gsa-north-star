@@ -1,4 +1,4 @@
-import type { Crop, MeasureId, Point, Polygon, ScenarioId } from '../data/scenarios'
+import type { Crop, MeasureId, PartCrop, Point, Polygon, ScenarioId } from '../data/scenarios'
 
 export type YesNo = 'yes' | 'no'
 export type Role = 'farmer' | 'advisor'
@@ -11,13 +11,14 @@ export type Confirmable = 'fields_other' | 'receipts' | 'calvings'
 export type MeasureValue = string | string[] | boolean
 
 export interface Split {
-  line: [Point, Point]
-  crops: [Crop | null, Crop | null]
+  /** From one edge of the field to another, with the bends he pulled. */
+  line: Point[]
+  crops: [PartCrop | null, PartCrop | null]
 }
 
 /**
  * A field he adds this year: the parcel he bought, or land he farms that isn't in his application yet.
- * Saved whole, once he has named it, given its crop and chosen its measures.
+ * Saved whole, once he has named it and given its crop.
  */
 export interface NewField {
   id: string
@@ -26,7 +27,6 @@ export interface NewField {
   polygon: Polygon
   name: string
   crop: Crop
-  measures: MeasureId[]
 }
 
 // Only what people answered. Tasks, statuses and the estimate are derived.
@@ -89,7 +89,7 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 12
+  version: 13
   scenarioId: ScenarioId
   role: Role
   /** Jelena's work on escalated cases. */

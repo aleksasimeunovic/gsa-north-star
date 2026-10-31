@@ -15,91 +15,12 @@ export function polygonAreaHa(poly: Polygon): number {
   return Math.abs(twice) / 2 / M2_PER_HA
 }
 
-// Which side of the line a point is on: > 0 left, < 0 right.
-const side = (p: Point, a: Point, b: Point) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)
-
-const lerp = (p: Point, q: Point, t: number): Point => ({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t })
-
-/** Keep the part of the polygon on one side of the line through a and b. */
-function clipHalfPlane(poly: Polygon, a: Point, b: Point, keepLeft: boolean): Polygon {
-  const out: Polygon = []
-  const s = (p: Point) => (keepLeft ? side(p, a, b) : -side(p, a, b))
-  for (let i = 0; i < poly.length; i++) {
-    const p = poly[i]
-    const q = poly[(i + 1) % poly.length]
-    const sp = s(p)
-    const sq = s(q)
-    if (sp >= 0) out.push(p)
-    if ((sp > 0 && sq < 0) || (sp < 0 && sq > 0)) out.push(lerp(p, q, sp / (sp - sq)))
-  }
-  return out
-}
-
-/**
- * The part of the line through a and b that lies inside the field.
- * Guardrail: the drawn line never reaches outside eligible land. Fields are convex.
- */
-export function clipLineToPolygon(poly: Polygon, a: Point, b: Point): [Point, Point] | null {
-  if (a.x === b.x && a.y === b.y) return null
-  const hits: Point[] = []
-  for (let i = 0; i < poly.length; i++) {
-    const p = poly[i]
-    const q = poly[(i + 1) % poly.length]
-    const sp = side(p, a, b)
-    const sq = side(q, a, b)
-    if (sp === 0) hits.push(p)
-    else if ((sp > 0 && sq < 0) || (sp < 0 && sq > 0)) hits.push(lerp(p, q, sp / (sp - sq)))
-  }
-  const unique = hits.filter((h, i) => hits.findIndex((o) => Math.hypot(o.x - h.x, o.y - h.y) < 1e-9) === i)
-  return unique.length >= 2 ? [unique[0], unique[1]] : null
-}
-
-export interface SplitResult {
-  parts: [Polygon, Polygon]
-  areasHa: [number, number]
-  chord: [Point, Point]
-}
-
-/** Split a field with one line. Null when the line doesn't cross the field. */
-export function splitPolygon(poly: Polygon, a: Point, b: Point): SplitResult | null {
-  const chord = clipLineToPolygon(poly, a, b)
-  if (!chord) return null
-  const left = clipHalfPlane(poly, a, b, true)
-  const right = clipHalfPlane(poly, a, b, false)
-  const areasHa: [number, number] = [roundHa(polygonAreaHa(left)), roundHa(polygonAreaHa(right))]
-  if (areasHa[0] <= 0 || areasHa[1] <= 0) return null
-  return { parts: [left, right], areasHa, chord }
-}
-
 export const bounds = (poly: Polygon) => ({
   minX: Math.min(...poly.map((p) => p.x)),
   maxX: Math.max(...poly.map((p) => p.x)),
   minY: Math.min(...poly.map((p) => p.y)),
   maxY: Math.max(...poly.map((p) => p.y)),
 })
-
-/** Slider alternative: a horizontal line edge to edge at fraction t (0 top, 1 bottom). */
-export function lineAtFraction(poly: Polygon, t: number): [Point, Point] {
-  const { minX, maxX, minY, maxY } = bounds(poly)
-  const y = minY + Math.min(1, Math.max(0, t)) * (maxY - minY)
-  return [
-    { x: minX, y },
-    { x: maxX, y },
-  ]
-}
-
-/**
- * The satellite suggests, Milan decides: GSA proposes the split line along the top of the
- * flagged area, edge to edge. He accepts it or nudges it.
- */
-export function proposedSplitLine(field: Polygon, flag: Polygon): [Point, Point] {
-  const f = bounds(field)
-  const y = bounds(flag).minY
-  return [
-    { x: f.minX, y },
-    { x: f.maxX, y },
-  ]
-}
 
 /** Area-weighted centre, for labelling a part on the map. */
 export function centroid(poly: Polygon): Point {
@@ -118,32 +39,6 @@ export function centroid(poly: Polygon): Point {
   return { x: cx / (3 * a), y: cy / (3 * a) }
 }
 
-/**
- * Guardrail: a handle stops at the field's edge. `clamped` says the edge stopped it,
- * so the map can say why at that moment.
- */
-export function clampToField(p: Point, poly: Polygon): { point: Point; clamped: boolean } {
-  const b = bounds(poly)
-  const point = { x: Math.min(b.maxX, Math.max(b.minX, p.x)), y: Math.min(b.maxY, Math.max(b.minY, p.y)) }
-  return { point, clamped: point.x !== p.x || point.y !== p.y }
-}
-
-/** Move the whole line; it stays inside the field as one piece. */
-export function translateLine(line: [Point, Point], dx: number, dy: number, poly: Polygon): { line: [Point, Point]; clamped: boolean } {
-  const b = bounds(poly)
-  const xs = line.map((p) => p.x)
-  const ys = line.map((p) => p.y)
-  const cdx = Math.min(b.maxX - Math.max(...xs), Math.max(b.minX - Math.min(...xs), dx))
-  const cdy = Math.min(b.maxY - Math.max(...ys), Math.max(b.minY - Math.min(...ys), dy))
-  return {
-    line: [
-      { x: line[0].x + cdx, y: line[0].y + cdy },
-      { x: line[1].x + cdx, y: line[1].y + cdy },
-    ],
-    clamped: cdx !== dx || cdy !== dy,
-  }
-}
-
 export type PartName = 'top' | 'bottom' | 'left' | 'right'
 
 /** Name the two parts as he sees them on the map, not as A and B. */
@@ -160,9 +55,159 @@ export function inArea(part: Polygon, area: Polygon): boolean {
   return c.x >= b.minX && c.x <= b.maxX && c.y >= b.minY && c.y <= b.maxY
 }
 
-/** Fraction (0 top, 1 bottom) of a horizontal line, for the slider. */
-export function fractionOfLine(poly: Polygon, line: [Point, Point]): number {
+/** Whether a point is inside a polygon, for a tap on one part of a split field. */
+export function pointInPolygon(p: Point, poly: Polygon): boolean {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i]
+    const b = poly[j]
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
+}
+
+// ---- The line that splits a field: from one edge of the field to another, with bends he pulls. ----
+
+/** A line across a field. Its first and last points sit on the field's edge; the ones between are bends. */
+export type SplitLine = Point[]
+
+export interface SplitResult {
+  parts: [Polygon, Polygon]
+  areasHa: [number, number]
+}
+
+/** No part smaller than this (a prototype placeholder, to confirm with the ministry). */
+export const MIN_PART_HA = 0.1
+/** Closer than this to the edge the photo shows, a bend joins it. */
+export const SNAP_M = 6
+const INSET_M = 1
+const MAX_BENDS = 7
+/** A press on the line this close to a bend takes that bend. */
+const BEND_REACH_M = 12
+/** A bend left this close to a straight line isn't a bend. */
+const STRAIGHT_M = 2
+
+const closestOnSegment = (p: Point, a: Point, b: Point): { point: Point; t: number; dist: number } => {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const len = dx * dx + dy * dy
+  const t = len === 0 ? 0 : Math.min(1, Math.max(0, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len))
+  const point = { x: a.x + dx * t, y: a.y + dy * t }
+  return { point, t, dist: Math.hypot(p.x - point.x, p.y - point.y) }
+}
+
+/** The nearest place on a chain of segments. */
+function closestOnPath(p: Point, path: Point[]) {
+  let best = { ...closestOnSegment(p, path[0], path[1]), segment: 0 }
+  for (let i = 1; i < path.length - 1; i++) {
+    const c = closestOnSegment(p, path[i], path[i + 1])
+    if (c.dist < best.dist) best = { ...c, segment: i }
+  }
+  return best
+}
+
+const ring = (poly: Polygon) => [...poly, poly[0]]
+
+/** Where a point sits on the field's edge, as edge number plus how far along it. */
+const onEdgeAt = (poly: Polygon, p: Point) => {
+  const c = closestOnPath(p, ring(poly))
+  return c.segment + c.t
+}
+
+/** The nearest place on the field's edge: an end of the line slides along it and can't leave it. */
+export const toFieldEdge = (poly: Polygon, p: Point): Point => closestOnPath(p, ring(poly)).point
+
+/** Keep a bend just inside the field. `clamped` says the edge stopped it, so the panel can say why. */
+export function keepInside(poly: Polygon, p: Point): { point: Point; clamped: boolean } {
   const b = bounds(poly)
-  const y = (line[0].y + line[1].y) / 2
+  const point = { x: Math.min(b.maxX - INSET_M, Math.max(b.minX + INSET_M, p.x)), y: Math.min(b.maxY - INSET_M, Math.max(b.minY + INSET_M, p.y)) }
+  return { point, clamped: point.x !== p.x || point.y !== p.y }
+}
+
+/** Help following a boundary: near the edge the photo shows, a bend joins it. */
+export function snapToEdge(p: Point, edge: Point[]): { point: Point; snapped: boolean } {
+  const c = closestOnPath(p, edge)
+  return c.dist <= SNAP_M ? { point: c.point, snapped: true } : { point: p, snapped: false }
+}
+
+/**
+ * The two parts a line makes: the line, then the field's edge back round to its start, one way for
+ * each part. Fields are convex, so a line that stays inside can't leave anything out.
+ */
+export function splitField(poly: Polygon, line: SplitLine): SplitResult | null {
+  if (line.length < 2) return null
+  const n = poly.length
+  const from = onEdgeAt(poly, line[0])
+  const to = onEdgeAt(poly, line[line.length - 1])
+  const corners = (a: number, b: number) => {
+    const span = (b - a + n) % n
+    const out: Polygon = []
+    for (let k = 1; k <= n; k++) {
+      const c = (Math.floor(a) + k) % n
+      const ahead = (c - a + n) % n
+      if (ahead > 0 && ahead < span) out.push(poly[c])
+    }
+    return out
+  }
+  const first = [...line, ...corners(to, from)]
+  const second = [...[...line].reverse(), ...corners(from, to)]
+  const whole = roundHa(polygonAreaHa(poly))
+  const a = roundHa(polygonAreaHa(first))
+  const areasHa: [number, number] = [a, roundHa(whole - a)]
+  return areasHa[0] > 0 && areasHa[1] > 0 ? { parts: [first, second], areasHa } : null
+}
+
+const cross = (a: Point, b: Point, c: Point) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
+const segmentsCross = (a: Point, b: Point, c: Point, d: Point) =>
+  cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0
+
+export type LineProblem = 'crosses_itself' | 'too_small'
+
+/** What's wrong with a line, or null. The map never lets him leave one of these behind. */
+export function lineProblem(poly: Polygon, line: SplitLine): LineProblem | null {
+  for (let i = 0; i < line.length - 1; i++) {
+    for (let j = i + 2; j < line.length - 1; j++) {
+      if (segmentsCross(line[i], line[i + 1], line[j], line[j + 1])) return 'crosses_itself'
+    }
+  }
+  const r = splitField(poly, line)
+  return !r || Math.min(...r.areasHa) < MIN_PART_HA ? 'too_small' : null
+}
+
+/**
+ * Pulling the line somewhere that has no bend makes one there; near a bend, it takes that bend. Null at
+ * the most bends a line can have. There are no points to place: only the line, which he pulls.
+ */
+export function pullLine(line: SplitLine, p: Point): { line: SplitLine; bend: number } | null {
+  for (let i = 1; i < line.length - 1; i++) if (Math.hypot(line[i].x - p.x, line[i].y - p.y) <= BEND_REACH_M) return { line, bend: i }
+  if (line.length - 2 >= MAX_BENDS) return null
+  const at = closestOnPath(p, line)
+  const bend = at.segment + 1
+  return { line: [...line.slice(0, bend), at.point, ...line.slice(bend)], bend }
+}
+
+export const removeBend = (line: SplitLine, i: number): SplitLine => line.filter((_, k) => k !== i || k === 0 || k === line.length - 1)
+
+/** A bend he let go on a straight stretch is gone, so handles stay few. */
+export function tidyLine(line: SplitLine): SplitLine {
+  return line.filter((p, i) => i === 0 || i === line.length - 1 || closestOnSegment(p, line[i - 1], line[i + 1]).dist > STRAIGHT_M)
+}
+
+/** The line from end to end with no bends. */
+export const straightLine = (line: SplitLine): SplitLine => [line[0], line[line.length - 1]]
+
+/** The whole line moved up or down; its ends stay on the field's edge. */
+export const shiftLine = (poly: Polygon, line: SplitLine, dy: number): SplitLine =>
+  line.map((p, i) => (i === 0 || i === line.length - 1 ? toFieldEdge(poly, { x: p.x, y: p.y + dy }) : keepInside(poly, { x: p.x, y: p.y + dy }).point))
+
+/** How far down the field the line sits (0 top, 1 bottom), for the slider. */
+export function lineHeight(poly: Polygon, line: SplitLine): number {
+  const b = bounds(poly)
+  const y = line.reduce((sum, p) => sum + p.y, 0) / line.length
   return Math.min(1, Math.max(0, (y - b.minY) / (b.maxY - b.minY)))
 }
+
+export const sameLine = (a: SplitLine, b: SplitLine) => a.length === b.length && a.every((p, i) => Math.hypot(p.x - b[i].x, p.y - b[i].y) < 0.05)
+
+/** Whether every bend of the line sits on the edge the photo shows. */
+export const followsEdge = (line: SplitLine, edge: Point[]) => line.every((p) => closestOnPath(p, edge).dist < 0.5)

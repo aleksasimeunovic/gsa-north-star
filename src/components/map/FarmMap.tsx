@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { en, formatDateYear, map as copy } from '../../copy/en'
+import { en, formatDateYear, formatHa, map as copy } from '../../copy/en'
 import type { Field, FieldId, Polygon, Scenario } from '../../data/scenarios'
+import { riverParts } from '../../logic/farm'
 import { Button } from '../../ui/Button'
 import { Icon } from '../../ui/Icon'
 import { VisuallyHidden } from '../../ui/Layout'
@@ -17,7 +18,9 @@ interface Props {
   mode: 'preview' | 'explore'
   label: string
   /** The split line, drawn on the map; he moves it when interactive. */
-  split?: { field: Field; d: SplitDraft; interactive: boolean }
+  split?: { field: Field; d: SplitDraft; interactive: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }
+  /** Hide what the photo flagged, to compare it with last year's field. */
+  hideFlag?: boolean
   /** Fills a map stage: as large as the screen allows, with its tools on the map. */
   fill?: boolean
   /** Someone else's parcel, alone on the photo (Jelena's case preview). */
@@ -32,9 +35,14 @@ interface Props {
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, fill, parcel, spot, lands, onPickLand, skip }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, lands, onPickLand, skip }: Props) {
   const { state } = useApp()
   const added = state.answers.newFields
+  // While he edits the split the draft is on the map; otherwise, the split he confirmed.
+  const parts = split ? null : riverParts(scenario, state.answers)
+  const done = parts ? { line: state.answers.river.split!.line, parts: parts.map((p) => ({ polygon: p.polygon, label: `${en.crops[p.crop]}, ${formatHa(p.ha)}` })) } : undefined
+  const doneKey = done ? JSON.stringify(done) : ''
+  const splitOpen = !!split
   const addedKey = added.map((f) => `${f.id}:${f.name}:${f.polygon.map((p) => `${p.x},${p.y}`).join(' ')}`).join('|')
   const pick = useRef(onPickLand)
   pick.current = onPickLand
@@ -47,7 +55,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, fil
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, lands, skip })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, lands, skip, done })
     // A tap on registered farmland picks it: one large target, never a point to place.
     if (lands?.length) {
       h.map.on('singleclick', (e) => {
@@ -67,9 +75,10 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, fil
       h.destroy()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, lands?.length, skip])
+  }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, lands?.length, skip, doneKey, splitOpen])
 
   useEffect(() => fm?.map.updateSize(), [fm, large])
+  useEffect(() => fm?.showFlag(!hideFlag), [fm, hideFlag])
 
   return (
     <div className="map-frame" data-mode={mode} data-size={large ? 'large' : undefined} data-fill={fill || undefined}>

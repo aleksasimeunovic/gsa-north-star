@@ -1,6 +1,6 @@
 import type { Action, AppState } from '../state/actions'
 import { fresh, reducer } from '../state/store'
-import type { Crop, ScenarioId } from '../data/scenarios'
+import type { PartCrop, ScenarioId } from '../data/scenarios'
 import { derive } from './derive'
 
 export function play(scenarioId: ScenarioId, ...actions: Action[]): AppState {
@@ -15,7 +15,7 @@ export const run = (scenarioId: ScenarioId, ...actions: Action[]) => derive(play
 export const lastYear: Action = { type: 'choose_measures', chosen: ['plant_production', 'cows_raising_calves'] }
 
 /** Split the river field across the middle, as Milan would. */
-export const halfSplit = (crops: [Crop | null, Crop | null] = ['sunflower', 'wheat']): Action => ({
+export const halfSplit = (crops: [PartCrop | null, PartCrop | null] = ['sunflower', 'wheat']): Action => ({
   type: 'set_split',
   split: { line: [{ x: 0, y: 60 }, { x: 200, y: 60 }], crops },
 })

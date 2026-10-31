@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
-import { en, formatDinars, formatHa, formatNumber, tasks } from '../copy/en'
+import { en, formatDinars, formatHa, formatNumber, split, tasks } from '../copy/en'
 import type { Measure, MeasureId, Requirement } from '../data/scenarios'
 import { fitting, goalGain, measureGaps, readyToApply, shown } from '../logic/status'
-import { polygonAreaHa, roundHa } from '../logic/geometry'
-import type { MeasureValue, NewField } from '../state/actions'
+import { carriedFields, fieldChoices } from '../logic/farm'
+import type { PartName } from '../logic/geometry'
+import type { MeasureValue } from '../state/actions'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Checkbox, CheckboxGroup } from '../ui/Checkbox'
@@ -22,16 +23,17 @@ type Derived = AppCtx['derived']
 type Inputs = Record<string, MeasureValue>
 
 const t = tasks.measures
+/** A field by name; once the river field is split, each part by where it sits on the map. */
+const fieldName = (id: string) => (id.startsWith('river:') ? tasks.suggest.riverPart(split.part[id.slice(6) as PartName]) : en.fields[id as keyof typeof en.fields])
 const req = (r: Requirement) => tasks.requirement[r.id]
 const aboutThousand = (n: number) => formatDinars(Math.round(n / 1000) * 1000)
 const quantity = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2))
 const userReqs = (m: Measure) => m.requirements.filter((r) => r.kind !== 'auto')
 
 /** What the measure pays, worked out on his own numbers where the rate is known. */
-function amountLine(m: Measure, d: Derived, added: NewField[]): string {
+function amountLine(m: Measure, d: Derived): string {
   if (m.rateDinars && m.unit === 'ha') {
-    // A field he added counts only where he applies for this measure on it, as in the estimate.
-    const ha = roundHa(added.filter((f) => !f.measures.includes(m.id)).reduce((left, f) => left - polygonAreaHa(f.polygon), d.farm.fields.totalHa))
+    const ha = d.farm.fields.totalHa
     return t.plant(formatHa(ha), formatNumber(m.rateDinars), aboutThousand(ha * m.rateDinars))
   }
   if (m.rateDinars && m.unit === 'cow_calved' && d.scenario.herd) {
@@ -103,7 +105,7 @@ export function MeasuresBody() {
             <span className="measure-name">{en.measures[m.id]}</span>
             {/* Why GSA recommends it, what the state still checks, what he provides. */}
             {g && <span className="measure-line text-sm" data-strong>{g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}</span>}
-            <span className="measure-line text-sm text-muted-foreground">{amountLine(m, derived, state.answers.newFields)}</span>
+            <span className="measure-line text-sm text-muted-foreground">{amountLine(m, derived)}</span>
             {!g && !m.lastYear && <span className="measure-line text-sm text-muted-foreground">{t.why[m.id]}</span>}
             {g && tasks.suggest.checks[m.id] && <span className="measure-line text-sm text-muted-foreground">{tasks.suggest.checks[m.id]}</span>}
             {g && !on && own.length > 0 && <span className="measure-line text-sm text-muted-foreground">{tasks.suggest.provide(own.map((r) => req(r).short).join(', '))}</span>}
@@ -169,7 +171,7 @@ export function MeasuresBody() {
  * already has and what he adds, each in the form that fits it. An answer that rules it out says so.
  */
 function MeasureFields({ m, inputs, applied, suggestedFields, showErrors, onChange }: { m: Measure; inputs: Inputs; applied: boolean; suggestedFields?: string[]; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void }) {
-  const { derived } = useApp()
+  const { derived, state } = useApp()
   const gaps = measureGaps(m, inputs)
   const ruledOut = m.requirements.find((r) => r.blocks !== undefined && inputs[`${m.id}.${r.id}`] === r.blocks)
   return (
@@ -192,8 +194,8 @@ function MeasureFields({ m, inputs, applied, suggestedFields, showErrors, onChan
               {/* The fields GSA's evidence was about: suggested, never ticked for him. One tap uses them. */}
               {r.kind === 'fields' && suggestedFields && !(inputs[`${m.id}.${r.id}`] as string[] | undefined)?.length && (
                 <div>
-                  <Button onClick={() => onChange(`${m.id}.${r.id}`, suggestedFields)}>
-                    {tasks.suggest.useFields(suggestedFields.map((f) => en.fields[f as keyof typeof en.fields]).join(', '))}
+                  <Button onClick={() => onChange(`${m.id}.${r.id}`, carriedFields(suggestedFields, derived.scenario, state.answers))}>
+                    {tasks.suggest.useFields(carriedFields(suggestedFields, derived.scenario, state.answers).map((f) => fieldName(f)).join(', '))}
                   </Button>
                 </div>
               )}
@@ -318,7 +320,7 @@ function AutoLine({ r, d }: { r: Requirement; d: Derived }) {
 
 /** One input, chosen by what the measure needs: a file, a number, words, a choice, fields or a promise. */
 function RequirementInput({ r, value, error, onChange }: { r: Requirement; value: MeasureValue | undefined; error?: string; onChange: (v: MeasureValue) => void }) {
-  const { derived } = useApp()
+  const { derived, state } = useApp()
   const c = req(r)
   switch (r.kind) {
     case 'upload':
@@ -353,8 +355,8 @@ function RequirementInput({ r, value, error, onChange }: { r: Requirement; value
         <CheckboxGroup
           legend={c.label}
           error={error}
-          options={derived.scenario.fields.filter((f) => f.arable).map((f) => ({ value: f.id, label: `${en.fields[f.id]}, ${formatHa(f.areaHa)}` }))}
-          value={(value as string[]) ?? []}
+          options={fieldChoices(derived.scenario, state.answers).map((f) => ({ value: f.id, label: `${fieldName(f.id)}, ${formatHa(f.ha)}` }))}
+          value={carriedFields((value as string[]) ?? [], derived.scenario, state.answers)}
           onChange={onChange}
         />
       )

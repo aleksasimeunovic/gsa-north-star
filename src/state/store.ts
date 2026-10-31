@@ -26,7 +26,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 12,
+  version: 13,
   scenarioId: 'second_year',
   role: 'farmer',
   advisor: { log: [] },

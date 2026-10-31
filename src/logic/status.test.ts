@@ -174,7 +174,7 @@ describe('status per item', () => {
     expect(item(run('second_year'), 'field_bought').detail).toBe('bought_unanswered')
     expect(item(run('second_year', { type: 'answer_bought', answer: 'no' }), 'field_bought')).toEqual({ id: 'field_bought', status: 'complete', detail: 'bought_not_farmed' })
     expect(item(run('second_year', { type: 'answer_bought', answer: 'yes' }), 'field_bought').detail).toBe('bought_needs_field')
-    const field = { id: 'bought', landId: 'bought', polygon: rect(60), name: 'Lower field', crop: 'maize' as const, measures: [] }
+    const field = { id: 'bought', landId: 'bought', polygon: rect(60), name: 'Lower field', crop: 'maize' as const }
     const saved = run('second_year', { type: 'answer_bought', answer: 'yes' }, { type: 'save_field', field })
     expect(item(saved, 'field_bought').status).toBe('complete')
     // No takes the field out again.
@@ -182,7 +182,7 @@ describe('status per item', () => {
   })
 
   it('a field he adds is its own done task in Land, and removing it takes it out', () => {
-    const field = { id: 'f1', landId: 'block_5', polygon: rect(60), name: 'Rented field', crop: 'wheat' as const, measures: [] }
+    const field = { id: 'f1', landId: 'block_5', polygon: rect(60), name: 'Rented field', crop: 'wheat' as const }
     const r = run('second_year', { type: 'save_field', field })
     expect(item(r, 'added_f1')).toEqual({ id: 'added_f1', status: 'complete', detail: 'added_field' })
     expect(run('second_year', { type: 'save_field', field }, { type: 'remove_field', id: 'f1' }).items.some((i) => i.id === 'added_f1')).toBe(false)

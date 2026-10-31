@@ -1,7 +1,7 @@
 import type { FieldId, Goal, Measure, Requirement, Scenario } from '../data/scenarios'
 import type { Answers, MeasureValue } from '../state/actions'
 import type { CaseState } from './advisor'
-import { roundHa, splitPolygon } from './geometry'
+import { roundHa, splitField } from './geometry'
 
 export type Status = 'complete' | 'action_required' | 'awaiting_verification'
 export type ItemId =
@@ -18,7 +18,7 @@ export type ItemId =
   | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
-export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'overlap_pending' | 'meadow_out'
+export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'overlap_pending' | 'meadow_out' | 'river_unsown'
 export interface PaymentImpact {
   amountDinars: number // negative = less payment
   areaHa: number
@@ -56,7 +56,7 @@ export type ItemDetail =
   | 'pigs_household'
   | 'pigs_declared'
   | 'bought_unanswered'
-  | 'bought_needs_field' // he farms it: draw it, name it, choose its measures
+  | 'bought_needs_field' // he farms it: name it and give its crop
   | 'bought_added'
   | 'bought_not_farmed'
   | 'added_field'
@@ -123,7 +123,7 @@ export function riverSplitComplete(s: Scenario, a: Answers): boolean {
   if (!field || !split || !split.crops[0] || !split.crops[1]) return false
   // Two crops means two different crops.
   if (split.crops[0] === split.crops[1]) return false
-  return splitPolygon(field.polygon, split.line[0], split.line[1]) !== null
+  return splitField(field.polygon, split.line) !== null
 }
 
 /** A field with a detected change gets its own item. */
@@ -136,9 +136,12 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
     const r = a.river
     if (r.answer === null) return { id: itemId, status: 'action_required', detail: 'river_unanswered' }
     if (r.answer === 'yes') {
-      return riverSplitComplete(s, a)
-        ? { id: itemId, status: 'complete', detail: 'river_split_done' }
-        : { id: itemId, status: 'action_required', detail: 'river_needs_split' }
+      if (!riverSplitComplete(s, a)) return { id: itemId, status: 'action_required', detail: 'river_needs_split' }
+      // Land with nothing sown doesn't count for plant production (assumption), so the part he left is a lower payment.
+      const split = a.river.split!
+      const empty = split.crops.indexOf('unsown')
+      const areas = splitField(field.polygon, split.line)!.areasHa
+      return { id: itemId, status: 'complete', detail: 'river_split_done', ...(empty >= 0 ? { paymentImpact: impactOf(s, areas[empty], 'river_unsown') } : {}) }
     }
     // No: his declaration stands. The satellite never decides what he planted.
     return { id: itemId, status: 'complete', detail: 'river_one_crop' }
@@ -254,7 +257,7 @@ export function correctionOf(a: Answers, itemId: string, what = ''): string | nu
 
 /**
  * The parcel the land registry now shows in his name. A fact with its source; whether he farms it is his
- * question. Yes needs the field drawn, named and its measures chosen; No leaves it out with that reason.
+ * question. Yes needs the field named and its crop given; No leaves it out with that reason.
  */
 function boughtItem(s: Scenario, a: Answers): Item | null {
   if (!s.bought) return null
