@@ -18,7 +18,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(function Button({ var
       variant={MAP[variant]}
       size={size}
       data-variant={variant}
-      className={[variant === 'choice' ? 'justify-start font-medium' : '', className].filter(Boolean).join(' ')}
+      className={[variant === 'choice' ? 'h-auto min-h-12 justify-start py-2 text-left font-medium whitespace-normal' : '', className].filter(Boolean).join(' ')}
       {...rest}
     />
   )

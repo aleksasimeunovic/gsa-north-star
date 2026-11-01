@@ -1,6 +1,7 @@
 import 'ol/ol.css'
 import Feature from 'ol/Feature'
 import OlMap from 'ol/Map'
+import Overlay from 'ol/Overlay'
 import View from 'ol/View'
 import Attribution from 'ol/control/Attribution'
 import Zoom from 'ol/control/Zoom'
@@ -18,7 +19,7 @@ import VectorSource from 'ol/source/Vector'
 import XYZ from 'ol/source/XYZ'
 import { en, formatHa, map as copy } from '../../copy/en'
 import type { FieldId, Point, Polygon, Scenario } from '../../data/scenarios'
-import { bounds, centroid } from '../../logic/geometry'
+import { bounds, centroid, topEdgeAt } from '../../logic/geometry'
 import { fromMercator, toMercator } from '../../logic/geo'
 import { labelStyle, mapStyle, type MapRole } from '../../ui/mapStyles'
 
@@ -44,6 +45,10 @@ export interface FarmMapOptions {
   skip?: string
   /** The river field once he has split it: drawn on every map instead of the flag. */
   done?: { line: Point[]; parts: { polygon: Polygon; label: string }[] }
+  /** Tools float over the bottom of the map, so his field is framed above them. */
+  docked?: boolean
+  /** He has moved away from the field in question, or come back to it. */
+  onAway?: (away: boolean) => void
 }
 
 export type FarmMap = ReturnType<typeof createFarmMap>
@@ -75,6 +80,21 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     f.setStyle(labelStyle(text, o))
     into.addFeature(f)
   }
+  /** A note on the photo that reads on any field and never catches a press. */
+  const chips: Overlay[] = []
+  const chip = (at: Point, text: string) => {
+    const el = document.createElement('div')
+    el.className = 'map-chip'
+    el.textContent = text
+    const o = new Overlay({ element: el, position: coord(at), positioning: 'center-center', stopEvent: false })
+    chips.push(o)
+    return o
+  }
+  /** Its name, just above its top edge, so the inside stays clear for what changed and the split areas. */
+  const name = (poly: Polygon, text: string, strong: boolean) => {
+    const c = centroid(poly)
+    label(labels, { x: c.x, y: topEdgeAt(poly, c.x) - 3 }, text, { above: true, strong, size: strong ? 15 : 13 })
+  }
 
   const focused = opts.focus ? s.fields.find((f) => f.id === opts.focus) : undefined
   const fields = opts.parcel ? [] : opts.only ? s.fields.filter((f) => opts.only!.includes(f.id)) : s.fields
@@ -85,56 +105,44 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     const strong = (!focused && !opts.spot && !opts.lands?.length) || f.id === focused?.id
     shape(f.polygon, strong ? 'field' : 'faint')
     // On a still preview only the field in question is named; on a map he moves around, every field is.
-    if (strong || opts.interactive) {
-      const b = bounds(f.polygon)
-      // Named just above its top edge, so the inside stays clear for what changed and the split areas.
-      label(labels, { x: b.minX + 2, y: b.minY - 2 }, en.fields[f.id], { align: 'left', above: true, strong, size: strong ? 15 : 13 })
-    }
+    if (strong || opts.interactive) name(f.polygon, en.fields[f.id], strong)
   }
 
   for (const f of opts.parcel ? [] : (opts.added ?? [])) {
     if (f.id === opts.skip) continue
     const strong = !focused && !opts.spot && !opts.lands?.length
     shape(f.polygon, strong ? 'field' : 'faint')
-    if (strong || opts.interactive) {
-      const b = bounds(f.polygon)
-      label(labels, { x: b.minX + 2, y: b.minY - 2 }, f.name, { align: 'left', above: true, strong, size: strong ? 15 : 13 })
-    }
+    if (strong || opts.interactive) name(f.polygon, f.name, strong)
   }
   if (opts.spot) {
     shape(opts.spot.polygon, 'spot')
-    const b = bounds(opts.spot.polygon)
-    label(notes, { x: b.minX + 2, y: b.minY - 2 }, opts.spot.label, { align: 'left', above: true, size: 15 })
+    chip(centroid(opts.spot.polygon), opts.spot.label)
   }
   for (const l of opts.lands ?? []) {
     shape(l.polygon, 'land')
-    label(notes, centroid(l.polygon), l.label, { size: 14 })
+    chip(centroid(l.polygon), l.label)
   }
 
-  // What changed, in place: the satellite flag, the road strip, the neighbour's line.
+  // What changed, in place: the satellite flag, the road strip.
   const signal = focused?.signal
-  if (signal?.kind === 'satellite_difference' && !opts.done) {
-    shape(signal.flagPolygon, 'flag', flagged)
-    const b = bounds(signal.flagPolygon)
-    label(flagged, { x: (b.minX + b.maxX) / 2, y: b.maxY - 4 }, copy.flag, { above: true, size: 14 })
+  let flagChip: Overlay | null = null
+  if (signal?.kind === 'satellite_difference') {
+    label(notes, signal.riverAt, copy.river, { strong: false, size: 13 })
+    if (!opts.done) {
+      shape(signal.flagPolygon, 'flag', flagged)
+      flagChip = chip(centroid(signal.flagPolygon), copy.flag)
+    }
   }
   if (opts.done && !opts.parcel && !opts.lands?.length) {
     const f = new Feature<Geometry>(new LineString(opts.done.line.map(coord)))
     f.setStyle(mapStyle(focused?.id === 'river' || !focused ? 'split' : 'faint'))
     shapes.addFeature(f)
-    if (focused?.id === 'river') opts.done.parts.forEach((p) => label(notes, centroid(p.polygon), p.label, { size: 15 }))
+    if (focused?.id === 'river') opts.done.parts.forEach((p) => chip(centroid(p.polygon), p.label))
   }
   if (signal?.kind === 'road_strip') {
     shape(signal.stripPolygon, 'strip')
     const b = bounds(signal.stripPolygon)
-    label(notes, { x: (b.minX + b.maxX) / 2, y: b.minY - 14 }, copy.strip(formatHa(signal.stripHa)))
-  }
-  if (signal?.kind === 'overlap') {
-    shape(signal.neighbourPolygon, 'neighbour')
-    label(notes, centroid(signal.neighbourPolygon), copy.neighbour, { strong: false, size: 13 })
-    shape(signal.overlapPolygon, 'overlap')
-    const b = bounds(signal.overlapPolygon)
-    label(notes, { x: (b.minX + b.maxX) / 2, y: b.minY - 14 }, copy.both(formatHa(signal.overlapHa)))
+    chip({ x: (b.minX + b.maxX) / 2, y: b.minY - 16 }, copy.strip(formatHa(signal.stripHa)))
   }
 
   const extentOf = (polys: Polygon[]) => boundingExtent(polys.flat().map(coord))
@@ -146,8 +154,8 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
       : opts.lands?.length
         ? [...s.fields.map((f) => f.polygon), ...opts.lands.map((l) => l.polygon)]
         : focused
-      ? [focused.polygon, ...(signal?.kind === 'overlap' ? [signal.neighbourPolygon] : [])]
-      : fields.map((f) => f.polygon)
+        ? [focused.polygon]
+        : fields.map((f) => f.polygon)
 
   const flagLayer = new VectorLayer({ source: flagged })
   const view = new View({
@@ -178,14 +186,27 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
       : [],
   })
 
+  chips.forEach((o) => map.addOverlay(o))
+
   const small = target.clientWidth < 640
-  const padding = opts.interactive ? Array(4).fill(small ? 32 : 56) : [20, 20, 20, 20]
+  const edge = small ? 28 : 56
+  // Clear of the zoom buttons on the left, and of the tools floating over the bottom.
+  const padding = opts.interactive ? [edge, small ? 16 : edge, opts.docked ? edge + 76 : edge, small ? 64 : edge] : [20, 20, 20, 20]
   // Until he moves the map himself, it keeps his field framed when its size changes (the panel beside it grows and shrinks).
   let framing = false
   let moved = false
-  view.on('change:center', () => {
-    if (!framing) moved = true
-  })
+  let away = false
+  const setAway = (v: boolean) => {
+    if (v !== away) opts.onAway?.(v)
+    away = v
+  }
+  const onMove = () => {
+    if (framing) return
+    moved = true
+    setAway(true)
+  }
+  view.on('change:center', onMove)
+  view.on('change:resolution', onMove)
   const fit = (polys: Polygon[], animate: boolean) => {
     framing = true
     view.fit(extentOf(polys), {
@@ -218,10 +239,19 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     ring,
     point,
     /** Shows or hides what the photo flagged, so he can compare it with his field. */
-    showFlag: (on: boolean) => flagLayer.setVisible(on),
+    showFlag: (on: boolean) => {
+      flagLayer.setVisible(on)
+      flagChip?.getElement()?.toggleAttribute('hidden', !on)
+    },
     /** Back to the field in question (or the fields shown). */
-    fitHome: (animate = true) => fit(home, animate),
-    fitFarm: (animate = true) => fit(all, animate),
+    fitHome: (animate = true) => {
+      fit(home, animate)
+      setAway(false)
+    },
+    fitFarm: (animate = true) => {
+      fit(all, animate)
+      setAway(true)
+    },
     destroy: () => map.setTarget(undefined),
   }
 }

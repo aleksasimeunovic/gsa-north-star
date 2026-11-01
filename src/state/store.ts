@@ -10,10 +10,8 @@ export const emptyAnswers = (): Answers => ({
   herd: { answer: null, ownCount: null },
   river: { answer: null, split: null },
   road: { answer: null },
-  upper: { answer: null },
   pigs: { answer: null },
   bank: { answer: null, account: null },
-  meadow: { answer: null },
   bought: { answer: null },
   newFields: [],
   measures: { chosen: [], confirmed: false, inputs: {} },
@@ -26,7 +24,7 @@ export const emptyAnswers = (): Answers => ({
 })
 
 export const initialState = (): AppState => ({
-  version: 13,
+  version: 14,
   scenarioId: 'second_year',
   role: 'farmer',
   advisor: { log: [] },
@@ -40,9 +38,9 @@ export const fresh = (scenarioId: ScenarioId): AppState => ({ ...initialState(),
 
 /** Answers that can be taken back with Undo. Prototype, advisor and submit actions can't. */
 const UNDOABLE = new Set<Action['type']>([
-  'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road', 'answer_upper',
+  'answer_herd', 'set_herd_count', 'answer_river', 'set_split', 'answer_road',
   'answer_pigs', 'confirm', 'attach_document', 'ask_record_check', 'choose_measures', 'save_measure',
-  'answer_bank', 'set_bank_account', 'answer_meadow', 'answer_bought', 'save_field', 'remove_field',
+  'answer_bank', 'set_bank_account', 'answer_bought', 'save_field', 'remove_field',
 ])
 const PAST_LIMIT = 20
 
@@ -71,8 +69,6 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, river: { ...a.river, split: action.split } }
     case 'answer_road':
       return { ...a, road: { ...a.road, answer: action.answer } }
-    case 'answer_upper':
-      return { ...a, upper: { answer: action.answer } }
     case 'answer_pigs':
       return { ...a, pigs: { answer: action.answer } }
     case 'answer_bank':
@@ -80,8 +76,6 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
       return { ...a, bank: { answer: action.answer, account: action.answer === 'no' ? null : a.bank.account } }
     case 'set_bank_account':
       return { ...a, bank: { ...a.bank, account: action.account } }
-    case 'answer_meadow':
-      return { ...a, meadow: { answer: action.answer } }
     case 'answer_bought':
       // No takes the parcel out again, with anything he drew on it.
       return { ...a, bought: { answer: action.answer }, newFields: action.answer === 'no' ? a.newFields.filter((f) => f.landId !== 'bought') : a.newFields }

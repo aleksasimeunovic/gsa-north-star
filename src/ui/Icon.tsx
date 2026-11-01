@@ -1,7 +1,7 @@
 import {
   ArrowRight, ArrowUpRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Copy, CircleAlert, CircleCheck,
-  CircleX, Clock, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, Map, Maximize2, Minimize2, Minus,
-  PencilLine, PiggyBank, Plus, Receipt, Satellite, Send, Sprout, Target, Undo2, Upload, Wheat, X, type LucideIcon,
+  CircleX, Clock, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, LocateFixed, Magnet, Map, Minus,
+  PencilLine, PiggyBank, Plus, Receipt, Redo2, RotateCcw, Satellite, Send, Slash, SlidersHorizontal, Sprout, Target, Undo2, Upload, Wheat, X, type LucideIcon,
 } from 'lucide-react'
 import { useDensity } from './Density'
 
@@ -32,13 +32,17 @@ const ICONS = {
   edit: PencilLine,
   removed: Minus,
   undo: Undo2,
+  redo: Redo2,
+  reset: RotateCcw,
+  snap: Magnet,
+  straight: Slash,
+  slider: SlidersHorizontal,
+  locate: LocateFixed,
   upload: Upload,
   expand: ChevronDown,
   disclose: ChevronRight,
   close: X,
   copy: Copy,
-  larger: Maximize2,
-  smaller: Minimize2,
   prototype: FlaskConical,
   deadline: Calendar,
   // Parts of the application and what they're about

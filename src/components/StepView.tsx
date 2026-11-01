@@ -9,7 +9,7 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { Toast } from '../ui/Toast'
 import { useApp } from './AppContext'
 import { nextActionLabel } from './ReadinessBar'
-import { TaskBody, taskSummary } from './TaskBodies'
+import { TaskBody } from './TaskBodies'
 import type { AfterAnswer, Flow } from './useApplicationFlow'
 
 /** One part of his application: what his last answer changed, then the one thing to do now in this part. */
@@ -74,8 +74,8 @@ function StepDone({ flow }: { flow: Flow }) {
 }
 
 /**
- * The defining moment, said briefly: what his answer did to the application (done, no longer needed and
- * why, added), as a toast with Undo. The next action has already taken the top slot under it.
+ * The defining moment, said briefly: one line about what his answer did to the application, with Undo.
+ * The next action has already taken the top slot under it.
  */
 export function AfterAnswerToast({ flow }: { flow: Flow }) {
   const { derived, state, dispatch } = useApp()
@@ -88,36 +88,15 @@ export function AfterAnswerToast({ flow }: { flow: Flow }) {
     count.current++
   }
   if (!a || a === seen) return null
-  const outcome = (id: TaskId) => taskSummary(id, derived, state)
-  // A part his answer finished is said first, as progress he can feel: "Your details: done".
-  const finished = derived.list.steps.filter((st) => st.id !== 'submit' && st.left === 0 && a.done.some((id) => stepOf(id) === st.id))
-  const lines = [
-    ...finished.map((st) => home.stepFinished(steps.name[st.id])),
-    ...a.more.map(({ work }) => copy.more(tasks.work[work.id], copy.why[work.id] ?? '')),
-    ...a.done.map((id) => copy.done(flow.title(id), outcome(id))),
-    ...a.waiting.map((id) => copy.done(flow.title(id), outcome(id))),
-    ...a.removed.map(({ work }) => copy.removed(tasks.work[work.id], tasks.reason[work.reason!])),
-    ...a.added.map((id) => `${flow.title(id)}: ${outcome(id)}`),
-  ]
-  const [title, ...rest] = lines
-  return (
-    <Toast
-      id={count.current}
-      title={title}
-      onClose={() => setSeen(a)}
-      action={
-        state.past.length > 0 && (
-          <Button variant="link" onClick={() => dispatch({ type: 'undo' })} aria-label={copy.undoLabel}>
-            {copy.undo}
-          </Button>
-        )
-      }
-    >
-      {rest.length > 0 && (
-        <ul className="toast-list">
-          {rest.map((l) => <li key={l}>{l}</li>)}
-        </ul>
-      )}
-    </Toast>
-  )
+  // Work his answer added comes first, so the finish line never moves silently; then a part he finished.
+  const finished = derived.list.steps.find((st) => st.id !== 'submit' && st.left === 0 && a.done.some((id) => stepOf(id) === st.id))
+  const title = [
+    ...a.more.map(({ work }) => copy.more(tasks.work[work.id])),
+    ...a.added.map((id) => copy.more(flow.title(id))),
+    ...(finished ? [home.stepFinished(steps.name[finished.id])] : []),
+    ...a.done.map((id) => copy.done(flow.title(id))),
+    ...a.waiting.map((id) => copy.waiting(flow.title(id))),
+    ...a.removed.map(({ work }) => copy.removed(tasks.work[work.id])),
+  ][0]
+  return <Toast id={count.current} title={title} onClose={() => setSeen(a)} undo={state.past.length > 0 ? { label: copy.undo, hint: copy.undoLabel, onClick: () => dispatch({ type: 'undo' }) } : undefined} />
 }

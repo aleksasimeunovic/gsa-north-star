@@ -20,7 +20,7 @@ describe('farm picture', () => {
   it('every answer changes it: the road, the split, his own cattle count', () => {
     const f = run('second_year', { type: 'answer_road', answer: 'yes' }, { type: 'answer_river', answer: 'yes' }, halfSplit(['wheat', 'sunflower']), { type: 'answer_herd', answer: 'no' }, { type: 'set_herd_count', count: 41 }).farm
     expect(f.fields.totalHa).toBe(8.88)
-    expect(f.fields.crops).toContainEqual({ crop: 'sunflower', ha: 1.2 })
+    expect(f.fields.crops).toContainEqual({ crop: 'sunflower', ha: 0.6 })
     expect(f.fields.crops).toContainEqual({ crop: 'maize', ha: 2.98 })
     expect(f.cattle).toEqual({ count: 41, registry: 38, source: 'checking' })
   })
@@ -35,12 +35,9 @@ describe('farm picture', () => {
       'second_year',
       { type: 'answer_road', answer: 'yes' },
       { type: 'answer_river', answer: 'no' },
-      { type: 'answer_upper', answer: 'yes' },
-      { type: 'answer_meadow', answer: 'yes' },
-      { type: 'confirm', what: 'fields_other' },
       { type: 'choose_measures', chosen: ['plant_production'] },
     ).farm
-    expect(all.fields).toMatchObject({ source: 'confirmed', confirmed: 5 })
+    expect(all.fields).toMatchObject({ source: 'confirmed', confirmed: 2 })
     expect(all.measures.source).toBe('confirmed')
   })
 
@@ -88,8 +85,8 @@ describe('a split carries through the application', () => {
   })
 
   it('moving the line moves the money, when a part is left unsown', () => {
-    const lower = run('second_year', lastYear, river, { type: 'set_split', split: { line: [{ x: 0, y: 90 }, { x: 200, y: 90 }], crops: ['unsown', 'wheat'] } })
-    const higher = run('second_year', lastYear, river, { type: 'set_split', split: { line: [{ x: 0, y: 30 }, { x: 200, y: 30 }], crops: ['unsown', 'wheat'] } })
+    const lower = run('second_year', lastYear, river, { type: 'set_split', split: { line: [{ x: 166, y: 90 }, { x: 288.5, y: 80 }], crops: ['unsown', 'wheat'] } })
+    const higher = run('second_year', lastYear, river, { type: 'set_split', split: { line: [{ x: 150, y: 25 }, { x: 279, y: 20 }], crops: ['unsown', 'wheat'] } })
     expect(lower.estimate.totalDinars).toBeGreaterThan(higher.estimate.totalDinars)
   })
 

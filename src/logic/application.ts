@@ -25,8 +25,8 @@ export interface Work {
  * - change: a record differs from last year, and he says what is true
  * - choice: what he decides for this year (measures)
  * - confirm: what he declares every year under liability or with new evidence (cows that calved,
- *   this year's crops on unchanged fields, his receipts), one tap each, never bundled
- * What is unchanged and declares nothing (name, address, active farmer) is reused without asking: no task.
+ *   his receipts), one tap each, never bundled
+ * What is unchanged and declares nothing (name, address, active farmer, unchanged fields) is reused without asking: no task.
  */
 export type TaskKind = 'change' | 'choice' | 'confirm'
 export const KINDS: TaskKind[] = ['change', 'choice', 'confirm']
@@ -77,7 +77,7 @@ export const CHANGE_TASKS: TaskId[] = ['bank', 'herd', 'pigs']
 export function stepOf(id: TaskId): StepId {
   if (id === 'renewal' || id === 'bank' || id === 'details') return 'details'
   if (id === 'herd' || id === 'pigs' || id === 'calvings') return 'animals'
-  if (id.startsWith('field_') || id.startsWith('added_') || id === 'fields_other') return 'land'
+  if (id.startsWith('field_') || id.startsWith('added_')) return 'land'
   if (id === 'measures') return 'measures'
   return 'documents'
 }
@@ -89,8 +89,7 @@ function kindOf(id: TaskId): TaskKind {
 }
 
 /** Whether a map shows this change: he reviews the boundary on the map, not from a description. */
-export const isMapChange = (id: TaskId): id is 'field_river' | 'field_road' | 'field_upper' =>
-  id === 'field_river' || id === 'field_road' || id === 'field_upper'
+export const isMapChange = (id: TaskId): id is 'field_river' | 'field_road' => id === 'field_river' || id === 'field_road'
 
 const removed = (id: WorkId, reason: RemovalReason): Work => ({ id, state: 'removed', reason })
 

@@ -16,13 +16,9 @@ export type FieldId = 'river' | 'road' | 'upper' | 'meadow' | 'house'
 
 /** Each signal is a fact with its source's date (prototype placeholders): GSA says what it saw and when. */
 export type FieldSignal =
-  /** `edge`: where the photo changes, from one side of the field to the other. GSA's line starts here. */
-  | { kind: 'satellite_difference'; edge: Point[]; flagPolygon: Polygon; flagHa: number }
+  /** `edge`: where the photo changes, from one side of the field to the other. GSA's line starts here. `riverAt`: where the river runs beside it. */
+  | { kind: 'satellite_difference'; edge: Point[]; flagPolygon: Polygon; flagHa: number; riverAt: Point }
   | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number; seen: string }
-  /** Last year's drawing runs into a neighbour's declared field. */
-  | { kind: 'overlap'; neighbourPolygon: Polygon; overlapPolygon: Polygon; overlapHa: number; seen: string }
-  /** Grassland the state checks is mowed or grazed this year: he says whether it will be. */
-  | { kind: 'yearly_use' }
 
 export interface Field {
   id: FieldId
@@ -34,11 +30,12 @@ export interface Field {
   signal?: FieldSignal
 }
 
-/** Reference layers on the map. */
+/** Registered farmland he can put a field on. */
 export interface LandShape {
   id: string
   label: string
   polygon: Polygon
+  areaHa: number
 }
 
 export type MeasureId =
@@ -157,10 +154,6 @@ export interface Scenario {
   herd: Herd | null
   pigs: Pigs | null
   fields: Field[]
-  /** Land the government has registered as farmland (physical blocks). Fields stay inside it. */
-  blocks: LandShape[]
-  /** Land register plots (cadastral parcels). Reference only, hidden by default. */
-  parcels: LandShape[]
   bought: BoughtParcel | null
   /** Registered farmland near his fields that isn't in his application: where a field he adds can go. */
   otherLand: LandShape[]
@@ -169,21 +162,16 @@ export interface Scenario {
   documents: Document[]
 }
 
-const rect = (x: number, y: number, w: number, h: number): Polygon => [
-  { x, y },
-  { x: x + w, y },
-  { x: x + w, y: y + h },
-  { x, y: y + h },
-]
+const shape = (...points: [number, number][]): Polygon => points.map(([x, y]) => ({ x, y }))
 
-// Where the river field's photo changes (prototype placeholder): the lower part floods every spring, and water follows the ground, not a ruler.
-const RIVER_EDGE: Point[] = [
-  { x: 0, y: 54 },
-  { x: 52, y: 66 },
-  { x: 104, y: 58 },
-  { x: 152, y: 64 },
-  { x: 200, y: 60 },
-]
+// Every shape is traced on the edges the satellite photo shows. Coordinates are metres on the local grid.
+// The record's area is what counts: a shape says where the land is, and a part of a field is its share of that area.
+
+// The pale ground along the river, where the photo changes to green wheat: a real edge across a real field.
+const RIVER_TOP = shape([147, 1], [168, -5], [190, -12], [215, -18], [245, -24], [268, -28], [275, -26], [279, -18], [278, 10], [280, 30])
+const RIVER_EDGE = shape([283.75, 37.5], [250, 39], [200, 42.5], [157.64, 46.5])
+const RIVER_LEFT = shape([154, 38], [149, 22], [145, 8])
+const RIVER_BOTTOM = shape([287, 60], [290, 100], [290, 116], [172, 116], [166, 90], [160, 52])
 
 const FIELDS: Field[] = [
   {
@@ -192,9 +180,9 @@ const FIELDS: Field[] = [
     areaHa: 2.4,
     cropLastYear: 'wheat',
     arable: true,
-    polygon: rect(0, 0, 200, 120),
-    // The lower half floods every spring; satellite sees it differently.
-    signal: { kind: 'satellite_difference', edge: RIVER_EDGE, flagPolygon: [...RIVER_EDGE, { x: 200, y: 120 }, { x: 0, y: 120 }], flagHa: 1.18 },
+    polygon: [...RIVER_TOP, RIVER_EDGE[0], ...RIVER_BOTTOM, RIVER_EDGE[3], ...RIVER_LEFT],
+    // The part along the river stays wet for longer every spring, so the photo sees it differently.
+    signal: { kind: 'satellite_difference', edge: [...RIVER_EDGE].reverse(), flagPolygon: [...RIVER_TOP, ...RIVER_EDGE, ...RIVER_LEFT], flagHa: 1.08, riverAt: { x: 268, y: -37 } },
   },
   {
     id: 'road',
@@ -202,54 +190,17 @@ const FIELDS: Field[] = [
     areaHa: 1.8,
     cropLastYear: 'maize',
     arable: true,
-    polygon: rect(220, 0, 150, 120),
-    signal: { kind: 'road_strip', stripPolygon: rect(220, 112, 150, 8), stripHa: 0.12, seen: '2026-03-16' },
+    polygon: shape([344, -20], [380, -18], [414, -15], [413, -5], [410, 45], [407, 75], [406, 112], [404, 117], [335, 117], [332, 112], [331, 72], [339, 45], [340, 20], [344, -5]),
+    // The strip along the road, where the road was widened.
+    signal: { kind: 'road_strip', stripPolygon: shape([331.6, 108], [406.2, 108], [406, 112], [404, 117], [335, 117], [332, 112]), stripHa: 0.12, seen: '2026-03-16' },
   },
-  {
-    id: 'upper',
-    name: 'Upper field',
-    areaHa: 2.0,
-    cropLastYear: 'wheat',
-    arable: true,
-    polygon: rect(0, 140, 200, 100),
-    // The neighbour's new declaration starts 5 m inside last year's drawing.
-    signal: { kind: 'overlap', neighbourPolygon: rect(0, 235, 200, 55), overlapPolygon: rect(0, 235, 200, 5), overlapHa: 0.1, seen: '2026-04-15' },
-  },
-  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: rect(220, 140, 150, 100), signal: { kind: 'yearly_use' } },
-  { id: 'house', name: 'House field', areaHa: 1.3, cropLastYear: 'maize', arable: true, polygon: rect(390, 0, 130, 100) },
+  { id: 'upper', name: 'Upper field', areaHa: 2.0, cropLastYear: 'wheat', arable: true, polygon: shape([190, 190], [235, 197], [277, 212], [270, 247], [262, 282], [279, 292], [208, 295], [146, 282], [115, 273], [111, 259], [119, 233], [133, 218], [151, 202]) },
+  { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: shape([305, 140], [360, 139], [408, 138], [405, 175], [400, 205], [398, 236], [372, 236], [352, 227], [310, 216], [303, 207]) },
+  { id: 'house', name: 'House field', areaHa: 1.3, cropLastYear: 'maize', arable: true, polygon: shape([388, -139], [436, -140], [478, -140], [480, -105], [476, -62], [478, -22], [430, -26], [381, -31]) },
 ]
 
-const BLOCKS: LandShape[] = [
-  {
-    id: 'block_1',
-    label: 'Block 1',
-    // Ends where the widened road starts.
-    polygon: [
-      { x: 0, y: 0 },
-      { x: 370, y: 0 },
-      { x: 370, y: 112 },
-      { x: 200, y: 112 },
-      { x: 200, y: 120 },
-      { x: 0, y: 120 },
-    ],
-  },
-  { id: 'block_2', label: 'Block 2', polygon: rect(0, 140, 370, 100) },
-  { id: 'block_3', label: 'Block 3', polygon: rect(390, 0, 130, 100) },
-  // Around the parcel he bought: a little wider than the parcel itself.
-  { id: 'block_4', label: 'Block 4', polygon: rect(220, -90, 150, 76) },
-]
-
-// Farmland by the meadow, not in his application: where a field he rents could go.
-const OTHER_LAND: LandShape[] = [{ id: 'block_5', label: 'Block 5', polygon: rect(220, 262, 150, 60) }]
-
-const PARCELS: LandShape[] = [
-  { id: 'parcel_1', label: 'Parcel 1', polygon: rect(0, 0, 120, 120) },
-  { id: 'parcel_2', label: 'Parcel 2', polygon: rect(120, 0, 250, 120) },
-  { id: 'parcel_3', label: 'Parcel 3', polygon: rect(0, 140, 370, 60) },
-  { id: 'parcel_4', label: 'Parcel 4', polygon: rect(0, 200, 370, 40) },
-  { id: 'parcel_5', label: 'Parcel 5', polygon: rect(390, 0, 130, 100) },
-  { id: 'parcel_6', label: 'Parcel 6', polygon: rect(232, -84, 125, 64) },
-]
+// Farmland south of the meadow, not in his application: where a field he rents could go.
+const OTHER_LAND: LandShape[] = [{ id: 'block_5', label: 'Block 5', areaHa: 0.9, polygon: shape([280, 219], [351, 229], [372, 237], [400, 238], [395, 266], [390, 279], [313, 290], [285, 290], [264, 282], [277, 248]) }]
 
 const HERD: Herd = {
   lastYearDeclared: 41,
@@ -349,10 +300,8 @@ const BASE: Scenario = {
   herd: HERD,
   pigs: PIGS,
   fields: FIELDS,
-  blocks: BLOCKS,
-  parcels: PARCELS,
   // 0.80 ha above the road field, in his name since February (round 11, Aleksa).
-  bought: { polygon: rect(232, -84, 125, 64), areaHa: 0.8, on: '2026-02-12' },
+  bought: { polygon: shape([350, -146], [386, -140], [380, -33], [331, -33], [331, -80], [340, -120]), areaHa: 0.8, on: '2026-02-12' },
   otherLand: OTHER_LAND,
   measures: MEASURES,
   suggestions: [
@@ -422,7 +371,7 @@ export const NEIGHBOUR_CASE: AdvisorCaseSeed = {
   deadline: '2026-05-26',
   owner: 'land_registry',
   today: '2026-04-28',
-  parcel: rect(0, 245, 200, 45),
+  parcel: shape([52, 26], [77, 22], [90, 60], [105, 112], [100, 118], [72, 118], [63, 75]),
   history: [
     { at: '2026-04-27T15:20:00Z', actor: 'Neighbour', action: 'confirm' },
     { at: '2026-04-27T15:40:00Z', actor: 'Neighbour', action: 'send_to_jelena' },

@@ -1,6 +1,6 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
 import type { FieldId, PartCrop, GoalKind, MeasureId, Office, ScenarioId } from '../data/scenarios'
-import type { RemovalReason, StepId, WorkId } from '../logic/application'
+import type { StepId, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
 import type { Severity } from '../logic/readiness'
@@ -86,9 +86,6 @@ export const en = {
     river_unsown: (ha: string, about: string) => `Nothing is sown on ${ha} of the river field, about ${about} less`,
     road_took_area: (ha: string, about: string) => `The road took ${ha}, about ${about} less`,
     road_pending_correction: (ha: string, about: string) => `${ha} doesn't count until checked, about ${about} less`,
-    overlap_removed: (ha: string, about: string) => `Your neighbour's line took ${ha}, about ${about} less`,
-    overlap_pending: (ha: string, about: string) => `${ha} doesn't count until checked, about ${about} less`,
-    meadow_out: (ha: string, about: string) => `The meadow is left out: ${ha}, about ${about} less`,
   } satisfies Record<ImpactReason, (ha: string, about: string) => string>,
 
   estimate: {
@@ -96,7 +93,7 @@ export const en = {
     none: 'Your estimate appears once you choose your measures',
     afterChecks: 'Your measures are worked out after checks',
     provisional: (what: string) => `Provisional until you've checked ${what}`,
-    pending: { field_river: 'the river field', field_road: 'the road field', field_upper: 'the upper field', field_meadow: 'the meadow', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
+    pending: { field_river: 'the river field', field_road: 'the road field', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
     about: (d: string) => `About ${d}`,
     unpriced: (n: number) => (n === 1 ? 'Plus 1 more measure, worked out after checks' : `Plus ${n} more measures, worked out after checks`),
     caveat: 'The payment still depends on inspection and final eligibility.',
@@ -135,16 +132,12 @@ export const home = {
   },
 }
 
-/** What his last answer changed in the application, shown until his next answer. */
+/** What his last answer did, in one line. */
 export const after = {
-  done: (task: string, outcome: string) => `${task}: ${outcome}`,
-  removed: (work: string, reason: string) => `No longer needed: ${work.toLowerCase()}, ${reason}`,
-  more: (work: string, why: string) => `1 more thing: ${work.toLowerCase()}, because ${why}`,
-  why: {
-    river_split: 'something else is growing in the lower part',
-    bank_enter: "the new account isn't the right one",
-    bought_add: 'you farm it this year',
-  } as Partial<Record<WorkId, string>>,
+  done: (task: string) => `${task}: done`,
+  waiting: (task: string) => `${task}: waiting for a check`,
+  removed: (work: string) => `No longer needed: ${work.toLowerCase()}`,
+  more: (work: string) => `Added: ${work.toLowerCase()}`,
   undo: 'Undo',
   undoLabel: 'Undo your last answer',
 }
@@ -154,13 +147,10 @@ export const tasks = {
     renewal: 'Renew your active farmer status',
     bank: 'Account for payments',
     calvings: 'Cows that calved',
-    field_meadow: 'Meadow',
     herd: 'Your herd',
     pigs: 'Your pigs',
     field_river: 'River field',
     field_road: 'Road field',
-    field_upper: 'Upper field',
-    fields_other: 'Crops on your other fields',
     field_bought: 'The parcel you bought',
     details: 'Your details',
     measures: 'Choose your measures',
@@ -173,13 +163,10 @@ export const tasks = {
     renewal: 'Renew your active farmer status',
     bank: 'Check your account for payments',
     calvings: 'Confirm your cows that calved',
-    field_meadow: 'Check the meadow',
-    fields_other: "Confirm this year's crops",
     herd: 'Check your herd',
     pigs: 'Tell us about your pigs',
     field_river: 'Check the river field',
     field_road: 'Check the road field',
-    field_upper: 'Check the upper field',
     field_bought: 'Check the parcel you bought',
     measures: 'Choose your measures',
     receipts: 'Confirm your input receipts',
@@ -197,15 +184,6 @@ export const tasks = {
     bank_enter: 'Type in your account number',
     bought_add: 'Name the field and give its crop',
   } satisfies Record<WorkId, string>,
-  reason: {
-    one_crop: 'one crop in the whole field (the state may still check it)',
-    edge_moved: 'GSA moved the edge to the road for you',
-    kept_until_checked: 'we asked for a correction instead',
-    not_farmed: "you don't farm it this year",
-    household: "household pigs don't need declaring",
-    bank_sent: 'your bank sent the new one',
-  } satisfies Record<RemovalReason, string>,
-
   bank: {
     context: (date: string) => `Your bank closed the account payments went to on ${date}`,
     registered: 'In the farm register',
@@ -229,15 +207,6 @@ export const tasks = {
     asked: (n: number) => `The registry will check, and ${n} counts until then`,
     askedWith: (his: string, n: number) => `You said ${his}, the registry will check, and ${n} counts until then`,
     done: (n: number) => `${n} cows calved`,
-  },
-
-  meadow: {
-    rule: 'The state checks by satellite that the meadow is mowed or grazed at least once this year',
-    question: 'Will you mow or graze the meadow at least once this year?',
-    answerYes: 'Yes, I will',
-    answerNo: 'No, not this year',
-    kept: "You'll mow or graze it, and the state checks by satellite",
-    out: (ha: string) => `Left out this year, ${ha} less`,
   },
 
   /** Why it may fit, what the state checks, what he provides. */
@@ -307,19 +276,19 @@ export const tasks = {
 
   river: {
     /** What the photo shows, no more. */
-    context: 'The lower strip is greening later than the wheat above it, so it may need attention',
+    context: 'The part along the river looks paler than the rest of your wheat, so it may need attention',
     lastYear: 'Your field last year',
     lastYearValue: (ha: string, crop: string) => `${ha}, ${crop}`,
     different: 'Looks different',
     differentValue: (ha: string) => `About ${ha}`,
     showPhoto: 'What the photo shows',
     showField: 'Your field last year',
-    question: "What's growing in the lower part this year?",
+    question: "What's growing along the river this year?",
     same: 'The same as the rest of the field',
     other: 'Something else',
     oneCrop: 'The same crop in the whole field',
     mayCheck: 'the state may still check it',
-    split: (a: string, b: string) => `${a}, ${b}`,
+    split: (a: string, b: string) => `${a}, ${b.toLowerCase()}`,
     part: (crop: string, area: string) => `${crop} ${area}`,
   },
 
@@ -343,18 +312,6 @@ export const tasks = {
     ],
   },
 
-  upper: {
-    context: (d: string) => `On ${d} your neighbour declared a strip along the bottom of this field`,
-    overlap: (ha: string) => `${ha} declared by both of you`,
-    question: "Should we move your edge back to your neighbour's line?",
-    yes: 'Yes, move my edge',
-    no: 'No, the strip is mine',
-    answerYes: "Moved to the neighbour's line",
-    answerNo: 'The strip is mine',
-    moved: (ha: string) => `Now ${ha}`,
-    disputed: "Your declaration and your neighbour's are both kept, and the payments office checks them",
-  },
-
   bought: {
     context: (d: string) => `The land registry shows a parcel in your name since ${d}`,
     question: 'Will you farm it this year?',
@@ -373,11 +330,6 @@ export const tasks = {
     household: 'Household only, nothing to declare',
     declared: (n: number) => `${n} pigs declared`,
   },
-
-  fields: {
-    row: (area: string, crop: string) => `${area}, ${crop}`,
-  },
-
 
   /** Reused without asking. */
   details: {
@@ -525,11 +477,10 @@ export const tasks = {
 
 export const map = {
   title: 'Map of your fields',
-  flag: 'Greening later',
+  flag: 'Looks different',
+  river: 'River',
   photoDate: (d: string) => `Satellite photo, ${d}`,
   strip: (ha: string) => `${ha} now road`,
-  neighbour: "Neighbour's field",
-  both: (ha: string) => `${ha} declared by both`,
   imagery: 'Imagery © Esri',
   keys: 'Drag or use the arrow keys to move the map, plus or minus to zoom',
   zoomIn: 'Zoom in',
@@ -537,8 +488,6 @@ export const map = {
   backTo: (field: string) => `Back to the ${field.toLowerCase()}`,
   backToFields: 'Back to your fields',
   wholeFarm: 'Whole farm',
-  larger: 'Show larger map',
-  smaller: 'Show smaller map',
   back: 'Back to your application',
 }
 
@@ -550,26 +499,39 @@ export const split = {
   step: (n: number) => `Step ${n} of 3`,
   lineTitle: 'Where does the crop change?',
   proposed: 'GSA drew this line where the photo changes. If the crop changes somewhere else, pull the line there.',
-  following: "The line follows the edge in the photo",
-  yourLine: 'The line follows your changes',
+  yourLine: 'Pull the line anywhere, and move its square ends along the edge of your field.',
   bendLabel: (n: number) => `Bend ${n} in the line`,
   endStart: 'Start of the line, on the edge of the field',
   endEnd: 'End of the line, on the edge of the field',
   keys: 'Arrow keys move it, and Delete takes a bend out',
-  follow: "Follow the edge in the photo",
-  straight: 'Make the line straight',
-  removeBend: 'Take out this bend',
   noMoreBends: 'The line has as many bends as it can take, so move one of them',
-  useSlider: 'Use a slider instead',
-  useDrag: 'Pull the line instead',
-  sliderLabel: 'Move the whole line up or down',
+  straightOn: 'Straight is on, so move the two ends, or turn it off to bend the line',
+  tools: {
+    label: 'Tools for the line',
+    undo: 'Undo',
+    undoHint: 'Undo your last move',
+    redo: 'Redo',
+    redoHint: 'Redo your last move',
+    snap: (on: boolean) => `Snap ${on ? 'on' : 'off'}`,
+    snapHint: 'Snap to the edge in the photo',
+    straight: (on: boolean) => `Straight ${on ? 'on' : 'off'}`,
+    straightHint: 'Keep the line straight and move only its ends',
+    slider: (on: boolean) => `Slider ${on ? 'on' : 'off'}`,
+    sliderHint: 'Move the whole line with a slider',
+    sliderLabel: 'Move the whole line',
+    reset: 'Reset',
+    resetHint: "Go back to GSA's line",
+    remove: 'Remove',
+    removeHint: 'Take out this bend',
+  },
   stopped: {
     edge: "The line stops at your field's edge, because land outside it can't get support",
-      crosses_itself: "The line can't cross itself, so it stopped here",
+    leaves_field: "The line stops at your field's edge, because land outside it can't get support",
+    crosses_itself: "The line can't cross itself, so it stopped here",
     too_small: 'Each part needs at least 0.10 ha to be declared, so the line stopped here',
   },
-  part: { top: 'Top part', bottom: 'Bottom part', left: 'Left part', right: 'Right part' },
-  partArea: (part: string, area: string) => `${part}: ${area}`,
+  part: { top: 'River side', bottom: 'Road side', left: 'Left part', right: 'Right part' },
+  partArea: (part: string, area: string) => `${part} ${area}`,
   cropsTitle: "What's growing in each part?",
   cropsHint: 'Tap a part on the map, or choose here',
   cropFor: (part: string, area: string) => `${part}, ${area}`,
@@ -578,16 +540,15 @@ export const split = {
   effectsTitle: 'What this changes in your application',
   effects: {
     field: 'River field',
-    fieldValue: (parts: string, ha: string) => `Now two parts, ${parts}, still ${ha} in all`,
+    fieldValue: (parts: string, ha: string) => `Two parts, ${parts}, still ${ha} in all`,
     measures: 'Measures',
     bothCount: 'Both parts count for basic support for plant production',
     oneCounts: (ha: string) => `Only ${ha} counts for basic support for plant production, because nothing is sown on the rest`,
     cover: 'Green cover over winter now lists each part, and you can choose them separately',
     estimate: 'Your estimate',
-    same: "Stays the same, because every crop here is paid the same per hectare",
+    same: 'Stays the same, because both crops pay the same per hectare',
     less: (about: string) => `About ${about} less, because land with nothing sown isn't paid`,
   },
-  undo: 'Undo',
   next: 'Continue',
   back: 'Back',
   confirm: 'Confirm the split',
@@ -652,7 +613,8 @@ export const records = {
   calvings: 'Cows that calved',
   period: (from: string, to: string) => `${from} to ${to}`,
   fieldValue: (ha: string, crop: string) => `${ha}, ${crop}`,
-  leftOut: 'Left out this year',
+  unchangedFields: 'Unchanged fields',
+  unchangedValue: (n: number, ha: string) => `${n} fields, ${ha}`,
   addField: 'Add a field',
 }
 
@@ -740,7 +702,6 @@ export const advisor = {
     answer_river: 'Answered: river field',
     set_split: 'Split the river field',
     answer_road: 'Answered: road field',
-    answer_upper: 'Answered: upper field',
     answer_pigs: 'Answered: pigs',
     choose_measures: 'Chose measures',
     save_measure: 'Added what a measure needs',
@@ -750,7 +711,6 @@ export const advisor = {
     confirm: 'Confirmed a part',
     answer_bank: 'Answered: account',
     set_bank_account: 'Gave his account',
-    answer_meadow: 'Answered: meadow',
     attach_document: 'Attached a document',
     renew: 'Renewed active farmer status',
     sign_declarations: 'Signed the declaration',

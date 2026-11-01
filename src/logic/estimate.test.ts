@@ -37,12 +37,6 @@ describe('estimate', () => {
     expect(after).toBe(before)
   })
 
-  it("the neighbour's line takes 0.10 ha more: 8.78 ha, 438,040", () => {
-    const e = run('second_year', lastYear, { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }).estimate
-    expect(e.assumptions.eligibleAreaHa).toBe(8.78)
-    expect(e.totalDinars).toBe(438_040)
-  })
-
   it('only chosen measures count; ones without a known rate are named, not guessed', () => {
     const e = run('second_year', lastYear, { type: 'choose_measures', chosen: ['cows_raising_calves', 'insurance'] }).estimate
     expect(e.totalDinars).toBe(280_000)
@@ -54,19 +48,16 @@ describe('estimate', () => {
     expect(e.totalDinars).toBe(442_000)
   })
 
-  it('is provisional while the road, the upper field or the measures are unanswered, and says which', () => {
-    expect(run('second_year').estimate.pending).toEqual(['field_river', 'field_road', 'field_upper', 'field_meadow', 'field_bought', 'measures'])
-    const e = run('second_year', lastYear, { type: 'answer_road', answer: 'yes' }, { type: 'answer_upper', answer: 'yes' }, { type: 'answer_river', answer: 'no' }, { type: 'answer_meadow', answer: 'yes' }, { type: 'answer_bought', answer: 'no' }, { type: 'choose_measures', chosen: ['plant_production'] }).estimate
+  it('is provisional while the river, the road or the measures are unanswered, and says which', () => {
+    expect(run('second_year').estimate.pending).toEqual(['field_river', 'field_road', 'field_bought', 'measures'])
+    const e = run('second_year', lastYear, { type: 'answer_road', answer: 'yes' }, { type: 'answer_river', answer: 'no' }, { type: 'answer_bought', answer: 'no' }, { type: 'choose_measures', chosen: ['plant_production'] }).estimate
     expect(e.pending).toEqual([])
   })
 
   it('a field he adds counts only where he applies for plant production on it: 9.80 ha × 18,000 + 280,000 = 456,400', () => {
-    const field = { id: 'bought', landId: 'bought', polygon: SCENARIOS.second_year.bought!.polygon, name: 'Lower field', crop: 'maize' as const }
+    const field = { id: 'bought', landId: 'bought', polygon: SCENARIOS.second_year.bought!.polygon, areaHa: SCENARIOS.second_year.bought!.areaHa, name: 'Lower field', crop: 'maize' as const }
     const yes = { type: 'answer_bought', answer: 'yes' } as const
     expect(run('second_year', lastYear, yes, { type: 'save_field', field }).estimate.totalDinars).toBe(456_400)
   })
 
-  it('leaving the meadow out takes 1.50 ha: 7.50 ha × 18,000 + 280,000 = 415,000', () => {
-    expect(run('second_year', lastYear, { type: 'answer_meadow', answer: 'no' }).estimate.totalDinars).toBe(415_000)
-  })
 })

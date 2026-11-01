@@ -39,6 +39,16 @@ export function centroid(poly: Polygon): Point {
   return { x: cx / (3 * a), y: cy / (3 * a) }
 }
 
+/** Where a field's top edge is at this x, to write its name just above it. */
+export function topEdgeAt(poly: Polygon, x: number): number {
+  let top = Infinity
+  poly.forEach((a, i) => {
+    const b = poly[(i + 1) % poly.length]
+    if ((a.x <= x && b.x >= x) || (b.x <= x && a.x >= x)) top = Math.min(top, a.x === b.x ? Math.min(a.y, b.y) : a.y + ((b.y - a.y) * (x - a.x)) / (b.x - a.x))
+  })
+  return top
+}
+
 export type PartName = 'top' | 'bottom' | 'left' | 'right'
 
 /** Name the two parts as he sees them on the map, not as A and B. */
@@ -48,12 +58,8 @@ export function partNames(parts: [Polygon, Polygon]): [PartName, PartName] {
   return a.x < b.x ? ['left', 'right'] : ['right', 'left']
 }
 
-/** Whether a part lies mostly in the flagged area (its centre is inside the flag's bounds). */
-export function inArea(part: Polygon, area: Polygon): boolean {
-  const c = centroid(part)
-  const b = bounds(area)
-  return c.x >= b.minX && c.x <= b.maxX && c.y >= b.minY && c.y <= b.maxY
-}
+/** Whether a part lies mostly in the flagged area (its centre is inside it). */
+export const inArea = (part: Polygon, area: Polygon): boolean => pointInPolygon(centroid(part), area)
 
 /** Whether a point is inside a polygon, for a tap on one part of a split field. */
 export function pointInPolygon(p: Point, poly: Polygon): boolean {
@@ -96,6 +102,9 @@ const closestOnSegment = (p: Point, a: Point, b: Point): { point: Point; t: numb
   return { point, t, dist: Math.hypot(p.x - point.x, p.y - point.y) }
 }
 
+/** The nearest place on the line, where a press would pull it. */
+export const nearestOnLine = (line: SplitLine, p: Point): Point => closestOnPath(p, line).point
+
 /** The nearest place on a chain of segments. */
 function closestOnPath(p: Point, path: Point[]) {
   let best = { ...closestOnSegment(p, path[0], path[1]), segment: 0 }
@@ -117,11 +126,14 @@ const onEdgeAt = (poly: Polygon, p: Point) => {
 /** The nearest place on the field's edge: an end of the line slides along it and can't leave it. */
 export const toFieldEdge = (poly: Polygon, p: Point): Point => closestOnPath(p, ring(poly)).point
 
-/** Keep a bend just inside the field. `clamped` says the edge stopped it, so the panel can say why. */
+/** Keep a bend just inside the field, whatever its shape. `clamped` says the edge stopped it, so the map can say why. */
 export function keepInside(poly: Polygon, p: Point): { point: Point; clamped: boolean } {
-  const b = bounds(poly)
-  const point = { x: Math.min(b.maxX - INSET_M, Math.max(b.minX + INSET_M, p.x)), y: Math.min(b.maxY - INSET_M, Math.max(b.minY + INSET_M, p.y)) }
-  return { point, clamped: point.x !== p.x || point.y !== p.y }
+  const inside = pointInPolygon(p, poly)
+  const edge = closestOnPath(p, ring(poly))
+  if (inside && edge.dist >= INSET_M) return { point: p, clamped: false }
+  const c = centroid(poly)
+  const len = Math.hypot(c.x - edge.point.x, c.y - edge.point.y) || 1
+  return { point: { x: edge.point.x + ((c.x - edge.point.x) / len) * INSET_M, y: edge.point.y + ((c.y - edge.point.y) / len) * INSET_M }, clamped: !inside }
 }
 
 /** Help following a boundary: near the edge the photo shows, a bend joins it. */
@@ -132,9 +144,9 @@ export function snapToEdge(p: Point, edge: Point[]): { point: Point; snapped: bo
 
 /**
  * The two parts a line makes: the line, then the field's edge back round to its start, one way for
- * each part. Fields are convex, so a line that stays inside can't leave anything out.
+ * each part. The record's area is what counts, so a part is its share of `wholeHa`.
  */
-export function splitField(poly: Polygon, line: SplitLine): SplitResult | null {
+export function splitField(poly: Polygon, line: SplitLine, wholeHa = polygonAreaHa(poly)): SplitResult | null {
   if (line.length < 2) return null
   const n = poly.length
   const from = onEdgeAt(poly, line[0])
@@ -151,8 +163,8 @@ export function splitField(poly: Polygon, line: SplitLine): SplitResult | null {
   }
   const first = [...line, ...corners(to, from)]
   const second = [...[...line].reverse(), ...corners(from, to)]
-  const whole = roundHa(polygonAreaHa(poly))
-  const a = roundHa(polygonAreaHa(first))
+  const whole = roundHa(wholeHa)
+  const a = roundHa((polygonAreaHa(first) / polygonAreaHa(poly)) * wholeHa)
   const areasHa: [number, number] = [a, roundHa(whole - a)]
   return areasHa[0] > 0 && areasHa[1] > 0 ? { parts: [first, second], areasHa } : null
 }
@@ -161,16 +173,24 @@ const cross = (a: Point, b: Point, c: Point) => (b.x - a.x) * (c.y - a.y) - (b.y
 const segmentsCross = (a: Point, b: Point, c: Point, d: Point) =>
   cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0
 
-export type LineProblem = 'crosses_itself' | 'too_small'
+export type LineProblem = 'crosses_itself' | 'too_small' | 'leaves_field'
+
+// A field's edge isn't straight, so a stretch of line between two good bends can still run outside it.
+const staysInside = (poly: Polygon, a: Point, b: Point) =>
+  [0.1, 0.25, 0.5, 0.75, 0.9].every((t) => {
+    const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+    return pointInPolygon(p, poly) || closestOnPath(p, ring(poly)).dist < 0.5
+  })
 
 /** What's wrong with a line, or null. The map never lets him leave one of these behind. */
-export function lineProblem(poly: Polygon, line: SplitLine): LineProblem | null {
+export function lineProblem(poly: Polygon, line: SplitLine, wholeHa = polygonAreaHa(poly)): LineProblem | null {
   for (let i = 0; i < line.length - 1; i++) {
     for (let j = i + 2; j < line.length - 1; j++) {
       if (segmentsCross(line[i], line[i + 1], line[j], line[j + 1])) return 'crosses_itself'
     }
+    if (!staysInside(poly, line[i], line[i + 1])) return 'leaves_field'
   }
-  const r = splitField(poly, line)
+  const r = splitField(poly, line, wholeHa)
   return !r || Math.min(...r.areasHa) < MIN_PART_HA ? 'too_small' : null
 }
 

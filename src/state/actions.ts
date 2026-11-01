@@ -5,7 +5,7 @@ export type Role = 'farmer' | 'advisor'
 export type Actor = 'Milan' | 'Jelena' | 'GSA'
 
 /** Things GSA already has, confirmed by name. */
-export type Confirmable = 'fields_other' | 'receipts' | 'calvings'
+export type Confirmable = 'receipts' | 'calvings'
 
 /** A measure input: text or a number as text, a choice, a list of fields, a ticked promise, or a file name. */
 export type MeasureValue = string | string[] | boolean
@@ -25,6 +25,8 @@ export interface NewField {
   /** The registered farmland it sits on, or 'bought' for the parcel in his name. */
   landId: string
   polygon: Polygon
+  /** The record's area, which is what counts. */
+  areaHa: number
   name: string
   crop: Crop
 }
@@ -35,14 +37,10 @@ export interface Answers {
   river: { answer: YesNo | null; split: Split | null }
   /** No sends the correction: the land map's area counts until it is checked. */
   road: { answer: YesNo | null }
-  /** Yes: GSA moves his edge back to the neighbour's line. No: both declarations are kept until the payments office checks. */
-  upper: { answer: YesNo | null }
   /** Yes: household only, nothing to declare. */
   pigs: { answer: YesNo | null }
   /** Yes: payments go to the new account the bank reported. No: he gives the account. */
   bank: { answer: YesNo | null; account: string | null }
-  /** Yes: he will mow or graze it. No: the meadow is left out this year. */
-  meadow: { answer: YesNo | null }
   /** Yes: he farms the parcel he bought, and adds it as a field. No: it stays out of this application. */
   bought: { answer: YesNo | null }
   newFields: NewField[]
@@ -89,7 +87,7 @@ export interface AdvisorLogEntry {
 }
 
 export interface AppState {
-  version: 13
+  version: 14
   scenarioId: ScenarioId
   role: Role
   /** Jelena's work on escalated cases. */
@@ -112,11 +110,9 @@ export type Action =
   | { type: 'answer_river'; answer: YesNo }
   | { type: 'set_split'; split: Split | null }
   | { type: 'answer_road'; answer: YesNo }
-  | { type: 'answer_upper'; answer: YesNo }
   | { type: 'answer_pigs'; answer: YesNo }
   | { type: 'answer_bank'; answer: YesNo }
   | { type: 'set_bank_account'; account: string }
-  | { type: 'answer_meadow'; answer: YesNo }
   | { type: 'answer_bought'; answer: YesNo }
   | { type: 'save_field'; field: NewField }
   | { type: 'remove_field'; id: string }

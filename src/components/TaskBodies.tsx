@@ -194,8 +194,8 @@ function PigsBody() {
 }
 
 /** The facts a map change needs before he answers: the size of the strip and what it does to the payment. */
-export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upper' }) {
-  const { derived, state } = useApp()
+export function MapFacts({ id }: { id: 'field_river' | 'field_road' }) {
+  const { derived } = useApp()
   const s = derived.scenario
   const field = s.fields.find((f) => `field_${f.id}` === id)!
   const signal = field.signal
@@ -204,14 +204,6 @@ export function MapFacts({ id }: { id: 'field_river' | 'field_road' | 'field_upp
       <ul className="facts">
         <li>{tasks.road.area(formatHa(field.areaHa), formatHa(roundHa(field.areaHa - signal.stripHa)))}</li>
         <li>{tasks.road.payment(about(impactOf(s, signal.stripHa, 'road_took_area').amountDinars))}</li>
-      </ul>
-    )
-  }
-  if (signal?.kind === 'overlap' && state.answers.upper.answer === null) {
-    return (
-      <ul className="facts">
-        <li>{tasks.upper.overlap(formatHa(signal.overlapHa))}</li>
-        <li>{tasks.road.payment(about(impactOf(s, signal.overlapHa, 'overlap_removed').amountDinars))}</li>
       </ul>
     )
   }
@@ -247,10 +239,9 @@ export function RoadDispute() {
 export const herdSettled = (jelena: boolean, reg: number) => tasks.herd.settled(reg, jelena ? tasks.herd.withJelena : tasks.herd.registryOnly)
 
 /** What GSA found, said in one line, with when: a possibility at most, never what it means. */
-export function mapContext(s: Derived['scenario'], id: 'field_river' | 'field_road' | 'field_upper') {
+export function mapContext(s: Derived['scenario'], id: 'field_river' | 'field_road') {
   const sig = s.fields.find((f) => `field_${f.id}` === id)?.signal
   if (sig?.kind === 'road_strip') return tasks.road.context(formatDateYear(sig.seen))
-  if (sig?.kind === 'overlap') return tasks.upper.context(formatDateYear(sig.seen))
   return tasks.river.context
 }
 
@@ -258,7 +249,7 @@ export function mapContext(s: Derived['scenario'], id: 'field_river' | 'field_ro
  * A change on the land shows the place, not a description: a still picture of the satellite photo with
  * what changed highlighted, the facts, and one way in: review the boundary on the map.
  */
-function MapChangeCard({ id }: { id: 'field_river' | 'field_road' | 'field_upper' }) {
+function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
   const { derived, state, go } = useApp()
   const fieldId = id.slice(6) as FieldId
   const item = itemOf(derived, id)
@@ -303,28 +294,6 @@ function ConfirmButton({ id, what }: { id: ItemId; what: Confirmable }) {
   const { derived, dispatch } = useApp()
   if (itemOf(derived, id).status !== 'action_required') return null
   return <Primary onClick={() => dispatch({ type: 'confirm', what })}>{tasks.confirm}</Primary>
-}
-
-/** Fields with nothing new: on the map he can move around, named, confirmed in one tap. */
-function FieldsBody() {
-  const { derived } = useApp()
-  const s = derived.scenario
-  const same = s.fields.filter((f) => !f.signal)
-  return (
-    <Stack gap="section">
-      <Suspense fallback={<MapFallback mode="explore" />}>
-        <FarmMap scenario={s} only={same.map((f) => f.id)} mode="explore" label={map.title} />
-      </Suspense>
-      <ul className="plain-list">
-        {same.map((f) => (
-          <li key={f.id}>
-            <strong>{en.fields[f.id]}</strong> {tasks.fields.row(formatHa(f.areaHa), en.crops[f.cropLastYear])}
-          </li>
-        ))}
-      </ul>
-      <ConfirmButton id="fields_other" what="fields_other" />
-    </Stack>
-  )
 }
 
 /**
@@ -440,33 +409,6 @@ function CalvingsBody() {
   )
 }
 
-/** What the state checks this year, and the question about this year: one timeframe. */
-function MeadowBody() {
-  const { derived, state, dispatch } = useApp()
-  const a = state.answers.meadow
-  const m = tasks.meadow
-  return (
-    <Stack gap="section">
-      {a.answer === null && (
-        <Text>
-          {m.rule} <Note kind="assumption" />
-        </Text>
-      )}
-      <figure className="map-figure">
-        <Suspense fallback={<MapFallback mode="preview" />}>
-          <FarmMap scenario={derived.scenario} focus="meadow" mode="preview" label={`${map.title}: ${en.fields.meadow}`} />
-        </Suspense>
-      </figure>
-      <Question
-        legend={m.question}
-        value={a.answer}
-        answer={a.answer === 'yes' ? m.answerYes : m.answerNo}
-        onAnswer={(answer) => dispatch({ type: 'answer_meadow', answer })}
-      />
-    </Stack>
-  )
-}
-
 // Each kind of decision gets its own body: a number, a map, a drawing, a choice of measures, a form.
 export function TaskBody({ task }: { task: Task }) {
   const id = task.id
@@ -483,10 +425,6 @@ export function TaskBody({ task }: { task: Task }) {
       return <PigsBody />
     case 'calvings':
       return <CalvingsBody />
-    case 'field_meadow':
-      return <MeadowBody />
-    case 'fields_other':
-      return <FieldsBody />
     case 'field_bought':
       return <BoughtBody Question={Question} />
     case 'measures':
@@ -520,10 +458,6 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       if (item.status !== 'awaiting_verification') return tasks.calvings.done(s.herd!.cowsCalved)
       return v ? tasks.calvings.askedWith(v, s.herd!.cowsCalved) : tasks.calvings.asked(s.herd!.cowsCalved)
     }
-    case 'field_meadow':
-      if (item.detail === 'meadow_kept') return tasks.meadow.kept
-      if (item.detail === 'meadow_out') return tasks.meadow.out(formatHa(item.paymentImpact?.areaHa ?? 0))
-      return tasks.meadow.rule
     case 'herd': {
       const h = s.herd!
       if (item.detail === 'herd_settled') return tasks.herd.outcome[milanOutcome(state) ?? 'kept'](state.answers.herd.ownCount ?? h.registryCount, h.registryCount)
@@ -551,16 +485,6 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
       if (item.detail === 'pigs_household') return tasks.pigs.household
       if (item.detail === 'pigs_declared') return tasks.pigs.declared(s.pigs!.registryCount)
       return tasks.pigs.context(s.pigs!.registryCount)
-    case 'field_upper': {
-      const f = s.fields.find((x) => x.id === 'upper')!
-      if (item.detail === 'upper_moved' && f.signal?.kind === 'overlap') return tasks.upper.moved(formatHa(roundHa(f.areaHa - f.signal.overlapHa)))
-      if (item.detail === 'upper_disputed') return tasks.upper.disputed
-      return mapContext(s, id)
-    }
-    case 'fields_other': {
-      const names = s.fields.filter((f) => !f.signal).map((f) => en.fields[f.id]).join(', ')
-      return names
-    }
     case 'field_bought':
       if (item.detail === 'bought_not_farmed') return tasks.bought.notFarmed
       if (item.detail === 'bought_needs_field') return tasks.work.bought_add

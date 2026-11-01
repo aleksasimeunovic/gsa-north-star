@@ -80,18 +80,15 @@
 .answer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 12px 16px; border-radius: 16px; background: var(--muted); }
 .answer strong { color: var(--foreground); }
 
-/* What his last answer changed: a toast in the lower right, above the action bar, with Undo */
-.toast { position: fixed; z-index: 45; right: 16px; bottom: 88px; width: min(440px, calc(100vw - 32px)); display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); border-radius: 16px; background: var(--foreground); color: #fff; box-shadow: 0 12px 32px -8px rgb(28 42 34 / 0.4); }
-@media (max-width: 639px) { .toast { bottom: 136px; } }
-.toast-icon { display: inline-flex; margin-top: 10px; color: var(--forest-100); }
-.toast-icon svg path { stroke: var(--foreground); }
-.toast-body { flex: 1; min-width: 0; padding: 10px 0; display: flex; flex-direction: column; gap: var(--space-1); }
-.toast-title { font-size: 0.9375rem; font-weight: 500; }
-.toast-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.8125rem; color: color-mix(in oklch, #fff 72%, transparent); }
-.toast-actions { display: flex; align-items: center; gap: var(--space-1); flex: none; }
-.toast-actions button { color: #fff; }
-.toast-actions button:hover { background: color-mix(in oklch, #fff 12%, transparent); }
-.toast-actions [data-variant='link'], .toast-actions a { color: var(--forest-100); }
+/* What his last answer did: one line in the lower right, above the action bar. Undo and close are the same control. */
+.toast { position: fixed; z-index: 45; right: 16px; bottom: 88px; max-width: calc(100vw - 32px); display: inline-flex; gap: var(--space-1); align-items: center; padding: 6px 6px 6px var(--space-4); border-radius: 12px; background: var(--foreground); color: #fff; box-shadow: 0 12px 32px -8px rgb(28 42 34 / 0.4); }
+/* On a phone it sits at the top, so it never covers the action he needs next */
+@media (max-width: 639px) { .toast { top: calc(var(--topbar-h) + var(--space-1)); bottom: auto; left: 16px; right: 16px; } .toast-title { flex: 1; } }
+.toast-title { font-size: 0.875rem; font-weight: 500; margin-right: var(--space-3); }
+.toast-action { flex: none; min-width: 36px; min-height: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: none; color: #fff; font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background-color 0.15s; }
+.toast-action:hover { background: rgb(255 255 255 / 0.14); }
+.toast-action:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+@media (pointer: coarse) { .toast-action { min-width: 44px; min-height: 44px; } }
 @media (prefers-reduced-motion: no-preference) {
   .toast { animation: toast-in 0.25s ease-out; }
   @keyframes toast-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -172,31 +169,77 @@ button.drawer-row:hover { background: var(--hover); }
 .map-figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .map-frame { position: relative; display: flex; flex-direction: column; gap: 8px; }
 /* When the photo was taken: on every map, over the photo */
-.map-date { position: absolute; left: 8px; bottom: 8px; z-index: 1; margin: 0; padding: 2px 8px; border-radius: 8px; background: rgb(0 0 0 / 0.65); color: #fff; font-size: 0.75rem; line-height: 1.5; pointer-events: none; }
+.map-date { position: absolute; right: 8px; top: 8px; z-index: 1; margin: 0; padding: 2px 8px; border-radius: 8px; background: rgb(0 0 0 / 0.65); color: #fff; font-size: 0.75rem; line-height: 1.5; pointer-events: none; }
 .map-link { cursor: pointer; border-radius: 16px; transition: box-shadow 0.15s; }
 .map-link:hover { box-shadow: 0 0 0 3px var(--border); }
 .farm-map { width: 100%; height: 220px; position: relative; background: var(--foreground); border-radius: 16px; overflow: hidden; }
 .map-frame[data-mode='explore'] .farm-map, .farm-map[data-mode='draw'] { height: clamp(260px, 42vh, 520px); touch-action: none; }
 @media (min-width: 768px) { .map-frame[data-mode='explore'] .farm-map, .farm-map[data-mode='draw'] { height: clamp(320px, 50vh, 560px); } }
-.map-frame[data-size='large'] .farm-map { height: 78vh; }
 @media (min-width: 1024px) { .map-frame[data-mode='preview'] .farm-map { height: 260px; } }
 .farm-map[data-loading] { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.875rem; }
 .farm-map:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
-.farm-map .ol-zoom { top: 12px; left: 12px; }
-.farm-map .ol-zoom button { width: 44px; height: 44px; font-size: 1.375rem; line-height: 1; margin: 0 0 8px; background: var(--card); color: var(--foreground); border: 0; border-radius: 12px; box-shadow: var(--shadow-card); cursor: pointer; }
+.farm-map .ol-zoom { top: 12px; left: 12px; display: flex; flex-direction: column; gap: var(--space-2); }
+.farm-map .ol-zoom button, .map-tool { width: var(--map-tool); height: var(--map-tool); display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; font-size: 1.25rem; font-weight: 400; line-height: 1; background: var(--card); color: var(--foreground); border: 0; border-radius: 10px; box-shadow: var(--shadow-card); cursor: pointer; transition: background-color 0.15s; }
+.farm-map .ol-zoom button:hover, .farm-map .ol-zoom button:focus, .map-tool:hover { background: var(--hover); color: var(--foreground); outline: none; }
+.farm-map .ol-zoom button:focus-visible, .map-tool:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .farm-map .ol-control { background: none; padding: 0; }
 .farm-map .ol-attribution { font-size: 0.6875rem; }
 .farm-map .ol-attribution ul { background: rgb(255 255 255 / 0.85); padding: 0 8px; border-radius: 8px; }
-.map-tools { display: flex; flex-wrap: wrap; gap: 8px; }
-/* Map handles are controls, not actions: white and dark, never the primary green */
-.map-handle { width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 4px solid var(--foreground); box-shadow: 0 2px 8px rgb(0 0 0 / 0.3); cursor: grab; touch-action: none; }
+.map-frame { --map-tool: 36px; }
+@media (pointer: coarse) { .map-frame { --map-tool: 44px; } }
+/* Under the zoom buttons */
+.map-tools { position: absolute; z-index: 2; top: calc(12px + 2 * var(--map-tool) + 2 * var(--space-2)); left: 12px; display: flex; flex-direction: column; gap: var(--space-2); }
+/* Handles are small marks in a large hit area, so they never cover the edge he is checking. White and dark, never the primary green. */
+.map-handle { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
+.map-handle::before { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); transition: transform 0.1s; }
+.map-handle:hover::before { transform: scale(1.25); }
+.map-handle:active { cursor: grabbing; }
 /* The ends slide along the field's edge, so they look like something on a rail: square, not round */
-.map-handle[data-end] { border-radius: 12px; }
-.map-handle:focus-visible { outline: 3px dashed #fff; outline-offset: 3px; }
+.map-handle[data-end]::before { border-radius: 3px; }
+.map-handle[data-selected]::before { background: var(--foreground); box-shadow: 0 0 0 3px #fff, 0 1px 4px rgb(0 0 0 / 0.4); }
+.map-handle:focus { outline: none; }
+.map-handle:focus-visible::before { outline: 2px dashed #fff; outline-offset: 5px; }
+/* A dot on the line where a press would pull it */
+.map-ghost { width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground); opacity: 0.85; pointer-events: none; }
+/* Notes on the photo: readable on any field, and they never catch a press */
+.map-chip { padding: 3px 8px; border-radius: 8px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; white-space: nowrap; pointer-events: none; }
+.map-chip[hidden] { display: none; }
+/* The tools for what he is doing: floating over the bottom of the map, always in the same place */
+.map-dock { position: absolute; z-index: 2; left: 8px; right: 8px; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); pointer-events: none; }
+.map-dock > * { pointer-events: auto; max-width: 100%; }
+.map-dock > [aria-live] { pointer-events: none; }
+.tool-island { display: inline-flex; align-items: center; gap: 2px; padding: 6px; border-radius: 18px; background: var(--card); box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.tool-island[data-switch] { padding: 4px; border-radius: 14px; }
+.tool { width: 72px; height: 56px; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 0; border-radius: 12px; background: none; color: var(--foreground); font: inherit; cursor: pointer; transition: background-color 0.15s; }
+.tool span { font-size: 0.75rem; font-weight: 500; line-height: 1.25; color: var(--muted-foreground); white-space: nowrap; }
+.tool:hover { background: var(--hover); }
+.tool[data-on] { background: var(--foreground); color: #fff; }
+.tool[data-on] span { color: #fff; }
+.tool:disabled { color: var(--input); cursor: default; background: none; }
+.tool:disabled span { color: var(--input); }
+.tool:focus-visible, .tool-option:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.tool-divider { width: 1px; height: 32px; flex: none; margin: 0 2px; background: var(--border); }
+.tool-option { padding: var(--space-2) var(--space-3); border: 0; border-radius: 10px; background: none; color: var(--foreground); font: inherit; font-size: 0.8125rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 0.15s; }
+.tool-option:hover { background: var(--hover); }
+.tool-option[aria-pressed='true'] { background: var(--foreground); color: #fff; }
+/* Why the line stopped, right where he is working */
+.map-status { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.map-status svg { flex: none; color: var(--warning); }
+.tool-slider { display: flex; align-items: center; gap: var(--space-3); width: min(420px, 100%); padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--card); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.tool-slider input { flex: 1; min-width: 0; accent-color: var(--foreground); }
+/* A phone has no room for six captions: undo, redo and reset are known by their icons */
+@media (max-width: 639px) {
+  .tool-island { padding: 4px; gap: 0; }
+  .tool { width: 62px; height: 52px; }
+  .tool span { font-size: 0.6875rem; }
+  .tool[data-short] { width: 40px; }
+  .tool[data-short] span { display: none; }
+  .tool-divider { display: none; }
+  .tool-option { padding: var(--space-2); font-size: 0.75rem; }
+}
 .split-head { display: flex; flex-direction: column; gap: var(--space-1); }
-.split-help { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); }
-.map-switch { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
-.map-switch button[aria-pressed='true'] { border-color: var(--foreground); box-shadow: inset 0 0 0 1px var(--foreground); }
+/* The step's actions: back beside it, the way forward filling the rest */
+.stage-action [data-variant='primary'] { flex: 1; }
 
 /* A large map with the question built in: the map fills the screen between the stepper and the action bar */
 /* The map screen is exactly the window: header, stepper, the stage filling the rest, the action bar. Nothing scrolls but the panel. */
@@ -211,23 +254,24 @@ button.drawer-row:hover { background: var(--hover); }
 /* Answers stacked in the narrow panel, so each reads in one line */
 .map-stage-panel [role='group'] > .grid { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 1023px) {
-  /* Below the map on a phone: the map takes what the panel doesn't need, the panel at most two thirds */
-  .map-stage { display: flex; flex-direction: column; }
-  .map-stage-map { flex: 1 1 auto; min-height: 200px; }
-  .map-stage[data-working] .review-head, .map-stage[data-working] .answer > span:first-child, .split-state { display: none; }
+  /* Below the map on a phone: a tall map, then the panel, and the page scrolls as one, so nothing is clipped inside a small box */
+  .page[data-screen='review'] { height: auto; display: block; overflow: visible; }
+  .map-stage { display: flex; flex-direction: column; height: auto; }
+  .map-stage-map { flex: none; height: 48dvh; min-height: 300px; }
   /* While he works on the line the map is what matters: the panel keeps to what he needs */
-  .map-stage[data-working] .map-stage-map { min-height: 280px; }
+  .map-stage[data-working] .map-stage-map { height: 56dvh; }
+  .map-stage[data-working] .review-head, .map-stage[data-working] .answer > span:first-child, .map-stage[data-working] .split-lead { display: none; }
   .split-head h2 { font-size: 1.125rem; line-height: 1.3; }
-  .map-stage-panel { flex: 0 1 auto; max-height: 66%; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--space-4); }
+  .map-stage-panel { overflow: visible; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--space-4); }
+  .map-stage-panel .stage-action { position: static; }
+  .map-stage-panel::after { display: none; }
 }
 .map-frame[data-fill] { height: 100%; position: relative; }
 .map-frame[data-fill] .farm-map, .map-frame[data-fill] .farm-map[data-mode='draw'] { height: 100%; border-radius: 0; }
-/* On the map: its tools sit in the top right corner, over the photo */
-.map-frame[data-fill] .map-tools { position: absolute; z-index: 2; top: 12px; right: 12px; justify-content: flex-end; }
-.map-frame[data-fill] .map-tools button { box-shadow: var(--shadow-card); border-color: transparent; }
-@media (max-width: 639px) { .map-frame[data-fill] .map-tools button { font-size: 0; gap: 0; padding: 0 12px; } }
 /* The answer stays in view: pinned to the bottom of the panel (or of the task card, above the action bar) */
-.stage-action { position: sticky; bottom: 0; z-index: 1; margin-top: auto; padding: var(--space-4) 0 var(--space-4); background: var(--card); box-shadow: 0 -12px 12px -12px rgb(28 42 34 / 0.12); }
+.stage-action { position: sticky; bottom: 0; z-index: 1; margin-top: auto; padding: var(--space-4) 0 var(--space-4); background: var(--card); }
+/* A step in the panel fills it, so its action sits at the bottom whatever the step holds */
+.map-stage-panel > div:has(> .stage-action) { flex: 1; }
 .next .stage-action { bottom: var(--bar-h); margin: 0 calc(-1 * var(--space-8)); padding: var(--space-4) var(--space-8); }
 @media (max-width: 639px) { .next .stage-action { margin: 0 calc(-1 * var(--space-5)); padding: var(--space-4) var(--space-5); } }
 /* An action that ends the card ends it: the card's own padding doesn't add to the action's. */

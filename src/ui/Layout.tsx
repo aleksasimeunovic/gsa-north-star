@@ -30,7 +30,7 @@ export function Compare({ items, long }: { items: { label: string; value: ReactN
       {items.map((i) => (
         <div key={i.label} className="rounded-xl bg-muted px-4 py-3">
           <dt className="text-sm text-muted-foreground">{i.label}</dt>
-          <dd className="text-2xl font-semibold tracking-tight [&_p]:text-sm [&_p]:font-normal">{i.value}</dd>
+          <dd className="text-lg leading-snug font-semibold [&_p]:text-sm [&_p]:font-normal">{i.value}</dd>
         </div>
       ))}
     </dl>

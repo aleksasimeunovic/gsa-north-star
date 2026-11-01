@@ -14,10 +14,10 @@ export const run = (scenarioId: ScenarioId, ...actions: Action[]) => derive(play
 /** Last year's two measures, chosen again. */
 export const lastYear: Action = { type: 'choose_measures', chosen: ['plant_production', 'cows_raising_calves'] }
 
-/** Split the river field across the middle, as Milan would. */
+/** Split the river field, as Milan would. */
 export const halfSplit = (crops: [PartCrop | null, PartCrop | null] = ['sunflower', 'wheat']): Action => ({
   type: 'set_split',
-  split: { line: [{ x: 0, y: 60 }, { x: 200, y: 60 }], crops },
+  split: { line: [{ x: 149, y: 22 }, { x: 278, y: 10 }], crops },
 })
 
 /** Every part answered the simple way and the rest confirmed: nothing left before submitting. */
@@ -28,10 +28,7 @@ export const ready: Action[] = [
   { type: 'answer_river', answer: 'yes' },
   halfSplit(),
   { type: 'answer_road', answer: 'yes' },
-  { type: 'answer_upper', answer: 'yes' },
-  { type: 'answer_meadow', answer: 'yes' },
   { type: 'answer_bought', answer: 'no' },
-  { type: 'confirm', what: 'fields_other' },
   { type: 'choose_measures', chosen: ['plant_production', 'cows_raising_calves'] },
   { type: 'attach_document', documentId: 'unreadable_receipt' },
   { type: 'confirm', what: 'receipts' },

@@ -1,6 +1,6 @@
-import type { Crop, PartCrop, Polygon, Scenario } from '../data/scenarios'
+import type { Crop, Field, PartCrop, Polygon, Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import { partNames, polygonAreaHa, roundHa, splitField, type PartName, type SplitLine } from './geometry'
+import { partNames, roundHa, splitField, type PartName, type SplitLine } from './geometry'
 import { fitting, riverSplitComplete, type Item, type ItemId } from './status'
 
 /**
@@ -43,11 +43,11 @@ export function riverParts(s: Scenario, a: Answers): RiverPart[] | null {
   const field = s.fields.find((f) => f.id === 'river')
   const split = a.river.split
   if (!field || !split || a.river.answer !== 'yes' || !riverSplitComplete(s, a)) return null
-  return partsOf(field.polygon, split.line, split.crops as [PartCrop, PartCrop])
+  return partsOf(field, split.line, split.crops as [PartCrop, PartCrop])
 }
 
-function partsOf(polygon: Polygon, line: SplitLine, crops: [PartCrop, PartCrop]): RiverPart[] | null {
-  const r = splitField(polygon, line)
+function partsOf({ polygon, areaHa }: Field, line: SplitLine, crops: [PartCrop, PartCrop]): RiverPart[] | null {
+  const r = splitField(polygon, line, areaHa)
   if (!r) return null
   const names = partNames(r.parts)
   const parts = ([0, 1] as const).map((i) => ({ id: `river:${names[i]}`, name: names[i], ha: r.areasHa[i], crop: crops[i], polygon: r.parts[i] }))
@@ -89,7 +89,7 @@ export interface SplitEffects {
 
 export function splitEffects(s: Scenario, a: Answers, split: NonNullable<Answers['river']['split']>): SplitEffects | null {
   const field = s.fields.find((f) => f.id === 'river')!
-  const parts = partsOf(field.polygon, split.line, split.crops as [PartCrop, PartCrop])
+  const parts = partsOf(field, split.line, split.crops as [PartCrop, PartCrop])
   if (!parts) return null
   const lostHa = parts.find((p) => p.crop === 'unsown')?.ha ?? 0
   const rate = s.measures.find((m) => m.id === 'plant_production')?.rateDinars ?? 0
@@ -124,13 +124,13 @@ export function farmPicture(s: Scenario, a: Answers, items: Item[]): FarmPicture
 
   // Fields he added this year, the parcel he bought among them.
   for (const f of a.newFields) {
-    const ha = roundHa(polygonAreaHa(f.polygon))
+    const ha = roundHa(f.areaHa)
     total += ha
     add(f.crop, ha)
   }
 
-  // Each field is confirmed by its own question, or by "same as last year" for the unchanged ones.
-  const fieldItems = s.fields.map((f) => (f.signal ? item(`field_${f.id}` as ItemId) : item('fields_other')))
+  // A field with a change is confirmed by its own question; the unchanged ones are reused without asking.
+  const fieldItems = s.fields.filter((f) => f.signal).map((f) => item(`field_${f.id}` as ItemId))
   const herd = item('herd')
   const pigs = item('pigs')
   return {

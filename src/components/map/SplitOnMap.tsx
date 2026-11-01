@@ -2,48 +2,72 @@ import Feature from 'ol/Feature'
 import Overlay from 'ol/Overlay'
 import type Geometry from 'ol/geom/Geometry'
 import LineString from 'ol/geom/LineString'
-import OlPoint from 'ol/geom/Point'
 import PointerInteraction from 'ol/interaction/Pointer'
 import { useEffect, useRef } from 'react'
 import { split as copy } from '../../copy/en'
 import type { Field, Point } from '../../data/scenarios'
-import { centroid, pointInPolygon } from '../../logic/geometry'
-import { labelStyle, mapStyle } from '../../ui/mapStyles'
-import { splitMoves, type SplitDraft } from '../SplitTool'
+import { centroid, followsEdge, nearestOnLine, pointInPolygon } from '../../logic/geometry'
+import { mapStyle } from '../../ui/mapStyles'
+import { edgeOf, splitMoves, type SplitDraft } from '../SplitTool'
 import type { FarmMap } from './olFarm'
 
 const round = (p: Point): Point => ({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 })
 
 /**
- * The line across the field on the satellite photo, with what's written on each part. He pulls the line
- * anywhere and it bends there; each bend and each end is a large handle, and arrow keys move whichever has
- * focus. Dragging anywhere else moves the map. Once the line is settled, a tap on a part picks that part.
+ * The line across the field on the satellite photo, with each part's size written on it. He pulls the line
+ * anywhere and it bends there; each bend and each end is a small handle with a large hit area, and arrow keys
+ * move whichever has focus. Dragging anywhere else moves the map. Once the line is settled, a tap on a part
+ * picks that part. With Snap on, the edge in the photo shows as a dashed guide once the line has left it.
  */
 export function SplitOnMap({ fm, field, d, interactive, labels, onPickPart }: { fm: FarmMap; field: Field; d: SplitDraft; interactive: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }) {
   const latest = useRef({ d, moves: splitMoves(field, d), onPickPart })
   latest.current = { d, moves: splitMoves(field, d), onPickPart }
   const handles = useRef<Overlay[]>([])
+  const chips = useRef<Overlay[]>([])
   const r = d.result
   const line = d.draft.line
   const key = JSON.stringify(line)
   const count = line.length
+  const edge = edgeOf(field)
+  const guide = interactive && d.snap && !followsEdge(line, edge)
 
-  // The line and what's written on each part, redrawn as it moves.
+  // What's written on each part: two chips over the photo that never catch a press.
+  useEffect(() => {
+    chips.current = [0, 1].map(() => {
+      const el = document.createElement('div')
+      el.className = 'map-chip'
+      const o = new Overlay({ element: el, positioning: 'center-center', stopEvent: false })
+      fm.map.addOverlay(o)
+      return o
+    })
+    return () => {
+      chips.current.forEach((o) => fm.map.removeOverlay(o))
+      chips.current = []
+    }
+  }, [fm])
+
+  // The line, redrawn as it moves.
   useEffect(() => {
     fm.extra.clear()
     if (!r) return
+    if (guide) {
+      const g = new Feature<Geometry>(new LineString(edge.map(fm.coord)))
+      g.setStyle(mapStyle('guide'))
+      fm.extra.addFeature(g)
+    }
     const f = new Feature<Geometry>(new LineString(line.map(fm.coord)))
     f.setStyle(mapStyle('split'))
     f.set('split', true)
     fm.extra.addFeature(f)
     r.parts.forEach((part, i) => {
-      const at = new Feature<Geometry>(new OlPoint(fm.coord(centroid(part))))
-      at.setStyle(labelStyle(labels[i], { size: 16 }))
-      fm.extra.addFeature(at)
+      const chip = chips.current[i]
+      if (!chip) return
+      chip.setPosition(fm.coord(centroid(part)))
+      chip.getElement()!.textContent = labels[i]
     })
     handles.current.forEach((o, i) => line[i] && o.setPosition(fm.coord(line[i])))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fm, key, labels[0], labels[1], !!r])
+  }, [fm, key, labels[0], labels[1], !!r, guide])
 
   useEffect(() => () => fm.extra.clear(), [fm])
 
@@ -96,16 +120,26 @@ export function SplitOnMap({ fm, field, d, interactive, labels, onPickPart }: { 
     }
   }, [fm, interactive, count])
 
+  // The bend he is working on looks selected.
+  useEffect(() => {
+    handles.current.forEach((o, i) => {
+      const el = o.getElement()
+      if (el) el.toggleAttribute('data-selected', i === d.bend)
+    })
+  }, [d.bend, count])
+
   // Pulling the line: pressing anywhere on it makes a bend there, or takes the one he pressed near.
   useEffect(() => {
     if (!interactive) return
     let bend: number | null = null
-    const onLine = (pixel: number[]) => !!fm.map.forEachFeatureAtPixel(pixel, (f) => f.get('split') || undefined, { hitTolerance: 18 })
+    const onLine = (pixel: number[]) => !!fm.map.forEachFeatureAtPixel(pixel, (f) => f.get('split') || undefined, { hitTolerance: 14 })
     const along = new PointerInteraction({
       handleDownEvent: (e) => {
         if (!onLine(e.pixel)) return false
         bend = latest.current.moves.pull(round(fm.point(e.coordinate)))
-        return bend !== null
+        ghost.setPosition(undefined)
+        // A press on the line never moves the map, even when the line can't bend.
+        return true
       },
       handleDragEvent: (e) => {
         if (bend !== null) latest.current.moves.movePoint(bend, round(fm.point(e.coordinate)), false)
@@ -117,13 +151,22 @@ export function SplitOnMap({ fm, field, d, interactive, labels, onPickPart }: { 
       },
     })
     fm.map.addInteraction(along)
-    const cursor = (e: { pixel: number[]; dragging: boolean }) => {
-      if (!e.dragging) fm.map.getViewport().style.cursor = onLine(e.pixel) ? 'grab' : ''
+    // A small dot follows the pointer along the line, to show it can be pulled from anywhere.
+    const dot = document.createElement('div')
+    dot.className = 'map-ghost'
+    const ghost = new Overlay({ element: dot, positioning: 'center-center', stopEvent: false })
+    fm.map.addOverlay(ghost)
+    const hover = (e: { pixel: number[]; coordinate: number[]; dragging: boolean }) => {
+      if (e.dragging) return
+      const pullable = onLine(e.pixel) && !latest.current.d.straight
+      fm.map.getViewport().style.cursor = pullable ? 'grab' : ''
+      ghost.setPosition(pullable ? fm.coord(nearestOnLine(latest.current.d.draft.line, fm.point(e.coordinate))) : undefined)
     }
-    fm.map.on('pointermove', cursor)
+    fm.map.on('pointermove', hover)
     return () => {
       fm.map.removeInteraction(along)
-      fm.map.un('pointermove', cursor)
+      fm.map.removeOverlay(ghost)
+      fm.map.un('pointermove', hover)
     }
   }, [fm, interactive])
 

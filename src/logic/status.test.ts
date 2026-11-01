@@ -17,10 +17,7 @@ describe('status per item', () => {
       ['pigs', 'action_required'],
       ['field_river', 'action_required'],
       ['field_road', 'action_required'],
-      ['field_upper', 'action_required'],
-      ['field_meadow', 'action_required'],
       ['field_bought', 'action_required'],
-      ['fields_other', 'action_required'],
       ['measures', 'action_required'],
       ['receipts', 'action_required'],
     ])
@@ -35,13 +32,6 @@ describe('status per item', () => {
   it('cows that calved: confirmed, or checked by the registry without blocking', () => {
     expect(run('second_year').items.some((i) => i.id === 'calvings')).toBe(false)
     expect(item(run('second_year', { type: 'ask_record_check', itemId: 'calvings' }), 'calvings').status).toBe('awaiting_verification')
-  })
-
-  it('meadow: yes keeps it; no leaves it out, complete but 1.50 ha less', () => {
-    expect(item(run('second_year', { type: 'answer_meadow', answer: 'yes' }), 'field_meadow').detail).toBe('meadow_kept')
-    const out = item(run('second_year', { type: 'answer_meadow', answer: 'no' }), 'field_meadow')
-    expect(out.status).toBe('complete')
-    expect(out.paymentImpact).toEqual({ amountDinars: -27_000, areaHa: 1.5, reason: 'meadow_out' })
   })
 
   it('choosing a measure GSA suggested fills in nothing for him: only Milan declares', () => {
@@ -61,10 +51,6 @@ describe('status per item', () => {
     expect(item(run('second_year', { type: 'confirm', what: 'receipts' }), 'receipts').detail).toBe('receipts_unreadable')
     const r = run('second_year', { type: 'attach_document', documentId: 'unreadable_receipt' })
     expect(item(r, 'receipts')).toMatchObject({ status: 'action_required', detail: 'receipts_to_confirm' })
-  })
-
-  it('confirming an unchanged thing completes it', () => {
-    expect(item(run('second_year', { type: 'confirm', what: 'fields_other' }), 'fields_other').detail).toBe('fields_confirmed')
   })
 
   it('a correction to his details waits for the record owner and does not block', () => {
@@ -128,16 +114,6 @@ describe('status per item', () => {
     expect(item(run('second_year', { type: 'answer_pigs', answer: 'no' }), 'pigs').detail).toBe('pigs_declared')
   })
 
-  it("upper yes: complete, the neighbour's strip lowers the payment", () => {
-    const u = item(run('second_year', { type: 'answer_upper', answer: 'yes' }), 'field_upper')
-    expect(u.status).toBe('complete')
-    expect(u.paymentImpact).toEqual({ amountDinars: -1_800, areaHa: 0.1, reason: 'overlap_removed' })
-  })
-
-  it('upper no: both declarations are kept and it waits for a check, without blocking', () => {
-    expect(item(run('second_year', { type: 'answer_upper', answer: 'no' }), 'field_upper')).toMatchObject({ status: 'awaiting_verification', detail: 'upper_disputed', paymentImpact: { areaHa: 0.1, reason: 'overlap_pending' } })
-  })
-
   it('changing a measure after applying means applying again, and nothing he typed is lost', () => {
     const applied = play('second_year', { type: 'choose_measures', chosen: ['plant_production'] })
     const r = play('second_year', { type: 'choose_measures', chosen: ['plant_production'] }, { type: 'draft_measures', chosen: ['plant_production', 'insurance'], inputs: { 'insurance.insurer': 'DDOR' } })
@@ -174,7 +150,7 @@ describe('status per item', () => {
     expect(item(run('second_year'), 'field_bought').detail).toBe('bought_unanswered')
     expect(item(run('second_year', { type: 'answer_bought', answer: 'no' }), 'field_bought')).toEqual({ id: 'field_bought', status: 'complete', detail: 'bought_not_farmed' })
     expect(item(run('second_year', { type: 'answer_bought', answer: 'yes' }), 'field_bought').detail).toBe('bought_needs_field')
-    const field = { id: 'bought', landId: 'bought', polygon: rect(60), name: 'Lower field', crop: 'maize' as const }
+    const field = { id: 'bought', landId: 'bought', polygon: rect(60), areaHa: 0.5, name: 'Lower field', crop: 'maize' as const }
     const saved = run('second_year', { type: 'answer_bought', answer: 'yes' }, { type: 'save_field', field })
     expect(item(saved, 'field_bought').status).toBe('complete')
     // No takes the field out again.
@@ -182,7 +158,7 @@ describe('status per item', () => {
   })
 
   it('a field he adds is its own done task in Land, and removing it takes it out', () => {
-    const field = { id: 'f1', landId: 'block_5', polygon: rect(60), name: 'Rented field', crop: 'wheat' as const }
+    const field = { id: 'f1', landId: 'block_5', polygon: rect(60), areaHa: 0.5, name: 'Rented field', crop: 'wheat' as const }
     const r = run('second_year', { type: 'save_field', field })
     expect(item(r, 'added_f1')).toEqual({ id: 'added_f1', status: 'complete', detail: 'added_field' })
     expect(run('second_year', { type: 'save_field', field }, { type: 'remove_field', id: 'f1' }).items.some((i) => i.id === 'added_f1')).toBe(false)

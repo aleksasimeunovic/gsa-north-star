@@ -1,8 +1,7 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { en, formatDateYear, formatHa, map as copy } from '../../copy/en'
 import type { Field, FieldId, Polygon, Scenario } from '../../data/scenarios'
 import { riverParts } from '../../logic/farm'
-import { Button } from '../../ui/Button'
 import { Icon } from '../../ui/Icon'
 import { VisuallyHidden } from '../../ui/Layout'
 import type { SplitDraft } from '../SplitTool'
@@ -32,10 +31,12 @@ interface Props {
   onPickLand?: (id: string) => void
   /** An added field to leave out, because it is the one being changed. */
   skip?: string
+  /** The tools for what he is doing here, floating over the bottom of the map. */
+  dock?: ReactNode
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, lands, onPickLand, skip }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, lands, onPickLand, skip, dock }: Props) {
   const { state } = useApp()
   const added = state.answers.newFields
   // While he edits the split the draft is on the map; otherwise, the split he confirmed.
@@ -48,14 +49,15 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
   pick.current = onPickLand
   const el = useRef<HTMLDivElement>(null)
   const [fm, setFm] = useState<Handle | null>(null)
-  const [large, setLarge] = useState(false)
+  const [away, setAway] = useState(false)
   const keysId = useId()
   const explore = mode === 'explore'
   const onlyKey = only?.join()
+  const backLabel = focus ? copy.backTo(en.fields[focus]) : copy.backToFields
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, lands, skip, done })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, lands, skip, done, docked: !!split || !!dock, onAway: setAway })
     // A tap on registered farmland picks it: one large target, never a point to place.
     if (lands?.length) {
       h.map.on('singleclick', (e) => {
@@ -70,6 +72,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
       })
     }
     setFm(h)
+    setAway(false)
     return () => {
       setFm(null)
       h.destroy()
@@ -77,29 +80,20 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, lands?.length, skip, doneKey, splitOpen])
 
-  useEffect(() => fm?.map.updateSize(), [fm, large])
   useEffect(() => fm?.showFlag(!hideFlag), [fm, hideFlag])
 
   return (
-    <div className="map-frame" data-mode={mode} data-size={large ? 'large' : undefined} data-fill={fill || undefined}>
-      {/* Above the map (on it, when it fills a stage), so they stay put while the map moves. */}
+    <div className="map-frame" data-mode={mode} data-fill={fill || undefined}>
+      {/* Under the zoom buttons. The way back appears only once he has moved away from his field. */}
       {explore && (
         <div className="map-tools">
-          {(focus || only) && (
-            <Button onClick={() => fm?.fitHome()}>
-              <Icon name="land" />
-              {focus ? copy.backTo(en.fields[focus]) : copy.backToFields}
-            </Button>
-          )}
-          <Button onClick={() => fm?.fitFarm()}>
-            <Icon name="map" />
-            {copy.wholeFarm}
-          </Button>
-          {!fill && (
-            <Button onClick={() => setLarge(!large)}>
-              <Icon name={large ? 'smaller' : 'larger'} />
-              {large ? copy.smaller : copy.larger}
-            </Button>
+          <button type="button" className="map-tool" aria-label={copy.wholeFarm} title={copy.wholeFarm} onClick={() => fm?.fitFarm()}>
+            <Icon name="map" size="sm" />
+          </button>
+          {away && (
+            <button type="button" className="map-tool" aria-label={backLabel} title={backLabel} onClick={() => fm?.fitHome()}>
+              <Icon name="locate" size="sm" />
+            </button>
           )}
         </div>
       )}
@@ -118,6 +112,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
           <span id={keysId}>{copy.keys}</span>
         </VisuallyHidden>
       )}
+      {dock && <div className="map-dock">{dock}</div>}
       {split && fm && <SplitOnMap fm={fm} {...split} />}
     </div>
   )

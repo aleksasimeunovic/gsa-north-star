@@ -164,22 +164,24 @@ export function useRecordRows(step: StepId): RecordRow[] | null {
   }
 
   if (step === 'land') {
-    const rows: RecordRow[] = s.fields.map((f) => {
-      const id = f.signal ? `field_${f.id}` : 'fields_other'
+    // Fields with a change have their own line; the rest GSA reuses without asking, so they share one.
+    const same = s.fields.filter((f) => !f.signal)
+    const rows: RecordRow[] = s.fields.filter((f) => f.signal).map((f) => {
+      const id = `field_${f.id}`
       const it = item(id)
       const lost = it?.status === 'complete' ? (it.paymentImpact?.areaHa ?? 0) : 0
-      const out = it?.detail === 'meadow_out'
       const split = it?.detail === 'river_split_done'
       return {
         key: f.id,
         label: en.fields[f.id],
-        value: out ? copy.leftOut : split ? taskSummary(id as TaskId, derived, state) : copy.fieldValue(formatHa(roundHa(f.areaHa - lost)), en.crops[f.cropLastYear].toLowerCase()),
+        value: split ? taskSummary(id as TaskId, derived, state) : copy.fieldValue(formatHa(roundHa(f.areaHa - lost)), en.crops[f.cropLastYear].toLowerCase()),
         sub: it?.status === 'awaiting_verification' ? taskSummary(id as TaskId, derived, state) : undefined,
         source: sourceOf(id),
         edit: { open: id as TaskId },
       }
     })
-    return [...rows, ...newFieldRows(derived, state)]
+    const unchanged = { key: 'unchanged', label: copy.unchangedFields, value: copy.unchangedValue(same.length, formatHa(roundHa(same.reduce((sum, f) => sum + f.areaHa, 0)))) }
+    return [...rows, ...newFieldRows(derived, state), ...(same.length ? [unchanged] : [])]
   }
   return null
 }

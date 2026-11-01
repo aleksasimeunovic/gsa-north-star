@@ -3,7 +3,7 @@ import { Fill, Stroke, Style, Text } from 'ol/style'
 // Map styles on the satellite photo: white lines with a dark halo so they read on any field.
 // Greyscale like the rest of the prototype; the design system replaces these later.
 const white = '#fff'
-const halo = 'rgba(0,0,0,0.75)'
+const halo = 'rgba(0,0,0,0.6)'
 
 function pattern(size: number, draw: (ctx: CanvasRenderingContext2D) => void): CanvasPattern | string {
   if (typeof document === 'undefined') return 'rgba(255,255,255,0.3)'
@@ -15,10 +15,10 @@ function pattern(size: number, draw: (ctx: CanvasRenderingContext2D) => void): C
   return ctx.createPattern(c, 'repeat') ?? 'rgba(255,255,255,0.3)'
 }
 
-let patterns: { hatch: CanvasPattern | string; dots: CanvasPattern | string } | null = null
+let patterns: { hatch: CanvasPattern | string } | null = null
 const fills = () =>
   (patterns ??= {
-    // Hatched: land that changed hands (the road strip, the strip both of you declared).
+    // Hatched: land that changed hands (the road strip).
     hatch: pattern(12, (ctx) => {
       ctx.fillStyle = 'rgba(0,0,0,0.45)'
       ctx.fillRect(0, 0, 12, 12)
@@ -30,15 +30,6 @@ const fills = () =>
         ctx.lineTo(o + 12, 0)
       }
       ctx.stroke()
-    }),
-    // Dotted: what the satellite flagged.
-    dots: pattern(10, (ctx) => {
-      ctx.fillStyle = 'rgba(0,0,0,0.25)'
-      ctx.fillRect(0, 0, 10, 10)
-      ctx.fillStyle = white
-      ctx.beginPath()
-      ctx.arc(5, 5, 1.8, 0, Math.PI * 2)
-      ctx.fill()
     }),
   })
 
@@ -66,30 +57,30 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
  * - field: his field in question, or every field on the whole-farm map
  * - faint: his other fields, for orientation
  * - land: registered farmland he can put a field on
- * - neighbour: the neighbour's declared field
- * - flag / strip / overlap: what changed, patterned so it never relies on colour
+ * - flag: what the satellite flagged, a light veil and a dashed line, so the photo underneath stays readable
+ * - strip: what changed hands, hatched so it never relies on colour
  * - split: the line that splits a field
+ * - guide: the edge in the photo, once the line has left it
  * - spot: land in question that isn't his field yet (the parcel he bought)
  */
-export type MapRole = 'field' | 'faint' | 'land' | 'neighbour' | 'flag' | 'strip' | 'overlap' | 'split' | 'spot'
+export type MapRole = 'field' | 'faint' | 'land' | 'flag' | 'strip' | 'split' | 'guide' | 'spot'
 
 export function mapStyle(role: MapRole): Style[] {
   switch (role) {
     case 'field':
-      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.06)' }) }), ...line(3)]
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.04)' }) }), ...line(2.5)]
     case 'faint':
       return line(1.5, [6, 5])
     case 'land':
       return line(2, [14, 8])
-    case 'neighbour':
-      return [new Style({ fill: new Fill({ color: 'rgba(0,0,0,0.4)' }) }), ...line(1.5, [4, 4])]
     case 'flag':
-      return [new Style({ fill: new Fill({ color: fills().dots }) }), ...line(2, [8, 5])]
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.16)' }) }), ...line(2, [8, 5])]
     case 'strip':
-    case 'overlap':
       return [new Style({ fill: new Fill({ color: fills().hatch }) }), ...line(2)]
     case 'split':
-      return line(4)
+      return line(3)
+    case 'guide':
+      return line(1.5, [6, 5])
     case 'spot':
       return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.18)' }) }), ...line(3, [10, 6])]
   }

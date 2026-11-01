@@ -125,7 +125,7 @@ export function useApplicationFlow(target: string | null) {
       ...change.done.map((id) => home.announce.done(title(id))),
       ...change.waiting.map((id) => home.announce.waiting(title(id))),
       ...change.removed.map((r) => home.announce.removed(tasks.work[r.work.id])),
-      ...change.more.map((m) => afterCopy.more(tasks.work[m.work.id], afterCopy.why[m.work.id] ?? '')),
+      ...change.more.map((m) => afterCopy.more(tasks.work[m.work.id])),
     ]
     const prevFocus = shown.current
     if (prevFocus && prevFocus !== 'submit' && was.get(prevFocus) === 'action_required') {

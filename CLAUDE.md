@@ -129,17 +129,17 @@ The application is one list of named tasks. It is also the readiness view.
 | When | Then |
 |---|---|
 | The farm has nothing a task asks about | Task not in the list (no animals → no herd task) |
-| A record differs (bank account, herd, pigs, river, road, upper field, meadow) | Its own change task, opening on the evidence and the question |
-| An answer makes work unnecessary | That work leaves the list with a one-line reason |
+| A record differs (bank account, herd, pigs, river, road) | Its own change task, opening on the evidence and the question |
+| An answer makes work unnecessary | That work leaves the list, said in one short toast |
 | A task is done | It collapses to one line with its outcome |
-| Unchanged, nothing to declare this year (name, address, active farmer) | Reused without asking: not a task, not counted. One "Unchanged since last year" review on Check and submit, each item with "Something wrong? Ask for a correction" |
-| He declares it under liability, or it needs new evidence every year (cows that calved, this year's crops on unchanged fields, input receipts, the declaration) | A one-tap confirmation in its part. Never bundled. A problem with it (the blurry diesel receipt) is an action inside it |
+| Unchanged, nothing to declare this year (name, address, active farmer, fields nothing changed on) | Reused without asking: not a task, not counted. One "Unchanged since last year" review on Check and submit, each item with "Something wrong? Ask for a correction". In Land, one "Unchanged fields" line under What GSA knows |
+| He declares it under liability, or it needs new evidence every year (cows that calved, input receipts, the declaration) | A one-tap confirmation in its part. Never bundled. A problem with it (the blurry diesel receipt) is an action inside it |
 | A rule doesn't apply to his farm | Left out |
 | Choosing measures | Ones that fit come first, with the reason; full list stays |
 | Parts | The application comes in parts, in order: Your details, Animals, Land, Measures, Documents, Check and submit. Every task belongs to the part it is about. A part his farm has nothing for is left out (no animals, no Animals part). The point is not fewer steps; it is less effort per step and better, more personal questions |
 | Always | Inside the open part, exactly one next action, open, the most visible thing on screen. Once the part is done, "Continue: <next part>" is the primary action |
 | Kinds of work | Within each part, changes first because they shape the rest, then choices (measures), then yearly confirmations |
-| An answer adds work | The toast says what and why; the finish line never moves silently |
+| An answer adds work | The toast says what, in one line; the finish line never moves silently |
 | Advisor signs in | Same list, denser, what needs action first |
 
 Structure by what Milan has to accomplish, not by the smallest step count. There is no target number of steps.
@@ -152,11 +152,12 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Pigs:** the animal registry shows 3 pigs; none declared last year. Question: only for the household? (household pigs needing no declaration is an assumption).
 - **Herd:** last year declared 41 cattle. Animal registry today: 38 (registry has headcount only, no history, so never show a breakdown of movements). Milan knows why: 4 sold, 2 slaughtered, 3 calves born. 14 cows calved between 1 April 2025 and 31 March 2026.
 - **Land:** five fields, 9.00 ha total. Use local-style names:
-  - River field, 2.40 ha, wheat last year. Satellite photo: lower part looks different (about 1.18 ha; the edge is a prototype placeholder in `scenarios.ts`). The lower part floods every spring; this year sunflowers there, wheat on the rest (1.22 ha along GSA's line).
-  - Road field, 1.80 ha, maize. Land map: 0.12 ha strip now marked as road (wider road).
-  - Upper field, 2.00 ha, wheat. The neighbour's new declaration runs 5 m (0.10 ha) into last year's field. Yes: GSA moves his edge (about 1,800 dinars less). No: both declarations are kept until the payments office checks; the strip doesn't count until then.
+  - River field, 2.40 ha, wheat last year, beside the river (the tree line along its top edge). Satellite photo: the part along the river looks paler than the rest (about 1.08 ha). That ground stays wet for longer every spring; this year sunflowers there, wheat on the rest (1.32 ha along GSA's line).
+  - Road field, 1.80 ha, maize. Land map: 0.12 ha strip along the road now marked as road (wider road).
+  - Upper field, 2.00 ha, wheat. Unchanged.
   - Meadow, 1.50 ha, grassland/fodder. Unchanged.
   - House field, 1.30 ha, maize. Unchanged.
+  - Every shape is traced on the edges the real photo shows (round 14). The record's area is what counts: a shape says where the land is, and a part of a field is its share of the record's area.
 - **Measures:** 13 in the list, 10 fit his farm, 3 don't (organic, milk premium, fattening cattle). Last year he had the first two:
   - Basic support for plant production: 18,000 dinars per hectare (real 2026 rate), justified with input receipts.
   - Cows raising calves for fattening: 20,000 dinars per cow that calved 1 Apr 2025 to 31 Mar 2026 (real 2026 rate). 14 cows calved.
@@ -168,7 +169,6 @@ Use exactly these facts. Don't invent research findings or extra numbers.
 - **Added in round 5 at Aleksa's request (more problems per part):**
   - Your details: the bank closed the farm account ending 0417 on 3 March 2026 and reported a new one in his name ending 2291 (Yes: paid there; No: he types the 18-digit account). Round 10 cut the household question (grandson Luka): it changes nothing in this application.
   - Animals: the 14 cows that calved come from the animal registry; he confirms them, seeing they pay about 280,000 dinars, or asks the registry to check.
-  - Land: the state checks by satellite that the meadow is mowed or grazed at least once this year (assumption; no invented date). One timeframe: no imagery from last summer. Yes, he will; No leaves the meadow out (1.50 ha, about 27,000 dinars less).
   - Measures: GSA suggests green cover over winter (satellite: the river and upper fields stayed green all winter; suggested, with one tap "Use these fields"; the photo justifies the suggestion, never eligibility) and artificial insemination (registry: 9 inseminations by his vet since last April). Never a rate.
   - Documents: Diesel receipt.jpg is too blurry to read the amount: an error inside "Your input receipts", "Send a clearer diesel receipt".
 - **Added in round 11 at Aleksa's request (new land):**
@@ -196,21 +196,21 @@ Earl: one connected experience, not separate features. How the application chang
 ### Change cards: evidence before the question
 A card is one line of context (what GSA found, and where), the evidence, the question and the actions. The changes are different kinds of decision, so the cards differ:
 - **Herd and pigs:** a number is easy to check, so the card stays a simple confirm. Last year 41, registry today 38, yes or no. No invented breakdown.
-- **Map changes (river field, road strip, upper field):** the card shows the place, not a description: a small preview on the satellite photo with the affected area highlighted. The road card shows the exact strip, its size (0.12 ha) and the payment impact (about 2,200 dinars less). The primary action is **"Review this boundary"**, which opens the map at that area; he answers there.
+- **Map changes (river field, road strip):** the card shows the place, not a description: a small preview on the satellite photo with the affected area highlighted. The road card shows the exact strip, its size (0.12 ha) and the payment impact (about 2,200 dinars less). The primary action is **"Review this boundary"**, which opens the map at that area; he answers there.
 
 Paths:
 - Herd yes → herd complete. Herd no → "How many cattle do you have today?" → he enters 41 → **registry 38 | you declared 41** side by side, "The registry stays the official record until it's checked", awaiting verification. The one exception and the best-designed state: it says plainly that his part is done; who settles it (the animal registry, and Jelena if he sent it); that he needs to do nothing unless they contact him; what happens next (the registry checks, its 38 counts until then, he can still submit, the result appears here). Same words wherever the herd appears.
-- River: the lower strip is greening later than the wheat above (fact). He compares last year's field with what the photo shows. "What's growing in the lower part this year?" The same as the rest → complete. Something else → three steps: where the crop changes, what grows in each part, what this changes. No third branch.
+- River: the part along the river looks paler than the rest of his wheat (fact). He compares last year's field with what the photo shows. "What's growing along the river this year?" The same as the rest → complete. Something else → three steps: where the crop changes, what grows in each part, what this changes. No third branch.
 - Road yes → complete; area and estimate drop with the reason shown. Road no → both areas kept side by side, awaiting verification, and the herd's four answers (your part, who settles it, do you need to do anything, what happens next) plus what he gains if they agree. He stays on the map to read it. The land map's area counts until checked.
 - Answers stay editable; changing one re-runs the list rules.
 
 ### Land: real maps in plain language, and the suggested split
-- Every map is OpenLayers on the real satellite photo (loaded only when a map is shown). He can pan, zoom (buttons, pinch, wheel, keyboard), go back to the field or see the whole farm. Card previews are small still pictures; the review map fills the screen with the question beside it.
-- Plain labels and clearly different boundary styles, e.g. "Land the government has registered". No technical terms. No key. Cadastral parcels kept in the data as reference, never drawn. Road strip hatched; satellite flag patterned.
+- Every map is OpenLayers on the real satellite photo (loaded only when a map is shown). He can pan, zoom (buttons, pinch, wheel, keyboard) or see the whole farm; the way back to the field appears only once he has moved away from it. Card previews are small still pictures; the review map fills the screen with the question beside it.
+- Plain labels and clearly different boundary styles, e.g. "Land the government has registered". No technical terms. No key. Cadastral parcels are never drawn. Road strip hatched; satellite flag a light veil with a dashed line, so the photo stays readable.
 - When a boundary stops an action, explain why at that moment, in place.
-- **Split (round 13, the hero):** GSA's line runs along the edge the photo shows. He presses anywhere on the line and pulls, and it bends there; round handles move bends; square handles at the ends slide along the field's edge. Near the photo's edge a bend joins it. Help: follow the edge in the photo, make the line straight, take out a bend, a slider for the whole line, arrow keys, Delete. He never places a point. A move that would make a bad line (outside the field, crossing itself, a part under 0.10 ha) stops at the last good position and the panel says why, so an invalid shape can't exist. Live areas on the map, undo once there is something to undo. Then a crop for each part (tap a part on the map; nothing sown is a choice). Then what this changes in his application, before he confirms. Nothing counts until he confirms.
+- **Split (rounds 13 and 14, the hero):** GSA's line runs along the edge the photo shows. He presses anywhere on the line and pulls, and it bends there; small round handles move bends; small square handles at the ends slide along the field's edge. The tool island floats over the bottom of the map and changes with the step: Undo and Redo never move; Snap, Straight and Slider each show on or off with a dark fill and the word; the last place is Reset, or Remove while a bend is selected. Snap on: within 6 m a bend joins the photo's edge, and a dashed guide shows that edge once the line has left it. Arrow keys, Delete and Ctrl or Cmd + Z work too. He never places a point. A move that would make a bad line (outside the field, crossing itself, a part under 0.10 ha) stops at the last good position and the line above the island says why, so an invalid shape can't exist. Live areas on the map, as River side and Road side. Then a crop for each part (tap a part on the map; nothing sown is a choice), and the island leaves. Then what this changes in his application, before he confirms. Nothing counts until he confirms.
 - **The split carries through:** every map draws it, the land list and crops show it, measures offer each part (a choice of the river field carries to both, and back), the estimate and readiness follow, all derived.
-- **No moving a field's edges (round 12, Aleksa):** no dragging of sides or edges for the upper field, the parcel he bought or a field he adds; the land is taken whole as the record has it. River and road are the hero moments; check at 360 px, then 1280.
+- **No moving a field's edges (round 12, Aleksa):** no dragging of sides or edges for the parcel he bought or a field he adds; the land is taken whole as the record has it. River and road are the hero moments; check at 360 px, then 1280.
 - **New land stays small (round 13, Earl):** adding a field is its place, name and crop. It joins his land, so measures cover it like the rest; there is no measures step of its own.
 
 ### Readiness through submit
@@ -267,6 +267,8 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 13 (Earl, 31 Oct):** go deep on one parcel delineation workflow, one meaningful exception, and how both connect to the rest of the application; no suite of GIS tools. River field in three steps with a line he pulls, the road dispute with its owner and next steps, new land reduced, exploration in `docs/parcel-exploration.html`. Next from Earl: record a walkthrough with the after story; case study needs the original interaction and observations from the 44 sessions; claims about usability need new validation.
 
+**Round 14 (Aleksa, 1 Nov, on Earl's email of 31 Oct):** deepen the one parcel workflow. Parcels traced on the real photo, and the hero is a real two-tone field beside the river. A tool island with a constant overview of what's on, after the older mobile tool island; small handles; variations and reasoning in the Figma file North Star. Land keeps three tasks: river field, road field, the parcel he bought (Upper field, Meadow and Crops on your other fields are gone). Toasts are one line, with Undo and close the same control.
+
 Prototype controls (floating "Prototype" button): persona (Milan or Jelena), design notes (off by default, so unconfirmed rules are labelled, Earl 31 Oct) and reset.
 
 ## 11. Design system
@@ -309,12 +311,13 @@ shadcn/ui components live in `src/ui/shadcn/` and our semantic primitives in `sr
 - [ ] Every problem P1 to P12 is answered somewhere in the flow.
 - [ ] `src/copy/en.ts` is shorter than at the start of the round.
 - [ ] Welcome back leads with one obvious next action, then what's done, then what can wait; a stepper of parts generated around his farm.
-- [ ] River, road and upper field cards show the place on the satellite photo; "Review this boundary" opens a map he can pan and zoom.
+- [ ] River and road cards show the place on the satellite photo; "Review this boundary" opens a map he can pan and zoom.
 - [ ] "Your farm this year" says per item where it stands: unconfirmed, confirmed by him, or waiting for a check.
 - [ ] Round 10: fewer decisions on arrival (count logged before and after); progress leads with the verdict; added work is announced with its reason.
-- [ ] Facts carry source and date; meanings are possibilities; what GSA can't know is his question (river, meadow, measures).
+- [ ] Facts carry source and date; meanings are possibilities; what GSA can't know is his question (river, measures).
 - [ ] The herd disagreement answers: your part is done, who settles it, do you need to act, what happens next; same words everywhere.
 - [ ] One status function on every screen; red only for errors; the estimate has no basis / provisional / current; review is not submit.
 - [ ] River field and road strip are the strongest moments; no point placement with a finger anywhere.
 - [ ] Jelena never resolves straight after a referral; follow-up date from the deadline; cases decidable without opening the application.
 - [ ] Solid green only on the primary action; one content width; the primary action in one place on every task.
+- [ ] Every parcel sits on edges visible in the photo; the toolbar always shows what's on and off; handles never cover the edge he is checking.

@@ -7,13 +7,13 @@ describe('application state', () => {
   it('action required until every task is done', () => {
     const r = run('second_year').readiness
     expect(r.state).toBe('action_required')
-    expect(r.counts.action_required).toBe(11)
+    expect(r.counts.action_required).toBe(8)
     expect(r.canSubmit).toBe(false)
   })
 
   it('counts every thing left, across the parts', () => {
     // Cows that calved are the registry's record: reused, not asked (round 10, Aleksa).
-    expect(run('second_year').list.todo).toHaveLength(11)
+    expect(run('second_year').list.todo).toHaveLength(8)
   })
 
   it('ready to submit once nothing needs his action', () => {
@@ -54,7 +54,7 @@ describe('readiness verdict', () => {
   it("work not done yet is to do, not an error, and still stops him submitting; only the blurry receipt is an error", () => {
     const r = run('second_year').report
     expect(r.verdict).toBe('blocked')
-    expect(r.todo).toHaveLength(10)
+    expect(r.todo).toHaveLength(7)
     expect(r.errors).toEqual(['receipts'])
   })
 
@@ -63,10 +63,10 @@ describe('readiness verdict', () => {
     expect(r.errors).toContain('measures')
   })
 
-  it('the road and the neighbour line lower the payment: ready, with two things to look at', () => {
+  it('the road lowers the payment: ready, with one thing to look at', () => {
     const r = run('second_year', ...ready).report
     expect(r.verdict).toBe('ready_with_warnings')
-    expect(r.warnings.map((w) => w.id)).toEqual(['field_road', 'field_upper'])
+    expect(r.warnings.map((w) => w.id)).toEqual(['field_road'])
   })
 
   it('warnings never stop him submitting: a check and a lower payment', () => {

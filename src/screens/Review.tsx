@@ -1,9 +1,9 @@
 import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
-import { en, finish, formatHa, map, split, tasks } from '../copy/en'
+import { en, formatHa, map, split, tasks } from '../copy/en'
 import type { Field, FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
-import { CropsStep, EffectsStep, LineStep, partLabels, useSplitDraft } from '../components/SplitTool'
+import { CropsStep, EffectsStep, LineStep, LineTools, partLabels, useSplitDraft } from '../components/SplitTool'
 import { FarmMap, MapFacts, MapFallback, RoadDispute, mapContext, taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
@@ -11,10 +11,10 @@ import { Button } from '../ui/Button'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { Compare, Text, VisuallyHidden } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
-import { Note } from '../ui/Note'
+import { ToolSwitch } from '../ui/MapTools'
 
 
-export type MapTask = 'field_river' | 'field_road' | 'field_upper'
+export type MapTask = 'field_river' | 'field_road'
 
 /**
  * Review this boundary: the satellite photo at the place GSA found, large enough to look around,
@@ -40,7 +40,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
 
   if (!item) return null
   const onAnswer = () => (answered.current = true)
-  const Body = id === 'field_river' ? RiverReview : id === 'field_road' ? RoadReview : UpperReview
+  const Body = id === 'field_river' ? RiverReview : RoadReview
   const head = (
     <header className="review-head">
       <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
@@ -100,10 +100,11 @@ function RiverReview({ onAnswer, head }: BodyProps) {
   const draft = useSplitDraft(field, a.split)
   const [asking, setAsking] = useState(a.answer === null)
   const [step, setStep] = useState<RiverStep | null>(a.answer === 'yes' && item.status === 'action_required' ? 'line' : null)
-  const [flagged, setFlagged] = useState(true)
+  const [view, setView] = useState<'photo' | 'field'>('photo')
   const go = (to: RiverStep | null) => {
     setStep(to)
     requestAnimationFrame(() => {
+      window.scrollTo(0, 0)
       document.querySelector('.map-stage-panel')?.scrollTo(0, 0)
       document.getElementById('split-title')?.focus({ preventScroll: true })
     })
@@ -127,7 +128,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
             focus="river"
             mode="explore"
             fill
-            hideFlag={step === 'crops' || step === 'effects' || !flagged}
+            hideFlag={step !== null || view === 'field'}
             label={`${map.title}: ${en.fields.river}. ${mapContext(derived.scenario, 'field_river')}`}
             split={
               step
@@ -139,6 +140,21 @@ function RiverReview({ onAnswer, head }: BodyProps) {
                     onPickPart: step === 'crops' ? (i) => document.getElementById(`part-crop-${i}`)?.focus() : undefined,
                   }
                 : undefined
+            }
+            dock={
+              step === 'line' ? (
+                <LineTools field={field} d={draft} />
+              ) : !step && a.answer === null ? (
+                <ToolSwitch
+                  label={map.title}
+                  options={[
+                    { value: 'photo', label: tasks.river.showPhoto },
+                    { value: 'field', label: tasks.river.showField },
+                  ]}
+                  value={view}
+                  onChange={setView}
+                />
+              ) : undefined
             }
           />
         </Suspense>
@@ -152,8 +168,18 @@ function RiverReview({ onAnswer, head }: BodyProps) {
       ) : (
         head
       )}
-      {!step && a.answer === null && <RiverCompare field={field} flagged={flagged} onFlagged={setFlagged} />}
-      {step === 'line' && <LineStep field={field} d={draft} onNext={() => go('crops')} />}
+      {!step && a.answer === null && <RiverCompare field={field} />}
+      {step === 'line' && (
+        <LineStep
+          field={field}
+          d={draft}
+          onBack={() => {
+            setAsking(true)
+            go(null)
+          }}
+          onNext={() => go('crops')}
+        />
+      )}
       {step === 'crops' && <CropsStep d={draft} onBack={() => go('line')} onNext={() => go('effects')} />}
       {step === 'effects' && (
         <EffectsStep
@@ -193,23 +219,17 @@ function RiverReview({ onAnswer, head }: BodyProps) {
   )
 }
 
-/** Last year's field beside what the photo flags, and a switch to see each alone on the map. */
-function RiverCompare({ field, flagged, onFlagged }: { field: Field; flagged: boolean; onFlagged: (on: boolean) => void }) {
+/** Last year's field beside what the photo flags. */
+function RiverCompare({ field }: { field: Field }) {
   const ha = field.signal?.kind === 'satellite_difference' ? field.signal.flagHa : 0
   const t = tasks.river
   return (
-    <>
-      <Compare
-        items={[
-          { label: t.lastYear, value: t.lastYearValue(formatHa(field.areaHa), en.crops[field.cropLastYear].toLowerCase()) },
-          { label: t.different, value: t.differentValue(formatHa(ha)) },
-        ]}
-      />
-      <div className="map-switch" role="group" aria-label={map.title}>
-        <Button aria-pressed={flagged} onClick={() => onFlagged(true)}>{t.showPhoto}</Button>
-        <Button aria-pressed={!flagged} onClick={() => onFlagged(false)}>{t.showField}</Button>
-      </div>
-    </>
+    <Compare
+      items={[
+        { label: t.lastYear, value: t.lastYearValue(formatHa(field.areaHa), en.crops[field.cropLastYear].toLowerCase()) },
+        { label: t.different, value: t.differentValue(formatHa(ha)) },
+      ]}
+    />
   )
 }
 
@@ -248,47 +268,6 @@ function RoadReview({ onAnswer, head }: BodyProps) {
         <AnswerLine legend={tasks.road.question} answer={a.answer === 'yes' ? tasks.road.yes : tasks.road.no} onChange={() => setAsking(true)} />
       )}
       {disputed && <RoadDispute />}
-    </MapStage>
-  )
-}
-
-/** Last year's field runs into the neighbour's new declaration. Yes: GSA moves his edge. No: both are kept until checked. */
-function UpperReview({ onAnswer, head }: BodyProps) {
-  const { derived, state, dispatch } = useApp()
-  const a = state.answers.upper
-  const item = derived.items.find((i) => i.id === 'field_upper')!
-  const [asking, setAsking] = useState(a.answer === null)
-  return (
-    <MapStage
-      label={en.fields.upper}
-      map={
-        <Suspense fallback={<MapFallback mode="explore" fill />}>
-          <FarmMap scenario={derived.scenario} focus="upper" mode="explore" fill label={`${map.title}: ${en.fields.upper}. ${mapContext(derived.scenario, 'field_upper')}`} />
-        </Suspense>
-      }
-    >
-      {head}
-      {asking && <MapFacts id="field_upper" />}
-      {asking ? (
-        <StageAction>
-          <ChoiceButtons
-            legend={tasks.upper.question}
-            options={options(tasks.upper.yes, tasks.upper.no)}
-            onChoose={(v) => {
-              onAnswer()
-              setAsking(false)
-              dispatch({ type: 'answer_upper', answer: v })
-            }}
-          />
-        </StageAction>
-      ) : (
-        <AnswerLine legend={tasks.upper.question} answer={a.answer === 'yes' ? tasks.upper.answerYes : tasks.upper.answerNo} onChange={() => setAsking(true)} />
-      )}
-      {item.status === 'awaiting_verification' && !asking && (
-        <Text variant="secondary">
-          {finish.submit.awaitingNote} <Note kind="assumption" />
-        </Text>
-      )}
     </MapStage>
   )
 }

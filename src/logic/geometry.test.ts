@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
 import {
+  bounds,
   centroid,
   followsEdge,
   inArea,
@@ -24,22 +25,48 @@ import {
 
 const fields = SCENARIOS.second_year.fields
 const riverField = fields.find((f) => f.id === 'river')!
-const river = riverField.polygon
 const signal = riverField.signal?.kind === 'satellite_difference' ? riverField.signal : null
-const edge = signal!.edge
+const traced = riverField.polygon
+const tracedEdge = signal!.edge
+// The rules, on a plain 2.40 ha rectangle, so the numbers are easy to read.
+const river = [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 200, y: 120 }, { x: 0, y: 120 }]
+const edge: SplitLine = [{ x: 0, y: 54 }, { x: 52, y: 66 }, { x: 104, y: 58 }, { x: 152, y: 64 }, { x: 200, y: 60 }]
+const flag = [...edge, { x: 200, y: 120 }, { x: 0, y: 120 }]
 const flat: SplitLine = [{ x: 0, y: 60 }, { x: 200, y: 60 }]
 
-describe('geometry', () => {
-  it('field polygons match their declared areas (9.00 ha in total)', () => {
-    for (const f of fields) expect(polygonAreaHa(f.polygon)).toBeCloseTo(f.areaHa, 6)
-    expect(fields.reduce((s, f) => s + polygonAreaHa(f.polygon), 0)).toBeCloseTo(9, 6)
+describe('the fields as traced on the photo', () => {
+  it('the record gives the areas: 9.00 ha in total', () => {
+    expect(fields.reduce((s, f) => s + f.areaHa, 0)).toBeCloseTo(9, 6)
   })
 
-  it('signal areas match the scenario', () => {
-    for (const f of fields) {
-      if (f.signal?.kind === 'satellite_difference') expect(polygonAreaHa(f.signal.flagPolygon)).toBeCloseTo(f.signal.flagHa, 2)
-      if (f.signal?.kind === 'road_strip') expect(polygonAreaHa(f.signal.stripPolygon)).toBeCloseTo(f.signal.stripHa, 6)
-    }
+  it("GSA's line runs from edge to edge of the traced field, and gives the part along the river its share of the record's 2.40 ha", () => {
+    expect(lineProblem(traced, tracedEdge, riverField.areaHa)).toBeNull()
+    const r = splitField(traced, tracedEdge, riverField.areaHa)!
+    const names = partNames(r.parts)
+    expect(r.areasHa[names.indexOf('top')]).toBe(signal!.flagHa)
+    expect(r.areasHa[names.indexOf('bottom')]).toBe(1.32)
+    expect(inArea(r.parts[names.indexOf('top')], signal!.flagPolygon)).toBe(true)
+    expect(inArea(r.parts[names.indexOf('bottom')], signal!.flagPolygon)).toBe(false)
+  })
+
+  it('a part is a share of the record, whatever the drawing measures', () => {
+    const r = splitField(traced, tracedEdge, 2.4)!
+    expect(r.areasHa[0] + r.areasHa[1]).toBeCloseTo(2.4, 6)
+    expect(polygonAreaHa(r.parts[0]) + polygonAreaHa(r.parts[1])).toBeCloseTo(polygonAreaHa(traced), 6)
+  })
+
+  it('a bend stays inside the traced shape, not just its outline box', () => {
+    const b = bounds(traced)
+    const corner = { x: b.minX + 2, y: b.maxY - 2 }
+    expect(pointInPolygon(corner, traced)).toBe(false)
+    const kept = keepInside(traced, corner)
+    expect(kept.clamped).toBe(true)
+    expect(pointInPolygon(kept.point, traced)).toBe(true)
+  })
+
+  it('a stretch of line that runs outside the field is a bad line', () => {
+    // A bite into the field that crosses its bottom-left edge between two good points.
+    expect(lineProblem(traced, [{ x: 170, y: 116 }, { x: 150, y: 30 }, { x: 278, y: 10 }], riverField.areaHa)).toBe('leaves_field')
   })
 })
 
@@ -48,7 +75,7 @@ describe('splitting a field with a line', () => {
     expect([...splitField(river, flat)!.areasHa].sort()).toEqual([1.2, 1.2])
   })
 
-  it("GSA's line along the photo's edge: 1.22 above, 1.18 below", () => {
+  it('a line with bends: 1.22 above, 1.18 below', () => {
     const r = splitField(river, edge)!
     const names = partNames(r.parts)
     expect(r.areasHa[names.indexOf('top')]).toBe(1.22)
@@ -85,8 +112,8 @@ describe('splitting a field with a line', () => {
     const r = splitField(river, edge)!
     const names = partNames(r.parts)
     expect([...names].sort()).toEqual(['bottom', 'top'])
-    expect(inArea(r.parts[names.indexOf('bottom')], signal!.flagPolygon)).toBe(true)
-    expect(inArea(r.parts[names.indexOf('top')], signal!.flagPolygon)).toBe(false)
+    expect(inArea(r.parts[names.indexOf('bottom')], flag)).toBe(true)
+    expect(inArea(r.parts[names.indexOf('top')], flag)).toBe(false)
   })
 
   it('a tap lands in the part it was on', () => {

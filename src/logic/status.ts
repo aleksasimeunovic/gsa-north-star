@@ -13,12 +13,11 @@ export type ItemId =
   | `field_${FieldId}`
   | 'field_bought'
   | `added_${string}`
-  | 'fields_other'
   | 'measures'
   | 'receipts'
 
 // Payment impact is separate from status: never colour or rank status by money.
-export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'overlap_removed' | 'overlap_pending' | 'meadow_out' | 'river_unsown'
+export type ImpactReason = 'road_took_area' | 'road_pending_correction' | 'river_unsown'
 export interface PaymentImpact {
   amountDinars: number // negative = less payment
   areaHa: number
@@ -33,9 +32,6 @@ export type ItemDetail =
   | 'calvings_to_confirm'
   | 'calvings_confirmed'
   | 'calvings_check' // he asked the registry to check
-  | 'meadow_unanswered'
-  | 'meadow_kept'
-  | 'meadow_out'
   | 'herd_unanswered'
   | 'herd_needs_count'
   | 'herd_confirmed'
@@ -49,9 +45,6 @@ export type ItemDetail =
   | 'road_unanswered'
   | 'road_confirmed'
   | 'road_correction_requested'
-  | 'upper_unanswered'
-  | 'upper_moved'
-  | 'upper_disputed' // he says the strip is his: both declarations kept until the payments office checks
   | 'pigs_unanswered'
   | 'pigs_household'
   | 'pigs_declared'
@@ -60,8 +53,6 @@ export type ItemDetail =
   | 'bought_added'
   | 'bought_not_farmed'
   | 'added_field'
-  | 'fields_same'
-  | 'fields_confirmed'
   | 'details_correction' // he asked the record's owner to correct something unchanged since last year
   | 'measures_to_choose'
   | 'measures_chosen'
@@ -123,7 +114,7 @@ export function riverSplitComplete(s: Scenario, a: Answers): boolean {
   if (!field || !split || !split.crops[0] || !split.crops[1]) return false
   // Two crops means two different crops.
   if (split.crops[0] === split.crops[1]) return false
-  return splitField(field.polygon, split.line) !== null
+  return splitField(field.polygon, split.line, field.areaHa) !== null
 }
 
 /** A field with a detected change gets its own item. */
@@ -140,7 +131,7 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
       // Land with nothing sown doesn't count for plant production (assumption), so the part he left is a lower payment.
       const split = a.river.split!
       const empty = split.crops.indexOf('unsown')
-      const areas = splitField(field.polygon, split.line)!.areasHa
+      const areas = splitField(field.polygon, split.line, field.areaHa)!.areasHa
       return { id: itemId, status: 'complete', detail: 'river_split_done', ...(empty >= 0 ? { paymentImpact: impactOf(s, areas[empty], 'river_unsown') } : {}) }
     }
     // No: his declaration stands. The satellite never decides what he planted.
@@ -160,21 +151,6 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
       paymentImpact: impactOf(s, signal.stripHa, 'road_pending_correction'),
       conflict: { record: roundHa(field.areaHa - signal.stripHa), his: field.areaHa, owner: 'land_map' },
     }
-  }
-  if (signal?.kind === 'yearly_use') {
-    // What the state checks this year, asked about this year. No leaves the meadow out, with its payment.
-    if (a.meadow.answer === null) return { id: itemId, status: 'action_required', detail: 'meadow_unanswered' }
-    if (a.meadow.answer === 'yes') return { id: itemId, status: 'complete', detail: 'meadow_kept' }
-    return { id: itemId, status: 'complete', detail: 'meadow_out', paymentImpact: impactOf(s, field.areaHa, 'meadow_out') }
-  }
-  if (signal?.kind === 'overlap') {
-    const u = a.upper
-    if (u.answer === null) return { id: itemId, status: 'action_required', detail: 'upper_unanswered' }
-    if (u.answer === 'yes') {
-      return { id: itemId, status: 'complete', detail: 'upper_moved', paymentImpact: impactOf(s, signal.overlapHa, 'overlap_removed') }
-    }
-    // The strip stays declared by both until the payments office checks, and it doesn't count until then.
-    return { id: itemId, status: 'awaiting_verification', detail: 'upper_disputed', paymentImpact: impactOf(s, signal.overlapHa, 'overlap_pending') }
   }
   return null
 }
@@ -272,9 +248,9 @@ function boughtItem(s: Scenario, a: Answers): Item | null {
 /**
  * Every item gets a status. Pure: derived from scenario + answers, never stored.
  * A task exists only if it needs his input this year: a change a record shows, or something he declares
- * every year under liability (cows that calved, this year's crops, his receipts). What is unchanged and
- * declares nothing (name, address, active farmer) is reused without asking and isn't an item, unless he
- * asked for a correction, which then waits for the record's owner.
+ * every year under liability (cows that calved, his receipts). What is unchanged and declares nothing (name,
+ * address, active farmer, fields nothing has changed on) is reused without asking and isn't an item, unless
+ * he asked for a correction, which then waits for the record's owner.
  */
 export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = null): Item[] {
   const items: Item[] = []
@@ -294,7 +270,6 @@ export function deriveItems(s: Scenario, a: Answers, jelena: CaseState | null = 
   add(boughtItem(s, a))
   // A field he added is saved whole, so it is done; he can still change or remove it.
   a.newFields.filter((f) => f.landId !== 'bought').forEach((f) => add({ id: `added_${f.id}`, status: 'complete', detail: 'added_field' }))
-  if (s.fields.some((f) => !f.signal)) add(confirmedItem('fields_other', a.confirmed.includes('fields_other'), 'fields_same', 'fields_confirmed'))
 
   // Measures
   // GSA's suggestions sit at the top of choosing measures, so he sees them with the rest.

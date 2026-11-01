@@ -2,7 +2,6 @@ import { Suspense, useEffect, useState } from 'react'
 import { bar, en, fieldEdit as copy, formatDateYear, formatHa, map, records, tasks } from '../copy/en'
 import { CROPS, type Crop, type Polygon } from '../data/scenarios'
 import type { TaskId } from '../logic/application'
-import { polygonAreaHa, roundHa } from '../logic/geometry'
 import type { Item } from '../logic/status'
 import type { NewField } from '../state/actions'
 import { Button } from '../ui/Button'
@@ -20,7 +19,7 @@ type Derived = AppCtx['derived']
 type State = AppCtx['state']
 
 /** A new field in one line: its name, area and crop. */
-export const fieldLine = (f: NewField) => copy.line(f.name, formatHa(roundHa(polygonAreaHa(f.polygon))), en.crops[f.crop].toLowerCase())
+export const fieldLine = (f: NewField) => copy.line(f.name, formatHa(f.areaHa), en.crops[f.crop].toLowerCase())
 
 /** The herd's second line in his records: his own number next to the registry's, while it is checked. */
 export function herdLine(item?: Item): string | undefined {
@@ -127,7 +126,9 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const existing = state.answers.newFields.find((f) => f.id === id || (id === 'bought' && f.landId === 'bought'))
   const isBought = id === 'bought'
   const [landId, setLandId] = useState<string | null>(existing?.landId ?? (isBought ? 'bought' : null))
-  const polygon = existing?.polygon ?? (landId === 'bought' ? s.bought!.polygon : s.otherLand.find((l) => l.id === landId)?.polygon)
+  const land = landId === 'bought' ? s.bought! : s.otherLand.find((l) => l.id === landId)
+  const polygon = existing?.polygon ?? land?.polygon
+  const areaHa = existing?.areaHa ?? land?.areaHa ?? 0
   const [stage, setStage] = useState<Stage>(polygon ? 'details' : 'place')
   const [name, setName] = useState(existing?.name ?? '')
   const [nameError, setNameError] = useState<string>()
@@ -145,7 +146,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   }, [stage])
 
   const save = (shape: Polygon) => {
-    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, name: name.trim(), crop: crop! }
+    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, areaHa, name: name.trim(), crop: crop! }
     dispatch({ type: 'save_field', field })
     const task: TaskId = isBought ? 'field_bought' : `added_${field.id}`
     go('welcome')
@@ -156,7 +157,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
     <header className="review-head">
       {!(isBought || existing) && <p className="hint">{copy.step(step, of)}</p>}
       <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : copy.details}</h2>
-      {polygon && <p className="hint">{formatHa(roundHa(polygonAreaHa(polygon)))}</p>}
+      {polygon && <p className="hint">{formatHa(areaHa)}</p>}
     </header>
   )
 
@@ -245,7 +246,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                     setStage('details')
                   }}
                 >
-                  {copy.landChoice(copy.landNames[l.id] ?? copy.landLabel, formatHa(roundHa(polygonAreaHa(l.polygon))))}
+                  {copy.landChoice(copy.landNames[l.id] ?? copy.landLabel, formatHa(l.areaHa))}
                 </Button>
               ))}
             </div>
