@@ -28,6 +28,8 @@ export interface Field {
   arable: boolean
   polygon: Polygon
   signal?: FieldSignal
+  /** The farmland registered around the field: its edge can move, but not past this. */
+  land?: Polygon
 }
 
 /** Registered farmland he can put a field on. */
@@ -183,6 +185,8 @@ const FIELDS: Field[] = [
     polygon: [...RIVER_TOP, RIVER_EDGE[0], ...RIVER_BOTTOM, RIVER_EDGE[3], ...RIVER_LEFT],
     // The part along the river stays wet for longer every spring, so the photo sees it differently.
     signal: { kind: 'satellite_difference', edge: [...RIVER_EDGE].reverse(), flagPolygon: [...RIVER_TOP, ...RIVER_EDGE, ...RIVER_LEFT], flagHa: 1.08, riverAt: { x: 268, y: -37 } },
+    // Registered farmland around it, from the trees along the river to the road (prototype placeholder).
+    land: shape([136, 2], [164, -12], [212, -26], [266, -36], [282, -32], [288, -18], [288, 28], [295, 58], [298, 100], [297, 121], [168, 121], [159, 90], [152, 54], [143, 26]),
   },
   {
     id: 'road',

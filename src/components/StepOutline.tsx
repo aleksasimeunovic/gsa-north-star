@@ -1,4 +1,4 @@
-import { home } from '../copy/en'
+import { home, steps } from '../copy/en'
 import { Icon } from '../ui/Icon'
 import { Progress } from '../ui/Progress'
 import { StatusBadge } from '../ui/StatusBadge'
@@ -15,7 +15,7 @@ export function StepOutline({ flow }: { flow: Flow }) {
   return (
     <section className="step-outline" aria-labelledby="outline-title">
       <div className="outline-head">
-        <h3 id="outline-title" className="group-title">{home.outline(tasks.length - count('action_required'), tasks.length)}</h3>
+        <h3 id="outline-title" className="group-title">{steps.left(flow.step.id, count('action_required'))}</h3>
         <div className="outline-progress">
           <Progress value={tasks.length - count('action_required')} max={tasks.length} />
         </div>

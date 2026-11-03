@@ -1,26 +1,30 @@
 import { useEffect, useState } from 'react'
 import { en, formatDinars, formatHa, split as copy } from '../copy/en'
-import { PART_CROPS, type Field, type PartCrop, type Point } from '../data/scenarios'
-import { splitEffects } from '../logic/farm'
+import { PART_CROPS, type Field, type PartCrop, type Point, type Polygon } from '../data/scenarios'
+import { fieldWith, splitEffects } from '../logic/farm'
 import {
+  fitLine,
   followsEdge,
   inArea,
   keepInside,
   lineHeight,
-  lineProblem,
+  outlinePath,
   partNames,
   pullLine,
+  pullOutline,
   removeBend,
+  removeCorner,
   roundHa,
   sameLine,
+  shapeProblem,
   shiftLine,
   SNAP_M,
-  snapToEdge,
+  snapToAny,
   splitField,
-  straightLine,
   tidyLine,
+  tidyOutline,
   toFieldEdge,
-  type LineProblem,
+  type ShapeProblem,
   type SplitLine,
 } from '../logic/geometry'
 import type { Split } from '../state/actions'
@@ -38,10 +42,12 @@ const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x
 export const edgeOf = (field: Field) => (field.signal?.kind === 'satellite_difference' ? field.signal.edge : field.polygon)
 const flagOf = (field: Field) => (field.signal?.kind === 'satellite_difference' ? field.signal.flagPolygon : field.polygon)
 
-/** Why the line stopped where it did, said at that moment. */
-type Stopped = 'edge' | LineProblem | 'bends' | 'straight' | null
+/** Why a move stopped where it did, said at that moment. */
+type Stopped = 'edge' | ShapeProblem | null
+/** The point he is working on: a bend in the line, or a corner of his field. */
+export type Selected = { on: 'line' | 'field'; i: number } | null
 
-/** GSA's proposal: the line along the edge the photo shows; the part away from what it flagged keeps last year's crop. */
+/** GSA's proposal: his field as registered, the line along the edge the photo shows; the part away from what it flagged keeps last year's crop. */
 function proposal(field: Field): Split {
   const line = edgeOf(field)
   const r = splitField(field.polygon, line, field.areaHa)
@@ -49,35 +55,40 @@ function proposal(field: Field): Split {
   return { line, crops }
 }
 
+const samePoly = (a: Polygon, b: Polygon) => sameLine(a, b)
+
 /**
  * Draft split, kept locally until he confirms. Undo and redo walk through drafts, and nothing here counts
- * as declared. Whatever he does, the draft is always a line the field can be split by.
+ * as declared. Whatever he does, the draft is always a field and a line the field can be split by.
+ * `record` is the field as registered; the draft may move its edge.
  */
-export function useSplitDraft(field: Field, stored: Split | null) {
-  const [draft, setDraft] = useState<Split>(() => stored ?? proposal(field))
+export function useSplitDraft(record: Field, stored: Split | null) {
+  const [draft, setDraft] = useState<Split>(() => stored ?? proposal(record))
   const [past, setPast] = useState<Split[]>([])
   const [future, setFuture] = useState<Split[]>([])
   const [stopped, setStopped] = useState<Stopped>(null)
-  const [bend, setBend] = useState<number | null>(null)
+  const [selected, setSelected] = useState<Selected>(null)
   // The helpers, on or off, always shown on the toolbar.
   const [snap, setSnap] = useState(true)
-  const [straight, setStraight] = useState(false)
   const [slider, setSlider] = useState(false)
+  const field = fieldWith(record, draft.boundary)
   const result = splitField(field.polygon, draft.line, field.areaHa)
 
   const remember = () => {
     setPast((p) => [...p, draft])
     setFuture([])
   }
-  const update = (next: Split, record = true, why: Stopped = null) => {
-    if (record) remember()
-    setDraft(next)
+  const update = (next: Split, rec = true, why: Stopped = null) => {
+    if (rec) remember()
+    // A field moved back onto its registered edge is the record again.
+    const boundary = next.boundary && !samePoly(next.boundary, record.polygon) ? next.boundary : undefined
+    setDraft({ ...next, boundary })
     setStopped(why)
   }
   /** A press that moved nothing leaves nothing to undo. */
-  const settle = (line: SplitLine) => {
+  const settle = (next: Split) => {
     const last = past[past.length - 1]
-    if (last && sameLine(last.line, line)) setPast(past.slice(0, -1))
+    if (last && sameLine(last.line, next.line) && samePoly(last.boundary ?? record.polygon, next.boundary ?? record.polygon)) setPast(past.slice(0, -1))
   }
   const travel = (from: Split[], to: Split[], setFrom: (s: Split[]) => void, setTo: (s: Split[]) => void) => {
     if (!from.length) return
@@ -86,111 +97,142 @@ export function useSplitDraft(field: Field, stored: Split | null) {
     setFrom(from.slice(0, -1))
     setDraft(next)
     setStopped(null)
-    setBend(null)
-    if (next.line.length > 2) setStraight(false)
+    setSelected(null)
   }
   const undo = () => travel(past, future, setPast, setFuture)
   const redo = () => travel(future, past, setFuture, setPast)
-  return { draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, bend, setBend, snap, setSnap, straight, setStraight, slider, setSlider }
+  return { record, field, draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, selected, setSelected, snap, setSnap, slider, setSlider }
 }
 
 export type SplitDraft = ReturnType<typeof useSplitDraft>
 
 /**
- * Moving the line, whatever moves it. He never places a point: he pulls the line, which bends where he
- * pulled, and moves its ends along the field's edge. A move that would leave a bad line stops at the last
- * good one before it, and the map says why, so there is no invalid shape to come back from.
+ * Moving the line and the field's edge, whatever moves them. He never places a point on empty ground: he
+ * pulls the line or the edge, which bends where he pulled, and moves the corners and bends that makes. A move
+ * that would leave a bad shape stops at the last good one before it, and the map says why, so there is no
+ * invalid shape to come back from. The field can't go past the farmland registered around it.
  */
-export function splitMoves(field: Field, d: SplitDraft) {
-  const { draft } = d
-  const poly = field.polygon
-  const edge = edgeOf(field)
-  const commit = (lineAt: (t: number) => { line: SplitLine; clamped?: boolean }, record: boolean) => {
-    const full = lineAt(1)
-    const problem = lineProblem(poly, full.line, field.areaHa)
-    if (!problem) return d.update({ ...draft, line: full.line }, record, full.clamped ? 'edge' : null)
+export function splitMoves(d: SplitDraft) {
+  const { draft, record } = d
+  const poly = d.field.polygon
+  const edge = edgeOf(record)
+  const land = record.land
+  const haOf = (b: Polygon) => fieldWith(record, b).areaHa
+  // What he can see and follow: the edge the photo shows, and his field's edge as registered.
+  const snapped = (p: Point) => (d.snap ? snapToAny(p, [edge, outlinePath(record.polygon)]).point : p)
+
+  type Shape = { boundary: Polygon; line: SplitLine; clamped?: boolean }
+  const commit = (at: (t: number) => Shape, rec: boolean) => {
+    const full = at(1)
+    const problem = shapeProblem(land, full.boundary, full.line, haOf(full.boundary))
+    if (!problem) return d.update({ ...draft, boundary: full.boundary, line: full.line }, rec, full.clamped ? 'edge' : null)
     let lo = 0
     let hi = 1
     for (let k = 0; k < 12; k++) {
       const mid = (lo + hi) / 2
-      if (lineProblem(poly, lineAt(mid).line, field.areaHa)) hi = mid
+      const m = at(mid)
+      if (shapeProblem(land, m.boundary, m.line, haOf(m.boundary))) hi = mid
       else lo = mid
     }
-    d.update({ ...draft, line: lineAt(lo).line }, record, problem)
+    const good = at(lo)
+    d.update({ ...draft, boundary: good.boundary, line: good.line }, rec, problem)
   }
-  const withPoint = (i: number, p: Point) => draft.line.map((q, k) => (k === i ? p : q))
   const isEnd = (i: number) => i === 0 || i === draft.line.length - 1
   /** With Snap on, an end close to where the photo's edge meets the field joins it. */
   const snapEnd = (p: Point) => [edge[0], edge[edge.length - 1]].find((e) => d.snap && Math.hypot(e.x - p.x, e.y - p.y) <= SNAP_M) ?? p
+  const lerp = (a: Point, b: Point, t: number) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
 
-  const movePoint = (i: number, p: Point, record: boolean) => {
+  const moveBend = (i: number, p: Point, rec: boolean) => {
     const from = draft.line[i]
     commit((t) => {
-      const at = { x: from.x + (p.x - from.x) * t, y: from.y + (p.y - from.y) * t }
-      if (isEnd(i)) return { line: withPoint(i, snapEnd(toFieldEdge(poly, at))) }
-      const inside = keepInside(poly, at)
-      return { line: withPoint(i, d.snap ? snapToEdge(inside.point, edge).point : inside.point), clamped: inside.clamped }
-    }, record)
+      const at = lerp(from, p, t)
+      const line = draft.line.map((q, k) => (k === i ? q : q))
+      if (isEnd(i)) {
+        line[i] = snapEnd(toFieldEdge(poly, at))
+        return { boundary: poly, line }
+      }
+      const inside = keepInside(poly, snapped(at))
+      line[i] = inside.point
+      return { boundary: poly, line, clamped: inside.clamped }
+    }, rec)
   }
+  const moveCorner = (i: number, p: Point, rec: boolean) => {
+    const from = poly[i]
+    commit((t) => {
+      const boundary = poly.map((q, k) => (k === i ? snapped(lerp(from, p, t)) : q))
+      return { boundary, line: fitLine(boundary, draft.line) }
+    }, rec)
+  }
+  const movePoint = (sel: NonNullable<Selected>, p: Point, rec: boolean) => (sel.on === 'line' ? moveBend(sel.i, p, rec) : moveCorner(sel.i, p, rec))
+
   /** A press on the line: the bend he pressed near, or a new one there. */
-  const pull = (p: Point): number | null => {
-    if (d.straight) {
-      d.setStopped('straight')
-      return null
-    }
+  const pull = (p: Point): Selected => {
     const r = pullLine(draft.line, p)
-    if (!r) {
-      d.setStopped('bends')
-      return null
-    }
     d.remember()
     d.update({ ...draft, line: r.line }, false)
-    d.setBend(r.bend)
-    return r.bend
+    const sel = { on: 'line' as const, i: r.bend }
+    d.setSelected(sel)
+    return sel
+  }
+  /** A press on the field's edge: the corner he pressed near, or a new one there. */
+  const pullEdge = (p: Point): Selected => {
+    const r = pullOutline(poly, p)
+    d.remember()
+    d.update({ ...draft, boundary: r.poly }, false)
+    const sel = { on: 'field' as const, i: r.corner }
+    d.setSelected(sel)
+    return sel
   }
   const letGo = () => {
-    const tidy = tidyLine(draft.line)
-    if (tidy.length !== draft.line.length) {
-      d.update({ ...draft, line: tidy }, false)
-      d.setBend(null)
+    // Only a point he let go on a straight stretch goes: the corners traced from the photo stay.
+    const sel = d.selected
+    const line = tidyLine(draft.line)
+    const boundary = sel?.on === 'field' ? tidyOutline(poly, sel.i) : poly
+    const next = { ...draft, line: fitLine(boundary, line), boundary }
+    if (line.length !== draft.line.length || boundary.length !== poly.length) {
+      d.update(next, false, d.stopped)
+      d.setSelected(null)
     }
-    d.settle(tidy)
+    d.settle(next)
   }
-  const dropBend = (i: number) => {
-    d.update({ ...draft, line: removeBend(draft.line, i) })
-    d.setBend(null)
+  const drop = (sel: NonNullable<Selected>) => {
+    if (sel.on === 'line') {
+      if (isEnd(sel.i)) return
+      d.update({ ...draft, line: removeBend(draft.line, sel.i) })
+    } else {
+      const boundary = removeCorner(poly, sel.i)
+      const line = fitLine(boundary, draft.line)
+      const problem = shapeProblem(land, boundary, line, haOf(boundary))
+      if (problem) return d.setStopped(problem)
+      d.update({ ...draft, boundary, line })
+    }
+    d.setSelected(null)
   }
-  /** Arrow keys: 5 m a press, 1 m with Shift. */
-  const nudge = (i: number, key: string, fine: boolean) => {
-    if ((key === 'Delete' || key === 'Backspace') && !isEnd(i)) {
-      dropBend(i)
+  /** Arrow keys: 5 m a press, 1 m with Shift. Delete takes the point out. */
+  const nudge = (sel: NonNullable<Selected>, key: string, fine: boolean) => {
+    if (key === 'Delete' || key === 'Backspace') {
+      drop(sel)
       return true
     }
     const a = ARROWS[key]
     if (!a) return false
     const step = fine ? 1 : STEP_M
-    movePoint(i, { x: draft.line[i].x + a.x * step, y: draft.line[i].y + a.y * step }, true)
+    const from = sel.on === 'line' ? draft.line[sel.i] : poly[sel.i]
+    movePoint(sel, { x: from.x + a.x * step, y: from.y + a.y * step }, true)
     return true
   }
   const moveWhole = (to: number) => {
     const b = poly.map((p) => p.y)
     const dy = (to - lineHeight(poly, draft.line)) * (Math.max(...b) - Math.min(...b))
     const from = draft.line
-    commit((t) => ({ line: shiftLine(poly, from, dy * t) }), false)
+    commit((t) => ({ boundary: poly, line: shiftLine(poly, from, dy * t) }), false)
   }
   const reset = () => {
-    d.update({ ...draft, line: edge })
-    d.setStraight(false)
-    d.setBend(null)
+    d.update({ ...draft, boundary: undefined, line: edge })
+    d.setSelected(null)
   }
-  const toggleStraight = () => {
-    d.setBend(null)
-    if (d.straight) return d.setStraight(false)
-    d.setStraight(true)
-    if (draft.line.length > 2) d.update({ ...draft, line: straightLine(draft.line) })
-    else d.setStopped(null)
-  }
-  return { movePoint, pull, letGo, dropBend, nudge, moveWhole, reset, toggleStraight, isEnd }
+  const isReset = sameLine(draft.line, edge) && !draft.boundary
+  return { movePoint, pull, pullEdge, letGo, drop, nudge, moveWhole, reset, isReset, isEnd }
 }
 
 const namesOf = (d: SplitDraft) => (d.result ? partNames(d.result.parts) : null)
@@ -216,18 +258,16 @@ export function partLabels(d: SplitDraft, step: 'line' | 'crops' | 'effects'): [
   return [label(0), label(1)]
 }
 
-const STOPPED = (s: NonNullable<Stopped>) => (s === 'bends' ? copy.noMoreBends : s === 'straight' ? copy.straightOn : copy.stopped[s])
-
 /**
  * Step 1's toolbar: undo and redo never move, the helpers always show whether they're on, and the last place
- * changes with what he has selected. Why the line stopped is said above it, right where he is working.
+ * changes with what he has selected. Why a move stopped is said above it, right where he is working; going
+ * past the registered farmland is an error, said the same way.
  */
-export function LineTools({ field, d }: { field: Field; d: SplitDraft }) {
+export function LineTools({ d }: { d: SplitDraft }) {
   const { draft } = d
-  const moves = splitMoves(field, d)
+  const moves = splitMoves(d)
   const t = copy.tools
-  const edge = edgeOf(field)
-  const bend = d.bend !== null && !moves.isEnd(d.bend) && d.bend < draft.line.length ? d.bend : null
+  const sel = d.selected && !(d.selected.on === 'line' && moves.isEnd(d.selected.i)) ? d.selected : null
   const order = orderOf(d)
   const r = d.result
   const areas = r ? order.map((i) => copy.partArea(partLabel(d, i), formatHa(r.areasHa[i]))).join(', ') : ''
@@ -236,8 +276,8 @@ export function LineTools({ field, d }: { field: Field; d: SplitDraft }) {
     <>
       <div aria-live="polite">
         {d.stopped && (
-          <MapStatus>
-            {STOPPED(d.stopped)} {d.stopped === 'too_small' && <Note kind="assumption" />}
+          <MapStatus error={d.stopped === 'outside_land'}>
+            {copy.stopped[d.stopped]} {d.stopped === 'too_small' && <Note kind="assumption" />}
           </MapStatus>
         )}
         <VisuallyHidden>{areas}</VisuallyHidden>
@@ -250,7 +290,7 @@ export function LineTools({ field, d }: { field: Field; d: SplitDraft }) {
             min={5}
             max={95}
             step={1}
-            value={Math.round(lineHeight(field.polygon, draft.line) * 100)}
+            value={Math.round(lineHeight(d.field.polygon, draft.line) * 100)}
             aria-valuetext={areas}
             onPointerDown={d.remember}
             onKeyDown={(e) => e.key.startsWith('Arrow') && d.remember()}
@@ -263,22 +303,21 @@ export function LineTools({ field, d }: { field: Field; d: SplitDraft }) {
         <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} short disabled={!d.canRedo} onClick={d.redo} />
         <ToolDivider />
         <ToolButton icon="snap" caption={t.snap(d.snap)} hint={t.snapHint} on={d.snap} onClick={() => d.setSnap(!d.snap)} />
-        <ToolButton icon="straight" caption={t.straight(d.straight)} hint={t.straightHint} on={d.straight} onClick={moves.toggleStraight} />
         <ToolButton icon="slider" caption={t.slider(d.slider)} hint={t.sliderHint} on={d.slider} onClick={() => d.setSlider(!d.slider)} />
         <ToolDivider />
-        {bend !== null ? (
-          <ToolButton icon="close" caption={t.remove} hint={t.removeHint} short onClick={() => moves.dropBend(bend)} />
+        {sel ? (
+          <ToolButton icon="close" caption={t.remove} hint={t.removeHint} short onClick={() => moves.drop(sel)} />
         ) : (
-          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} short disabled={sameLine(draft.line, edge)} onClick={moves.reset} />
+          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} short disabled={moves.isReset} onClick={moves.reset} />
         )}
       </ToolIsland>
     </>
   )
 }
 
-/** Step 1: GSA's line and how to move it. The tools are on the map. */
-export function LineStep({ field, d, onBack, onNext }: { field: Field; d: SplitDraft; onBack: () => void; onNext: () => void }) {
-  const onEdge = followsEdge(d.draft.line, edgeOf(field))
+/** Step 1: GSA's line and how to move it, and his field's edge. The tools are on the map. */
+export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => void; onNext: () => void }) {
+  const onEdge = followsEdge(d.draft.line, edgeOf(d.record)) && !d.draft.boundary
 
   // On a keyboard, undo and redo work as everywhere else.
   useEffect(() => {
@@ -293,6 +332,7 @@ export function LineStep({ field, d, onBack, onNext }: { field: Field; d: SplitD
     return () => window.removeEventListener('keydown', key)
   })
 
+  const moved = d.draft.boundary ? roundHa(d.field.areaHa - d.record.areaHa) : 0
   return (
     <Stack gap="sm">
       <div className="split-lead">
@@ -300,6 +340,7 @@ export function LineStep({ field, d, onBack, onNext }: { field: Field; d: SplitD
           {onEdge ? copy.proposed : copy.yourLine} <Note kind="ai" />
         </Text>
       </div>
+      {moved !== 0 && <Text variant="secondary">{copy.fieldNow(formatHa(d.field.areaHa), formatHa(Math.abs(moved)), moved > 0)}</Text>}
       <StageAction>
         <Inline>
           <Button onClick={onBack}>{copy.back}</Button>
@@ -355,20 +396,23 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
  */
 export function EffectsStep({ d, onBack, onConfirm }: { d: SplitDraft; onBack: () => void; onConfirm: (s: Split) => void }) {
   const { derived, state } = useApp()
-  const e = splitEffects(derived.scenario, state.answers, d.draft)
+  const e = splitEffects(derived.base, state.answers, d.draft)
   if (!e) return null
   const c = copy.effects
-  const about = (n: number) => formatDinars(Math.round(n / 100) * 100)
+  const about = (n: number) => formatDinars(Math.round(Math.abs(n) / 100) * 100)
+  const parts = e.parts.map((p) => `${en.crops[p.crop].toLowerCase()} ${formatHa(p.ha)}`).join(' and ')
+  const money = e.movedDinars - e.lostDinars
   const items: [string, string][] = [
-    [c.field, c.fieldValue(e.parts.map((p) => `${en.crops[p.crop].toLowerCase()} ${formatHa(p.ha)}`).join(' and '), formatHa(e.totalHa))],
-    [c.estimate, e.lostHa ? c.less(about(e.lostDinars)) : c.same],
+    [c.field, e.movedHa ? c.fieldMoved(parts, formatHa(e.totalHa), formatHa(Math.abs(e.movedHa)), e.movedHa > 0) : c.fieldValue(parts, formatHa(e.totalHa))],
+    [c.estimate, money > 0 ? c.more(about(money)) : money < 0 ? (e.lostHa ? c.less(about(money)) : c.smaller(about(money))) : c.same],
     [c.measures, e.lostHa ? c.oneCounts(formatHa(roundHa(e.totalHa - e.lostHa))) : c.bothCount],
   ]
+  if (e.newCrop) items.push([c.newFor, c.newCrop(en.crops[e.newCrop.crop].toLowerCase())])
   if (e.coverChosen) items.push([c.measures, c.cover])
   return (
     <Stack gap="sm">
       <Answers items={items} />
-      {e.lostHa > 0 && <Note kind="assumption" />}
+      {(e.lostHa > 0 || e.newCrop) && <Note kind="assumption" />}
       <StageAction>
         <Inline>
           <Button onClick={onBack}>{copy.back}</Button>

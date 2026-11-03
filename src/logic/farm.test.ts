@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS, type PartCrop } from '../data/scenarios'
-import { carriedFields, fieldChoices, riverParts, splitEffects } from './farm'
+import { carriedFields, fieldChoices, newCrops, riverParts, splitEffects } from './farm'
 import { halfSplit, lastYear, play, run } from './testUtils'
 
 describe('farm picture', () => {
@@ -108,5 +108,22 @@ describe('a split carries through the application', () => {
     expect(carriedFields(['river:bottom', 'upper'], s, split)).toEqual(['river:bottom', 'upper'])
     expect(carriedFields(['river:bottom', 'upper'], s, undone)).toEqual(['river', 'upper'])
     expect(carriedFields(['upper'], s, split)).toEqual(['upper'])
+  })
+
+  it("moving the river field's edge carries through: its area, the estimate, and a crop new this year", () => {
+    const record = SCENARIOS.second_year.fields.find((f) => f.id === 'river')!
+    // The corner by the road moved out by a few metres, still on the registered farmland.
+    const boundary = record.polygon.map((p) => (p.x === 290 && p.y === 116 ? { x: 295, y: 119 } : p))
+    const split = { boundary, line: [{ x: 149, y: 22 }, { x: 278, y: 10 }], crops: ['sunflower', 'wheat'] as [PartCrop, PartCrop] }
+    const before = run('second_year', lastYear)
+    const after = run('second_year', lastYear, { type: 'answer_river', answer: 'yes' }, { type: 'set_split', split })
+    const river = after.scenario.fields.find((f) => f.id === 'river')!
+    expect(river.areaHa).toBeGreaterThan(2.4)
+    expect(after.estimate.assumptions.eligibleAreaHa).toBeGreaterThan(before.estimate.assumptions.eligibleAreaHa)
+    expect(after.base.fields.find((f) => f.id === 'river')!.areaHa).toBe(2.4)
+    const e = splitEffects(SCENARIOS.second_year, play('second_year').answers, split)!
+    expect(e.movedHa).toBeGreaterThan(0)
+    expect(e.newCrop?.crop).toBe('sunflower')
+    expect(newCrops(after.scenario, play('second_year', { type: 'answer_river', answer: 'yes' }, { type: 'set_split', split }).answers)[0].crop).toBe('sunflower')
   })
 })

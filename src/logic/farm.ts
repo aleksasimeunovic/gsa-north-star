@@ -1,6 +1,6 @@
 import type { Crop, Field, PartCrop, Polygon, Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import { partNames, roundHa, splitField, type PartName, type SplitLine } from './geometry'
+import { outlineHa, partNames, roundHa, splitField, type PartName, type SplitLine } from './geometry'
 import { fitting, riverSplitComplete, type Item, type ItemId } from './status'
 
 /**
@@ -28,6 +28,34 @@ const sourceOf = (items: (Item | undefined)[]): Source => {
   const known = items.filter((i): i is Item => !!i)
   if (known.some((i) => i.status === 'awaiting_verification' || i.conflict)) return 'checking'
   return known.length > 0 && known.every((i) => i.status === 'complete') ? 'confirmed' : 'records'
+}
+
+/** A field with its edge where he moved it: the record's area, grown or shrunk by as much. */
+export function fieldWith(field: Field, boundary: Polygon | undefined): Field {
+  if (!boundary) return field
+  return { ...field, polygon: boundary, areaHa: outlineHa(field.polygon, field.areaHa, boundary) }
+}
+
+/**
+ * His farm as he has answered it: once he confirms a new edge for the river field, every map, area,
+ * measure, the readiness and the estimate use it. The record stays as it was underneath (`base`).
+ */
+const answered = new WeakMap<Polygon, Scenario>()
+export function farmAsAnswered(s: Scenario, a: Answers): Scenario {
+  const boundary = a.river.answer === 'yes' ? a.river.split?.boundary : undefined
+  if (!boundary) return s
+  // The same answer gives the same farm, so maps drawn from it aren't redrawn on every change elsewhere.
+  const known = answered.get(boundary)
+  if (known?.id === s.id) return known
+  const farm = { ...s, fields: s.fields.map((f) => (f.id === 'river' ? fieldWith(f, boundary) : f)) }
+  answered.set(boundary, farm)
+  return farm
+}
+
+/** Crops he grows this year that he didn't last year, on land that counts, largest first. */
+export function newCrops(s: Scenario, a: Answers): { crop: Crop; ha: number }[] {
+  const last = new Set(s.fields.map((f) => f.cropLastYear))
+  return (riverParts(s, a) ?? []).filter((p) => p.crop !== 'unsown' && !last.has(p.crop)).map((p) => ({ crop: p.crop as Crop, ha: p.ha }))
 }
 
 export interface RiverPart {
@@ -79,6 +107,11 @@ export function carriedFields(chosen: string[], s: Scenario, a: Answers): string
 export interface SplitEffects {
   parts: RiverPart[]
   totalHa: number
+  /** How much the field grew (or shrank, below 0) where he moved its edge, and what that does to the payment. */
+  movedHa: number
+  movedDinars: number
+  /** A crop new to his farm this year, which certified seed can now cover. */
+  newCrop: { crop: Crop; ha: number } | null
   /** Land that stops counting for plant production, and what that takes off the payment. */
   lostHa: number
   lostDinars: number
@@ -88,14 +121,21 @@ export interface SplitEffects {
 }
 
 export function splitEffects(s: Scenario, a: Answers, split: NonNullable<Answers['river']['split']>): SplitEffects | null {
-  const field = s.fields.find((f) => f.id === 'river')!
+  const record = s.fields.find((f) => f.id === 'river')!
+  const field = fieldWith(record, split.boundary)
   const parts = partsOf(field, split.line, split.crops as [PartCrop, PartCrop])
   if (!parts) return null
   const lostHa = parts.find((p) => p.crop === 'unsown')?.ha ?? 0
   const rate = s.measures.find((m) => m.id === 'plant_production')?.rateDinars ?? 0
+  const movedHa = roundHa(field.areaHa - record.areaHa)
+  const last = new Set(s.fields.map((f) => f.cropLastYear))
+  const fresh = parts.filter((p) => p.crop !== 'unsown' && !last.has(p.crop as Crop))[0]
   return {
     parts,
     totalHa: field.areaHa,
+    movedHa,
+    movedDinars: Math.round(movedHa * rate),
+    newCrop: fresh ? { crop: fresh.crop as Crop, ha: fresh.ha } : null,
     lostHa,
     lostDinars: Math.round(lostHa * rate),
     plantChosen: a.measures.chosen.includes('plant_production'),

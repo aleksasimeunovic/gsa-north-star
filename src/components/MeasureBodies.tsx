@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { en, formatDinars, formatHa, formatNumber, split, tasks } from '../copy/en'
 import type { Measure, MeasureId, Requirement } from '../data/scenarios'
 import { fitting, goalGain, measureGaps, readyToApply, shown } from '../logic/status'
-import { carriedFields, fieldChoices } from '../logic/farm'
+import { carriedFields, fieldChoices, newCrops } from '../logic/farm'
 import type { PartName } from '../logic/geometry'
 import type { MeasureValue } from '../state/actions'
 import { Banner } from '../ui/Banner'
@@ -94,6 +94,7 @@ export function MeasuresBody() {
     dispatch({ type: 'choose_measures', chosen: ids, inputs: kept })
   }
 
+  const fresh = newCrops(derived.scenario, state.answers)[0]
   const option = (m: Measure) => {
     const on = chosen.includes(m.id)
     const g = suggested.find((x) => x.measureId === m.id)
@@ -106,7 +107,8 @@ export function MeasuresBody() {
             {/* Why GSA recommends it, what the state still checks, what he provides. */}
             {g && <span className="measure-line text-sm" data-strong>{g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}</span>}
             <span className="measure-line text-sm text-muted-foreground">{amountLine(m, derived)}</span>
-            {!g && !m.lastYear && <span className="measure-line text-sm text-muted-foreground">{t.why[m.id]}</span>}
+            {/* A crop new this year, from the split he confirmed, is why certified seed now fits more of his land. */}
+            {!g && !m.lastYear && (m.id === 'certified_seed' && fresh ? <span className="measure-line text-sm" data-strong>{t.newCrop(en.crops[fresh.crop].toLowerCase())}</span> : <span className="measure-line text-sm text-muted-foreground">{t.why[m.id]}</span>)}
             {g && tasks.suggest.checks[m.id] && <span className="measure-line text-sm text-muted-foreground">{tasks.suggest.checks[m.id]}</span>}
             {g && !on && own.length > 0 && <span className="measure-line text-sm text-muted-foreground">{tasks.suggest.provide(own.map((r) => req(r).short).join(', '))}</span>}
           </span>

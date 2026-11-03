@@ -39,11 +39,11 @@ export function ToolSwitch<T extends string>({ label, options, value, onChange }
   )
 }
 
-/** Said on the map, above the tools, at the moment it happens. */
-export function MapStatus({ children }: { children: ReactNode }) {
+/** Said on the map, above the tools, at the moment it happens. `error`: something he tried that can't be. */
+export function MapStatus({ children, error }: { children: ReactNode; error?: boolean }) {
   return (
-    <p className="map-status">
-      <Icon name="warning" size="sm" />
+    <p className="map-status" data-error={error || undefined} role={error ? 'alert' : undefined}>
+      <Icon name={error ? 'error' : 'warning'} size="sm" />
       {children}
     </p>
   )

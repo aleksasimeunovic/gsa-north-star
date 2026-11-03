@@ -62,7 +62,8 @@
 .next { background: var(--card); border: 1px solid var(--border); border-radius: var(--stage-radius); box-shadow: var(--shadow-card); padding: var(--stage-pad); display: flex; flex-direction: column; gap: var(--gap-pair); scroll-margin-top: calc(var(--topbar-h) + 100px); }
 .next-top { display: flex; align-items: center; gap: 12px; }
 .task-icon { width: 44px; height: 44px; flex: none; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; background: var(--muted); color: var(--foreground); }
-.next-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.next-head { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.next-head h3 { margin-right: auto; }
 .next h3 { font-size: 1.5rem; letter-spacing: -0.02em; }
 .next > p, .next .lead { color: var(--muted-foreground); }
 .review-head { display: flex; flex-direction: column; gap: 8px; }
@@ -95,7 +96,7 @@
 }
 
 /* This part at a glance */
-.step-outline { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); display: flex; flex-direction: column; gap: var(--space-4); box-shadow: var(--shadow-card); }
+.step-outline { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); display: flex; flex-direction: column; gap: var(--space-3); box-shadow: var(--shadow-card); }
 .outline-head { display: flex; flex-direction: column; gap: 12px; }
 .outline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .outline-list { gap: 2px; }
@@ -191,15 +192,17 @@ button.drawer-row:hover { background: var(--hover); }
 .map-tools { position: absolute; z-index: 2; top: calc(12px + 2 * var(--map-tool) + 2 * var(--space-2)); left: 12px; display: flex; flex-direction: column; gap: var(--space-2); }
 /* Handles are small marks in a large hit area, so they never cover the edge he is checking. White and dark, never the primary green. */
 .map-handle { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
-.map-handle::before { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); transition: transform 0.1s; }
-.map-handle:hover::before { transform: scale(1.25); }
+/* Vertex states after the GSA map kit: a white dot on a dark ring; a halo on hover; selected and dragging, a ring around it. */
+.map-handle::before { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); transition: transform 0.1s, box-shadow 0.1s; }
+.map-handle::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0); transition: box-shadow 0.1s; pointer-events: none; }
+.map-handle:hover::after { box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85), 0 0 0 4px rgb(0 0 0 / 0.25); }
 .map-handle:active { cursor: grabbing; }
-/* The ends slide along the field's edge, so they look like something on a rail: square, not round */
 .map-handle[data-end]::before { border-radius: 3px; }
-.map-handle[data-selected]::before { background: var(--foreground); box-shadow: 0 0 0 3px #fff, 0 1px 4px rgb(0 0 0 / 0.4); }
+.map-handle[data-corner]::before { inset: 16px; }
+.map-handle[data-selected]::before, .map-handle[data-dragging]::before { transform: scale(1.15); }
+.map-handle[data-selected]::after, .map-handle[data-dragging]::after { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 5px rgb(255 255 255 / 0.85); }
 .map-handle:focus { outline: none; }
-.map-handle:focus-visible::before { outline: 2px dashed #fff; outline-offset: 5px; }
-/* A dot on the line where a press would pull it */
+.map-handle:focus-visible::after { box-shadow: 0 0 0 2.5px var(--ring), 0 0 0 5px #fff; }
 .map-ghost { width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground); opacity: 0.85; pointer-events: none; }
 /* Notes on the photo: readable on any field, and they never catch a press */
 .map-chip { padding: 3px 8px; border-radius: 8px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; white-space: nowrap; pointer-events: none; }
@@ -225,6 +228,8 @@ button.drawer-row:hover { background: var(--hover); }
 /* Why the line stopped, right where he is working */
 .map-status { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
 .map-status svg { flex: none; color: var(--warning); }
+.map-status[data-error] { box-shadow: inset 0 0 0 1.5px var(--error), 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.map-status[data-error] svg { color: var(--error); }
 .tool-slider { display: flex; align-items: center; gap: var(--space-3); width: min(420px, 100%); padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--card); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
 .tool-slider input { flex: 1; min-width: 0; accent-color: var(--foreground); }
 /* A phone has no room for six captions: undo, redo and reset are known by their icons */
@@ -272,7 +277,7 @@ button.drawer-row:hover { background: var(--hover); }
 .stage-action { position: sticky; bottom: 0; z-index: 1; margin-top: auto; padding: var(--space-4) 0 var(--space-4); background: var(--card); }
 /* A step in the panel fills it, so its action sits at the bottom whatever the step holds */
 .map-stage-panel > div:has(> .stage-action) { flex: 1; }
-.next .stage-action { bottom: var(--bar-h); margin: 0 calc(-1 * var(--space-8)); padding: var(--space-4) var(--space-8); }
+.next .stage-action { bottom: var(--bar-h); margin: 0 calc(-1 * var(--stage-pad)); padding: var(--space-4) var(--stage-pad); }
 @media (max-width: 639px) { .next .stage-action { margin: 0 calc(-1 * var(--space-5)); padding: var(--space-4) var(--space-5); } }
 /* An action that ends the card ends it: the card's own padding doesn't add to the action's. */
 .next:has(.stage-action:last-child) { padding-bottom: 0; }
@@ -335,9 +340,9 @@ button.drawer-row:hover { background: var(--hover); }
 .records-title { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground); }
 /* Rows are divided by a hairline, never shaded, so nothing reads as hover or selection. */
 .records-rows { margin: 0; display: flex; flex-direction: column; }
-.records-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--border); }
+.records-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--border); }
 .records-row:first-child { border-top: 0; }
-.records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
 .records-text dt { font-size: 0.8125rem; color: var(--muted-foreground); }
 .records-text dd { margin: 0; }
 .records-value { font-weight: 600; }
@@ -355,3 +360,19 @@ button.drawer-row:hover { background: var(--hover); }
 .records-form { display: flex; flex-direction: column; gap: var(--space-3); }
 .records-form-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .records-foot { border-top: 1px solid var(--border); padding-top: var(--space-2); margin: 0 -8px; }
+
+/* On a computer the application is exactly the window: header, stepper, the part filling the rest, the action bar.
+   Nothing scrolls the page; a map task's map takes all the room its card has. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .page[data-screen='welcome'] { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding-bottom: calc(var(--bar-h) + var(--space-4)); }
+  .page[data-screen='welcome'] .main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .page[data-screen='welcome'] .step { flex: 1; min-height: 0; }
+  .page[data-screen='welcome'] .app-layout { flex: 1; min-height: 0; align-items: stretch; }
+  .page[data-screen='welcome'] .app-side { position: static; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .page[data-screen='welcome'] .flow { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .page[data-screen='welcome'] .next:has(.map-figure) { flex: 1; min-height: 0; }
+  .page[data-screen='welcome'] .next:has(.map-figure) > .flex-col { flex: 1; min-height: 0; }
+  .page[data-screen='welcome'] .next .map-figure { flex: 1; min-height: 200px; }
+  .page[data-screen='welcome'] .next .map-figure > .map-link, .page[data-screen='welcome'] .next .map-figure .map-frame { height: 100%; }
+  .page[data-screen='welcome'] .next .map-figure .farm-map { height: 100%; }
+}

@@ -12,6 +12,11 @@ import {
   pointInPolygon,
   polygonAreaHa,
   pullLine,
+  pullOutline,
+  shapeProblem,
+  outlineHa,
+  outlineCrosses,
+  snapToAny,
   removeBend,
   sameLine,
   shiftLine,
@@ -170,11 +175,33 @@ describe('moving the line', () => {
     expect(r.line).toBe(edge)
   })
 
-  it('a line has a limit of bends, so handles stay large on a phone', () => {
+  it('a line takes as many bends as he pulls', () => {
     let line: SplitLine = flat
-    for (let x = 20; x < 200; x += 25) line = pullLine(line, { x, y: 60 })?.line ?? line
-    expect(line.length).toBe(9)
-    expect(pullLine(line, { x: 190, y: 60 })).toBeNull()
+    for (let x = 20; x < 200; x += 25) line = pullLine(line, { x, y: 60 }).line
+    expect(line.length).toBe(10)
+  })
+
+  it("the field's edge takes new corners where he pulls it, and stays on the registered farmland", () => {
+    const sq = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]
+    const land = [{ x: -20, y: -20 }, { x: 120, y: -20 }, { x: 120, y: 120 }, { x: -20, y: 120 }]
+    const r = pullOutline(sq, { x: 50, y: 1 })
+    expect(r.poly.length).toBe(5)
+    expect(r.corner).toBe(1)
+    const line = [{ x: 0, y: 50 }, { x: 100, y: 50 }]
+    const out = r.poly.map((p, i) => (i === 1 ? { x: 50, y: -30 } : p))
+    expect(shapeProblem(land, out, line, 1)).toBe('outside_land')
+    const ok = r.poly.map((p, i) => (i === 1 ? { x: 50, y: -10 } : p))
+    expect(shapeProblem(land, ok, line, 1)).toBeNull()
+    expect(outlineHa(sq, 1, ok)).toBeCloseTo(1.05, 2)
+    const crossed = [{ x: 0, y: 0 }, { x: 100, y: 100 }, { x: 100, y: 0 }, { x: 0, y: 100 }]
+    expect(outlineCrosses(crossed)).toBe(true)
+  })
+
+  it('snaps to the nearest of several edges', () => {
+    const a = [{ x: 0, y: 0 }, { x: 100, y: 0 }]
+    const b = [{ x: 0, y: 10 }, { x: 100, y: 10 }]
+    expect(snapToAny({ x: 50, y: 7 }, [a, b]).point.y).toBe(10)
+    expect(snapToAny({ x: 50, y: 50 }, [a, b]).snapped).toBe(false)
   })
 
   it('a bend can be taken out, and a bend let go on a straight stretch goes by itself', () => {

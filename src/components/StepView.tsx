@@ -9,7 +9,7 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { Toast } from '../ui/Toast'
 import { useApp } from './AppContext'
 import { nextActionLabel } from './ReadinessBar'
-import { TaskBody } from './TaskBodies'
+import { MapReviewButton, TaskBody } from './TaskBodies'
 import type { AfterAnswer, Flow } from './useApplicationFlow'
 
 /** One part of his application: what his last answer changed, then the one thing to do now in this part. */
@@ -42,6 +42,7 @@ function NextAction({ flow }: { flow: Flow }) {
           <div className="next-head">
             <h3 id="next-title" tabIndex={-1}>{heading}</h3>
             {!needsHim && <StatusBadge mark={task.mark} />}
+            <MapReviewButton id={task.id} />
           </div>
         </div>
       </div>

@@ -301,4 +301,17 @@ One line per decision: what was chosen, the alternative rejected, why.
 246. **Variations, reasoning and toolbar states are in the Figma file North Star** (four ways to show the tools, four ways to change the field, the workflow strip, handle sizes, phone). Written out there: ten things that make a parcel change easier, and Earl's questions answered.
 247. `src/copy/en.ts`: 4,977 to 4,724 words.
 
-- Removed the "Show design notes" checkbox from the prototype drawer (rejected: keeping it off by default); Aleksa asked, so design notes stay hidden.
+## Round 15 (Aleksa, 3 Nov, on Earl's email of 31 Oct): edit the whole field
+
+248. **The "Show design notes" switch is gone from the prototype drawer (Aleksa).** Rejected: keeping it off by default. Design notes no longer show anywhere.
+249. **He can move the river field's own edge, not only the line across it, with as many points as he likes (reverses 190 and 224 for the river field only).** Pressing the edge makes a corner there or takes the one he pressed near, like the line. Rejected: a separate "edit boundary" mode, which is one more thing to find; the edge and the line are both just things he pulls.
+250. **The edge can't go past the farmland registered around the field, and saying so is an error toast on the map (red ring and icon), with the farmland shown dashed while he works.** He never needs the words physical block, cadastral or agricultural parcel: GSA holds the field inside the farmland, keeps the line's ends on the field's edge whatever he moves, and names the limit only when it stops him. The farmland outline is a prototype placeholder. Rejected: letting the corner go and showing a red invalid shape (old GSA), because an invalid shape then exists.
+251. **A moved edge changes the field's area as the record's 2.40 ha scaled by the drawn change**, and from there the land list, parts, estimate, measures and readiness follow (`farmAsAnswered`, derived, never stored; the record stays as `base`). Rejected: keeping 2.40 ha whatever he draws, which would make moving the edge mean nothing.
+252. **Straight is removed and the line takes any number of bends.** Snap now follows the satellite's edge and the field's registered edge, for bends and corners alike. Only a point he lets go on a straight stretch is tidied away; the corners traced from the photo stay.
+253. **Vertex states after the GSA map kit in Figma (Serbian GSA, Map / Vertex handle):** white dot on a dark ring; a halo on hover; a ring around it while selected or dragged. Corners are a little smaller than the line's bends.
+254. **A crop new this year says which measure it opens**: "Certified seed can now also cover seed for your sunflowers" before he confirms, and "New: you sow sunflowers on the river field this year" on certified seed in Measures. Labelled as an assumption. Rejected: a new section about eligibility, which is more text.
+255. **The stepper and the part outline say what's left in his words ("2 fields to go", "1 thing to confirm", "Choose yours"), not "0 of 3 done".**
+256. **On a computer the application fills the window and the page never scrolls**; a long part scrolls inside its own column. A map task's map fills its card and "Review this boundary" sits beside the heading. On a phone the page still scrolls (decision 244): a phone has no room for a map and a panel at once.
+257. **Spacing pass:** groups 24 to 16 px, sections 40 to 24 px, the task card's padding 32 to 24 px, rows in What GSA knows 12 to 8 px.
+258. **Wording:** "What the satellite shows" for the photo view; "Change the divider line" for changing the split.
+259. `src/copy/en.ts`: 4,710 to 4,845 words. The round adds the edge, its error and the new crop on purpose.

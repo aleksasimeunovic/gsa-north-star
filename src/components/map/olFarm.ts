@@ -74,6 +74,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     const f = new Feature<Geometry>(new OlPolygon(ring(poly)))
     f.setStyle(mapStyle(role))
     into.addFeature(f)
+    return f
   }
   const label = (into: VectorSource, at: Point, text: string, o?: Parameters<typeof labelStyle>[1]) => {
     const f = new Feature<Geometry>(new OlPoint(coord(at)))
@@ -100,10 +101,12 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   const fields = opts.parcel ? [] : opts.only ? s.fields.filter((f) => opts.only!.includes(f.id)) : s.fields
   if (opts.parcel) shape(opts.parcel, 'field')
 
+  let focusShape: Feature<Geometry> | null = null
   for (const f of fields) {
     // With a place in question (a parcel, farmland to pick), his fields are only there for orientation.
     const strong = (!focused && !opts.spot && !opts.lands?.length) || f.id === focused?.id
-    shape(f.polygon, strong ? 'field' : 'faint')
+    const drawn = shape(f.polygon, strong ? 'field' : 'faint')
+    if (f.id === focused?.id) focusShape = drawn
     // On a still preview only the field in question is named; on a map he moves around, every field is.
     if (strong || opts.interactive) name(f.polygon, en.fields[f.id], strong)
   }
@@ -238,6 +241,8 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     coord,
     ring,
     point,
+    /** While he moves its edge, the field in question is drawn by the tool instead. */
+    hideFocus: (hide: boolean) => focusShape?.setStyle(hide ? [] : mapStyle('field')),
     /** Shows or hides what the photo flagged, so he can compare it with his field. */
     showFlag: (on: boolean) => {
       flagLayer.setVisible(on)

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { en, formatDateYear, formatHa, map as copy } from '../../copy/en'
-import type { Field, FieldId, Polygon, Scenario } from '../../data/scenarios'
+import type { FieldId, Polygon, Scenario } from '../../data/scenarios'
 import { riverParts } from '../../logic/farm'
 import { Icon } from '../../ui/Icon'
 import { VisuallyHidden } from '../../ui/Layout'
@@ -17,7 +17,7 @@ interface Props {
   mode: 'preview' | 'explore'
   label: string
   /** The split line, drawn on the map; he moves it when interactive. */
-  split?: { field: Field; d: SplitDraft; interactive: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }
+  split?: { d: SplitDraft; interactive: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }
   /** Hide what the photo flagged, to compare it with last year's field. */
   hideFlag?: boolean
   /** Fills a map stage: as large as the screen allows, with its tools on the map. */

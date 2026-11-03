@@ -254,14 +254,12 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
   const fieldId = id.slice(6) as FieldId
   const item = itemOf(derived, id)
   const unanswered = item.detail.endsWith('_unanswered')
-  const review = () => go('review', id)
-  const action = item.detail === 'river_needs_split' ? tasks.reviewSplit : tasks.review
 
   return (
-    <Stack gap="section">
+    <Stack gap="md">
       <Text>{taskSummary(id, derived, state)}</Text>
       <figure className="map-figure">
-        <div className="map-link" onClick={review}>
+        <div className="map-link" onClick={() => go('review', id)}>
           <Suspense fallback={<MapFallback mode="preview" />}>
             <FarmMap
               scenario={derived.scenario}
@@ -279,13 +277,21 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
           {finish.submit.awaitingNote} <Note kind="assumption" />
         </Text>
       )}
-      <StageAction>
-        <Button variant={item.status === 'action_required' ? 'primary' : 'secondary'} onClick={review}>
-          {item.status === 'action_required' ? action : en.change}
-          <VisuallyHidden>: {en.fields[fieldId]}</VisuallyHidden>
-        </Button>
-      </StageAction>
     </Stack>
+  )
+}
+
+/** The way into the map, beside the task's heading, so the map gets the room under it. */
+export function MapReviewButton({ id }: { id: TaskId }) {
+  const { derived, go } = useApp()
+  if (id !== 'field_river' && id !== 'field_road') return null
+  const item = itemOf(derived, id)
+  const action = item.detail === 'river_needs_split' ? tasks.reviewSplit : tasks.review
+  return (
+    <Button variant={item.status === 'action_required' ? 'primary' : 'secondary'} onClick={() => go('review', id)}>
+      {item.status === 'action_required' ? action : en.change}
+      <VisuallyHidden>: {en.fields[id.slice(6) as FieldId]}</VisuallyHidden>
+    </Button>
   )
 }
 

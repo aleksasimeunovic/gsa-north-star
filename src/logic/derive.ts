@@ -6,14 +6,16 @@ import { readiness, readinessReport } from './readiness'
 import { deriveItems } from './status'
 import { milanCaseState } from './advisor'
 import { detectChanges } from './changes'
-import { farmPicture } from './farm'
+import { farmAsAnswered, farmPicture } from './farm'
 
 /** Everything the UI shows, derived from the store in one place. */
 export function derive(state: AppState) {
-  const scenario = SCENARIOS[state.scenarioId]
+  const base = SCENARIOS[state.scenarioId]
+  const scenario = farmAsAnswered(base, state.answers)
   const items = deriveItems(scenario, state.answers, milanCaseState(state))
   const list = applicationList(scenario, state.answers, items, state.role)
   return {
+    base,
     scenario,
     items,
     list,

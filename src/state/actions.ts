@@ -11,6 +11,8 @@ export type Confirmable = 'receipts' | 'calvings'
 export type MeasureValue = string | string[] | boolean
 
 export interface Split {
+  /** The field's edge where he moved it; none while it is as registered. */
+  boundary?: Polygon
   /** From one edge of the field to another, with the bends he pulled. */
   line: Point[]
   crops: [PartCrop | null, PartCrop | null]

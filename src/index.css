@@ -85,8 +85,8 @@
   /* A title and the body it introduces */
   --gap-pair: var(--space-2);
   --gap-item: var(--space-3);
-  --gap-group: var(--space-6);
-  --gap-section: var(--space-10);
+  --gap-group: var(--space-4);
+  --gap-section: var(--space-6);
 
   /*
    * Layout: three surfaces, each with one padding and one radius, so every screen keeps the same rhythm.
@@ -94,7 +94,7 @@
    * outline, kept from last year, review rows). Row: one line inside a panel.
    */
   --page-gutter: var(--space-4);
-  --stage-pad: var(--space-8);
+  --stage-pad: var(--space-6);
   --stage-radius: 24px;
   --panel-pad: var(--space-5);
   --panel-radius: 20px;
@@ -113,7 +113,7 @@
 }
 [data-density='compact'] { --control-h: 34px; --gap-section: var(--space-6); }
 @media (max-width: 1023px) { :root { --stepper-h: 52px; } }
-@media (max-width: 639px) { :root { --gap-section: var(--space-8); --bar-h: 118px; --stage-pad: var(--space-5); --stage-radius: 20px; --panel-pad: var(--space-4); } }
+@media (max-width: 639px) { :root { --gap-section: var(--space-6); --bar-h: 118px; --stage-pad: var(--space-5); --stage-radius: 20px; --panel-pad: var(--space-4); } }
 
 @theme inline {
   --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;

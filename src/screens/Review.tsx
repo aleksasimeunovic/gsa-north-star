@@ -95,9 +95,10 @@ const RIVER_STEPS: RiverStep[] = ['line', 'crops', 'effects']
 function RiverReview({ onAnswer, head }: BodyProps) {
   const { derived, state, dispatch } = useApp()
   const field = derived.scenario.fields.find((f) => f.id === 'river')!
+  const record = derived.base.fields.find((f) => f.id === 'river')!
   const item = derived.items.find((i) => i.id === 'field_river')!
   const a = state.answers.river
-  const draft = useSplitDraft(field, a.split)
+  const draft = useSplitDraft(record, a.split)
   const [asking, setAsking] = useState(a.answer === null)
   const [step, setStep] = useState<RiverStep | null>(a.answer === 'yes' && item.status === 'action_required' ? 'line' : null)
   const [view, setView] = useState<'photo' | 'field'>('photo')
@@ -133,7 +134,6 @@ function RiverReview({ onAnswer, head }: BodyProps) {
             split={
               step
                 ? {
-                    field,
                     d: draft,
                     interactive: step === 'line',
                     labels: partLabels(draft, step),
@@ -143,7 +143,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
             }
             dock={
               step === 'line' ? (
-                <LineTools field={field} d={draft} />
+                <LineTools d={draft} />
               ) : !step && a.answer === null ? (
                 <ToolSwitch
                   label={map.title}
@@ -171,7 +171,6 @@ function RiverReview({ onAnswer, head }: BodyProps) {
       {!step && a.answer === null && <RiverCompare field={field} />}
       {step === 'line' && (
         <LineStep
-          field={field}
           d={draft}
           onBack={() => {
             setAsking(true)

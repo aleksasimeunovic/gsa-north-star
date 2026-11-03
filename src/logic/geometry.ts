@@ -87,7 +87,6 @@ export const MIN_PART_HA = 0.1
 /** Closer than this to the edge the photo shows, a bend joins it. */
 export const SNAP_M = 6
 const INSET_M = 1
-const MAX_BENDS = 7
 /** A press on the line this close to a bend takes that bend. */
 const BEND_REACH_M = 12
 /** A bend left this close to a straight line isn't a bend. */
@@ -195,12 +194,11 @@ export function lineProblem(poly: Polygon, line: SplitLine, wholeHa = polygonAre
 }
 
 /**
- * Pulling the line somewhere that has no bend makes one there; near a bend, it takes that bend. Null at
- * the most bends a line can have. There are no points to place: only the line, which he pulls.
+ * Pulling the line somewhere that has no bend makes one there; near a bend, it takes that bend. As many
+ * bends as he likes. There are no points to place: only the line, which he pulls.
  */
-export function pullLine(line: SplitLine, p: Point): { line: SplitLine; bend: number } | null {
+export function pullLine(line: SplitLine, p: Point): { line: SplitLine; bend: number } {
   for (let i = 1; i < line.length - 1; i++) if (Math.hypot(line[i].x - p.x, line[i].y - p.y) <= BEND_REACH_M) return { line, bend: i }
-  if (line.length - 2 >= MAX_BENDS) return null
   const at = closestOnPath(p, line)
   const bend = at.segment + 1
   return { line: [...line.slice(0, bend), at.point, ...line.slice(bend)], bend }
@@ -231,3 +229,72 @@ export const sameLine = (a: SplitLine, b: SplitLine) => a.length === b.length &&
 
 /** Whether every bend of the line sits on the edge the photo shows. */
 export const followsEdge = (line: SplitLine, edge: Point[]) => line.every((p) => closestOnPath(p, edge).dist < 0.5)
+
+// ---- The field's own edge: he pulls it like the line, and it can't leave the farmland registered there. ----
+
+/** Help following what he sees: near any of these edges (the photo's, the field's as registered), a point joins it. */
+export function snapToAny(p: Point, paths: Point[][]): { point: Point; snapped: boolean } {
+  let best: { point: Point; dist: number } | null = null
+  for (const path of paths) {
+    if (path.length < 2) continue
+    const c = closestOnPath(p, path)
+    if (c.dist <= SNAP_M && (!best || c.dist < best.dist)) best = c
+  }
+  return best ? { point: best.point, snapped: true } : { point: p, snapped: false }
+}
+
+/** A closed outline as a path, for snapping to it. */
+export const outlinePath = (poly: Polygon): Point[] => ring(poly)
+
+/**
+ * Pressing the field's edge: the corner he pressed near, or a new one there. As many as he likes, and
+ * never a point he places on empty ground.
+ */
+export function pullOutline(poly: Polygon, p: Point): { poly: Polygon; corner: number } {
+  for (let i = 0; i < poly.length; i++) if (Math.hypot(poly[i].x - p.x, poly[i].y - p.y) <= BEND_REACH_M / 2) return { poly, corner: i }
+  const at = closestOnPath(p, ring(poly))
+  const corner = at.segment + 1
+  return { poly: [...poly.slice(0, corner), at.point, ...poly.slice(corner)], corner }
+}
+
+export const removeCorner = (poly: Polygon, i: number): Polygon => (poly.length <= 3 ? poly : poly.filter((_, k) => k !== i))
+
+/** A corner he let go on a straight stretch of the edge isn't a corner. */
+export function tidyOutline(poly: Polygon, i: number): Polygon {
+  const n = poly.length
+  if (n <= 3 || !poly[i]) return poly
+  return closestOnSegment(poly[i], poly[(i - 1 + n) % n], poly[(i + 1) % n]).dist > STRAIGHT_M ? poly : removeCorner(poly, i)
+}
+
+/** Whether a field's edge crosses itself. */
+export function outlineCrosses(poly: Polygon): boolean {
+  const n = poly.length
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue
+      if (segmentsCross(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n])) return true
+    }
+  }
+  return false
+}
+
+const onLand = (land: Polygon, p: Point) => pointInPolygon(p, land) || closestOnPath(p, ring(land)).dist < 0.5
+
+/** Whether the field's edge stays on the farmland registered there, corners and the stretches between them. */
+export const staysOnLand = (land: Polygon, poly: Polygon) =>
+  poly.every((p, i) => onLand(land, p) && staysInside(land, p, poly[(i + 1) % poly.length]))
+
+/** The line's ends stay on the field's edge when the edge moves. */
+export const fitLine = (poly: Polygon, line: SplitLine): SplitLine => line.map((p, i) => (i === 0 || i === line.length - 1 ? toFieldEdge(poly, p) : p))
+
+/** The record's area, grown or shrunk by as much as he moved the field's edge. */
+export const outlineHa = (record: Polygon, recordHa: number, poly: Polygon) => roundHa((recordHa * polygonAreaHa(poly)) / polygonAreaHa(record))
+
+export type ShapeProblem = LineProblem | 'outside_land'
+
+/** What's wrong with the field's edge and the line across it, or null. The map never leaves him with one. */
+export function shapeProblem(land: Polygon | undefined, poly: Polygon, line: SplitLine, wholeHa: number): ShapeProblem | null {
+  if (land && !staysOnLand(land, poly)) return 'outside_land'
+  if (outlineCrosses(poly)) return 'crosses_itself'
+  return lineProblem(poly, line, wholeHa)
+}
