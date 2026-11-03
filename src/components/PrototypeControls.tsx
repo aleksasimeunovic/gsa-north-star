@@ -2,15 +2,14 @@ import { useRef, useState } from 'react'
 import { proto } from '../copy/en'
 import type { Role } from '../state/actions'
 import { Button } from '../ui/Button'
-import { Checkbox } from '../ui/Checkbox'
 import { Icon } from '../ui/Icon'
 import { Drawer } from '../ui/Drawer'
 import { Stack } from '../ui/Layout'
 import { RadioGroup } from '../ui/RadioGroup'
 import { useApp } from './AppContext'
 
-/** Only what a reviewer needs: whose eyes to see it through, what's still an assumption, and a fresh start. */
-export function PrototypeControls({ notes, onNotes }: { notes: boolean; onNotes: (on: boolean) => void }) {
+/** Only what a reviewer needs: whose eyes to see it through and a fresh start. */
+export function PrototypeControls() {
   const { state, dispatch, go } = useApp()
   const [open, setOpen] = useState(false)
   const opener = useRef<HTMLButtonElement>(null)
@@ -37,7 +36,6 @@ export function PrototypeControls({ notes, onNotes }: { notes: boolean; onNotes:
               go(role === 'advisor' ? 'queue' : 'welcome')
             }}
           />
-          <Checkbox label={proto.notes} checked={notes} onChange={onNotes} />
           <div>
             <Button
               onClick={() => {

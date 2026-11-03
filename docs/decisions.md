@@ -301,3 +301,4 @@ One line per decision: what was chosen, the alternative rejected, why.
 246. **Variations, reasoning and toolbar states are in the Figma file North Star** (four ways to show the tools, four ways to change the field, the workflow strip, handle sizes, phone). Written out there: ten things that make a parcel change easier, and Earl's questions answered.
 247. `src/copy/en.ts`: 4,977 to 4,724 words.
 
+- Removed the "Show design notes" checkbox from the prototype drawer (rejected: keeping it off by default); Aleksa asked, so design notes stay hidden.

@@ -647,7 +647,6 @@ export const proto = {
   milan: 'Milan (farmer)',
   jelena: 'Jelena (advisor)',
   reset: 'Reset this scenario',
-  notes: 'Show design notes (assumptions, tested, AI)',
 }
 
 export const advisor = {
