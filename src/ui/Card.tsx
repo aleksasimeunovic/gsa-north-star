@@ -18,11 +18,11 @@ export function Card({ id, title, headingLevel = 3, emphasis = 'normal', childre
   const compact = useDensity() === 'compact'
   return (
     <section id={id} tabIndex={-1} aria-labelledby={headingId} className="scroll-mt-40">
-      <Base className={cn(compact && 'gap-3 p-4 rounded-xl')}>
+      <Base className={cn('gap-[var(--gap-text)]', compact && 'p-4 rounded-xl')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <H id={headingId} className={cn(emphasis === 'low' ? 'text-base' : 'text-lg')}>{title}</H>
         </div>
-        <div className="flex flex-col gap-3">{children}</div>
+        <div className="flex flex-col gap-[var(--gap-item)]">{children}</div>
       </Base>
     </section>
   )

@@ -3,6 +3,7 @@ import { after as copy, home, steps, tasks } from '../copy/en'
 import type { TaskId } from '../logic/application'
 import { isMapChange, stepOf } from '../logic/application'
 import { Button } from '../ui/Button'
+import { Icon } from '../ui/Icon'
 import { Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
@@ -69,7 +70,7 @@ function StepDone({ flow }: { flow: Flow }) {
       )}
       {nextStep && (
         <div>
-          <Button variant="primary" onClick={() => flow.goStep(nextStep.id)}>{home.continueTo(steps.name[nextStep.id])}</Button>
+          <Button variant="primary" onClick={() => flow.goStep(nextStep.id)}>{home.continueTo(steps.name[nextStep.id])}<Icon name="forward" size="sm" /></Button>
         </div>
       )}
     </section>

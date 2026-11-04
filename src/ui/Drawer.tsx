@@ -15,8 +15,9 @@ interface Props {
   variant?: 'default' | 'prototype'
 }
 
-// A sheet from the right, the full height of the window. Non-modal: no focus trap. Esc closes and focus returns
-// to the opener. Rendered at the end of the page, so a blurred header it opens from can't clip it.
+// A sheet from the right, the full height of the window, over a dark veil that keeps the eye on it; a tap on
+// the veil closes it. No focus trap. Esc closes and focus returns to the opener. Rendered at the end of the
+// page, so a blurred header it opens from can't clip it.
 export function Drawer({ open, title, onClose, returnFocusTo, children, variant = 'default' }: Props) {
   const titleId = useId()
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -37,6 +38,8 @@ export function Drawer({ open, title, onClose, returnFocusTo, children, variant 
 
   if (!open) return null
   return createPortal(
+    <>
+    {variant === 'default' && <div className="drawer-scrim" aria-hidden="true" onClick={onClose} />}
     <section
       role="dialog"
       aria-modal="false"
@@ -53,7 +56,8 @@ export function Drawer({ open, title, onClose, returnFocusTo, children, variant 
         </Button>
       </div>
       {children}
-    </section>,
+    </section>
+    </>,
     document.body,
   )
 }

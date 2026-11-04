@@ -130,7 +130,9 @@ export function useApplicationFlow(target: string | null) {
     const prevFocus = shown.current
     if (prevFocus && prevFocus !== 'submit' && was.get(prevFocus) === 'action_required') {
       const now = all.find((t) => t.id === prevFocus)?.status
-      if (now === 'complete' || now === undefined) {
+      // Measures complete as he fills in the last answer: he stays, and Continue becomes the primary action.
+      if (prevFocus === 'measures' && now === 'complete') setHeld(prevFocus)
+      else if (now === 'complete' || now === undefined) {
         // On to the next task in this part; once the part is finished, straight on to the next part that needs him.
         const next = todoAfter(prevFocus)
         const onward = next ? null : stepAfter(index)

@@ -395,3 +395,21 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 317. **Fixed: compact density never reached the CSS** (the page had no `data-density`), so Jelena's controls only looked compact where a component asked for it.
 318. **Labels shortened to fit one line**: "The same as the rest" (the question already says along the river), and "Use these fields" (the evidence line above names them; screen readers still hear the names).
 319. `src/copy/en.ts`: 4,809 to 4,802 words.
+
+## Round 21 (Aleksa, 4 Nov): measures as checkboxes, type and gap tokens, clearer states
+
+320. **A measure is a checkbox, not a button**: ticking it is his choice and opens what it needs under it. It counts as applied once everything is in ("Applied", green tick, green border), with no Apply or "Fill in what's missing" button; once every ticked measure is complete, the part's Continue becomes the primary action, and he stays on the task while typing the last answer. Rejected: a button per measure plus a sticky apply bar (the bar did nothing useful and floated over the list).
+321. **A required answer left empty turns red once he moves on from that measure** (the field, the field cards, the upload area and the checkbox), never while he is still in it, and an error never pulls focus back. The "Still to fill in" line is gone; the fields say it.
+322. **The measure card holds only the name and one line** (why GSA recommends it, what it pays on his numbers, or why it fits); the arrow opens everything else in a side panel. For a measure that doesn't fit yet, the panel leads with what he is missing, then what it could mean for his household. One heading style, one body style, one quiet style, sections 24 px apart.
+323. **Side panels open over a dark veil**; a tap on it closes the panel. Still no focus trap; Esc returns focus.
+324. **Headings and body text have their own fonts, as tokens**: `--font-heading` (Bricolage Grotesque) and `--font-body` (Inter), plus `--heading-weight` and `--heading-tracking`. Changing the pair is those lines and the font link in `index.html`; map labels read the body token. Rejected: Geist for everything (no separation between heading and text).
+325. **Gaps by relation, as tokens**: `--gap-text` (6 px, a title and the text it introduces, e.g. "Estimated subsidy" and its line), `--gap-label` (label and control), `--gap-inline` (icon and words), `--gap-item`, `--gap-group`, `--gap-section`. `--gap-pair` is gone. A task's heading and its line of context now use `--gap-text`.
+326. **To do is a warning sign in neutral grey**, not an empty circle: it reads as "needs you" without reading as an error. Orange and red keep their meanings.
+327. **"Your farm this year" leads each row with its state mark**, so what still needs him is scannable down the left edge before he submits.
+328. **The part panel is left out when the part has one task**; "Only this one left, then …" is gone.
+329. **Back points left, Continue and Next point right.**
+330. **The account number field fits the whole number**, with "Save changes" right under it instead of pinned over it.
+331. **"Add a field" spans the panel; "See all your records" sits under every "What GSA knows"** (a placeholder that leads nowhere yet).
+332. **Card map previews are taller on a phone** (280 px).
+333. **"Unchanged since last year" is now "Farmer's data".**
+334. `src/copy/en.ts`: 4,802 to 4,764 words.

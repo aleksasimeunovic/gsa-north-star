@@ -4,6 +4,10 @@ import { Fill, Stroke, Style, Text } from 'ol/style'
 // Greyscale like the rest of the prototype; the design system replaces these later.
 const white = '#fff'
 const halo = 'rgba(0,0,0,0.6)'
+// Labels on the map use the body font token, so a new type pair reaches the canvas too.
+let font: string | null = null
+const bodyFont = () =>
+  (font ??= (typeof document !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim()) || 'system-ui, sans-serif')
 
 function pattern(size: number, draw: (ctx: CanvasRenderingContext2D) => void): CanvasPattern | string {
   if (typeof document === 'undefined') return 'rgba(255,255,255,0.3)'
@@ -43,7 +47,7 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
   return new Style({
     text: new Text({
       text,
-      font: `${strong ? 600 : 400} ${size}px Geist, system-ui, -apple-system, sans-serif`,
+      font: `${strong ? 600 : 400} ${size}px ${bodyFont()}`,
       fill: new Fill({ color: white }),
       stroke: new Stroke({ color: halo, width: 4 }),
       textAlign: align,

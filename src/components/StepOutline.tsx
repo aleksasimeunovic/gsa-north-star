@@ -10,19 +10,19 @@ import type { Flow } from './useApplicationFlow'
  */
 export function StepOutline({ flow }: { flow: Flow }) {
   const { tasks } = flow.step
-  if (!tasks.length) return null
+  // A part of one task needs no panel: the task on screen is all there is.
+  if (tasks.length < 2) return null
   const count = (status: string) => tasks.filter((t) => t.status === status).length
   const left = count('action_required')
   return (
     <section className="step-outline" aria-labelledby="outline-title">
       <div className="outline-head">
-        <h3 id="outline-title" className="group-title">{left === 1 && flow.step.id !== 'measures' ? steps.only(flow.nextStep && steps.name[flow.nextStep.id]) : steps.left(flow.step.id, left)}</h3>
+        <h3 id="outline-title" className="group-title">{steps.left(flow.step.id, left)}</h3>
         <div className="outline-progress">
           <Progress value={tasks.length - count('action_required')} max={tasks.length} />
         </div>
       </div>
-      {/* A part of one task needs no list: the heading beside it already names it. */}
-      {tasks.length > 1 && <ul className="outline-list">
+      <ul className="outline-list">
         {tasks.map((t) => {
           const now = t.id === flow.focus
           return (
@@ -42,7 +42,7 @@ export function StepOutline({ flow }: { flow: Flow }) {
             </li>
           )
         })}
-      </ul>}
+      </ul>
     </section>
   )
 }

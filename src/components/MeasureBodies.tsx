@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { en, formatDinars, formatHa, formatNumber, split, tasks } from '../copy/en'
-import type { Measure, MeasureId, Requirement } from '../data/scenarios'
+import type { Measure, MeasureId, Requirement, Suggestion } from '../data/scenarios'
 import { fitting, goalGain, measureGaps, readyToApply, shown } from '../logic/status'
 import { carriedFields, fieldChoices, newCrops } from '../logic/farm'
 import type { PartName } from '../logic/geometry'
@@ -8,6 +8,7 @@ import type { MeasureValue } from '../state/actions'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Checkbox, CheckboxGroup } from '../ui/Checkbox'
+import { Checkbox as CheckboxBase } from '../ui/shadcn/checkbox'
 import { Disclosure } from '../ui/Disclosure'
 import { Drawer } from '../ui/Drawer'
 import { Field } from '../ui/Field'
@@ -15,7 +16,6 @@ import { FileInput } from '../ui/FileInput'
 import { Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { RadioGroup } from '../ui/RadioGroup'
 import { Icon } from '../ui/Icon'
-import { StageAction } from '../ui/MapStage'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp, type AppCtx } from './AppContext'
 
@@ -43,88 +43,106 @@ function amountLine(m: Measure, d: Derived): string {
   return t.pays[m.id] ?? ''
 }
 
+/** One short line under a measure's name: why it fits, or what it pays him. The rest is in its side panel. */
+function shortLine(m: Measure, d: Derived, g: Suggestion | undefined, fresh: ReturnType<typeof newCrops>[number] | undefined): string {
+  if (g) return g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)
+  if (m.lastYear) return amountLine(m, d)
+  if (m.id === 'certified_seed' && fresh) return t.newCrop(en.crops[fresh.crop].toLowerCase())
+  return t.why[m.id] ?? ''
+}
+
 /**
- * Choosing measures, in the order that helps him decide: last year's, then the ones GSA recommends (with its
- * reason), then the rest that fit, closed. Choosing a measure opens what it needs right under it. It only
- * counts as applied once everything every chosen measure needs is in and he applies, so each measure says
- * where it stands and the one action is what's missing, until it can be Apply. What he types is kept as he goes.
+ * Choosing measures, in the order that helps him decide: last year's, then the ones GSA recommends, then the
+ * rest that fit, closed. Each is a checkbox: ticking it is his choice, and opens what it needs right under it.
+ * It counts as applied once everything is in; a required answer left empty turns red once he moves on from
+ * the measure. No apply button: the part's own Continue becomes the primary action once every ticked measure
+ * is complete. Name and one line on the card; everything else about it opens in a side panel.
  */
 export function MeasuresBody() {
   const { derived, state, dispatch } = useApp()
   const s = derived.scenario
-  const { chosen, inputs, confirmed } = state.answers.measures
+  const { chosen, inputs } = state.answers.measures
   const fit = fitting(s)
   const suggested = s.suggestions.filter((g) => fit.some((m) => m.id === g.measureId))
   const isSuggested = (id: MeasureId) => suggested.some((g) => g.measureId === id)
   const last = fit.filter((m) => m.lastYear)
   const ofSuggestions = suggested.map((g) => fit.find((m) => m.id === g.measureId)!)
   const more = fit.filter((m) => !m.lastYear && !isSuggested(m.id))
-  // The measures he chose, in the order he sees them.
-  const picked = [...last, ...ofSuggestions, ...more].filter((m) => chosen.includes(m.id))
-  const open = picked.filter((m) => !readyToApply(m, inputs))
   const [moreOpen, setMoreOpen] = useState(more.some((m) => chosen.includes(m.id)))
-  // An empty field says so only once he has asked for what's missing.
-  const [tried, setTried] = useState(false)
+  // A ticked measure shows what's missing in red only once he has moved on from it.
+  const [touched, setTouched] = useState<MeasureId[]>([])
+  const [about, setAbout] = useState<Measure | null>(null)
+  const opener = useRef<HTMLElement | null>(null)
+  const fresh = newCrops(derived.scenario, state.answers)[0]
 
-  // Nothing is chosen or filled in for him: GSA prepares, only Milan declares.
-  const toggle = (m: Measure, on: boolean) =>
-    dispatch({ type: 'draft_measures', chosen: on ? [...chosen.filter((x) => x !== m.id), m.id] : chosen.filter((x) => x !== m.id), inputs })
-
-  const showMissing = () => {
-    setTried(true)
-    setMoreOpen(true)
-    requestAnimationFrame(() => {
-      const el = document.getElementById(`measure-${open[0].id}`)
-      el?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-      el?.querySelector<HTMLElement>('.measure-fields input, .measure-fields textarea, .measure-fields button')?.focus({ preventScroll: true })
-    })
-  }
-
-  const apply = () => {
-    const ids = fit.map((m) => m.id).filter((id) => chosen.includes(id))
+  // Nothing is ticked or filled in for him: GSA prepares, only Milan declares.
+  const draft = (next: MeasureId[], nextInputs: Inputs) => {
     // Only what he can see is kept.
     const kept = Object.fromEntries(
-      Object.entries(inputs).filter(([k]) => {
+      Object.entries(nextInputs).filter(([k]) => {
         const [mid, rid] = k.split('.')
         const m = fit.find((x) => x.id === mid)
         const r = m?.requirements.find((x) => x.id === rid)
-        return !!m && !!r && ids.includes(m.id) && shown(m, r, inputs)
+        return !!m && !!r && next.includes(m.id) && shown(m, r, nextInputs)
       }),
     )
-    dispatch({ type: 'choose_measures', chosen: ids, inputs: kept })
+    dispatch({ type: 'draft_measures', chosen: fit.map((m) => m.id).filter((id) => next.includes(id)), inputs: kept })
+  }
+  const toggle = (m: Measure, on: boolean) => {
+    if (!on) setTouched((ts) => ts.filter((x) => x !== m.id))
+    draft(on ? [...chosen, m.id] : chosen.filter((x) => x !== m.id), inputs)
   }
 
-  const fresh = newCrops(derived.scenario, state.answers)[0]
   const option = (m: Measure) => {
     const on = chosen.includes(m.id)
     const g = suggested.find((x) => x.measureId === m.id)
-    const own = userReqs(m)
+    const ready = readyToApply(m, inputs)
+    const invalid = on && !ready && touched.includes(m.id)
+    const box = `apply-${m.id}`
     return (
-      <li key={m.id} id={`measure-${m.id}`} className="measure-option" data-on={on || undefined}>
+      <li
+        key={m.id}
+        id={`measure-${m.id}`}
+        className="measure-option"
+        data-on={on || undefined}
+        data-state={on ? (ready ? 'applied' : invalid ? 'error' : 'open') : undefined}
+        onBlur={(e) => {
+          if (on && !ready && !e.currentTarget.contains(e.relatedTarget as Node | null)) setTouched((ts) => (ts.includes(m.id) ? ts : [...ts, m.id]))
+        }}
+      >
         <div className="measure-head">
-          <span className="measure-text">
-            <span className="measure-name">{en.measures[m.id]}</span>
-            {/* Why GSA recommends it, what the state still checks, what he provides. */}
-            {g && <span className="measure-line text-sm" data-strong>{g.evidence === 'green_all_winter' ? tasks.suggest.green_cover : tasks.suggest.insemination(g.count ?? 0)}</span>}
-            <span className="measure-line text-sm text-muted-foreground">{amountLine(m, derived)}</span>
-            {/* A crop new this year, from the split he confirmed, is why certified seed now fits more of his land. */}
-            {!g && !m.lastYear && (m.id === 'certified_seed' && fresh ? <span className="measure-line text-sm" data-strong>{t.newCrop(en.crops[fresh.crop].toLowerCase())}</span> : <span className="measure-line text-sm text-muted-foreground">{t.why[m.id]}</span>)}
-            {g && tasks.suggest.checks[m.id] && <span className="measure-line text-sm text-muted-foreground">{tasks.suggest.checks[m.id]}</span>}
-            {g && !on && own.length > 0 && <span className="measure-line text-sm text-muted-foreground">{tasks.suggest.provide(own.map((r) => req(r).short).join(', '))}</span>}
-          </span>
-          <Button onClick={() => toggle(m, !on)}>
-            {on ? t.leaveOut : m.lastYear ? t.chooseAgain : t.choose}
-            <span className="sr-only">: {en.measures[m.id]}</span>
-          </Button>
+          <label htmlFor={box} className="measure-check">
+            <CheckboxBase id={box} checked={on} aria-invalid={invalid || undefined} onCheckedChange={(v) => toggle(m, v === true)} />
+            <span className="measure-text">
+              <span className="measure-name">{en.measures[m.id]}</span>
+              <span className="measure-line">{shortLine(m, derived, g, fresh)}</span>
+            </span>
+          </label>
+          {on && ready && (
+            <span className="measure-state" data-ready>
+              <Icon name="complete" size="sm" /> {t.applied}
+            </span>
+          )}
+          <button
+            type="button"
+            className="measure-about"
+            aria-haspopup="dialog"
+            aria-label={t.goalOpen(en.measures[m.id])}
+            onClick={(e) => {
+              opener.current = e.currentTarget
+              setAbout(m)
+            }}
+          >
+            <Icon name="details_open" />
+          </button>
         </div>
         {on && (
           <MeasureFields
             m={m}
             inputs={inputs}
-            applied={confirmed}
             suggestedFields={g?.fields}
-            showErrors={tried}
-            onChange={(k, v) => dispatch({ type: 'draft_measures', chosen, inputs: { ...inputs, [k]: v } })}
+            showErrors={invalid}
+            onChange={(k, v) => draft(chosen, { ...inputs, [k]: v })}
           />
         )}
       </li>
@@ -151,41 +169,65 @@ export function MeasuresBody() {
           <ul className="measure-list">{more.map(option)}</ul>
         </Disclosure>
       )}
-      {/* One action: what's missing until nothing is, then Apply. Nothing to do until he chooses one, or once he has applied. */}
-      {picked.length > 0 && (open.length > 0 || !confirmed) && (
-        <StageAction>
-          <p className="measure-progress" aria-live="polite">
-            {open.length ? t.notApplied(picked.length - open.length, picked.length, en.measures[open[0].id]) : t.allFilled}
-          </p>
-          {open.length ? (
-            <Button variant="primary" onClick={showMissing}>{t.fillIn}</Button>
-          ) : (
-            <Button variant="primary" onClick={apply}>{t.confirm(picked.length)}</Button>
-          )}
-        </StageAction>
-      )}
+      <Drawer open={!!about} title={about ? en.measures[about.id] : ''} onClose={() => setAbout(null)} returnFocusTo={opener}>
+        {about && <MeasurePanel m={about} g={suggested.find((x) => x.measureId === about.id)} />}
+      </Drawer>
     </Stack>
   )
 }
 
+/** Everything about a measure he can apply for, in his terms: why it fits, what it could pay, what he gives. */
+function MeasurePanel({ m, g }: { m: Measure; g?: Suggestion }) {
+  const { derived, state } = useApp()
+  const p = t.panel
+  const fresh = newCrops(derived.scenario, state.answers)[0]
+  const own = userReqs(m)
+  const known = m.requirements.filter((r) => r.kind === 'auto')
+  const checks = tasks.suggest.checks[m.id]
+  return (
+    <div className="panel-sections">
+      <PanelSection title={p.why}>
+        <Text>{shortLine({ ...m, lastYear: false }, derived, g, fresh)}</Text>
+      </PanelSection>
+      <PanelSection title={p.pays}>
+        <Text>{m.rateDinars ? amountLine(m, derived) : t.pays[m.id]}</Text>
+        {!m.rateDinars && <Text variant="small">{p.noRate}</Text>}
+      </PanelSection>
+      {own.length > 0 && (
+        <PanelSection title={p.give}>
+          <ul className="panel-list">{own.map((r) => <li key={r.id}>{req(r).label}</li>)}</ul>
+          {known.length > 0 && <Text variant="small">{p.known(known.map((r) => req(r).short).join(', '))}</Text>}
+        </PanelSection>
+      )}
+      {checks && (
+        <PanelSection title={p.checks}>
+          <Text>{checks}</Text>
+        </PanelSection>
+      )}
+    </div>
+  )
+}
+
+function PanelSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="panel-section">
+      <h3 className="panel-title">{title}</h3>
+      {children}
+    </section>
+  )
+}
+
 /**
- * Under a chosen measure: where it stands first (still to fill in, ready to apply, applied), then what GSA
- * already has and what he adds, each in the form that fits it. An answer that rules it out says so.
+ * Under a ticked measure: what GSA already has and what he adds, each in the form that fits it.
+ * A required answer left empty is red once he has moved on. An answer that rules it out says so.
  */
-function MeasureFields({ m, inputs, applied, suggestedFields, showErrors, onChange }: { m: Measure; inputs: Inputs; applied: boolean; suggestedFields?: string[]; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void }) {
+function MeasureFields({ m, inputs, suggestedFields, showErrors, onChange }: { m: Measure; inputs: Inputs; suggestedFields?: string[]; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void }) {
   const { derived, state } = useApp()
   const gaps = measureGaps(m, inputs)
   const ruledOut = m.requirements.find((r) => r.blocks !== undefined && inputs[`${m.id}.${r.id}`] === r.blocks)
   return (
     <div className="measure-fields">
-      {ruledOut ? (
-        <Banner tone="attention">{req(ruledOut).ruledOut}</Banner>
-      ) : (
-        <p className="measure-state" data-ready={!gaps.missing.length || undefined}>
-          <Icon name={gaps.missing.length ? 'todo' : 'complete'} size="sm" />
-          {gaps.missing.length ? t.stillToFill(gapNames(m, gaps.missing)) : applied ? t.applied : t.ready}
-        </p>
-      )}
+      {ruledOut && <Banner tone="attention">{req(ruledOut).ruledOut}</Banner>}
       {m.requirements
         .filter((r) => shown(m, r, inputs))
         .map((r) =>
@@ -263,36 +305,34 @@ export function MeasureGoals() {
   )
 }
 
-/** Everything about one measure: what it pays, what it could mean for his household, and how to get there. */
+/**
+ * Everything about a measure he can't apply for yet, in the order he cares about: what he is missing,
+ * what it could mean for his household, then what he'd give and what the state checks.
+ */
 function GoalPanel({ m }: { m: Measure }) {
   const g = m.goal!
   const p = t.goalPanel
   const about = t.goalAbout[m.id]!
   return (
-    <>
+    <div className="panel-sections">
       <Text>{about.pays}</Text>
-      <section className="goal-section">
-        <h3 className="group-title">{p.household}</h3>
-        <Text variant="strong">{t.gain(goalAbout(m))}</Text>
-        <Text variant="small">{p.working[g.gain.unit](quantity(g.gain.quantity), formatNumber(g.gain.rateDinars))}</Text>
-        <Text variant="small">{p.caveat}</Text>
-      </section>
-      <section className="goal-section">
-        <h3 className="group-title">{p.need}</h3>
-        <ul className="goal-steps">
-          {[t.goal[g.kind](g.left), ...about.steps].map((s) => <li key={s}>{s}</li>)}
+      <PanelSection title={p.need}>
+        <ul className="panel-list">
+          {[t.goal[g.kind](g.left), ...about.steps].map((x) => <li key={x}>{x}</li>)}
         </ul>
         <Text variant="small">{p.then}</Text>
-      </section>
-      <section className="goal-section">
-        <h3 className="group-title">{p.checks}</h3>
-        <Text>{about.checks}</Text>
-      </section>
-      <section className="goal-section">
-        <h3 className="group-title">{p.provide}</h3>
+      </PanelSection>
+      <PanelSection title={p.household}>
+        <Text>{t.gain(goalAbout(m))}</Text>
+        <Text variant="small">{p.working[g.gain.unit](quantity(g.gain.quantity), formatNumber(g.gain.rateDinars))}. {p.caveat}</Text>
+      </PanelSection>
+      <PanelSection title={p.provide}>
         <Text>{about.provide}</Text>
-      </section>
-    </>
+      </PanelSection>
+      <PanelSection title={p.checks}>
+        <Text>{about.checks}</Text>
+      </PanelSection>
+    </div>
   )
 }
 
@@ -322,6 +362,12 @@ function AutoLine({ r, d }: { r: Requirement; d: Derived }) {
   )
 }
 
+const ErrorLine = ({ children }: { children: string }) => (
+  <span className="error" role="alert">
+    <Icon name="error" size="sm" /> {children}
+  </span>
+)
+
 /** One input, chosen by what the measure needs: a file, a number, words, a choice, fields or a promise. */
 function RequirementInput({ r, value, error, onChange }: { r: Requirement; value: MeasureValue | undefined; error?: string; onChange: (v: MeasureValue) => void }) {
   const { derived, state } = useApp()
@@ -331,20 +377,20 @@ function RequirementInput({ r, value, error, onChange }: { r: Requirement; value
       return (
         <Stack gap="sm">
           {typeof value === 'string' && value && <Text>{t.attached(value)}</Text>}
-          {error && <span className="error" role="alert">{error}</span>}
-          <FileInput label={c.label} hint={c.hint} onFile={onChange} />
+          {error && <ErrorLine>{error}</ErrorLine>}
+          <FileInput label={c.label} hint={c.hint} invalid={!!error} onFile={onChange} />
         </Stack>
       )
     case 'number':
-      return <Field label={c.label} hint={c.hint} error={error} inputMode="numeric" value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <Field label={c.label} hint={c.hint} error={error} focusOnError={false} inputMode="numeric" value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'text':
-      return <Field label={c.label} hint={c.hint} error={error} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <Field label={c.label} hint={c.hint} error={error} focusOnError={false} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'longtext':
-      return <Field multiline rows={3} label={c.label} hint={c.hint} error={error} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <Field multiline rows={3} label={c.label} hint={c.hint} error={error} focusOnError={false} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'choice':
       return (
         <div>
-          {error && <span className="error" role="alert">{error}</span>}
+          {error && <ErrorLine>{error}</ErrorLine>}
           <RadioGroup
             legend={c.label}
             hint={c.hint}
@@ -367,8 +413,7 @@ function RequirementInput({ r, value, error, onChange }: { r: Requirement; value
     case 'confirm':
       return (
         <div>
-          {error && <span className="error" role="alert">{error}</span>}
-          <Checkbox label={c.label} checked={value === true} onChange={onChange} />
+          <Checkbox label={c.label} checked={value === true} error={error} onChange={onChange} />
         </div>
       )
     default:

@@ -43,13 +43,17 @@ export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) =
     <section className="records" aria-labelledby={`records-${step}`}>
       <h3 id={`records-${step}`} className="records-title">{copy.title}</h3>
       <RecordList rows={rows} onOpen={onOpen} />
-      {step === 'land' && (
-        <div className="records-foot">
-          <Button variant="ghost" onClick={() => go('field', 'new')}>
+      <div className="records-foot">
+        {step === 'land' && (
+          <Button className="w-full" onClick={() => go('field', 'new')}>
             <Icon name="added" size="sm" /> {copy.addField}
           </Button>
-        </div>
-      )}
+        )}
+        {/* Prototype: the full record isn't built, so this leads nowhere yet. */}
+        <Button variant="ghost" className="w-full" onClick={() => undefined}>
+          {copy.seeAll} <Icon name="disclose" size="sm" />
+        </Button>
+      </div>
     </section>
   )
 }

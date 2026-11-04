@@ -377,11 +377,12 @@ function BankBody() {
             save()
           }}
         >
-          <Stack gap="sm">
-            <Field label={b.label} hint={b.hint} error={error} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} />
-            <StageAction>
+          {/* Wide enough for the whole number, and the button right under it, never floating over it. */}
+          <Stack gap="group">
+            <Field label={b.label} hint={b.hint} error={error} inputMode="numeric" width="long" value={value} onChange={(e) => setValue(e.target.value)} />
+            <div>
               <Button type="submit" variant="primary">{b.save}</Button>
-            </StageAction>
+            </div>
           </Stack>
         </form>
       )}

@@ -5,6 +5,7 @@ import type { TaskId } from '../logic/application'
 import type { Item } from '../logic/status'
 import type { NewField } from '../state/actions'
 import { Button } from '../ui/Button'
+import { Icon } from '../ui/Icon'
 import { Field } from '../ui/Field'
 import { Inline, Stack, Text } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
@@ -212,6 +213,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                         setStage('place')
                       }}
                     >
+                      <Icon name="back" size="sm" />
                       {bar.back}
                     </Button>
                   )}

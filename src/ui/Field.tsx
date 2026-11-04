@@ -8,6 +8,10 @@ interface Common {
   label: string
   hint?: string
   error?: string
+  /** short: a few digits. long: a whole account number. Text fields take the full width. */
+  width?: 'short' | 'long'
+  /** false where the error appears because he moved on: focus stays where he went. */
+  focusOnError?: boolean
 }
 
 type InputProps = Common & InputHTMLAttributes<HTMLInputElement> & { multiline?: false }
@@ -19,11 +23,12 @@ export function Field(props: InputProps | TextareaProps) {
   const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined
   // When an error appears, focus goes to the field, so he can fix it straight away.
   const wrap = useRef<HTMLDivElement>(null)
+  const focusOnError = props.focusOnError ?? true
   useEffect(() => {
-    if (error) wrap.current?.querySelector<HTMLElement>('input, textarea')?.focus()
-  }, [error])
+    if (error && focusOnError) wrap.current?.querySelector<HTMLElement>('input, textarea')?.focus()
+  }, [error, focusOnError])
   return (
-    <div ref={wrap} className="flex flex-col gap-2">
+    <div ref={wrap} className="flex flex-col gap-[var(--gap-label)]">
       <Label htmlFor={id} className="text-base">{label}</Label>
       {hint && <span id={`${id}-hint`} className="text-sm text-muted-foreground">{hint}</span>}
       {error && (
@@ -40,7 +45,7 @@ export function Field(props: InputProps | TextareaProps) {
           id={id}
           aria-describedby={describedBy}
           aria-invalid={!!error || undefined}
-          className={cn(props.inputMode === 'numeric' && 'max-w-48')}
+          className={cn((props.width ?? (props.inputMode === 'numeric' ? 'short' : undefined)) === 'short' && 'max-w-48', props.width === 'long' && 'max-w-sm')}
         />
       )}
     </div>
@@ -48,6 +53,6 @@ export function Field(props: InputProps | TextareaProps) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function strip({ label: _l, hint: _h, error: _e, multiline: _m, ...rest }: any) {
+function strip({ label: _l, hint: _h, error: _e, multiline: _m, width: _w, focusOnError: _f, ...rest }: any) {
   return rest
 }

@@ -128,11 +128,18 @@ describe('status per item', () => {
     expect(item(run('second_year', { type: 'answer_pigs', answer: 'no' }), 'pigs').detail).toBe('pigs_declared')
   })
 
-  it('changing a measure after applying means applying again, and nothing he typed is lost', () => {
+  it('a ticked measure is applied once everything it needs is in, with no separate apply step', () => {
+    const ticked = play('second_year', { type: 'draft_measures', chosen: ['plant_production'], inputs: {} })
+    expect(item(derive(ticked), 'measures')).toMatchObject({ status: 'complete', detail: 'measures_chosen' })
+    const none = play('second_year', { type: 'draft_measures', chosen: ['plant_production'], inputs: {} }, { type: 'draft_measures', chosen: [], inputs: {} })
+    expect(item(derive(none), 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_to_choose' })
+  })
+
+  it('ticking a measure that still needs something keeps the task open, and nothing he typed is lost', () => {
     const applied = play('second_year', { type: 'choose_measures', chosen: ['plant_production'] })
     const r = play('second_year', { type: 'choose_measures', chosen: ['plant_production'] }, { type: 'draft_measures', chosen: ['plant_production', 'insurance'], inputs: { 'insurance.insurer': 'DDOR' } })
     expect(applied.answers.measures.confirmed).toBe(true)
-    expect(r.answers.measures).toEqual({ chosen: ['plant_production', 'insurance'], inputs: { 'insurance.insurer': 'DDOR' }, confirmed: false })
+    expect(r.answers.measures).toEqual({ chosen: ['plant_production', 'insurance'], inputs: { 'insurance.insurer': 'DDOR' }, confirmed: true })
     expect(r.past).toHaveLength(applied.past.length)
     expect(item(derive(r), 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_incomplete', missing: ['insurance'] })
   })

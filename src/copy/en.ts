@@ -194,7 +194,7 @@ export const tasks = {
     label: 'Account number for payments',
     hint: '18 digits, for example 160-0000000123456-78',
     error: 'Enter the 18 digits of the account number',
-    save: 'Save the account',
+    save: 'Save changes',
     paidTo: (n: string) => `Paid into the account ending ${n}`,
   },
 
@@ -215,7 +215,6 @@ export const tasks = {
       green_cover: 'The state still checks they stay covered',
       insemination: "The state checks your vet's certificate",
     } as Partial<Record<MeasureId, string>>,
-    provide: (list: string) => `You provide: ${list}`,
     useFields: 'Use these fields',
     riverPart: (part: string) => `River field (${part.toLowerCase()})`,
   },
@@ -334,7 +333,7 @@ export const tasks = {
 
   /** Reused without asking. */
   details: {
-    title: 'Unchanged since last year',
+    title: "Farmer's data",
     holder: 'Name',
     place: 'Address',
     active: 'Active farmer',
@@ -343,18 +342,13 @@ export const tasks = {
   },
 
   measures: {
-    lead: (fit: number) => `You can apply for ${fit} measures this year. Each counts once it's filled in`,
+    lead: (fit: number) => `Tick the ones you want, out of ${fit}. Each counts once it's filled in`,
     groupLast: 'You applied for these last year',
-    choose: 'Choose',
-    chooseAgain: 'Choose again',
     groupSuggested: 'GSA recommends for your farm',
     groupMore: (n: number) => `${n} more measures you can apply for`,
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
-    notApplied: (ready: number, n: number, next: string) => `Not applied yet, ${ready} of ${n} filled in, next is ${next}`,
-    allFilled: 'Everything is filled in',
-    fillIn: "Fill in what's missing",
     appliedFor: (n: number) => (n === 1 ? 'Applied for 1 measure' : `Applied for ${n} measures`),
     goalsTitle: 'What you need for more support',
     goal: {
@@ -369,7 +363,7 @@ export const tasks = {
       household: 'What it could mean for your household',
       working: { ha: (qty: string, rate: string) => `${qty} ha × ${rate} dinars`, animal: (qty: string, rate: string) => `${qty} animals × ${rate} dinars` },
       caveat: "An estimate. The final amount depends on that year's rates and checks",
-      need: 'What you need to do',
+      need: "What you're missing",
       then: 'Then you can apply next year',
       checks: 'What the state checks',
       provide: "What you'd provide",
@@ -394,7 +388,14 @@ export const tasks = {
         provide: 'Your sale or slaughter receipts',
       },
     } as Partial<Record<MeasureId, { pays: string; steps: string[]; checks: string; provide: string }>>,
-    confirm: (n: number) => (n === 1 ? 'Apply for 1 measure' : `Apply for ${n} measures`),
+    panel: {
+      why: 'Why it fits your farm',
+      pays: 'What it could pay you',
+      noRate: 'The amount is worked out after checks',
+      give: "What you'd give",
+      known: (list: string) => `GSA already has: ${list}`,
+      checks: 'What the state checks',
+    },
     pays: {
       fertiliser: 'Part of the cost of mineral fertiliser',
       diesel: 'Part of the cost of diesel for field work',
@@ -419,10 +420,8 @@ export const tasks = {
     } as Partial<Record<MeasureId, string>>,
     newCrop: (crop: string) => `New: you sow ${crop} on the river field this year`,
     stillToFill: (list: string) => `Still to fill in: ${list}`,
-    ready: 'Ready to apply',
     applied: 'Applied',
     ruledOut: "Can't be paid this year",
-    leaveOut: 'Leave out',
     attached: (name: string) => `Attached: ${name}`,
     error: {
       upload: 'Add a photo or PDF',
@@ -645,6 +644,7 @@ export const records = {
   unchangedFields: 'Unchanged fields',
   unchangedValue: (n: number, ha: string) => `${n} fields, ${ha}`,
   addField: 'Add a field',
+  seeAll: 'See all your records',
 }
 
 /** Adding a field on the map: where, its name and crop, its measures. */
@@ -770,7 +770,6 @@ export const steps = {
     if (id === 'land') return n === 1 ? '1 field to go' : `${n} fields to go`
     return `${n} thing${n === 1 ? '' : 's'} to ${{ details: 'confirm', documents: 'sort out' }[id as string] ?? 'answer'}`
   },
-  only: (next = '') => `Only this one left${next && `, then ${next}`}`,
 }
 
 export const bar = {

@@ -134,9 +134,10 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
       history: [...state.history, { at, actor: 'Milan', action: action.type }],
     }
   }
-  // Kept as he types, so it is neither an answer to undo nor a line in the history. Changing anything means applying again.
+  // Kept as he types, so it is neither an answer to undo nor a line in the history. Ticking a measure is his
+  // choice: once everything a ticked measure needs is in, it is applied, with no separate apply button.
   if (action.type === 'draft_measures') {
-    return { ...state, answers: { ...state.answers, measures: { chosen: action.chosen, inputs: action.inputs, confirmed: false } } }
+    return { ...state, answers: { ...state.answers, measures: { chosen: action.chosen, inputs: action.inputs, confirmed: action.chosen.length > 0 } } }
   }
   if (action.type === 'undo') {
     const prev = state.past[state.past.length - 1]

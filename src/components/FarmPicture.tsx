@@ -3,7 +3,7 @@ import type { Source } from '../logic/farm'
 import { Card } from '../ui/Card'
 import { Disclosure } from '../ui/Disclosure'
 import { Text } from '../ui/Layout'
-import { SourceTag } from '../ui/SourceTag'
+import { SourceMark, SourceTag } from '../ui/SourceTag'
 import { useApp } from './AppContext'
 
 /**
@@ -44,13 +44,15 @@ export function FarmPicture({ detailed = false }: { detailed?: boolean }) {
     <dl className="farm">
       {rows.map((r) => (
         <div key={r.label} className="farm-row" data-source={r.source}>
-          <dt>{r.label}</dt>
+          {/* Where each line stands leads the row, so what still needs him stands out before he submits. */}
+          <dt>
+            <SourceMark source={r.source} />
+            {r.label}
+          </dt>
           {r.lines.map((l) => (
             <dd key={l}>{l}</dd>
           ))}
-          <dd>
-            <SourceTag source={r.source}>{r.tag}</SourceTag>
-          </dd>
+          <dd className="farm-state" data-source={r.source}>{r.tag}</dd>
         </div>
       ))}
     </dl>

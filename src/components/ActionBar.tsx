@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { bar } from '../copy/en'
 import type { TaskId } from '../logic/application'
 import { Button } from '../ui/Button'
+import { Icon } from '../ui/Icon'
 import { StickyBar } from '../ui/StickyBar'
 import { ReadinessBar } from './ReadinessBar'
 import { ReadinessDrawer } from './ReadinessDrawer'
@@ -23,9 +24,9 @@ export function ActionBar({ back, forward, forwardIsPrimary, onPick, next }: { b
     <>
       <StickyBar
         label={bar.label}
-        start={back && <Button onClick={back.onClick}>{back.label}</Button>}
+        start={back && <Button onClick={back.onClick}><Icon name="back" size="sm" />{back.label}</Button>}
         middle={<ReadinessBar ref={opener} expanded={open} onOpen={() => setOpen(true)} next={next} />}
-        end={forward && <Button variant={forwardIsPrimary ? 'primary' : 'secondary'} onClick={forward.onClick} disabled={forward.disabled}>{forward.label}</Button>}
+        end={forward && <Button variant={forwardIsPrimary ? 'primary' : 'secondary'} onClick={forward.onClick} disabled={forward.disabled}>{forward.label}<Icon name="forward" size="sm" /></Button>}
       />
       <ReadinessDrawer
         open={open}
