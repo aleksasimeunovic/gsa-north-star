@@ -235,8 +235,8 @@ button.drawer-row:hover { background: var(--hover); }
 .tool:not(:disabled):active { scale: 0.94; }
 .tool[data-on] { background: var(--foreground); color: #fff; }
 .tool[data-on] span { color: #fff; }
-.tool:disabled { color: var(--input); cursor: default; background: none; }
-.tool:disabled span { color: var(--input); }
+.tool:disabled { color: color-mix(in oklch, var(--muted-foreground) 50%, transparent); cursor: default; background: none; }
+.tool:disabled span { color: color-mix(in oklch, var(--muted-foreground) 50%, transparent); }
 .tool:focus-visible, .tool-option:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .tool-divider { width: 1px; height: 32px; flex: none; margin: 0 2px; background: var(--border); }
 .tool-option { padding: var(--space-2) var(--space-3); border: 0; border-radius: 10px; background: none; color: var(--foreground); font: inherit; font-size: 0.8125rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 0.15s; }
