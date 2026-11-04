@@ -413,3 +413,4 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 332. **Card map previews are taller on a phone** (280 px).
 333. **"Unchanged since last year" is now "Farmer's data".**
 334. `src/copy/en.ts`: 4,802 to 4,764 words.
+335. **Headings are now a modern serif, Source Serif 4** (weight 600, slight negative tracking); body stays Inter. Small headings go up to 16 px, since a serif reads smaller than a sans at the same size. Rejected: Bricolage Grotesque (Aleksa: a bad fit for headlines).

@@ -6,7 +6,7 @@
 .hint { display: block; font-size: 0.875rem; color: var(--muted-foreground); font-weight: 400; }
 .error { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 500; color: var(--destructive); }
 .plain-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-.group-title { font-size: 0.9375rem; }
+.group-title { font-size: 1rem; }
 
 /* Header: brand, deadline, saved, prototype. Sticks to the top. */
 .topbar { position: sticky; top: 0; z-index: 35; height: var(--topbar-h); display: flex; align-items: center; gap: 12px; margin: 0 -16px; padding: 0 16px; background: color-mix(in oklch, var(--background) 85%, transparent); backdrop-filter: blur(12px); }
@@ -394,7 +394,7 @@ button.drawer-row:hover { background: var(--hover); }
 
 /* Kept from last year: closed by default, quiet zebra rows, no colour, so it never competes with the next action */
 .records { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); display: flex; flex-direction: column; gap: var(--space-2); }
-.records-title { margin: 0; display: flex; align-items: center; gap: var(--gap-inline); font-size: 0.9375rem; color: var(--muted-foreground); }
+.records-title { margin: 0; display: flex; align-items: center; gap: var(--gap-inline); font-size: 1rem; color: var(--muted-foreground); }
 /* Rows are divided by a hairline, never shaded, so nothing reads as hover or selection. */
 .records-rows { margin: 0; display: flex; flex-direction: column; }
 .records-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--border); }

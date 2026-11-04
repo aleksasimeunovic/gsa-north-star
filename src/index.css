@@ -96,12 +96,12 @@
 
   /*
    * Type: one family for headings, one for body text. Changing the pair is these two lines and the font link
-   * in index.html. Headings: Bricolage Grotesque. Body: Inter.
+   * in index.html. Headings: Source Serif 4. Body: Inter.
    */
-  --font-heading: 'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-heading: 'Source Serif 4', ui-serif, Georgia, serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --heading-weight: 600;
-  --heading-tracking: -0.015em;
+  --heading-tracking: -0.01em;
 
   /*
    * Layout: three surfaces, each with one padding and one radius, so every screen keeps the same rhythm.
