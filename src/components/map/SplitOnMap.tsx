@@ -13,7 +13,7 @@ import { centroid, followsEdge, nearestOnLine, outlinePath, pointInPolygon } fro
 import { mapStyle } from '../../ui/mapStyles'
 import { edgeOf, splitMoves, type Selected, type SplitDraft } from '../SplitTool'
 import { createLoupe } from './loupe'
-import type { FarmMap } from './olFarm'
+import { outsideStyle, type FarmMap } from './olFarm'
 
 /** Grows a line from its start to its end over a moment, along its own length. */
 function drawIn(f: Feature<Geometry>, coords: number[][], ms = 700) {
@@ -97,6 +97,13 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
     if (interactive && record.land && showLand) add(new OlPolygon(fm.ring(record.land)), 'land')
     if (fieldGuide) add(new LineString(outlinePath(record.polygon).map(fm.coord)), 'guide')
     if (lineGuide) add(new LineString(edge.map(fm.coord)), 'guide')
+    // Past the registered farmland, the land outside it is veiled orange: look at this, the registry checks it.
+    if (d.pastLand && record.land) {
+      const land = record.land.map(fm.coord)
+      const veil = new Feature<Geometry>(new OlPolygon(fm.ring(poly)))
+      veil.setStyle(outsideStyle(fm.map, land))
+      fm.extra.addFeature(veil)
+    }
     add(new LineString(outlinePath(poly).map(fm.coord)), 'field', 'outline')
     if (!r) return
     const splitLine = add(new LineString(line.map(fm.coord)), 'split', 'split')
@@ -117,7 +124,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       if (p) o.setPosition(fm.coord(p))
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fm, key, labels[0], labels[1], !!r, lineGuide, fieldGuide, interactive, showLand])
+  }, [fm, key, labels[0], labels[1], !!r, lineGuide, fieldGuide, interactive, showLand, d.pastLand])
 
   useEffect(() => () => fm.extra.clear(), [fm])
 

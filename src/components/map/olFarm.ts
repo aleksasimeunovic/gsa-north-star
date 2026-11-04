@@ -21,6 +21,7 @@ import { en, formatHa, map as copy } from '../../copy/en'
 import type { FieldId, Point, Polygon, Scenario } from '../../data/scenarios'
 import { bounds, centroid, topEdgeAt } from '../../logic/geometry'
 import { fromMercator, toMercator } from '../../logic/geo'
+import { Style } from 'ol/style'
 import { labelStyle, mapStyle, type MapRole } from '../../ui/mapStyles'
 
 // The satellite photo. Esri World Imagery needs no key; the attribution stays on the map.
@@ -52,6 +53,33 @@ export interface FarmMapOptions {
 }
 
 export type FarmMap = ReturnType<typeof createFarmMap>
+
+/**
+ * His field where it goes past the registered farmland, veiled orange (look at this: the land registry checks
+ * it). Drawn by clipping his field to everything outside the farmland, so only that sliver shows.
+ */
+export function outsideStyle(map: OlMap, land: number[][]) {
+  return new Style({
+    renderer: (coords, state) => {
+      const ctx = state.context
+      const ring = (coords as number[][][])[0]
+      const k = state.pixelRatio
+      const px = land.map((c) => map.getPixelFromCoordinate(c).map((v) => v * k))
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(0, 0, ctx.canvas.width, ctx.canvas.height)
+      px.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)))
+      ctx.closePath()
+      ctx.clip('evenodd')
+      ctx.beginPath()
+      ring.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)))
+      ctx.closePath()
+      ctx.fillStyle = 'rgba(249, 115, 22, 0.45)'
+      ctx.fill()
+      ctx.restore()
+    },
+  })
+}
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -189,7 +217,15 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
       : [],
   })
 
+  // An edge he drew past the registered farmland stays marked on every map until the land registry checks it.
+  if (focused?.claimedHa !== undefined && focused.land && !opts.parcel) {
+    const veil = new Feature<Geometry>(new OlPolygon(ring(focused.polygon)))
+    veil.setStyle(outsideStyle(map, focused.land.map(coord)))
+    shapes.addFeature(veil)
+  }
   chips.forEach((o) => map.addOverlay(o))
+  // Until the photo has drawn once, the map shimmers instead of sitting black.
+  map.once('rendercomplete', () => target.setAttribute('data-ready', ''))
 
   const small = target.clientWidth < 640
   const edge = small ? 28 : 56

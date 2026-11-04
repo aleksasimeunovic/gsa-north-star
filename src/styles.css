@@ -430,3 +430,9 @@ button.drawer-row:hover { background: var(--hover); }
   @keyframes tick-in { from { scale: 0.4; opacity: 0; } to { scale: 1; opacity: 1; } }
   @keyframes ring-out { from { box-shadow: 0 0 0 0 color-mix(in oklch, var(--success) 35%, transparent); } to { box-shadow: 0 0 0 18px transparent; } }
 }
+
+/* The photo on its way: a slow shimmer in the map's own dark, gone once the tiles have drawn */
+@media (prefers-reduced-motion: no-preference) {
+  .farm-map:not([data-ready]) { background: linear-gradient(100deg, var(--foreground) 30%, color-mix(in oklch, var(--foreground) 82%, white) 50%, var(--foreground) 70%) 0 0 / 300% 100%; animation: shimmer 1.4s linear infinite; }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+}

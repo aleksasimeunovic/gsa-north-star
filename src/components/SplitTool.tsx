@@ -363,6 +363,12 @@ export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => v
   useEffect(() => {
     if (!d.editing) return
     const key = (e: KeyboardEvent) => {
+      // Escape lets go of the point he selected, as in any editor.
+      if (e.key === 'Escape' && d.selected) {
+        d.setSelected(null)
+        ;(document.activeElement as HTMLElement | null)?.blur?.()
+        return
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
         if (e.shiftKey) d.redo()
