@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
 
 /**
@@ -26,10 +26,17 @@ export function ToolButton({ icon, caption, hint, on, disabled, short, onClick }
   )
 }
 
-/** Two views of the same map, one at a time. */
+/** Two views of the same map, one at a time. The dark thumb slides to the one he picks. */
 export function ToolSwitch<T extends string>({ label, options, value, onChange }: { label: string; options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  const group = useRef<HTMLDivElement>(null)
+  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null)
+  useLayoutEffect(() => {
+    const on = group.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
+    if (on) setThumb({ left: on.offsetLeft, width: on.offsetWidth })
+  }, [value, options.length])
   return (
-    <div className="tool-island" data-switch role="group" aria-label={label}>
+    <div ref={group} className="tool-island" data-switch role="group" aria-label={label}>
+      {thumb && <span className="tool-thumb" aria-hidden="true" style={{ translate: `${thumb.left}px 0`, width: thumb.width }} />}
       {options.map((o) => (
         <button key={o.value} type="button" className="tool-option" aria-pressed={o.value === value} onClick={() => onChange(o.value)}>
           {o.label}

@@ -275,6 +275,8 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 17 (Aleksa, 4 Nov):** a pass on details from all of Earl's emails: walk the whole journey at 360 and 1280 px and fix what gets in Milan's way (Check and submit scrolls and lists what's left by part; Submit says why rather than greying out; one finger never pans the map while editing on touch; the deadline stays on a phone); tokens for map overlays.
 
+**Round 18 (Aleksa, 4 Nov):** the map experience, motion and states, after research into GIS editing on phones: a loupe above the finger, quiet field corners, the farmland shown only when it matters, the sliver past it veiled orange, GSA's line drawing itself in, panel and map lighting the same part, snapping felt and seen, purposeful motion under reduced-motion rules, never a grey button without a reason, the answer in view on a phone.
+
 Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset. Design notes are switched off (Aleksa, 3 Nov).
 
 ## 11. Design system

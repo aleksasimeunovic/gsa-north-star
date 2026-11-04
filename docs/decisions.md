@@ -359,3 +359,11 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 290. **Motion has one purpose each, 150 to 300 ms, eased out, none with reduced motion**: the next action rises in when it takes the top slot; the tools and what the map says lift in; a part that is done ticks; the receipt's mark rings once; the three groups before Confirm arrive in order; buttons and tools give under a press.
 291. **Fixed: a Select given an id lost its label's link**, so the crop fields had no accessible name from their labels. Errors in selects, radio groups and checkboxes now carry the error icon, as everywhere else.
 292. **Map labels in Geist**, like the rest of the application, and the satellite tiles load with CORS, so the loupe can draw them.
+293. **The land past the registered farmland is veiled orange, exactly that sliver** (his field clipped to outside the farmland), while he edits and on every map until the land registry checks it. Orange is "look at this": he can see what the registry will look at. Rejected: only the sentence, which made him find the place himself.
+294. **On a phone, a question on the map screen is answered without scrolling**: the map gives way (34% of the screen) while the panel asks something, and takes 56% while he edits; the action bar is one row there (Back, then where he stands), and the areas sentence, which the chips on the map already show, is kept for screen readers.
+295. **The toast fades out, and a thin line along its foot drains while it stays**, stopping while he points at it or it has focus, so he can tell it is about to go. The line and the toast end together after a pause.
+296. **The photo's date moves to the free bottom corner on a still preview**, where the field's name no longer collides with it.
+297. **The two views of the photo have a sliding thumb**, so switching reads as one control with two positions.
+298. **Escape lets go of the selected point**, and the map shimmers in its own dark until the photo has drawn, instead of sitting black.
+299. **Coming back mid-application was checked at both widths**: it opens on the next action in the part he was in, with nothing left over from the last visit (no stale toast, no summary to read first).
+300. `src/copy/en.ts`: 4,827 to 4,821 words over rounds 18 and 19.
