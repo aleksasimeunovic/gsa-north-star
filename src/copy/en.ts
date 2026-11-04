@@ -216,7 +216,7 @@ export const tasks = {
       insemination: "The state checks your vet's certificate",
     } as Partial<Record<MeasureId, string>>,
     provide: (list: string) => `You provide: ${list}`,
-    useFields: (names: string) => `Use these fields: ${names}`,
+    useFields: 'Use these fields',
     riverPart: (part: string) => `River field (${part.toLowerCase()})`,
   },
 
@@ -276,7 +276,7 @@ export const tasks = {
     showPhoto: 'What the satellite shows',
     showField: 'Your field last year',
     question: "What's growing along the river this year?",
-    same: 'The same as the rest of the field',
+    same: 'The same as the rest',
     other: 'Something else',
     oneCrop: 'The same crop in the whole field',
     mayCheck: 'the state may still check it',

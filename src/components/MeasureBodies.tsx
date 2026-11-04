@@ -12,7 +12,7 @@ import { Disclosure } from '../ui/Disclosure'
 import { Drawer } from '../ui/Drawer'
 import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
-import { Stack, Text } from '../ui/Layout'
+import { Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { RadioGroup } from '../ui/RadioGroup'
 import { Icon } from '../ui/Icon'
 import { StageAction } from '../ui/MapStage'
@@ -197,7 +197,9 @@ function MeasureFields({ m, inputs, applied, suggestedFields, showErrors, onChan
               {r.kind === 'fields' && suggestedFields && !(inputs[`${m.id}.${r.id}`] as string[] | undefined)?.length && (
                 <div>
                   <Button onClick={() => onChange(`${m.id}.${r.id}`, carriedFields(suggestedFields, derived.scenario, state.answers))}>
-                    {tasks.suggest.useFields(carriedFields(suggestedFields, derived.scenario, state.answers).map((f) => fieldName(f)).join(', '))}
+                    {/* The evidence line above names the fields; the button stays one line. */}
+                    {tasks.suggest.useFields}
+                    <VisuallyHidden>: {carriedFields(suggestedFields, derived.scenario, state.answers).map((f) => fieldName(f)).join(', ')}</VisuallyHidden>
                   </Button>
                 </div>
               )}

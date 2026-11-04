@@ -5,12 +5,12 @@ import { useDensity } from './Density'
 type Variant = 'primary' | 'secondary' | 'link' | 'choice' | 'prototype' | 'ghost'
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }
 
-// Semantic variants mapped onto shadcn's. Density decides the size.
+// Semantic variants mapped onto shadcn's. Density decides the size; every variant but link is the same height.
 const MAP = { primary: 'default', secondary: 'outline', link: 'link', choice: 'outline', prototype: 'prototype', ghost: 'ghost' } as const
 
 export const Button = forwardRef<HTMLButtonElement, Props>(function Button({ variant = 'secondary', type = 'button', className, ...rest }, ref) {
   const compact = useDensity() === 'compact'
-  const size = variant === 'link' ? 'inline' : variant === 'choice' ? 'lg' : compact ? 'sm' : 'default'
+  const size = variant === 'link' ? 'inline' : compact ? 'sm' : 'default'
   return (
     <Base
       ref={ref}
@@ -18,7 +18,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(function Button({ var
       variant={MAP[variant]}
       size={size}
       data-variant={variant}
-      className={[variant === 'choice' ? 'h-auto min-h-12 justify-start py-2 text-left font-medium whitespace-normal' : '', className].filter(Boolean).join(' ')}
+      className={[variant === 'choice' ? 'justify-start text-left font-medium' : '', className].filter(Boolean).join(' ')}
       {...rest}
     />
   )

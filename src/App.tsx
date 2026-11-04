@@ -43,7 +43,7 @@ export function App() {
     <AppContext.Provider value={{ state, derived, dispatch, go }}>
       <DensityContext.Provider value={derived.list.density}>
         <NotesContext.Provider value={false}>
-          <div className="page" data-screen={screen}>
+          <div className="page" data-screen={screen} data-density={derived.list.density}>
             <header className="topbar">
               <a href="#/welcome" className="brand">
                 {en.appName} <span className="brand-sub">{en.appSub}</span>

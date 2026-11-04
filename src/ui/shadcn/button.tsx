@@ -3,7 +3,7 @@ import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../../lib/utils'
 
-// shadcn/ui Button (MIT), with a taller comfortable size for Milan.
+// shadcn/ui Button (MIT). Every size but inline and icon is one fixed height, the density's control height.
 export const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-normal text-center rounded-lg text-sm font-medium transition-[color,background-color,border-color,box-shadow,scale] duration-150 enabled:active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:opacity-40 disabled:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:border-ring",
   {
@@ -17,9 +17,8 @@ export const buttonVariants = cva(
         prototype: 'border border-dashed border-meta bg-meta-surface text-meta',
       },
       size: {
-        default: 'min-h-[var(--control-h)] px-5 text-base',
-        sm: 'min-h-9 px-3',
-        lg: 'min-h-14 px-6 text-base rounded-xl',
+        default: 'h-[var(--control-h)] px-5 text-base whitespace-nowrap',
+        sm: 'h-[var(--control-h)] px-3 whitespace-nowrap',
         icon: 'size-11',
         inline: 'min-h-0 p-0',
       },

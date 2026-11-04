@@ -388,3 +388,10 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 313. **"Check and submit" is now "Summary"** in the stepper: the part is where he sees his whole application, and Submit appears there only when he can submit, so the name no longer promises a submit he may not have yet.
 314. **The readiness link looks clickable**: a hover surface, a firmer underline and a chevron that nudges (still under reduced motion).
 315. `src/copy/en.ts`: 4,811 to 4,809 words.
+
+## Round 20b (Aleksa, 4 Nov): one button height
+
+316. **Every button is the same height, whatever its variant**: primary, secondary, choice, ghost and prototype are all fixed at the density's control height (48 px for Milan, 34 px for Jelena) and keep their label on one line. Text links and the map's own icon tools are not buttons in this sense and keep their sizes. Rejected: a minimum height, which let a long label wrap into a taller button (the river question was 66 px on a phone).
+317. **Fixed: compact density never reached the CSS** (the page had no `data-density`), so Jelena's controls only looked compact where a component asked for it.
+318. **Labels shortened to fit one line**: "The same as the rest" (the question already says along the river), and "Use these fields" (the evidence line above names them; screen readers still hear the names).
+319. `src/copy/en.ts`: 4,809 to 4,800 words.
