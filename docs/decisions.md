@@ -367,3 +367,14 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 298. **Escape lets go of the selected point**, and the map shimmers in its own dark until the photo has drawn, instead of sitting black.
 299. **Coming back mid-application was checked at both widths**: it opens on the next action in the part he was in, with nothing left over from the last visit (no stale toast, no summary to read first).
 300. `src/copy/en.ts`: 4,827 to 4,821 words over rounds 18 and 19.
+
+## Round 19 (Aleksa, 4 Nov): alternatives at the key decision points, and a test of every state
+
+301. **Alternatives live only in the Figma file North Star, never in the code.** Eight new frames (5 to 12) below the parcel ones, one per decision point across the whole application: welcome back, how GSA asks about a changed record, the river field's first step, an edge past the registered farmland, disagreeing with the land map, choosing measures, "Is my application ready?", and submitting. Each has four ways drawn as small screens in the product's own style, the chosen one tagged, what it does and what it costs; earlier rounds and the tested and old versions are tagged as such, so the reasoning reads as a history, not a menu.
+302. **Every state is checked for clipping, not only first screens**: an audit walks the whole journey (drawers, toasts, errors, the editor, the dispute, the parcel he bought, the receipt) at 360, 768, 1024 and 1280 px and fails on sideways scroll, clipped or cut-off text, ellipsis and anything off screen. It now includes fixed elements (the action bar, toasts), which the first version skipped.
+303. **A keyboard pass at 360, 768 and 1280 px**: every focusable element is checked for a visible focus ring and for being clear of the header, the stepper and the action bar. On a phone, focus scrolled things in under the bar; the page's scroll padding now keeps them clear.
+304. **Errors take focus**: when a field's error appears, focus goes to that field; adding a field with its name in but no crop puts focus on the crops. Text fields show the error icon like every other control.
+305. **The stepper says "1 to confirm" and "1 to sort out"**, like "2 to answer", so a part's state fits on one or two lines at 1024 px.
+306. **A short map gets less padding**: on a tablet answering a question, the map padding follows its smaller side, so the river field is no longer a small shape in a wide photo.
+307. **Fixed: a double gap in "Back to your application"** (the button's gap applied to the hidden part of the label).
+308. `src/copy/en.ts`: 4,821 to 4,811 words.

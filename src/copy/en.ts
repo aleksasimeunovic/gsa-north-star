@@ -770,7 +770,7 @@ export const steps = {
     const many = n > 1
     switch (id) {
       case 'details':
-        return `${n} ${many ? 'things' : 'thing'} to confirm`
+        return `${n} to confirm`
       case 'animals':
         return `${n} to answer`
       case 'land':
@@ -778,7 +778,7 @@ export const steps = {
       case 'measures':
         return 'Choose yours'
       case 'documents':
-        return `${n} ${many ? 'documents' : 'document'} to sort out`
+        return `${n} to sort out`
       default:
         return ''
     }

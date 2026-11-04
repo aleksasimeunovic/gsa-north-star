@@ -455,3 +455,5 @@ button.drawer-row:hover { background: var(--hover); }
 @media (max-width: 639px) { .back-more { display: none; } }
 /* On a still preview the field's name sits at the top, so the photo's date takes the free corner at the bottom */
 .map-frame[data-mode='preview'] .map-date { top: auto; right: auto; bottom: 8px; left: 8px; }
+/* Keyboard focus and in-page jumps stop clear of the sticky header and stepper and the fixed action bar */
+html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padding-bottom: calc(var(--bar-h) + var(--space-4)); }

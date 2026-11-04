@@ -180,7 +180,11 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                 e.preventDefault()
                 setNameError(name.trim() ? undefined : copy.nameError)
                 setCropError(crop ? undefined : copy.cropError)
-                if (!name.trim() || !crop) return
+                if (!name.trim() || !crop) {
+                  // The name field takes focus itself; with the name in, focus goes to the crops.
+                  if (name.trim()) (e.currentTarget.querySelector('[role=radio]') as HTMLElement | null)?.focus()
+                  return
+                }
                 save(polygon)
               }}
             >
@@ -255,7 +259,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
           </StageAction>
         </MapStage>
       )}
-      <ActionBar back={{ label: <>{map.back}<span className="back-more">{map.backMore}</span></>, onClick: back }} forwardIsPrimary={false} next={null} onPick={(task) => flow.show(task)} />
+      <ActionBar back={{ label: <span>{map.back}<span className="back-more">{map.backMore}</span></span>, onClick: back }} forwardIsPrimary={false} next={null} onPick={(task) => flow.show(task)} />
     </>
   )
 }

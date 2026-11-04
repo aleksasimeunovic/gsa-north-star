@@ -54,7 +54,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
     <>
       <Body onAnswer={onAnswer} head={head} />
       <ActionBar
-        back={{ label: <>{map.back}<span className="back-more">{map.backMore}</span></>, onClick: back }}
+        back={{ label: <span>{map.back}<span className="back-more">{map.backMore}</span></span>, onClick: back }}
         forwardIsPrimary={false}
         next={item.status === 'action_required' ? id : null}
         onPick={(task) => {

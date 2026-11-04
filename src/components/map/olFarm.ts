@@ -227,7 +227,8 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   // Until the photo has drawn once, the map shimmers instead of sitting black.
   map.once('rendercomplete', () => target.setAttribute('data-ready', ''))
 
-  const small = target.clientWidth < 640
+  // A short map (a phone, or a tablet answering a question) needs less padding, or the field ends up tiny.
+  const small = Math.min(target.clientWidth, target.clientHeight || target.clientWidth) < 640
   const edge = small ? 28 : 56
   // Clear of the zoom buttons on the left, and of the tools floating over the bottom.
   const padding = opts.interactive ? [edge, small ? 16 : edge, opts.docked ? edge + 76 : edge, small ? 64 : edge] : [20, 20, 20, 20]
