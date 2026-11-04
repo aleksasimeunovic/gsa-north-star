@@ -1,6 +1,6 @@
 import type { Crop, Field, PartCrop, Polygon, Scenario } from '../data/scenarios'
 import type { Answers } from '../state/actions'
-import { outlineHa, partNames, roundHa, splitField, type PartName, type SplitLine } from './geometry'
+import { outlineHa, partNames, pastLand, roundHa, splitField, type PartName, type SplitLine } from './geometry'
 import { fitting, riverSplitComplete, type Item, type ItemId } from './status'
 
 /**
@@ -30,10 +30,16 @@ const sourceOf = (items: (Item | undefined)[]): Source => {
   return known.length > 0 && known.every((i) => i.status === 'complete') ? 'confirmed' : 'records'
 }
 
-/** A field with its edge where he moved it: the record's area, grown or shrunk by as much. */
+/**
+ * A field with its edge where he moved it: the record's area, grown or shrunk by as much. Past the registered
+ * farmland the record may be wrong, so both are kept: he says `claimedHa`, and no more than the record counts
+ * until the land registry checks it.
+ */
 export function fieldWith(field: Field, boundary: Polygon | undefined): Field {
   if (!boundary) return field
-  return { ...field, polygon: boundary, areaHa: outlineHa(field.polygon, field.areaHa, boundary) }
+  const drawn = outlineHa(field.polygon, field.areaHa, boundary)
+  if (!pastLand(field.land, boundary)) return { ...field, polygon: boundary, areaHa: drawn }
+  return { ...field, polygon: boundary, areaHa: Math.min(drawn, field.areaHa), claimedHa: drawn }
 }
 
 /**
@@ -115,6 +121,8 @@ export interface SplitEffects {
   /** Land that stops counting for plant production, and what that takes off the payment. */
   lostHa: number
   lostDinars: number
+  /** His edge goes past the registered farmland: what he says, and what counts until the land registry checks. */
+  pastLand: { claimedHa: number; countedHa: number } | null
   /** The measures it touches, so he hears about the ones he has chosen. */
   plantChosen: boolean
   coverChosen: boolean
@@ -138,6 +146,7 @@ export function splitEffects(s: Scenario, a: Answers, split: NonNullable<Answers
     newCrop: fresh ? { crop: fresh.crop as Crop, ha: fresh.ha } : null,
     lostHa,
     lostDinars: Math.round(lostHa * rate),
+    pastLand: field.claimedHa !== undefined ? { claimedHa: field.claimedHa, countedHa: field.areaHa } : null,
     plantChosen: a.measures.chosen.includes('plant_production'),
     coverChosen: a.measures.chosen.includes('green_cover'),
   }

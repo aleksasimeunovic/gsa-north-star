@@ -14,6 +14,8 @@ import {
   pullLine,
   pullOutline,
   shapeProblem,
+  pastLand,
+  straightAcross,
   outlineHa,
   outlineCrosses,
   snapToAny,
@@ -181,7 +183,7 @@ describe('moving the line', () => {
     expect(line.length).toBe(10)
   })
 
-  it("the field's edge takes new corners where he pulls it, and stays on the registered farmland", () => {
+  it("the field's edge takes new corners where he pulls it, and going past the registered farmland is flagged, not stopped", () => {
     const sq = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]
     const land = [{ x: -20, y: -20 }, { x: 120, y: -20 }, { x: 120, y: 120 }, { x: -20, y: 120 }]
     const r = pullOutline(sq, { x: 50, y: 1 })
@@ -189,12 +191,19 @@ describe('moving the line', () => {
     expect(r.corner).toBe(1)
     const line = [{ x: 0, y: 50 }, { x: 100, y: 50 }]
     const out = r.poly.map((p, i) => (i === 1 ? { x: 50, y: -30 } : p))
-    expect(shapeProblem(land, out, line, 1)).toBe('outside_land')
+    expect(shapeProblem(out, line, 1)).toBeNull()
+    expect(pastLand(land, out)).toBe(true)
     const ok = r.poly.map((p, i) => (i === 1 ? { x: 50, y: -10 } : p))
-    expect(shapeProblem(land, ok, line, 1)).toBeNull()
+    expect(pastLand(land, ok)).toBe(false)
+    expect(shapeProblem(ok, line, 1)).toBeNull()
     expect(outlineHa(sq, 1, ok)).toBeCloseTo(1.05, 2)
     const crossed = [{ x: 0, y: 0 }, { x: 100, y: 100 }, { x: 100, y: 0 }, { x: 0, y: 100 }]
     expect(outlineCrosses(crossed)).toBe(true)
+  })
+
+  it('rejecting the suggestion starts from a straight line across the middle, end to end on the edge', () => {
+    const sq = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 80 }, { x: 0, y: 80 }]
+    expect(straightAcross(sq)).toEqual([{ x: 0, y: 40 }, { x: 100, y: 40 }])
   })
 
   it('snaps to the nearest of several edges', () => {

@@ -28,8 +28,10 @@ export interface Field {
   arable: boolean
   polygon: Polygon
   signal?: FieldSignal
-  /** The farmland registered around the field: its edge can move, but not past this. */
+  /** The farmland registered around the field. His edge can go past it, and then the land registry checks it. */
   land?: Polygon
+  /** What he says the field is, when his edge goes past the registered farmland; areaHa is what counts until checked. */
+  claimedHa?: number
 }
 
 /** Registered farmland he can put a field on. */

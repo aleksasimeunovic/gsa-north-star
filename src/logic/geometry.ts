@@ -82,9 +82,9 @@ export interface SplitResult {
   areasHa: [number, number]
 }
 
-/** No part smaller than this (a prototype placeholder, to confirm with the ministry). */
+/** No part smaller than this. A design assumption until validated (placeholder, to confirm with the ministry). */
 export const MIN_PART_HA = 0.1
-/** Closer than this to the edge the photo shows, a bend joins it. */
+/** Closer than this to the edge the photo shows, a bend joins it. A design assumption until validated with farmers. */
 export const SNAP_M = 6
 const INSET_M = 1
 /** A press on the line this close to a bend takes that bend. */
@@ -290,11 +290,28 @@ export const fitLine = (poly: Polygon, line: SplitLine): SplitLine => line.map((
 /** The record's area, grown or shrunk by as much as he moved the field's edge. */
 export const outlineHa = (record: Polygon, recordHa: number, poly: Polygon) => roundHa((recordHa * polygonAreaHa(poly)) / polygonAreaHa(record))
 
-export type ShapeProblem = LineProblem | 'outside_land'
+export type ShapeProblem = LineProblem
 
-/** What's wrong with the field's edge and the line across it, or null. The map never leaves him with one. */
-export function shapeProblem(land: Polygon | undefined, poly: Polygon, line: SplitLine, wholeHa: number): ShapeProblem | null {
-  if (land && !staysOnLand(land, poly)) return 'outside_land'
+/**
+ * What's wrong with the field's edge and the line across it, or null. The map never leaves him with one.
+ * Going past the registered farmland is not one of them: the record can be wrong, so that is flagged for a check.
+ */
+export function shapeProblem(poly: Polygon, line: SplitLine, wholeHa: number): ShapeProblem | null {
   if (outlineCrosses(poly)) return 'crosses_itself'
   return lineProblem(poly, line, wholeHa)
+}
+
+/** Whether his field now goes past the farmland registered around it: a disagreement with the record, not an error. */
+export const pastLand = (land: Polygon | undefined, poly: Polygon) => !!land && !staysOnLand(land, poly)
+
+/** A straight line across the middle of the field, for when he rejects GSA's line entirely. */
+export function straightAcross(poly: Polygon): SplitLine {
+  const { minY, maxY } = bounds(poly)
+  const y = (minY + maxY) / 2
+  const xs: number[] = []
+  poly.forEach((a, i) => {
+    const b = poly[(i + 1) % poly.length]
+    if ((a.y - y) * (b.y - y) <= 0 && a.y !== b.y) xs.push(a.x + ((b.x - a.x) * (y - a.y)) / (b.y - a.y))
+  })
+  return [{ x: Math.min(...xs), y }, { x: Math.max(...xs), y }]
 }

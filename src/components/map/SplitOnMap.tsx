@@ -155,11 +155,12 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
   useEffect(() => {
     if (!interactive) return
     let sel: Selected = null
-    const hit = (pixel: number[]): 'split' | 'outline' | null =>
-      fm.map.forEachFeatureAtPixel(pixel, (f) => (f.get('split') ? 'split' : f.get('outline') ? 'outline' : undefined), { hitTolerance: 12 }) ?? null
+    // A finger is wider than a mouse, so a press near the line takes the line rather than moving the map.
+    const hit = (pixel: number[], touch = false): 'split' | 'outline' | null =>
+      fm.map.forEachFeatureAtPixel(pixel, (f) => (f.get('split') ? 'split' : f.get('outline') ? 'outline' : undefined), { hitTolerance: touch ? 24 : 12 }) ?? null
     const along = new PointerInteraction({
       handleDownEvent: (e) => {
-        const what = hit(e.pixel)
+        const what = hit(e.pixel, (e.originalEvent as PointerEvent).pointerType === 'touch')
         if (!what) return false
         const p = round(fm.point(e.coordinate))
         sel = what === 'split' ? latest.current.moves.pull(p) : latest.current.moves.pullEdge(p)

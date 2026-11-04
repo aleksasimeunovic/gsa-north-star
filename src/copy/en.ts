@@ -112,12 +112,10 @@ export const home = {
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
   daysLeft: (n: number) => (n === 1 ? '1 day left to apply' : `${n} days left to apply`),
   activeFarmer: "You're an active farmer for this year",
-  nextAction: (what: string) => `Next: ${what.charAt(0).toLowerCase()}${what.slice(1)}`,
   stepDone: (step: string) => `Nothing left to do in ${step.toLowerCase()}`,
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check. You can still submit' : `${n} things wait for a check. You can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
   now: 'Now',
-  /** How far along the part is: a fixed number he works down, never what's left, which can seem to grow. */
   stepFinished: (step: string) => `${step}: done`,
   submitted: 'Your application is submitted.',
   seeReceipt: 'See your receipt',
@@ -247,12 +245,6 @@ export const tasks = {
     countSave: 'Save my number',
     /** Same words wherever the herd appears. */
     waiting: (reg: number) => `The animal registry checks it, and its ${reg} counts until then`,
-    settled: (reg: number, who: string): [string, string][] => [
-      ['Your part', 'Done'],
-      ['Who settles it', who],
-      ['Do you need to do anything?', 'No, unless they contact you'],
-      ['What happens next', `The animal registry checks it, and its ${reg} counts until then. You can still submit, and the result appears here`],
-    ],
     registryOnly: 'The animal registry',
     withJelena: 'The animal registry, with Jelena',
     outcome: {
@@ -289,7 +281,21 @@ export const tasks = {
     mayCheck: 'the state may still check it',
     split: (a: string, b: string) => `${a}, ${b.toLowerCase()}`,
     part: (crop: string, area: string) => `${crop} ${area}`,
+    pastLand: (counted: string) => `The land registry checks your edge, and ${counted} counts until then`,
+    edge: 'your edge',
+    counts: (ha: string) => `Your field counts as ${ha}`,
   },
+
+  /** A disagreement with a record, in the same words wherever it appears. */
+  settled: (who: string, next: string, gain?: string): [string, string][] => [
+    ['Your part', 'Done'],
+    ['Who settles it', who],
+    ['Do you need to do anything?', 'No, unless they contact you'],
+    ['What happens next', `${next}. You can still submit, and the result appears here`],
+    ...(gain ? [['If they agree with you', gain] as [string, string]] : []),
+  ],
+  landWho: 'The land registry',
+  landChecks: (what: string, counted: string) => `The land registry checks ${what}, and ${counted} counts until then`,
 
   road: {
     context: (d: string) => `Since ${d} the land map marks a strip of this field as road`,
@@ -302,13 +308,8 @@ export const tasks = {
     correctionAsked: "The land registry checks the strip, and the land map's area counts until then",
     landMap: 'On the land map',
     yours: 'You say',
-    settled: (left: string, whole: string, about: string): [string, string][] => [
-      ['Your part', 'Done'],
-      ['Who settles it', 'The land registry'],
-      ['Do you need to do anything?', 'No, unless they contact you'],
-      ['What happens next', `The land registry checks the strip, and the land map's ${left} counts until then. You can still submit, and the result appears here`],
-      ['If they agree with you', `Your field goes back to ${whole}, about ${about} more`],
-    ],
+    strip: 'the strip',
+    gain: (whole: string, about: string) => `Your field goes back to ${whole}, about ${about} more`,
   },
 
   bought: {
@@ -337,11 +338,11 @@ export const tasks = {
     place: 'Address',
     active: 'Active farmer',
     activeYes: 'Yes, this year',
-    asked: 'Correction asked for, the office that keeps the record checks it',
+    asked: "Correction asked for. The record's office checks it",
   },
 
   measures: {
-    lead: (fit: number) => `You can apply for ${fit} measures this year, and each one counts once you've filled in everything it needs`,
+    lead: (fit: number) => `You can apply for ${fit} measures this year. Each counts once it's filled in`,
     groupLast: 'You applied for these last year',
     choose: 'Choose',
     chooseAgain: 'Choose again',
@@ -351,7 +352,7 @@ export const tasks = {
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
     notApplied: (ready: number, n: number, next: string) => `Not applied yet, ${ready} of ${n} filled in, next is ${next}`,
-    allFilled: 'Everything is filled in, so you can apply now',
+    allFilled: 'Everything is filled in',
     fillIn: "Fill in what's missing",
     appliedFor: (n: number) => (n === 1 ? 'Applied for 1 measure' : `Applied for ${n} measures`),
     goalsTitle: 'What you need for more support',
@@ -366,15 +367,15 @@ export const tasks = {
     goalPanel: {
       household: 'What it could mean for your household',
       working: { ha: (qty: string, rate: string) => `${qty} ha × ${rate} dinars`, animal: (qty: string, rate: string) => `${qty} animals × ${rate} dinars` },
-      caveat: "This is an estimate, and the final amount depends on that year's rates and the state's checks",
+      caveat: "An estimate. The final amount depends on that year's rates and checks",
       need: 'What you need to do',
-      then: "Once that's done, you can apply in next year's application",
+      then: 'Then you can apply next year',
       checks: 'What the state checks',
       provide: "What you'd provide",
     },
     goalAbout: {
       organic: {
-        pays: 'Extra support for each hectare farmed without synthetic fertiliser or sprays',
+        pays: 'For each hectare farmed without synthetic fertiliser or sprays',
         steps: ['Have a certification body confirm your land is organic'],
         checks: 'That a certification body has approved your land, and that it stays organic',
         provide: 'Your organic certificate',
@@ -495,12 +496,26 @@ export const draw = {
   loading: 'Loading the map',
 }
 
+const EDGE_STOP = "The line stops at your field's edge, because land outside it can't get support"
+
 export const split = {
   step: (n: number) => `Step ${n} of 3`,
   lineTitle: 'Where does the crop change?',
-  proposed: 'GSA drew this line where the satellite sees the change. Pull it, or the edge of your field, to where your land really is.',
-  yourLine: 'Pull the line or the edge of your field anywhere to bend it.',
-  fieldNow: (ha: string, by: string, more: boolean) => `Your field is now ${ha}, ${by} ${more ? 'more' : 'less'}.`,
+  check: {
+    suggested: "GSA's guess from the photo. Shadows and the season can fool it.",
+    yours: 'Your line.',
+    parts: (areas: string) => `This makes ${areas}.`,
+    question: 'Is this where the crop changes?',
+    yes: "Yes, that's right",
+    no: 'No, I need to change it',
+  },
+  yourLine: 'Pull the line or the edge of your field to where your land really is.',
+  straight: 'Start from a straight line',
+  sliderOn: 'Hard to drag? Use a slider',
+  sliderOff: 'Hide the slider',
+  fieldNow: (ha: string, by: string, more: boolean) => `You say your field is ${ha}, ${by} ${more ? 'more' : 'less'}.`,
+  pastLand: 'Past the registered farmland, the dashed line. The land registry will check it',
+  pastLandCounts: (ha: string) => `Until then ${ha} counts.`,
   bendLabel: (n: number) => `Bend ${n} in the line`,
   cornerLabel: (n: number) => `Corner ${n} of your field`,
   endStart: 'Start of the line, on the edge of the field',
@@ -512,10 +527,10 @@ export const split = {
     undoHint: 'Undo your last move',
     redo: 'Redo',
     redoHint: 'Redo your last move',
-    snap: (on: boolean) => `Snap ${on ? 'on' : 'off'}`,
-    snapHint: 'Snap to the edges the satellite and your registered field show',
-    slider: (on: boolean) => `Slider ${on ? 'on' : 'off'}`,
-    sliderHint: 'Move the whole line with a slider',
+    joined: 'Joined the edge on the photo',
+    free: 'Let it go freely',
+    snapOff: 'Points go exactly where you pull them',
+    snapOn: 'Join edges again',
     sliderLabel: 'Move the whole line',
     reset: 'Reset',
     resetHint: "Go back to GSA's line and your field as registered",
@@ -523,11 +538,10 @@ export const split = {
     removeHint: 'Take out this point',
   },
   stopped: {
-    edge: "The line stops at your field's edge, because land outside it can't get support",
-    leaves_field: "The line stops at your field's edge, because land outside it can't get support",
+    edge: EDGE_STOP,
+    leaves_field: EDGE_STOP,
     crosses_itself: "The line can't cross itself, so it stopped here",
     too_small: 'Each part needs at least 0.10 ha to be declared, so the line stopped here',
-    outside_land: "Your field can't go past the farmland registered here, the dashed line",
   },
   part: { top: 'River side', bottom: 'Road side', left: 'Left part', right: 'Right part' },
   partArea: (part: string, area: string) => `${part} ${area}`,
@@ -538,17 +552,23 @@ export const split = {
   sameError: 'Choose something different from the other part',
   effectsTitle: 'What this changes in your application',
   effects: {
+    changes: 'What changes',
+    stays: 'What stays the same',
+    decide: 'What needs your decision',
+    nothingToDecide: 'Nothing else needs your decision.',
     field: 'River field',
-    fieldValue: (parts: string, ha: string) => `Two parts, ${parts}, still ${ha} in all`,
-    fieldMoved: (parts: string, ha: string, by: string, more: boolean) => `Two parts, ${parts}, ${ha} in all, ${by} ${more ? 'more' : 'less'}`,
-    newFor: 'New for you',
-    newCrop: (crop: string) => `Certified seed can now also cover seed for your ${crop}`,
-    measures: 'Measures',
-    bothCount: 'Both parts count for basic support for plant production',
-    oneCounts: (ha: string) => `Only ${ha} counts for basic support for plant production, because nothing is sown on the rest`,
-    cover: 'Green cover over winter now lists each part, and you can choose them separately',
+    fieldValue: (parts: string) => `Two parts, ${parts}`,
+    total: 'Its size',
+    totalMoved: (ha: string, by: string, more: boolean) => `${ha}, ${by} ${more ? 'more' : 'less'}`,
+    edge: 'Its edge',
+    pastLand: (claimed: string, counted: string) => `You say ${claimed}. ${counted} counts until the land registry checks`,
+    newCrop: (crop: string) => `Could now cover seed for your ${crop}. Choose it in Measures if you want it`,
+    plant: 'Basic support for plant production',
+    bothCount: 'Covers both parts',
+    oneCounts: (ha: string) => `Covers only ${ha}, because nothing is sown on the rest`,
+    cover: 'Covers both parts. Take one out in Measures if you need to',
     estimate: 'Your estimate',
-    same: 'Stays the same, because both crops pay the same per hectare',
+    sameMoney: 'Both crops pay the same per hectare',
     less: (about: string) => `About ${about} less, because land with nothing sown isn't paid`,
     smaller: (about: string) => `About ${about} less, because your field is smaller`,
     more: (about: string) => `About ${about} more, because your field is larger`,
@@ -634,7 +654,7 @@ export const fieldEdit = {
   landChoice: (name: string, ha: string) => `${name}, ${ha}`,
   details: 'About the field',
   name: 'Name',
-  nameHint: 'So you recognise it, for example Lower field',
+  nameHint: 'For example, Lower field',
   nameError: 'Give the field a name',
   crop: 'What are you growing there this year?',
   save: 'Add the field',
@@ -738,7 +758,7 @@ export const steps = {
     submit: 'Check and submit',
   } satisfies Record<StepId, string>,
   of: (i: number, n: number) => `Step ${i} of ${n}`,
-  /** Under the open part's name in the stepper, and over its outline: what's left, in his words for that part. */
+  /** What's left in the open part, in his words. */
   left: (id: StepId, n: number) => {
     if (n === 0) return 'Done'
     const many = n > 1

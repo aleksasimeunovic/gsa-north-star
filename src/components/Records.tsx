@@ -170,7 +170,7 @@ export function useRecordRows(step: StepId): RecordRow[] | null {
       const id = `field_${f.id}`
       const it = item(id)
       const lost = it?.status === 'complete' ? (it.paymentImpact?.areaHa ?? 0) : 0
-      const split = it?.detail === 'river_split_done'
+      const split = it?.detail === 'river_split_done' || it?.detail === 'river_past_land'
       return {
         key: f.id,
         label: en.fields[f.id],

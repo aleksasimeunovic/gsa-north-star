@@ -84,6 +84,20 @@ describe('status per item', () => {
     expect(item(run('second_year', { type: 'answer_river', answer: 'yes' }, halfSplit(['wheat', 'wheat'])), 'field_river').status).toBe('action_required')
   })
 
+  it('river edge past the registered farmland: both areas kept, awaiting the land registry, no more than the record counts', () => {
+    const river = SCENARIOS.second_year.fields.find((f) => f.id === 'river')!
+    const c = { x: 220, y: 50 }
+    const boundary = river.polygon.map((p) => ({ x: c.x + (p.x - c.x) * 1.2, y: c.y + (p.y - c.y) * 1.2 }))
+    const line = [{ x: 140, y: 22 }, { x: 290, y: 10 }]
+    const r = run('second_year', { type: 'answer_river', answer: 'yes' }, { type: 'set_split', split: { line, boundary, crops: ['sunflower', 'wheat'] } })
+    const it = item(r, 'field_river')
+    expect(it.status).toBe('awaiting_verification')
+    expect(it.detail).toBe('river_past_land')
+    expect(it.conflict?.record).toBe(2.4)
+    expect(it.conflict?.his).toBeGreaterThan(2.4)
+    expect(r.scenario.fields.find((f) => f.id === 'river')!.areaHa).toBe(2.4)
+  })
+
   it('river no: his declaration stands, complete, and the estimate does not change', () => {
     const r = run('second_year', { type: 'answer_river', answer: 'no' })
     expect(item(r, 'field_river')).toEqual({ id: 'field_river', status: 'complete', detail: 'river_one_crop' })

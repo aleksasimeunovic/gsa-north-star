@@ -16,8 +16,10 @@ import {
   removeCorner,
   roundHa,
   sameLine,
+  pastLand,
   shapeProblem,
   shiftLine,
+  straightAcross,
   SNAP_M,
   snapToAny,
   splitField,
@@ -29,6 +31,7 @@ import {
 } from '../logic/geometry'
 import type { Split } from '../state/actions'
 import { Button } from '../ui/Button'
+import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { Answers } from '../ui/Fact'
 import { Inline, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { StageAction } from '../ui/MapStage'
@@ -68,8 +71,12 @@ export function useSplitDraft(record: Field, stored: Split | null) {
   const [future, setFuture] = useState<Split[]>([])
   const [stopped, setStopped] = useState<Stopped>(null)
   const [selected, setSelected] = useState<Selected>(null)
-  // The helpers, on or off, always shown on the toolbar.
+  // Confirm first: he edits only once he says GSA's line is wrong.
+  const [editing, setEditing] = useState(false)
+  // Snap works on its own; the map says when it joined an edge, with a way to turn it off.
   const [snap, setSnap] = useState(true)
+  const [snapped, setSnapped] = useState(false)
+  // A slider, for whoever finds dragging hard, offered in the panel rather than on the map.
   const [slider, setSlider] = useState(false)
   const field = fieldWith(record, draft.boundary)
   const result = splitField(field.polygon, draft.line, field.areaHa)
@@ -101,7 +108,7 @@ export function useSplitDraft(record: Field, stored: Split | null) {
   }
   const undo = () => travel(past, future, setPast, setFuture)
   const redo = () => travel(future, past, setFuture, setPast)
-  return { record, field, draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, selected, setSelected, snap, setSnap, slider, setSlider }
+  return { record, field, draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, selected, setSelected, editing, setEditing, snap, setSnap, snapped, setSnapped, slider, setSlider, pastLand: pastLand(record.land, field.polygon) }
 }
 
 export type SplitDraft = ReturnType<typeof useSplitDraft>
@@ -110,28 +117,35 @@ export type SplitDraft = ReturnType<typeof useSplitDraft>
  * Moving the line and the field's edge, whatever moves them. He never places a point on empty ground: he
  * pulls the line or the edge, which bends where he pulled, and moves the corners and bends that makes. A move
  * that would leave a bad shape stops at the last good one before it, and the map says why, so there is no
- * invalid shape to come back from. The field can't go past the farmland registered around it.
+ * invalid shape to come back from. Going past the farmland registered around it is allowed and flagged: the
+ * record can be wrong, so the land registry checks it.
  */
 export function splitMoves(d: SplitDraft) {
   const { draft, record } = d
   const poly = d.field.polygon
   const edge = edgeOf(record)
-  const land = record.land
   const haOf = (b: Polygon) => fieldWith(record, b).areaHa
   // What he can see and follow: the edge the photo shows, and his field's edge as registered.
-  const snapped = (p: Point) => (d.snap ? snapToAny(p, [edge, outlinePath(record.polygon)]).point : p)
+  let joined = false
+  const snapped = (p: Point) => {
+    if (!d.snap) return p
+    const r = snapToAny(p, [edge, outlinePath(record.polygon)])
+    joined = r.snapped
+    return r.point
+  }
 
   type Shape = { boundary: Polygon; line: SplitLine; clamped?: boolean }
   const commit = (at: (t: number) => Shape, rec: boolean) => {
     const full = at(1)
-    const problem = shapeProblem(land, full.boundary, full.line, haOf(full.boundary))
+    d.setSnapped(joined)
+    const problem = shapeProblem(full.boundary, full.line, haOf(full.boundary))
     if (!problem) return d.update({ ...draft, boundary: full.boundary, line: full.line }, rec, full.clamped ? 'edge' : null)
     let lo = 0
     let hi = 1
     for (let k = 0; k < 12; k++) {
       const mid = (lo + hi) / 2
       const m = at(mid)
-      if (shapeProblem(land, m.boundary, m.line, haOf(m.boundary))) hi = mid
+      if (shapeProblem(m.boundary, m.line, haOf(m.boundary))) hi = mid
       else lo = mid
     }
     const good = at(lo)
@@ -139,7 +153,11 @@ export function splitMoves(d: SplitDraft) {
   }
   const isEnd = (i: number) => i === 0 || i === draft.line.length - 1
   /** With Snap on, an end close to where the photo's edge meets the field joins it. */
-  const snapEnd = (p: Point) => [edge[0], edge[edge.length - 1]].find((e) => d.snap && Math.hypot(e.x - p.x, e.y - p.y) <= SNAP_M) ?? p
+  const snapEnd = (p: Point) => {
+    const e = [edge[0], edge[edge.length - 1]].find((q) => d.snap && Math.hypot(q.x - p.x, q.y - p.y) <= SNAP_M)
+    if (e) joined = true
+    return e ?? p
+  }
   const lerp = (a: Point, b: Point, t: number) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
 
   const moveBend = (i: number, p: Point, rec: boolean) => {
@@ -202,7 +220,7 @@ export function splitMoves(d: SplitDraft) {
     } else {
       const boundary = removeCorner(poly, sel.i)
       const line = fitLine(boundary, draft.line)
-      const problem = shapeProblem(land, boundary, line, haOf(boundary))
+      const problem = shapeProblem(boundary, line, haOf(boundary))
       if (problem) return d.setStopped(problem)
       d.update({ ...draft, boundary, line })
     }
@@ -230,9 +248,17 @@ export function splitMoves(d: SplitDraft) {
   const reset = () => {
     d.update({ ...draft, boundary: undefined, line: edge })
     d.setSelected(null)
+    d.setSnapped(false)
+  }
+  /** He rejects GSA's line entirely: a plain straight line across his field, to pull where he knows it is. */
+  const straight = () => {
+    d.update({ ...draft, line: straightAcross(poly) })
+    d.setSelected(null)
+    d.setSnap(false)
+    d.setSnapped(false)
   }
   const isReset = sameLine(draft.line, edge) && !draft.boundary
-  return { movePoint, pull, pullEdge, letGo, drop, nudge, moveWhole, reset, isReset, isEnd }
+  return { movePoint, pull, pullEdge, letGo, drop, nudge, moveWhole, reset, straight, isReset, isEnd }
 }
 
 const namesOf = (d: SplitDraft) => (d.result ? partNames(d.result.parts) : null)
@@ -259,9 +285,10 @@ export function partLabels(d: SplitDraft, step: 'line' | 'crops' | 'effects'): [
 }
 
 /**
- * Step 1's toolbar: undo and redo never move, the helpers always show whether they're on, and the last place
- * changes with what he has selected. Why a move stopped is said above it, right where he is working; going
- * past the registered farmland is an error, said the same way.
+ * Step 1's toolbar, once he edits: direct manipulation does the work, so the island holds only Undo, Redo and
+ * Reset (Remove while a point is selected). Snapping works on its own, and the map says when it joined an edge,
+ * with a way to turn it off. Why a move stopped is said in the same place, and so is an edge past the
+ * registered farmland, which is flagged for a check rather than stopped.
  */
 export function LineTools({ d }: { d: SplitDraft }) {
   const { draft } = d
@@ -271,15 +298,20 @@ export function LineTools({ d }: { d: SplitDraft }) {
   const order = orderOf(d)
   const r = d.result
   const areas = r ? order.map((i) => copy.partArea(partLabel(d, i), formatHa(r.areasHa[i]))).join(', ') : ''
+  const status = d.stopped ? (
+    <MapStatus>{copy.stopped[d.stopped]}</MapStatus>
+  ) : !d.snap ? (
+    <MapStatus action={{ label: t.snapOn, onClick: () => d.setSnap(true) }}>{t.snapOff}</MapStatus>
+  ) : d.snapped ? (
+    <MapStatus icon="snap" action={{ label: t.free, onClick: () => { d.setSnap(false); d.setSnapped(false) } }}>{t.joined}</MapStatus>
+  ) : d.pastLand ? (
+    <MapStatus>{copy.pastLand}</MapStatus>
+  ) : null
 
   return (
     <>
       <div aria-live="polite">
-        {d.stopped && (
-          <MapStatus error={d.stopped === 'outside_land'}>
-            {copy.stopped[d.stopped]} {d.stopped === 'too_small' && <Note kind="assumption" />}
-          </MapStatus>
-        )}
+        {status}
         <VisuallyHidden>{areas}</VisuallyHidden>
       </div>
       {d.slider && (
@@ -299,28 +331,31 @@ export function LineTools({ d }: { d: SplitDraft }) {
         </label>
       )}
       <ToolIsland label={t.label}>
-        <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} short disabled={!d.canUndo} onClick={d.undo} />
-        <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} short disabled={!d.canRedo} onClick={d.redo} />
-        <ToolDivider />
-        <ToolButton icon="snap" caption={t.snap(d.snap)} hint={t.snapHint} on={d.snap} onClick={() => d.setSnap(!d.snap)} />
-        <ToolButton icon="slider" caption={t.slider(d.slider)} hint={t.sliderHint} on={d.slider} onClick={() => d.setSlider(!d.slider)} />
+        <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} disabled={!d.canUndo} onClick={d.undo} />
+        <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} disabled={!d.canRedo} onClick={d.redo} />
         <ToolDivider />
         {sel ? (
-          <ToolButton icon="close" caption={t.remove} hint={t.removeHint} short onClick={() => moves.drop(sel)} />
+          <ToolButton icon="close" caption={t.remove} hint={t.removeHint} onClick={() => moves.drop(sel)} />
         ) : (
-          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} short disabled={moves.isReset} onClick={moves.reset} />
+          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} disabled={moves.isReset} onClick={moves.reset} />
         )}
       </ToolIsland>
     </>
   )
 }
 
-/** Step 1: GSA's line and how to move it, and his field's edge. The tools are on the map. */
+/**
+ * Step 1, confirmation first: GSA's line is a suggestion from the photo, and the usual answer is that it's right,
+ * so he confirms it without touching the map. Only if it's wrong does he edit it, or reject it and start from a
+ * straight line. The tools are on the map.
+ */
 export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => void; onNext: () => void }) {
   const onEdge = followsEdge(d.draft.line, edgeOf(d.record)) && !d.draft.boundary
+  const moves = splitMoves(d)
 
   // On a keyboard, undo and redo work as everywhere else.
   useEffect(() => {
+    if (!d.editing) return
     const key = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
@@ -332,18 +367,52 @@ export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => v
     return () => window.removeEventListener('keydown', key)
   })
 
-  const moved = d.draft.boundary ? roundHa(d.field.areaHa - d.record.areaHa) : 0
+  const claimed = d.field.claimedHa
+  const moved = d.draft.boundary ? roundHa((claimed ?? d.field.areaHa) - d.record.areaHa) : 0
+  const r = d.result
+  const order = orderOf(d)
+  const areas = r ? order.map((i) => copy.partArea(partLabel(d, i), formatHa(r.areasHa[i]))).join(' and ') : ''
+
+  if (!d.editing)
+    return (
+      <Stack gap="sm">
+        {/* Said on a phone too: the line is a suggestion, not a fact. */}
+        <Text variant="secondary">
+          {onEdge ? copy.check.suggested : copy.check.yours} <Note kind="ai" />
+        </Text>
+        {r && <Text>{copy.check.parts(areas)}</Text>}
+        <StageAction>
+          <Stack gap="sm">
+            <ChoiceButtons
+              legend={copy.check.question}
+              options={[
+                { value: 'yes' as const, label: copy.check.yes },
+                { value: 'no' as const, label: copy.check.no },
+              ]}
+              onChoose={(v) => (v === 'yes' ? onNext() : d.setEditing(true))}
+            />
+            <div>
+              <Button variant="link" onClick={onBack}>{copy.back}</Button>
+            </div>
+          </Stack>
+        </StageAction>
+      </Stack>
+    )
+
   return (
     <Stack gap="sm">
       <div className="split-lead">
-        <Text variant="secondary">
-          {onEdge ? copy.proposed : copy.yourLine} <Note kind="ai" />
-        </Text>
+        <Text variant="secondary">{copy.yourLine}</Text>
       </div>
-      {moved !== 0 && <Text variant="secondary">{copy.fieldNow(formatHa(d.field.areaHa), formatHa(Math.abs(moved)), moved > 0)}</Text>}
+      {moved !== 0 && <Text variant="secondary">{copy.fieldNow(formatHa(claimed ?? d.field.areaHa), formatHa(Math.abs(moved)), moved > 0)}</Text>}
+      {d.pastLand && <Text variant="secondary">{copy.pastLandCounts(formatHa(d.field.areaHa))}</Text>}
+      <Inline>
+        {onEdge && <Button variant="link" onClick={moves.straight}>{copy.straight}</Button>}
+        <Button variant="link" onClick={() => d.setSlider(!d.slider)}>{d.slider ? copy.sliderOff : copy.sliderOn}</Button>
+      </Inline>
       <StageAction>
         <Inline>
-          <Button onClick={onBack}>{copy.back}</Button>
+          <Button onClick={() => d.setEditing(false)}>{copy.back}</Button>
           <Button variant="primary" disabled={!d.result} onClick={onNext}>{copy.next}</Button>
         </Inline>
       </StageAction>
@@ -392,7 +461,8 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
 
 /**
  * Step 3: before he confirms, what the split does to the rest of his application, worked out from the same
- * rules as the estimate. The areas, the crops, the measures it touches and the money, each with its reason.
+ * rules as the estimate, in three groups so cause and effect can't be missed: what changes, what stays the
+ * same, and what still needs his decision. GSA never applies for a measure because a crop or an edge changed.
  */
 export function EffectsStep({ d, onBack, onConfirm }: { d: SplitDraft; onBack: () => void; onConfirm: (s: Split) => void }) {
   const { derived, state } = useApp()
@@ -402,17 +472,31 @@ export function EffectsStep({ d, onBack, onConfirm }: { d: SplitDraft; onBack: (
   const about = (n: number) => formatDinars(Math.round(Math.abs(n) / 100) * 100)
   const parts = e.parts.map((p) => `${en.crops[p.crop].toLowerCase()} ${formatHa(p.ha)}`).join(' and ')
   const money = e.movedDinars - e.lostDinars
-  const items: [string, string][] = [
-    [c.field, e.movedHa ? c.fieldMoved(parts, formatHa(e.totalHa), formatHa(Math.abs(e.movedHa)), e.movedHa > 0) : c.fieldValue(parts, formatHa(e.totalHa))],
-    [c.estimate, money > 0 ? c.more(about(money)) : money < 0 ? (e.lostHa ? c.less(about(money)) : c.smaller(about(money))) : c.same],
-    [c.measures, e.lostHa ? c.oneCounts(formatHa(roundHa(e.totalHa - e.lostHa))) : c.bothCount],
-  ]
-  if (e.newCrop) items.push([c.newFor, c.newCrop(en.crops[e.newCrop.crop].toLowerCase())])
-  if (e.coverChosen) items.push([c.measures, c.cover])
+  const changes: [string, string][] = [[c.field, c.fieldValue(parts)]]
+  const same: [string, string][] = []
+  const decide: [string, string][] = []
+  if (e.pastLand) changes.push([c.edge, c.pastLand(formatHa(e.pastLand.claimedHa), formatHa(e.pastLand.countedHa))])
+  else if (e.movedHa) changes.push([c.total, c.totalMoved(formatHa(e.totalHa), formatHa(Math.abs(e.movedHa)), e.movedHa > 0)])
+  else same.push([c.total, formatHa(e.totalHa)])
+  if (money) changes.push([c.estimate, money > 0 ? c.more(about(money)) : e.lostHa ? c.less(about(money)) : c.smaller(about(money))])
+  else same.push([c.estimate, c.sameMoney])
+  if (e.lostHa) changes.push([c.plant, c.oneCounts(formatHa(roundHa(e.totalHa - e.lostHa)))])
+  else same.push([c.plant, c.bothCount])
+  if (e.newCrop) decide.push([en.measures.certified_seed, c.newCrop(en.crops[e.newCrop.crop].toLowerCase())])
+  if (e.coverChosen) decide.push([en.measures.green_cover, c.cover])
+  const group = (title: string, items: [string, string][]) =>
+    items.length > 0 && (
+      <section className="effects-group">
+        <h3>{title}</h3>
+        <Answers items={items} />
+      </section>
+    )
   return (
     <Stack gap="sm">
-      <Answers items={items} />
-      {(e.lostHa > 0 || e.newCrop) && <Note kind="assumption" />}
+      {group(c.changes, changes)}
+      {group(c.stays, same)}
+      {decide.length ? group(c.decide, decide) : <Text variant="secondary">{c.nothingToDecide}</Text>}
+      {(e.lostHa > 0 || e.newCrop || e.pastLand) && <Note kind="assumption" />}
       <StageAction>
         <Inline>
           <Button onClick={onBack}>{copy.back}</Button>

@@ -39,12 +39,20 @@ export function ToolSwitch<T extends string>({ label, options, value, onChange }
   )
 }
 
-/** Said on the map, above the tools, at the moment it happens. `error`: something he tried that can't be. */
-export function MapStatus({ children, error }: { children: ReactNode; error?: boolean }) {
+/**
+ * Said on the map, above the tools, at the moment it happens. `error`: something he tried that can't be.
+ * `action`: the one thing he can do about it, right there (turn snapping off).
+ */
+export function MapStatus({ children, error, icon, action }: { children: ReactNode; error?: boolean; icon?: IconName; action?: { label: string; onClick: () => void } }) {
   return (
-    <p className="map-status" data-error={error || undefined} role={error ? 'alert' : undefined}>
-      <Icon name={error ? 'error' : 'warning'} size="sm" />
+    <p className="map-status" data-error={error || undefined} data-info={icon ? '' : undefined} role={error ? 'alert' : undefined}>
+      <Icon name={icon ?? (error ? 'error' : 'warning')} size="sm" />
       {children}
+      {action && (
+        <button type="button" className="map-status-action" onClick={action.onClick}>
+          {action.label}
+        </button>
+      )}
     </p>
   )
 }

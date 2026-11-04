@@ -229,14 +229,14 @@ export function RoadDispute() {
           { label: tasks.road.yours, value: whole },
         ]}
       />
-      <Answers items={tasks.road.settled(left, whole, about(impactOf(s, strip, 'road_pending_correction').amountDinars))} />
+      <Answers items={tasks.settled(tasks.landWho, tasks.landChecks(tasks.road.strip, left), tasks.road.gain(whole, about(impactOf(s, strip, 'road_pending_correction').amountDinars)))} />
       <Note kind="assumption" />
     </>
   )
 }
 
 /** The herd disagreement's four answers, in the same words wherever they appear. */
-export const herdSettled = (jelena: boolean, reg: number) => tasks.herd.settled(reg, jelena ? tasks.herd.withJelena : tasks.herd.registryOnly)
+export const herdSettled = (jelena: boolean, reg: number) => tasks.settled(jelena ? tasks.herd.withJelena : tasks.herd.registryOnly, tasks.herd.waiting(reg))
 
 /** What GSA found, said in one line, with when: a possibility at most, never what it means. */
 export function mapContext(s: Derived['scenario'], id: 'field_river' | 'field_road') {
@@ -473,9 +473,10 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
     }
     case 'field_river': {
       const parts = riverParts(s, state.answers)
-      if (item.detail === 'river_split_done' && parts) {
+      if ((item.detail === 'river_split_done' || item.detail === 'river_past_land') && parts) {
         const [x, y] = parts.map((p) => tasks.river.part(en.crops[p.crop], formatHa(p.ha)))
-        return tasks.river.split(x, y)
+        const both = tasks.river.split(x, y)
+        return item.conflict ? `${both}. ${tasks.river.pastLand(formatHa(item.conflict.record))}` : both
       }
       if (item.detail === 'river_one_crop') return `${tasks.river.oneCrop}, ${tasks.river.mayCheck}`
       return mapContext(s, id)

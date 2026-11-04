@@ -10,7 +10,9 @@ import type { YesNo } from '../state/actions'
 import { Button } from '../ui/Button'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { Compare, Text, VisuallyHidden } from '../ui/Layout'
+import { Answers } from '../ui/Fact'
 import { MapStage, StageAction } from '../ui/MapStage'
+import { Note } from '../ui/Note'
 import { ToolSwitch } from '../ui/MapTools'
 
 
@@ -135,14 +137,14 @@ function RiverReview({ onAnswer, head }: BodyProps) {
               step
                 ? {
                     d: draft,
-                    interactive: step === 'line',
+                    interactive: step === 'line' && draft.editing,
                     labels: partLabels(draft, step),
                     onPickPart: step === 'crops' ? (i) => document.getElementById(`part-crop-${i}`)?.focus() : undefined,
                   }
                 : undefined
             }
             dock={
-              step === 'line' ? (
+              step === 'line' && draft.editing ? (
                 <LineTools d={draft} />
               ) : !step && a.answer === null ? (
                 <ToolSwitch
@@ -212,9 +214,27 @@ function RiverReview({ onAnswer, head }: BodyProps) {
                 <Button variant="link" onClick={() => go('line')}>{tasks.changeSplit}</Button>
               </div>
             )}
+            {item.conflict && <RiverDispute counted={item.conflict.record} claimed={item.conflict.his} />}
           </>
         ))}
     </MapStage>
+  )
+}
+
+/** His edge goes past the registered farmland: both areas kept, who settles it and what happens next. */
+function RiverDispute({ counted, claimed }: { counted: number; claimed: number }) {
+  const t = tasks.river
+  return (
+    <>
+      <Compare
+        items={[
+          { label: tasks.road.landMap, value: formatHa(counted) },
+          { label: tasks.road.yours, value: formatHa(claimed) },
+        ]}
+      />
+      <Answers items={tasks.settled(tasks.landWho, tasks.landChecks(t.edge, formatHa(counted)), t.counts(formatHa(claimed)))} />
+      <Note kind="assumption" />
+    </>
   )
 }
 

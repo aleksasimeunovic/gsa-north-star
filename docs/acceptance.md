@@ -55,10 +55,13 @@ Where each problem and each item in CLAUDE.md section 13 can be checked. Start f
 - [x] Round 13: an invalid split line can't exist; what a split changes is shown before Confirm; land, crops, measures, estimate and readiness follow it; the road dispute names who owns the next step; assumptions labelled (Prototype → Show design notes).
 - [x] Solid green only on the primary action; open part and row neutral and labelled; one content width; the task's action pinned in one place.
 - [x] `src/copy/en.ts`: 4,242 words at the start of round 10, 4,208 at the end.
+- [x] Round 16: GSA's line is confirmed without touching the map; the editor opens only on "No"; GSA's line can be rejected for a straight one; past the registered farmland is flagged for the land registry, both areas kept; the island is Undo, Redo, Reset; snapping automatic with a way off; slider in the panel; three groups before Confirm; no measure applied on his behalf. Checked at 360 px and 1280 px.
+- [x] `src/copy/en.ts`: 4,845 words at the start of round 16, 4,828 at the end.
 
 ## Assumptions and placeholders
 
 - Prototype clock: today is 28 April 2026 (29 days left).
 - Placeholders: receipt file names and dates, reference numbers, plot outlines, the neighbour's parcel outline, the evidence dates (satellite photo 21 April 2026, land map 16 March 2026, neighbour's declaration 15 April 2026), and what he lacks for organic and the milk premium (2 months, 2 dairy cows).
 - Assumptions to confirm with the ministry: awaiting verification doesn't block submission; amending until the national deadline; after "the same as the rest of the field" the state may still check it; the meadow must be mowed or grazed at least once this year, checked by satellite (no date invented); household pigs need no declaration.
+- Design assumptions until validated (round 16): snapping within 6 m; the 0.10 ha minimum part; touch distances (a press 24 px from the line takes it, handles answer in 56 px); the registered area counts while the land registry checks an edge past the farmland. Whether Milan can drag the line on his own phone without panning the map needs testing with farmers.
 - Follow-up date for a referral: halfway to the application deadline (a design choice, not a policy).

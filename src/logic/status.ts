@@ -41,6 +41,7 @@ export type ItemDetail =
   | 'river_unanswered'
   | 'river_needs_split'
   | 'river_split_done'
+  | 'river_past_land' // his edge goes past the registered farmland: both kept until the land registry checks
   | 'river_one_crop'
   | 'road_unanswered'
   | 'road_confirmed'
@@ -132,7 +133,11 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
       const split = a.river.split!
       const empty = split.crops.indexOf('unsown')
       const areas = splitField(field.polygon, split.line, field.areaHa)!.areasHa
-      return { id: itemId, status: 'complete', detail: 'river_split_done', ...(empty >= 0 ? { paymentImpact: impactOf(s, areas[empty], 'river_unsown') } : {}) }
+      const impact = empty >= 0 ? { paymentImpact: impactOf(s, areas[empty], 'river_unsown') } : {}
+      // A record never overwrites his answer: past the registered farmland, both are kept until it's checked.
+      if (field.claimedHa !== undefined)
+        return { id: itemId, status: 'awaiting_verification', detail: 'river_past_land', ...impact, conflict: { record: field.areaHa, his: field.claimedHa, owner: 'land_map' } }
+      return { id: itemId, status: 'complete', detail: 'river_split_done', ...impact }
     }
     // No: his declaration stands. The satellite never decides what he planted.
     return { id: itemId, status: 'complete', detail: 'river_one_crop' }
