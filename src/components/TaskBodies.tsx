@@ -250,14 +250,13 @@ export function mapContext(s: Derived['scenario'], id: 'field_river' | 'field_ro
  * what changed highlighted, the facts, and one way in: review the boundary on the map.
  */
 function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
-  const { derived, state, go } = useApp()
+  const { derived, go } = useApp()
   const fieldId = id.slice(6) as FieldId
   const item = itemOf(derived, id)
   const unanswered = item.detail.endsWith('_unanswered')
 
   return (
     <Stack gap="md">
-      <Text>{taskSummary(id, derived, state)}</Text>
       <figure className="map-figure">
         <div className="map-link" onClick={() => go('review', id)}>
           <Suspense fallback={<MapFallback mode="preview" />}>

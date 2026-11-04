@@ -29,6 +29,7 @@ export const ReadinessBar = forwardRef<HTMLButtonElement, { onOpen: () => void; 
           <span className="readiness-lines">
             <span className="readiness-text">{text}</span>
           </span>
+          <span className="readiness-chevron"><Icon name="disclose" size="sm" /></span>
         </button>
       )}
     </div>

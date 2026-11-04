@@ -136,7 +136,7 @@ The application is one list of named tasks. It is also the readiness view.
 | He declares it under liability, or it needs new evidence every year (cows that calved, input receipts, the declaration) | A one-tap confirmation in its part. Never bundled. A problem with it (the blurry diesel receipt) is an action inside it |
 | A rule doesn't apply to his farm | Left out |
 | Choosing measures | Ones that fit come first, with the reason; full list stays |
-| Parts | The application comes in parts, in order: Your details, Animals, Land, Measures, Documents, Check and submit. Every task belongs to the part it is about. A part his farm has nothing for is left out (no animals, no Animals part). The point is not fewer steps; it is less effort per step and better, more personal questions |
+| Parts | The application comes in parts, in order: Your details, Animals, Land, Measures, Documents, Summary (was Check and submit). Every task belongs to the part it is about. A part his farm has nothing for is left out (no animals, no Animals part). The point is not fewer steps; it is less effort per step and better, more personal questions |
 | Always | Inside the open part, exactly one next action, open, the most visible thing on screen. Once the part is done, "Continue: <next part>" is the primary action |
 | Kinds of work | Within each part, changes first because they shape the rest, then choices (measures), then yearly confirmations |
 | An answer adds work | The toast says what, in one line; the finish line never moves silently |

@@ -378,3 +378,13 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 306. **A short map gets less padding**: on a tablet answering a question, the map padding follows its smaller side, so the river field is no longer a small shape in a wide photo.
 307. **Fixed: a double gap in "Back to your application"** (the button's gap applied to the hidden part of the label).
 308. `src/copy/en.ts`: 4,821 to 4,811 words.
+
+## Round 20 (Aleksa, 4 Nov): stepper, task header, last-one wording, Summary
+
+309. **The stepper no longer says what's left in the open part**; the panel beside it does, once. On a phone the compact stepper says "Step 3 of 6" with the part bar, rather than repeating the panel's count.
+310. **A task's heading and its one line of context are one group** (8 px apart), justified against the map's button on the other side; on a phone the button wraps under the group. Rejected: the button inside the heading row with the context below the whole header, which broke the group.
+311. **When one thing is left in a part, the panel says "Only this one left, then Animals"**: it says the count is one, that this is the thing on screen, and where finishing it leads. Rejected: "This is the only action you have to take so you can proceed" (long, "action" is UI language, "proceed" doesn't say where) and "1 thing to confirm" (true, but doesn't reassure). A part of only one task drops its list, which only repeated the heading.
+312. **Counts name what they count**: "2 things to answer", "1 thing to confirm", "2 things to sort out", "1 field to go".
+313. **"Check and submit" is now "Summary"** in the stepper: the part is where he sees his whole application, and Submit appears there only when he can submit, so the name no longer promises a submit he may not have yet.
+314. **The readiness link looks clickable**: a hover surface, a firmer underline and a chevron that nudges (still under reduced motion).
+315. `src/copy/en.ts`: 4,811 to 4,809 words.

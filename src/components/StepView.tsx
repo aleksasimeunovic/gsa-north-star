@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { after as copy, home, steps, tasks } from '../copy/en'
 import type { TaskId } from '../logic/application'
-import { stepOf } from '../logic/application'
+import { isMapChange, stepOf } from '../logic/application'
 import { Button } from '../ui/Button'
 import { Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
@@ -9,7 +9,7 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { Toast } from '../ui/Toast'
 import { useApp } from './AppContext'
 import { nextActionLabel } from './ReadinessBar'
-import { MapReviewButton, TaskBody } from './TaskBodies'
+import { MapReviewButton, TaskBody, taskSummary } from './TaskBodies'
 import type { AfterAnswer, Flow } from './useApplicationFlow'
 
 /** One part of his application: what his last answer changed, then the one thing to do now in this part. */
@@ -27,7 +27,7 @@ export function StepView({ flow }: { flow: Flow }) {
 
 /** The one next action: what kind of work it is, what to do, and the task itself, open. */
 function NextAction({ flow }: { flow: Flow }) {
-  const { derived } = useApp()
+  const { derived, state } = useApp()
   const task = flow.focusTask!
   const needsHim = task.status === 'action_required'
   // The very first thing he does in the application is said as a start.
@@ -36,15 +36,17 @@ function NextAction({ flow }: { flow: Flow }) {
 
   return (
     <section key={task.id} id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
+      {/* Heading and its one line of context are one group; the map's way in sits opposite it. */}
       <div className="next-top">
         <div className="next-titles">
           {task.kind === 'change' && <Note kind="ai" />}
           <div className="next-head">
             <h3 id="next-title" tabIndex={-1}>{heading}</h3>
             {!needsHim && <StatusBadge mark={task.mark} />}
-            <MapReviewButton id={task.id} />
           </div>
+          {isMapChange(task.id) && <p className="next-lead">{taskSummary(task.id, derived, state)}</p>}
         </div>
+        <MapReviewButton id={task.id} />
       </div>
       <TaskBody task={task} />
     </section>

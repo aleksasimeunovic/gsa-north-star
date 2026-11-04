@@ -761,28 +761,16 @@ export const steps = {
     land: 'Land',
     measures: 'Measures',
     documents: 'Documents',
-    submit: 'Check and submit',
+    submit: 'Summary',
   } satisfies Record<StepId, string>,
   of: (i: number, n: number) => `Step ${i} of ${n}`,
-  /** What's left in the open part, in his words. */
   left: (id: StepId, n: number) => {
     if (n === 0) return 'Done'
-    const many = n > 1
-    switch (id) {
-      case 'details':
-        return `${n} to confirm`
-      case 'animals':
-        return `${n} to answer`
-      case 'land':
-        return `${n} ${many ? 'fields' : 'field'} to go`
-      case 'measures':
-        return 'Choose yours'
-      case 'documents':
-        return `${n} to sort out`
-      default:
-        return ''
-    }
+    if (id === 'measures') return 'Choose yours'
+    if (id === 'land') return n === 1 ? '1 field to go' : `${n} fields to go`
+    return `${n} thing${n === 1 ? '' : 's'} to ${{ details: 'confirm', documents: 'sort out' }[id as string] ?? 'answer'}`
   },
+  only: (next = '') => `Only this one left${next && `, then ${next}`}`,
 }
 
 export const bar = {

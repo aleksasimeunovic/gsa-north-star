@@ -121,7 +121,13 @@
 .outline-list li[data-mark='done'] .row-title { color: var(--muted-foreground); }
 
 /* Readiness: answers "Is my application ready?" */
-.readiness-link { display: inline-flex; align-items: center; gap: 12px; font: inherit; font-size: 0.875rem; font-weight: 500; background: none; border: 0; padding: 8px 0; min-height: 44px; color: var(--foreground); cursor: pointer; text-align: left; }
+.readiness-link { display: inline-flex; align-items: center; gap: 12px; font: inherit; font-size: 0.875rem; font-weight: 500; background: none; border: 0; padding: 8px 10px 8px 8px; margin-left: -8px; border-radius: 12px; min-height: 44px; color: var(--foreground); cursor: pointer; text-align: left; transition: background-color 0.15s; }
+.readiness-link:hover { background: var(--hover); }
+.readiness-link:hover .readiness-text { text-decoration-color: currentColor; }
+.readiness-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.readiness-chevron { display: inline-flex; color: var(--muted-foreground); transition: transform 0.15s; }
+.readiness-link:hover .readiness-chevron { transform: translateX(2px); color: var(--foreground); }
+@media (prefers-reduced-motion: reduce) { .readiness-chevron { transition: none; } .readiness-link:hover .readiness-chevron { transform: none; } }
 .unchanged { display: grid; gap: var(--gap-item); margin-top: var(--gap-item); }
 .unchanged-row { display: grid; gap: 2px; }
 .unchanged-row dt { color: var(--muted-foreground); font-size: 0.875rem; }
@@ -335,8 +341,9 @@ button.drawer-row:hover { background: var(--hover); }
 .queue-state { font-weight: 500; font-size: 0.875rem; }
 .queue-row[data-state='resolved'] .queue-open { color: var(--muted-foreground); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.next-top { align-items: flex-start; gap: 16px; }
-.next-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.next-top { justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
+.next-titles { display: flex; flex-direction: column; gap: var(--space-2); min-width: min(100%, 16rem); flex: 1; }
+.next-lead { color: var(--muted-foreground); }
 
 /* Check and submit: only what to fix or look at, a small panel, never the stepper again */
 .action-points { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--space-3) var(--panel-pad); display: flex; flex-direction: column; gap: var(--space-1); }
