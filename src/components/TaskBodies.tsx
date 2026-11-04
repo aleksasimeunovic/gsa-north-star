@@ -358,7 +358,6 @@ function BankBody() {
   return (
     <Stack gap="section">
       <Compare
-        long
         items={[
           { label: b.registered, value: <>{b.ending(acc.ending)} <Text variant="small" as="span">{b.closed}</Text></> },
           { label: b.fromBank, value: b.ending(acc.newEnding) },

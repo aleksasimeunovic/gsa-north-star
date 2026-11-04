@@ -414,3 +414,5 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 333. **"Unchanged since last year" is now "Farmer's data".**
 334. `src/copy/en.ts`: 4,802 to 4,764 words.
 335. **Headings are now a modern serif, Source Serif 4** (weight 600, slight negative tracking); body stays Inter. Small headings go up to 16 px, since a serif reads smaller than a sans at the same size. Rejected: Bricolage Grotesque (Aleksa: a bad fit for headlines).
+336. **Compared values sit one under the other** (last year, then the registry today; the old account, then the new one), so they read as before and after. Rejected: side by side.
+337. **Progress bars fill in the primary green, and the part's bar says "x/y" beside it**, so how far he is reads at a glance. An exception to green only on the primary action, at Aleksa's request.

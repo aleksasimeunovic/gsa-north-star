@@ -19,7 +19,8 @@ export function StepOutline({ flow }: { flow: Flow }) {
       <div className="outline-head">
         <h3 id="outline-title" className="group-title">{steps.left(flow.step.id, left)}</h3>
         <div className="outline-progress">
-          <Progress value={tasks.length - count('action_required')} max={tasks.length} />
+          <Progress value={tasks.length - left} max={tasks.length} />
+          <span className="outline-count">{tasks.length - left}/{tasks.length}</span>
         </div>
       </div>
       <ul className="outline-list">
