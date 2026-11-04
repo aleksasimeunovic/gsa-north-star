@@ -35,7 +35,7 @@ This file is the single source of truth. Read it fully before planning. If somet
 - Ask before adding any dependency beyond those in section 9 (OpenLayers, lucide-react, Tailwind, shadcn/ui's Radix packages, class-variance-authority, clsx and tailwind-merge are approved).
 - Styling: `src/index.css` (Tailwind and the shadcn theme tokens), shadcn components in `src/ui/shadcn/`, our primitives in `src/ui/` (Tailwind classes), composed pieces and page layout in `src/styles.css` (plain CSS on the same tokens).
 - Tests: only unit tests for the pure logic in `src/logic/`. No UI tests. Update the tests when a rule changes.
-- Commit at the end of each phase with a one-line message.
+- Commit at the end of each phase with a one-line message, push the working branch, then merge it straight into `main` (fast-forward) and push `main`, which deploys to GitHub Pages. Aleksa asked for this until the end of the project (4 Nov); no pull requests.
 - When Aleksa links a doc, board or email, use it to understand intent. Don't copy its text into the UI or into this file.
 - Keep a decision log in `docs/decisions.md`: one line per decision (what was chosen, the alternative rejected, why).
 
