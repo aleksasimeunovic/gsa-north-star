@@ -255,7 +255,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
           </StageAction>
         </MapStage>
       )}
-      <ActionBar back={{ label: map.back, onClick: back }} forwardIsPrimary={false} next={null} onPick={(task) => flow.show(task)} />
+      <ActionBar back={{ label: <>{map.back}<span className="back-more">{map.backMore}</span></>, onClick: back }} forwardIsPrimary={false} next={null} onPick={(task) => flow.show(task)} />
     </>
   )
 }

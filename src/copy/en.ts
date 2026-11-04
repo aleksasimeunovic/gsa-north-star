@@ -490,7 +490,8 @@ export const map = {
   backTo: (field: string) => `Back to the ${field.toLowerCase()}`,
   backToFields: 'Back to your fields',
   wholeFarm: 'Whole farm',
-  back: 'Back to your application',
+  back: 'Back',
+  backMore: ' to your application',
 }
 
 export const draw = {

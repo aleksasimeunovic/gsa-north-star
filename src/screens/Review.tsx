@@ -54,7 +54,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
     <>
       <Body onAnswer={onAnswer} head={head} />
       <ActionBar
-        back={{ label: map.back, onClick: back }}
+        back={{ label: <>{map.back}<span className="back-more">{map.backMore}</span></>, onClick: back }}
         forwardIsPrimary={false}
         next={item.status === 'action_required' ? id : null}
         onPick={(task) => {
@@ -124,6 +124,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
     <MapStage
       label={en.fields.river}
       working={step !== null}
+      answering={step === null ? asking : step !== 'line' || !draft.editing}
       map={
         <Suspense fallback={<MapFallback mode="explore" fill />}>
           <FarmMap

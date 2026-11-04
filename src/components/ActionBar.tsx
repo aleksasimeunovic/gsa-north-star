@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { bar } from '../copy/en'
 import type { TaskId } from '../logic/application'
 import { Button } from '../ui/Button'
@@ -7,7 +7,7 @@ import { ReadinessBar } from './ReadinessBar'
 import { ReadinessDrawer } from './ReadinessDrawer'
 
 interface Step {
-  label: string
+  label: ReactNode
   onClick: () => void
   disabled?: boolean
 }

@@ -392,7 +392,8 @@ export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => v
         <Text variant="secondary">
           {onEdge ? copy.check.suggested : copy.check.yours} <Note kind="ai" />
         </Text>
-        {r && <Text>{copy.check.parts(areas)}</Text>}
+        {/* The areas are on the map; on a phone, where room is short, the sentence is for screen readers. */}
+        {r && <p className="check-parts">{copy.check.parts(areas)}</p>}
         <StageAction>
           <Stack gap="sm">
             <ChoiceButtons
