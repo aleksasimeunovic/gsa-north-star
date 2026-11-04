@@ -99,7 +99,7 @@ function HerdBody() {
 
   const save = () => {
     const n = Number(count)
-    if (!Number.isInteger(n) || n < 0) return setError(tasks.herd.countError)
+    if (count.trim() === '' || !Number.isInteger(n) || n < 0) return setError(tasks.herd.countError)
     setError(undefined)
     dispatch({ type: 'set_herd_count', count: n })
   }
@@ -138,7 +138,7 @@ function HerdBody() {
           <Stack gap="sm">
             <Field label={tasks.herd.countLabel} hint={tasks.herd.countHint} error={error} inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
             <StageAction>
-              <Button type="submit" variant="primary" disabled={count.trim() === ''}>{tasks.herd.countSave}</Button>
+              <Button type="submit" variant="primary">{tasks.herd.countSave}</Button>
             </StageAction>
           </Stack>
         </form>
@@ -381,7 +381,7 @@ function BankBody() {
           <Stack gap="sm">
             <Field label={b.label} hint={b.hint} error={error} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} />
             <StageAction>
-              <Button type="submit" variant="primary" disabled={value.trim() === ''}>{b.save}</Button>
+              <Button type="submit" variant="primary">{b.save}</Button>
             </StageAction>
           </Stack>
         </form>

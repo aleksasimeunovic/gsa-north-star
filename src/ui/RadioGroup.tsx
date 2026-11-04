@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { cn } from '../lib/utils'
 import { RadioGroup as Base, RadioGroupItem } from './shadcn/radio-group'
 import { useDensity } from './Density'
+import { Icon } from './Icon'
 
 interface Option<T extends string> {
   value: T
@@ -16,10 +17,12 @@ interface Props<T extends string> {
   value: T | null
   onChange: (value: T) => void
   inline?: boolean
+  /** What's missing, said under the question. */
+  error?: string
 }
 
 /** One question, each answer a selectable card. */
-export function RadioGroup<T extends string>({ legend, hint, options, value, onChange, inline }: Props<T>) {
+export function RadioGroup<T extends string>({ legend, hint, options, value, onChange, inline, error }: Props<T>) {
   const id = useId()
   const compact = useDensity() === 'compact'
   return (
@@ -28,7 +31,13 @@ export function RadioGroup<T extends string>({ legend, hint, options, value, onC
         {legend}
         {hint && <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{hint}</span>}
       </p>
-      <Base value={value ?? ''} onValueChange={(v) => onChange(v as T)} aria-labelledby={`${id}-legend`} className={cn(inline && 'grid-cols-1 sm:grid-cols-2')}>
+      {error && (
+        <span role="alert" className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+          <Icon name="error" size="sm" />
+          {error}
+        </span>
+      )}
+      <Base aria-invalid={!!error || undefined} value={value ?? ''} onValueChange={(v) => onChange(v as T)} aria-labelledby={`${id}-legend`} className={cn(inline && 'grid-cols-1 sm:grid-cols-2')}>
         {options.map((o) => (
           <label
             key={o.value}

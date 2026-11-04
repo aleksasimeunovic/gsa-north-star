@@ -552,6 +552,7 @@ export const split = {
   cropFor: (part: string, area: string) => `${part}, ${area}`,
   choose: 'Choose a crop',
   sameError: 'Choose something different from the other part',
+  cropMissing: 'Choose what grows here',
   effectsTitle: 'What this changes in your application',
   effects: {
     changes: 'What changes',
@@ -659,6 +660,7 @@ export const fieldEdit = {
   name: 'Name',
   nameHint: 'For example, Lower field',
   nameError: 'Give the field a name',
+  cropError: 'Choose what you grow there',
   crop: 'What are you growing there this year?',
   save: 'Add the field',
   saveChanges: 'Save the field',

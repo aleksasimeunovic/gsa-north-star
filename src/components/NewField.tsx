@@ -132,6 +132,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const [stage, setStage] = useState<Stage>(polygon ? 'details' : 'place')
   const [name, setName] = useState(existing?.name ?? '')
   const [nameError, setNameError] = useState<string>()
+  const [cropError, setCropError] = useState<string>()
   const [crop, setCrop] = useState<Crop | null>(existing?.crop ?? null)
   // With the land already known, there is no place to pick.
   const of = 2
@@ -177,13 +178,14 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
               className="flex flex-col gap-6"
               onSubmit={(e) => {
                 e.preventDefault()
-                if (!name.trim()) return setNameError(copy.nameError)
-                setNameError(undefined)
-                if (crop) save(polygon)
+                setNameError(name.trim() ? undefined : copy.nameError)
+                setCropError(crop ? undefined : copy.cropError)
+                if (!name.trim() || !crop) return
+                save(polygon)
               }}
             >
               <Field label={copy.name} hint={copy.nameHint} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
-              <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} onChange={setCrop} />
+              <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} error={cropError} onChange={(c) => { setCrop(c); setCropError(undefined) }} />
               {existing && !isBought && (
                 <div>
                   <Button
@@ -209,7 +211,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                       {bar.back}
                     </Button>
                   )}
-                  <Button type="submit" variant="primary" disabled={!crop}>{existing ? copy.saveChanges : copy.save}</Button>
+                  <Button type="submit" variant="primary">{existing ? copy.saveChanges : copy.save}</Button>
                 </Inline>
               </StageAction>
             </form>

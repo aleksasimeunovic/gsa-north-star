@@ -78,6 +78,8 @@ export function useSplitDraft(record: Field, stored: Split | null) {
   const [snapped, setSnapped] = useState(false)
   // A slider, for whoever finds dragging hard, offered in the panel rather than on the map.
   const [slider, setSlider] = useState(false)
+  // The part the panel is talking about right now, lit on the map too.
+  const [lit, setLit] = useState<0 | 1 | null>(null)
   const field = fieldWith(record, draft.boundary)
   const result = splitField(field.polygon, draft.line, field.areaHa)
 
@@ -108,7 +110,7 @@ export function useSplitDraft(record: Field, stored: Split | null) {
   }
   const undo = () => travel(past, future, setPast, setFuture)
   const redo = () => travel(future, past, setFuture, setPast)
-  return { record, field, draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, selected, setSelected, editing, setEditing, snap, setSnap, snapped, setSnapped, slider, setSlider, pastLand: pastLand(record.land, field.polygon) }
+  return { record, field, draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, selected, setSelected, editing, setEditing, snap, setSnap, snapped, setSnapped, slider, setSlider, lit, setLit, pastLand: pastLand(record.land, field.polygon) }
 }
 
 export type SplitDraft = ReturnType<typeof useSplitDraft>
@@ -433,6 +435,14 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
   const complete = !!result && !!draft.crops[0] && !!draft.crops[1] && !same
   const order = orderOf(d)
   const options = PART_CROPS.map((c) => ({ value: c, label: en.crops[c] }))
+  // Continue is never grey: pressed too early, it says which part still needs a crop and goes there.
+  const [tried, setTried] = useState(false)
+  const next = () => {
+    if (complete) return onNext()
+    setTried(true)
+    const missing = order.find((i) => !draft.crops[i]) ?? order[1]
+    document.getElementById(`part-crop-${missing}`)?.focus()
+  }
   return (
     <Stack gap="md">
       <div className="split-lead">
@@ -440,25 +450,26 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
       </div>
       {result &&
         order.map((i) => (
+          <div key={i} onMouseEnter={() => d.setLit(i)} onMouseLeave={() => d.setLit(null)} onFocus={() => d.setLit(i)} onBlur={() => d.setLit(null)}>
           <Select
-            key={i}
             id={`part-crop-${i}`}
             label={copy.cropFor(partLabel(d, i), formatHa(result.areasHa[i]))}
             placeholder={copy.choose}
             options={options}
             value={draft.crops[i] ?? ''}
-            error={same && i === order[1] ? copy.sameError : undefined}
+            error={same && i === order[1] ? copy.sameError : tried && !draft.crops[i] ? copy.cropMissing : undefined}
             onChange={(e) => {
               const crops: Split['crops'] = [...draft.crops]
               crops[i] = (e.target.value || null) as PartCrop | null
               d.update({ ...draft, crops }, false)
             }}
           />
+          </div>
         ))}
       <StageAction>
         <Inline>
           <Button onClick={onBack}>{copy.back}</Button>
-          <Button variant="primary" disabled={!complete} onClick={onNext}>{copy.next}</Button>
+          <Button variant="primary" onClick={next}>{copy.next}</Button>
         </Inline>
       </StageAction>
     </Stack>

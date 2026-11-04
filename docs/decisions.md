@@ -343,3 +343,19 @@ One line per decision: what was chosen, the alternative rejected, why.
 279. **Tokens for what floats over the photo (`--shadow-float`) and the light ring that keeps a mark readable on it (`--map-halo`)**, in place of repeated values, so a map theme is one place.
 280. **Recommended measures say what the state checks in fewer words** ("The state still checks they stay covered"), without repeating what the measure pays for.
 281. `src/copy/en.ts`: 4,828 to 4,827 words.
+
+## Round 18 (Aleksa, 4 Nov): the map experience, motion and states
+
+Research behind it: GIS editors for phones put a magnifier above the finger, because the finger covers the point being placed ([ArcGIS magnifier](https://developers.arcgis.com/kotlin/v200/sample-code/show-magnifier/), [reticle](https://developers.arcgis.com/kotlin/api-reference/arcgis-maps-kotlin/com.arcgismaps.mapping.view.geometryeditor/-geometry-editor-reticle/index.html)), and show snapping as it happens. Farmer-facing CAP apps lead with the parcel on the map ([AgriSnap, Ireland](https://www.setu.ie/news/geo-tagged-photo-agrisnap-app-developed-in-ireland-helping-smooth-cap-payments)). No published study compares these for older farmers, so all of it is to validate.
+
+282. **A loupe while a finger drags a point**: the spot under the finger, twice as large, floating above it with the point marked like its handle; below the finger near the top of the map. Touch only, because a mouse covers nothing. Rejected: a fixed crosshair (reticle) that he moves the map under, which is a second way of editing to learn.
+283. **The field's corners are quiet 6 px dots until he reaches for one** (hover, focus, selected, dragged), while the line's bends stay full handles; the area that answers a press stays 44 or 56 px. Twenty-odd equal handles around the edge competed with the line he came to check.
+284. **The registered farmland shows only while he works on the field's edge, or once the edge goes past it.** Three kinds of line around one edge was clutter when he is only moving the divider.
+285. **GSA's line draws itself along the edge the first time it appears** (0.7 s, eased), so it reads as a proposal being made, not a fact. The chips on the photo fade in.
+286. **The panel and the map point at the same part**: in the crops step, the part under the pointer lights up, and so does the part whose crop he is choosing or hovering in the panel.
+287. **Snapping is felt and seen**: the point pulses once when it joins an edge, and the phone ticks (`navigator.vibrate`, where it exists).
+288. **The flag fades between "What the satellite shows" and "Your field last year"** (0.2 s), so the two views read as one photo with and without it. The camera glides back to the field in 0.45 s.
+289. **Never a grey button with no reason, everywhere (extends 274):** the crops step, a new field, the herd count and the bank account keep their button; pressed too early, the missing answer says what it needs and takes focus. Found while there: an empty herd count saved as 0 cattle; it now asks for a number.
+290. **Motion has one purpose each, 150 to 300 ms, eased out, none with reduced motion**: the next action rises in when it takes the top slot; the tools and what the map says lift in; a part that is done ticks; the receipt's mark rings once; the three groups before Confirm arrive in order; buttons and tools give under a press.
+291. **Fixed: a Select given an id lost its label's link**, so the crop fields had no accessible name from their labels. Errors in selects, radio groups and checkboxes now carry the error icon, as everywhere else.
+292. **Map labels in Geist**, like the rest of the application, and the satellite tiles load with CORS, so the loupe can draw them.

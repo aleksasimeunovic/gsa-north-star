@@ -53,6 +53,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
   latest.current = { d, moves: splitMoves(d), onPickPart }
   const handles = useRef<Overlay[]>([])
   const drawnIn = useRef(false)
+  const litRef = useRef<Feature<Geometry> | null>(null)
   const chips = useRef<Overlay[]>([])
   const r = d.result
   const line = d.draft.line
@@ -63,6 +64,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
   const edge = edgeOf(record)
   const lineGuide = interactive && d.snap && !followsEdge(line, edge)
   const fieldGuide = interactive && d.snap && !!d.draft.boundary
+  const showLand = d.selected?.on === 'field' || d.pastLand
 
   // What's written on each part: two chips over the photo that never catch a press.
   useEffect(() => {
@@ -91,7 +93,8 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       fm.extra.addFeature(f)
       return f
     }
-    if (interactive && record.land) add(new OlPolygon(fm.ring(record.land)), 'land')
+    // The registered farmland only when it matters: while he works on his field's edge, or once it goes past it.
+    if (interactive && record.land && showLand) add(new OlPolygon(fm.ring(record.land)), 'land')
     if (fieldGuide) add(new LineString(outlinePath(record.polygon).map(fm.coord)), 'guide')
     if (lineGuide) add(new LineString(edge.map(fm.coord)), 'guide')
     add(new LineString(outlinePath(poly).map(fm.coord)), 'field', 'outline')
@@ -114,7 +117,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       if (p) o.setPosition(fm.coord(p))
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fm, key, labels[0], labels[1], !!r, lineGuide, fieldGuide, interactive])
+  }, [fm, key, labels[0], labels[1], !!r, lineGuide, fieldGuide, interactive, showLand])
 
   useEffect(() => () => fm.extra.clear(), [fm])
 
@@ -284,12 +287,20 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
     }
   }, [fm, interactive])
 
+  // The part the panel points at (the crop he is choosing) lights up too.
+  useEffect(() => {
+    const part = d.lit !== null ? d.result?.parts[d.lit] : undefined
+    litRef.current?.setGeometry(part ? new OlPolygon(fm.ring(part)) : undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d.lit, fm])
+
   // A tap on a part goes to that part's crop: the part under the pointer lights up, so he sees it can be tapped.
   useEffect(() => {
     if (!onPickPart) return
     const lit = new Feature<Geometry>()
     lit.setStyle(mapStyle('hover'))
     fm.extra.addFeature(lit)
+    litRef.current = lit
     const light = (e: { coordinate: number[]; dragging: boolean }) => {
       if (e.dragging) return
       const p = fm.point(e.coordinate)
@@ -299,6 +310,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
     }
     fm.map.on('pointermove', light)
     const offLight = () => {
+      litRef.current = null
       fm.map.un('pointermove', light)
       if (fm.extra.hasFeature(lit)) fm.extra.removeFeature(lit)
       fm.map.getViewport().style.cursor = ''
