@@ -329,3 +329,17 @@ One line per decision: what was chosen, the alternative rejected, why.
 268. **The disagreement's four answers are one function (`tasks.settled`) for the herd, the road strip and the river edge**, so the words are the same everywhere and the copy shrinks.
 269. **The prototype stops growing here (Earl).** Next is the case study presentation; its outline is in `docs/case-study-outline.md`, around three decisions, with what still needs Aleksa's material.
 270. `src/copy/en.ts`: 4,845 to 4,828 words.
+
+## Round 17 (Aleksa, 4 Nov): a pass on details, from all of Earl's emails
+
+271. **Check and submit has its own scrolling column on a computer.** The page is fixed to the window (256), and this part had no column of its own, so everything below the window, the declaration included, was out of reach of the mouse wheel. Found by walking the journey end to end at 1280 px.
+272. **When something's left, Check and submit lists it by part (neutral, "To do"), between what to fix and what to look at.** Before, "Not ready to submit yet" sat over the blurry receipt alone while seven tasks were open, so it read as if that one thing were all. The readiness drawer still shows only errors and warnings (round 11).
+273. **When ready, the warnings have a visible heading ("You can submit, but look at these")**, not only an accessible name.
+274. **Submit is never a grey button with no reason.** Unsigned, it takes him to the declaration, stops above the action bar, and says "Tick the declaration to submit" under the box. Rejected: a disabled button, which a 63-year-old can't ask why.
+275. **While he edits on a touch screen, one finger only moves the line or the edge, and two fingers move the map** ("Move the map with two fingers", shown only on touch). A press that misses the line can no longer move the map, which was Earl's worry about dragging at 360 px. A mouse drags the map as before. Tested with touch events; still needs farmers' own phones.
+276. **The deadline stays on a phone**, as "29 days left"; "to apply", the sub-brand and the word Saved (its tick stays) give way. P1: the date he must not miss is on every screen.
+277. **Stepper: "2 to answer" for Animals**, in place of "2 answers about your animals", which wrapped to three lines.
+278. **The reference number never breaks across lines on the receipt.**
+279. **Tokens for what floats over the photo (`--shadow-float`) and the light ring that keeps a mark readable on it (`--map-halo`)**, in place of repeated values, so a map theme is one place.
+280. **Recommended measures say what the state checks in fewer words** ("The state still checks they stay covered"), without repeating what the measure pays for.
+281. `src/copy/en.ts`: 4,828 to 4,827 words.

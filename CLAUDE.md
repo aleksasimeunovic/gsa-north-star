@@ -273,6 +273,8 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 16 (Earl, 4 Nov, on round 15):** one final pass on the river field, then stop expanding the prototype and build the case study. Confirm GSA's line first and edit only if it's wrong; treat the photo as a guess (reject it entirely, move it freely); past the registered farmland is flagged, not stopped; 6 m snap and 0.10 ha labelled design assumptions; the island is Undo, Redo, Reset, with snapping automatic and the slider in the panel; larger touch targets on the line; what changes, what stays the same and what needs his decision before he confirms; never apply for a measure on his behalf. Case study: three decisions (a proposed boundary rather than a blank map; precision and recovery through direct manipulation and constraints; the map change carried through the application), with the original tested product, its limits, the alternatives rejected, organisational and technical challenges, and what still needs validation.
 
+**Round 17 (Aleksa, 4 Nov):** a pass on details from all of Earl's emails: walk the whole journey at 360 and 1280 px and fix what gets in Milan's way (Check and submit scrolls and lists what's left by part; Submit says why rather than greying out; one finger never pans the map while editing on touch; the deadline stays on a phone); tokens for map overlays.
+
 Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset. Design notes are switched off (Aleksa, 3 Nov).
 
 ## 11. Design system
