@@ -2,10 +2,15 @@ import { useId, type ReactNode } from 'react'
 import { cn } from '../lib/utils'
 import { Checkbox as Base } from './shadcn/checkbox'
 import { useDensity } from './Density'
+import { Icon } from './Icon'
 
-/** A checkbox; `hint` sits under the label and is read with it. `card` draws it as a selectable card. */
-export function Checkbox({ label, hint, checked, onChange, card }: { label: string; hint?: ReactNode; checked: boolean; onChange: (v: boolean) => void; card?: boolean }) {
-  const id = useId()
+/**
+ * A checkbox; `hint` sits under the label and is read with it. `card` draws it as a selectable card.
+ * `error` says what's missing, under it, and `id` lets an action take him straight to it.
+ */
+export function Checkbox({ id: given, label, hint, checked, error, onChange, card }: { id?: string; label: string; hint?: ReactNode; checked: boolean; error?: string; onChange: (v: boolean) => void; card?: boolean }) {
+  const own = useId()
+  const id = given ?? own
   const compact = useDensity() === 'compact'
   return (
     <label
@@ -16,12 +21,18 @@ export function Checkbox({ label, hint, checked, onChange, card }: { label: stri
         card && 'rounded-xl border bg-card px-4 py-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/50',
       )}
     >
-      <Base id={id} checked={checked} aria-describedby={hint ? `${id}-hint` : undefined} onCheckedChange={(v) => onChange(v === true)} className="mt-0.5" />
+      <Base id={id} checked={checked} aria-invalid={!!error || undefined} aria-describedby={[hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined} onCheckedChange={(v) => onChange(v === true)} className="mt-0.5" />
       <span className="flex flex-col gap-0.5">
         <span className="font-medium leading-snug">{label}</span>
         {hint && (
           <span id={`${id}-hint`} className="flex flex-col gap-0.5 text-sm text-muted-foreground">
             {hint}
+          </span>
+        )}
+        {error && (
+          <span id={`${id}-error`} role="alert" className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+            <Icon name="error" size="sm" />
+            {error}
           </span>
         )}
       </span>

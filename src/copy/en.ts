@@ -110,7 +110,8 @@ export const en = {
 export const home = {
   deadline: (n: number, closes: string) =>
     `${n === 1 ? '1 day' : `${n} days`} left to apply for subsidies (closes ${formatDateYear(closes)})`,
-  daysLeft: (n: number) => (n === 1 ? '1 day left to apply' : `${n} days left to apply`),
+  daysLeft: (n: number) => (n === 1 ? '1 day left' : `${n} days left`),
+  toApply: 'to apply',
   activeFarmer: "You're an active farmer for this year",
   stepDone: (step: string) => `Nothing left to do in ${step.toLowerCase()}`,
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check. You can still submit' : `${n} things wait for a check. You can still submit`),
@@ -211,8 +212,8 @@ export const tasks = {
     green_cover: 'Your river and upper fields stayed green all winter',
     insemination: (n: number) => `${n} inseminations by your vet since last April`,
     checks: {
-      green_cover: 'The state checks the fields stay covered from autumn to spring',
-      insemination: "The state checks your vet's certificate against the registry",
+      green_cover: 'The state still checks they stay covered',
+      insemination: "The state checks your vet's certificate",
     } as Partial<Record<MeasureId, string>>,
     provide: (list: string) => `You provide: ${list}`,
     useFields: (names: string) => `Use these fields: ${names}`,
@@ -511,6 +512,7 @@ export const split = {
   },
   yourLine: 'Pull the line or the edge of your field to where your land really is.',
   straight: 'Start from a straight line',
+  twoFingers: 'Move the map with two fingers',
   sliderOn: 'Hard to drag? Use a slider',
   sliderOff: 'Hide the slider',
   fieldNow: (ha: string, by: string, more: boolean) => `You say your field is ${ha}, ${by} ${more ? 'more' : 'less'}.`,
@@ -593,6 +595,7 @@ export const finish = {
     declarationTitle: 'Declaration',
     declaration: 'I confirm under full criminal and material liability that the information in this application is true.',
     button: 'Submit application',
+    signFirst: 'Tick the declaration to submit',
   },
   receipt: {
     title: 'Your application is submitted.',
@@ -766,7 +769,7 @@ export const steps = {
       case 'details':
         return `${n} ${many ? 'things' : 'thing'} to confirm`
       case 'animals':
-        return `${n} ${many ? 'answers' : 'answer'} about your animals`
+        return `${n} to answer`
       case 'land':
         return `${n} ${many ? 'fields' : 'field'} to go`
       case 'measures':

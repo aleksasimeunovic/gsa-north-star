@@ -12,14 +12,15 @@
 .topbar { position: sticky; top: 0; z-index: 35; height: var(--topbar-h); display: flex; align-items: center; gap: 12px; margin: 0 -16px; padding: 0 16px; background: color-mix(in oklch, var(--background) 85%, transparent); backdrop-filter: blur(12px); }
 .brand { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; font-weight: 700; letter-spacing: -0.02em; text-decoration: none; color: var(--foreground); }
 .brand-sub { font-weight: 400; color: var(--muted-foreground); font-size: 0.875rem; }
-.deadline { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 1000px; background: var(--card); border: 1px solid var(--border); font-size: 0.8125rem; color: var(--muted-foreground); }
+.deadline { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 1000px; background: var(--card); border: 1px solid var(--border); font-size: 0.8125rem; color: var(--muted-foreground); }
 .saved { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; color: var(--success); }
 .prototype-launcher { margin-left: auto; }
 .saved ~ .prototype-launcher { margin-left: 0; }
 .advisor-nav { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
 .advisor-nav a { min-height: 36px; padding: 0 12px; border-radius: 8px; display: inline-flex; align-items: center; font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none; }
 .advisor-nav a[aria-current='page'] { background: var(--muted); color: var(--foreground); font-weight: 600; }
-@media (max-width: 639px) { .deadline, .brand-sub { display: none; } }
+/* On a phone the deadline stays (the one date he must not miss); the sub-brand goes, and Saved keeps only its tick */
+@media (max-width: 639px) { .brand-sub { display: none; } .deadline { padding: 2px 10px; gap: 6px; } .deadline-more { display: none; } .prototype-launcher button { padding-inline: 10px; } .saved-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 
 /* Stepper: sticks under the header, also while he reviews a boundary */
 .step-nav { position: sticky; top: var(--topbar-h); z-index: 34; margin: 0 calc(-1 * var(--page-gutter)); padding: var(--space-1) var(--page-gutter) var(--space-3); background: color-mix(in oklch, var(--background) 85%, transparent); backdrop-filter: blur(12px); }
@@ -185,7 +186,7 @@ button.drawer-row:hover { background: var(--hover); }
 .farm-map .ol-zoom button:focus-visible, .map-tool:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .farm-map .ol-control { background: none; padding: 0; }
 .farm-map .ol-attribution { font-size: 0.6875rem; }
-.farm-map .ol-attribution ul { background: rgb(255 255 255 / 0.85); padding: 0 8px; border-radius: 8px; }
+.farm-map .ol-attribution ul { background: var(--map-halo); padding: 0 8px; border-radius: 8px; }
 .map-frame { --map-tool: 36px; }
 @media (pointer: coarse) { .map-frame { --map-tool: 44px; } }
 /* Under the zoom buttons */
@@ -195,12 +196,12 @@ button.drawer-row:hover { background: var(--hover); }
 /* Vertex states after the GSA map kit: a white dot on a dark ring; a halo on hover; selected and dragging, a ring around it. */
 .map-handle::before { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); transition: transform 0.1s, box-shadow 0.1s; }
 .map-handle::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0); transition: box-shadow 0.1s; pointer-events: none; }
-.map-handle:hover::after { box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85), 0 0 0 4px rgb(0 0 0 / 0.25); }
+.map-handle:hover::after { box-shadow: 0 0 0 2px var(--map-halo), 0 0 0 4px rgb(0 0 0 / 0.25); }
 .map-handle:active { cursor: grabbing; }
 .map-handle[data-end]::before { border-radius: 3px; }
 .map-handle[data-corner]::before { inset: 16px; }
 .map-handle[data-selected]::before, .map-handle[data-dragging]::before { transform: scale(1.15); }
-.map-handle[data-selected]::after, .map-handle[data-dragging]::after { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 5px rgb(255 255 255 / 0.85); }
+.map-handle[data-selected]::after, .map-handle[data-dragging]::after { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 5px var(--map-halo); }
 .map-handle:focus { outline: none; }
 /* A finger needs more room than a mouse: the mark stays small, the area it answers to grows */
 @media (pointer: coarse) { .map-handle { width: 56px; height: 56px; } .map-handle::before { inset: 21px; } .map-handle[data-corner]::before { inset: 22px; } .map-handle::after { inset: 15px; } }
@@ -213,7 +214,7 @@ button.drawer-row:hover { background: var(--hover); }
 .map-dock { position: absolute; z-index: 2; left: 8px; right: 8px; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); pointer-events: none; }
 .map-dock > * { pointer-events: auto; max-width: 100%; }
 .map-dock > [aria-live] { pointer-events: none; }
-.tool-island { display: inline-flex; align-items: center; gap: 2px; padding: 6px; border-radius: 18px; background: var(--card); box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.tool-island { display: inline-flex; align-items: center; gap: 2px; padding: 6px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow-float); }
 .tool-island[data-switch] { padding: 4px; border-radius: 14px; }
 .tool { width: 72px; height: 56px; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 0; border-radius: 12px; background: none; color: var(--foreground); font: inherit; cursor: pointer; transition: background-color 0.15s; }
 .tool span { font-size: 0.75rem; font-weight: 500; line-height: 1.25; color: var(--muted-foreground); white-space: nowrap; }
@@ -228,16 +229,16 @@ button.drawer-row:hover { background: var(--hover); }
 .tool-option:hover { background: var(--hover); }
 .tool-option[aria-pressed='true'] { background: var(--foreground); color: #fff; }
 /* Why the line stopped, right where he is working */
-.map-status { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.map-status { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; box-shadow: var(--shadow-float); }
 .map-status svg { flex: none; color: var(--warning); }
-.map-status[data-error] { box-shadow: inset 0 0 0 1.5px var(--error), 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.map-status[data-error] { box-shadow: inset 0 0 0 1.5px var(--error), var(--shadow-float); }
 .map-status[data-error] svg { color: var(--error); }
 .map-status[data-info] svg { color: #fff; }
 .map-status-action { margin-left: var(--space-1); padding: 0; border: 0; background: none; color: #fff; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 32px; }
 .map-status-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
 .effects-group { display: flex; flex-direction: column; gap: var(--space-2); }
 .effects-group h3 { margin: 0; font-size: 0.875rem; font-weight: 600; }
-.tool-slider { display: flex; align-items: center; gap: var(--space-3); width: min(420px, 100%); padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--card); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; box-shadow: 0 8px 24px -8px rgb(28 42 34 / 0.45); }
+.tool-slider { display: flex; align-items: center; gap: var(--space-3); width: min(420px, 100%); padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--card); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; box-shadow: var(--shadow-float); }
 .tool-slider input { flex: 1; min-width: 0; accent-color: var(--foreground); }
 /* A phone has no room for six captions: undo, redo and reset are known by their icons */
 @media (max-width: 639px) {
@@ -325,7 +326,8 @@ button.drawer-row:hover { background: var(--hover); }
 .status-list li > svg { color: var(--info); }
 .status-list li [title] svg { color: inherit; }
 .receipt-ref-row { display: flex; align-items: center; gap: 8px; }
-.receipt-ref-row > span { user-select: all; }
+.receipt-ref-row > span { user-select: all; white-space: nowrap; }
+@media (max-width: 639px) { .receipt-ref { padding: 16px; } .receipt-ref dd { font-size: 1.25rem; } }
 
 /* Receipt: unmistakable */
 .receipt { max-width: 640px; margin: 24px auto 0; display: flex; flex-direction: column; gap: 16px; }
@@ -377,9 +379,17 @@ button.drawer-row:hover { background: var(--hover); }
   .page[data-screen='welcome'] .app-layout { flex: 1; min-height: 0; align-items: stretch; }
   .page[data-screen='welcome'] .app-side { position: static; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
   .page[data-screen='welcome'] .flow { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .page[data-screen='welcome'] .step-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; margin-inline: -4px; padding: 0 4px var(--space-4); }
   .page[data-screen='welcome'] .next:has(.map-figure) { flex: 1; min-height: 0; }
   .page[data-screen='welcome'] .next:has(.map-figure) > .flex-col { flex: 1; min-height: 0; }
   .page[data-screen='welcome'] .next .map-figure { flex: 1; min-height: 200px; }
   .page[data-screen='welcome'] .next .map-figure > .map-link, .page[data-screen='welcome'] .next .map-figure .map-frame { height: 100%; }
   .page[data-screen='welcome'] .next .map-figure .farm-map { height: 100%; }
 }
+
+/* Said only where it's true: on a touch screen, two fingers move the map while he edits */
+.touch-hint { display: none; margin: 0; }
+@media (pointer: coarse) { .touch-hint { display: block; } }
+
+/* An action that takes him to the declaration stops above the action bar, not behind it */
+#declaration { scroll-margin-block: calc(var(--bar-h) + var(--space-10)); }

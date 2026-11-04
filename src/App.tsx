@@ -50,7 +50,7 @@ export function App() {
               </a>
               {state.role === 'farmer' && !submitted && (
                 <span className="deadline" title={home.deadline(left, derived.scenario.window.closes)}>
-                  <Icon name="deadline" size="sm" /> {home.daysLeft(left)} <Note kind="eu_mandate" />
+                  <Icon name="deadline" size="sm" /> <span>{home.daysLeft(left)}<span className="deadline-more"> {home.toApply}</span></span> <Note kind="eu_mandate" />
                 </span>
               )}
               {state.role === 'advisor' && (
@@ -61,7 +61,7 @@ export function App() {
               )}
               {savedAt && (
                 <span className="saved">
-                  <Icon name="check" size="sm" /> {en.saved}
+                  <Icon name="check" size="sm" /> <span className="saved-text">{en.saved}</span>
                 </span>
               )}
               <PrototypeControls />

@@ -70,7 +70,10 @@ export function Application({ target, review, field }: { target: string | null; 
         ) : drawing ? (
           <FieldEditor key={drawing} id={drawing} flow={flow} />
         ) : step.id === 'submit' ? (
-          <SubmitStep flow={flow} />
+          // Its own scrolling column on a computer, like every other part, so nothing sits out of reach.
+          <div className="step-scroll">
+            <SubmitStep flow={flow} />
+          </div>
         ) : (
           // One content width for every part: the task on the left, the part at a glance on the right (below on a phone).
           <div className="app-layout">

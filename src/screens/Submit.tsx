@@ -1,4 +1,5 @@
-import { bar, finish } from '../copy/en'
+import { useState } from 'react'
+import { bar, en, finish } from '../copy/en'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
@@ -23,14 +24,15 @@ export function SubmitStep({ flow }: { flow: Flow }) {
   const signed = state.answers.declarationsSigned
   const check = submitCheck(readiness, signed)
   const left = derived.list.todo.map((t) => t.id)
+  const [unsigned, setUnsigned] = useState(false)
   const goTo = (id: (typeof left)[number]) => (id === 'renewal' ? go('renewal') : flow.show(id))
 
   return (
     <Stack gap="lg">
-      {(left.length > 0 || derived.report.warnings.length > 0) && (
+      {(left.length > 0 || derived.report.warnings.length > 0 || derived.report.errors.length > 0) && (
         <section className="action-points" aria-label={finish.submit.blockedTitle}>
-          {left.length > 0 && <h3 className="group-title">{finish.submit.blockedTitle}</h3>}
-          <ActionPoints onPick={goTo} />
+          <h3 className="group-title">{left.length > 0 ? finish.submit.blockedTitle : en.readiness.group.look}</h3>
+          <ActionPoints onPick={goTo} todo />
         </section>
       )}
 
@@ -58,7 +60,13 @@ export function SubmitStep({ flow }: { flow: Flow }) {
             </ul>
           </section>
           <Card title={finish.submit.declarationTitle} headingLevel={3}>
-            <Checkbox label={finish.submit.declaration} checked={signed} onChange={(v) => dispatch({ type: 'sign_declarations', signed: v })} />
+            <Checkbox
+              id="declaration"
+              label={finish.submit.declaration}
+              checked={signed}
+              error={unsigned && !signed ? finish.submit.signFirst : undefined}
+              onChange={(v) => dispatch({ type: 'sign_declarations', signed: v })}
+            />
           </Card>
         </>
       )}
@@ -71,8 +79,15 @@ export function SubmitStep({ flow }: { flow: Flow }) {
             ? { label: finish.submit.goTo(flow.title(left[0])), onClick: () => goTo(left[0]) }
             : {
                 label: finish.submit.button,
-                disabled: !check.canSubmit,
+                // Never a grey button with no reason: unsigned, it takes him to the declaration and says why.
                 onClick: () => {
+                  if (!check.canSubmit) {
+                    setUnsigned(true)
+                    const box = document.getElementById('declaration')
+                    box?.scrollIntoView({ block: 'end', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+                    box?.focus({ preventScroll: true })
+                    return
+                  }
                   dispatch({ type: 'submit' })
                   go('receipt')
                 },

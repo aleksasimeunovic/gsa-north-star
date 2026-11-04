@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject } from 'react'
-import { en } from '../copy/en'
+import { en, steps } from '../copy/en'
 import type { TaskId } from '../logic/application'
 import type { Severity } from '../logic/readiness'
 import { Drawer } from '../ui/Drawer'
@@ -26,7 +26,7 @@ export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open
 }
 
 /** The action points themselves: the same rows in the drawer and on Check and submit. */
-export function ActionPoints({ onPick }: { onPick: (id: TaskId) => void }) {
+export function ActionPoints({ onPick, todo }: { onPick: (id: TaskId) => void; todo?: boolean }) {
   const { derived, state } = useApp()
   const r = derived.report
   const receiptsMissing = derived.items.some((i) => i.detail === 'receipts_missing')
@@ -40,6 +40,7 @@ export function ActionPoints({ onPick }: { onPick: (id: TaskId) => void }) {
           ))}
         </Group>
       )}
+      {todo && <TodoPoints onPick={onPick} />}
       {r.warnings.length > 0 && (
         <Group severity="look">
           {r.warnings.map((w) => (
@@ -48,6 +49,25 @@ export function ActionPoints({ onPick }: { onPick: (id: TaskId) => void }) {
         </Group>
       )}
     </>
+  )
+}
+
+/**
+ * On Check and submit, what's simply not done yet, one row per part, so "Not ready" never reads as if the one
+ * thing to fix were all that's left. Neutral: work not done is not an error.
+ */
+function TodoPoints({ onPick }: { onPick: (id: TaskId) => void }) {
+  const { derived } = useApp()
+  const parts = derived.list.steps
+    .map((s) => ({ s, todo: s.tasks.filter((t) => t.mark === 'todo') }))
+    .filter((p) => p.s.id !== 'submit' && p.todo.length > 0)
+  if (!parts.length) return null
+  return (
+    <Group severity="todo">
+      {parts.map(({ s, todo }) => (
+        <Row key={s.id} severity="todo" title={steps.name[s.id]} hint={steps.left(s.id, todo.length)} onClick={() => onPick(todo[0].id)} />
+      ))}
+    </Group>
   )
 }
 

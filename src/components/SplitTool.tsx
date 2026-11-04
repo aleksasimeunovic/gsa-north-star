@@ -404,6 +404,8 @@ export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => v
       <div className="split-lead">
         <Text variant="secondary">{copy.yourLine}</Text>
       </div>
+      {/* Only on a touch screen, where one finger now moves the line and never the map. */}
+      <p className="touch-hint hint">{copy.twoFingers}</p>
       {moved !== 0 && <Text variant="secondary">{copy.fieldNow(formatHa(claimed ?? d.field.areaHa), formatHa(Math.abs(moved)), moved > 0)}</Text>}
       {d.pastLand && <Text variant="secondary">{copy.pastLandCounts(formatHa(d.field.areaHa))}</Text>}
       <Inline>

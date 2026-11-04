@@ -4,6 +4,8 @@ import type Geometry from 'ol/geom/Geometry'
 import LineString from 'ol/geom/LineString'
 import OlPolygon from 'ol/geom/Polygon'
 import PointerInteraction from 'ol/interaction/Pointer'
+import DragPan from 'ol/interaction/DragPan'
+import type MapBrowserEvent from 'ol/MapBrowserEvent'
 import { useEffect, useRef } from 'react'
 import { split as copy } from '../../copy/en'
 import type { Point } from '../../data/scenarios'
@@ -197,6 +199,23 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       fm.map.removeOverlay(ghost)
       fm.map.un('pointermove', hover)
       fm.map.getViewport().style.cursor = ''
+    }
+  }, [fm, interactive])
+
+  // While he edits on a touch screen, one finger only ever moves the line or the edge, and two fingers move the
+  // map, so a press that misses the line can't move the map by accident. A mouse drags the map as usual.
+  useEffect(() => {
+    if (!interactive) return
+    const pans = fm.map.getInteractions().getArray().filter((i): i is DragPan => i instanceof DragPan)
+    pans.forEach((p) => p.setActive(false))
+    const twoFingers: DragPan = new DragPan({
+      condition: (e: MapBrowserEvent) =>
+        (e.originalEvent as PointerEvent).pointerType !== 'touch' || (twoFingers as unknown as { getPointerCount: () => number }).getPointerCount() === 2,
+    })
+    fm.map.addInteraction(twoFingers)
+    return () => {
+      fm.map.removeInteraction(twoFingers)
+      pans.forEach((p) => p.setActive(true))
     }
   }, [fm, interactive])
 
