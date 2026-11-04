@@ -171,7 +171,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   const map = new OlMap({
     target,
     layers: [
-      new TileLayer({ source: new XYZ({ url: IMAGERY, maxZoom: 18, attributions: copy.imagery }) }),
+      new TileLayer({ source: new XYZ({ url: IMAGERY, maxZoom: 18, attributions: copy.imagery, crossOrigin: 'anonymous' }) }),
       new VectorLayer({ source: shapes }),
       flagLayer,
       new VectorLayer({ source: extra }),
@@ -215,7 +215,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     view.fit(extentOf(polys), {
       padding,
       maxZoom: 18.5,
-      duration: animate && !reducedMotion() ? 300 : undefined,
+      duration: animate && !reducedMotion() ? 450 : undefined,
       callback: () => {
         framing = false
         moved = false
@@ -245,8 +245,23 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     hideFocus: (hide: boolean) => focusShape?.setStyle(hide ? [] : mapStyle('field')),
     /** Shows or hides what the photo flagged, so he can compare it with his field. */
     showFlag: (on: boolean) => {
-      flagLayer.setVisible(on)
       flagChip?.getElement()?.toggleAttribute('hidden', !on)
+      // A short fade, so the two views read as one photo with and without the flag.
+      if (reducedMotion()) {
+        flagLayer.setVisible(on)
+        return
+      }
+      flagLayer.setVisible(true)
+      const from = flagLayer.getOpacity()
+      const to = on ? 1 : 0
+      const start = performance.now()
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / 200)
+        flagLayer.setOpacity(from + (to - from) * t)
+        if (t < 1) requestAnimationFrame(step)
+        else flagLayer.setVisible(on)
+      }
+      requestAnimationFrame(step)
     },
     /** Back to the field in question (or the fields shown). */
     fitHome: (animate = true) => {

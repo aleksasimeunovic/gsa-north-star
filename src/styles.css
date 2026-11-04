@@ -199,17 +199,24 @@ button.drawer-row:hover { background: var(--hover); }
 .map-handle:hover::after { box-shadow: 0 0 0 2px var(--map-halo), 0 0 0 4px rgb(0 0 0 / 0.25); }
 .map-handle:active { cursor: grabbing; }
 .map-handle[data-end]::before { border-radius: 3px; }
-.map-handle[data-corner]::before { inset: 16px; }
+/* The field's corners are quiet dots until he reaches for one, so the line he came to move stands out; the area that answers a press stays full size */
+.map-handle[data-corner]::before { inset: 18.5px; box-shadow: 0 0 0 1.5px var(--foreground), 0 1px 3px rgb(0 0 0 / 0.35); }
+.map-handle[data-corner]:hover::before, .map-handle[data-corner]:focus-visible::before, .map-handle[data-corner][data-selected]::before, .map-handle[data-corner][data-dragging]::before { inset: 16px; box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); }
+.map-handle::before { transition: inset 0.12s, transform 0.1s, box-shadow 0.1s; }
 .map-handle[data-selected]::before, .map-handle[data-dragging]::before { transform: scale(1.15); }
 .map-handle[data-selected]::after, .map-handle[data-dragging]::after { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 5px var(--map-halo); }
 .map-handle:focus { outline: none; }
 /* A finger needs more room than a mouse: the mark stays small, the area it answers to grows */
-@media (pointer: coarse) { .map-handle { width: 56px; height: 56px; } .map-handle::before { inset: 21px; } .map-handle[data-corner]::before { inset: 22px; } .map-handle::after { inset: 15px; } }
+@media (pointer: coarse) { .map-handle { width: 56px; height: 56px; } .map-handle::before { inset: 21px; } .map-handle[data-corner]::before { inset: 24.5px; } .map-handle[data-corner][data-selected]::before, .map-handle[data-corner][data-dragging]::before { inset: 22px; } .map-handle::after { inset: 15px; } }
 .map-handle:focus-visible::after { box-shadow: 0 0 0 2.5px var(--ring), 0 0 0 5px #fff; }
 .map-ghost { width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground); opacity: 0.85; pointer-events: none; }
 /* Notes on the photo: readable on any field, and they never catch a press */
 .map-chip { padding: 3px 8px; border-radius: 8px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; white-space: nowrap; pointer-events: none; }
 .map-chip[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .map-chip { animation: chip-in 0.3s ease-out both; }
+  @keyframes chip-in { from { opacity: 0; translate: 0 4px; } to { opacity: 1; translate: 0; } }
+}
 /* The tools for what he is doing: floating over the bottom of the map, always in the same place */
 .map-dock { position: absolute; z-index: 2; left: 8px; right: 8px; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); pointer-events: none; }
 .map-dock > * { pointer-events: auto; max-width: 100%; }
@@ -218,7 +225,9 @@ button.drawer-row:hover { background: var(--hover); }
 .tool-island[data-switch] { padding: 4px; border-radius: 14px; }
 .tool { width: 72px; height: 56px; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 0; border-radius: 12px; background: none; color: var(--foreground); font: inherit; cursor: pointer; transition: background-color 0.15s; }
 .tool span { font-size: 0.75rem; font-weight: 500; line-height: 1.25; color: var(--muted-foreground); white-space: nowrap; }
-.tool:hover { background: var(--hover); }
+.tool { transition: background-color 0.15s, color 0.15s, scale 0.12s; }
+.tool:not(:disabled):hover { background: var(--hover); }
+.tool:not(:disabled):active { scale: 0.94; }
 .tool[data-on] { background: var(--foreground); color: #fff; }
 .tool[data-on] span { color: #fff; }
 .tool:disabled { color: var(--input); cursor: default; background: none; }
@@ -393,3 +402,31 @@ button.drawer-row:hover { background: var(--hover); }
 
 /* An action that takes him to the declaration stops above the action bar, not behind it */
 #declaration { scroll-margin-block: calc(var(--bar-h) + var(--space-10)); }
+
+/* The loupe: what's under his finger, twice as large, floating above it */
+.map-loupe { position: absolute; left: 0; top: 0; z-index: 5; width: 132px; height: 132px; border-radius: 50%; overflow: hidden; pointer-events: none; background: var(--foreground); box-shadow: 0 0 0 3px #fff, var(--shadow-float); opacity: 0; scale: 0.6; transition: opacity 0.12s, scale 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.map-loupe[data-on] { opacity: 1; scale: 1; }
+.map-loupe canvas { width: 100%; height: 100%; display: block; }
+.map-loupe::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2.5px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); }
+
+/*
+ * Motion with a purpose, never decoration: what just arrived rises in, what floats over the map lifts in, a
+ * part that is done ticks. Short (150 to 300 ms), eased out, and none of it with reduced motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .next { animation: rise-in 0.28s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+  .tool-island, .tool-slider { animation: lift-in 0.24s cubic-bezier(0.2, 0.8, 0.3, 1.1) both; }
+  .map-status { animation: lift-in 0.2s ease-out both; }
+  .map-handle[data-snapped]::after { animation: snap-pulse 0.45s ease-out; }
+  @keyframes snap-pulse { 0% { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 5px var(--map-halo); } 40% { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 12px rgb(255 255 255 / 0.5); } 100% { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 5px var(--map-halo); } }
+  .map-ghost { transition: opacity 0.12s; }
+  [data-mark='done'] .step-mark svg, li[data-mark='done'] .outline-row svg, .receipt-mark svg { animation: tick-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; }
+  .receipt-mark { animation: ring-out 0.9s ease-out 0.15s both; }
+  .effects-group { animation: rise-in 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+  .effects-group:nth-child(2) { animation-delay: 60ms; }
+  .effects-group:nth-child(3) { animation-delay: 120ms; }
+  @keyframes rise-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0; } }
+  @keyframes lift-in { from { opacity: 0; translate: 0 10px; scale: 0.97; } to { opacity: 1; translate: 0; scale: 1; } }
+  @keyframes tick-in { from { scale: 0.4; opacity: 0; } to { scale: 1; opacity: 1; } }
+  @keyframes ring-out { from { box-shadow: 0 0 0 0 color-mix(in oklch, var(--success) 35%, transparent); } to { box-shadow: 0 0 0 18px transparent; } }
+}

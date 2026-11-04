@@ -12,7 +12,31 @@ import type { Point } from '../../data/scenarios'
 import { centroid, followsEdge, nearestOnLine, outlinePath, pointInPolygon } from '../../logic/geometry'
 import { mapStyle } from '../../ui/mapStyles'
 import { edgeOf, splitMoves, type Selected, type SplitDraft } from '../SplitTool'
+import { createLoupe } from './loupe'
 import type { FarmMap } from './olFarm'
+
+/** Grows a line from its start to its end over a moment, along its own length. */
+function drawIn(f: Feature<Geometry>, coords: number[][], ms = 700) {
+  const lengths = coords.slice(1).map((c, i) => Math.hypot(c[0] - coords[i][0], c[1] - coords[i][1]))
+  const total = lengths.reduce((a, b) => a + b, 0)
+  const start = performance.now()
+  const step = (now: number) => {
+    const t = Math.min(1, (now - start) / ms)
+    const eased = 1 - Math.pow(1 - t, 3)
+    let left = total * eased
+    const out = [coords[0]]
+    for (let i = 0; i < lengths.length && left > 0; i++) {
+      const k = Math.min(1, left / (lengths[i] || 1))
+      out.push([coords[i][0] + (coords[i + 1][0] - coords[i][0]) * k, coords[i][1] + (coords[i + 1][1] - coords[i][1]) * k])
+      left -= lengths[i]
+    }
+    // Only while the feature still shows this line: a redraw replaces it.
+    const g = f.getGeometry()
+    if (g instanceof LineString) g.setCoordinates(out.length > 1 ? out : [coords[0], coords[0]])
+    if (t < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
 
 const round = (p: Point): Point => ({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 })
 const same = (a: Selected, b: Selected) => !!a && !!b && a.on === b.on && a.i === b.i
@@ -28,6 +52,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
   const latest = useRef({ d, moves: splitMoves(d), onPickPart })
   latest.current = { d, moves: splitMoves(d), onPickPart }
   const handles = useRef<Overlay[]>([])
+  const drawnIn = useRef(false)
   const chips = useRef<Overlay[]>([])
   const r = d.result
   const line = d.draft.line
@@ -64,13 +89,19 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       f.setStyle(mapStyle(role))
       if (tag) f.set(tag, true)
       fm.extra.addFeature(f)
+      return f
     }
     if (interactive && record.land) add(new OlPolygon(fm.ring(record.land)), 'land')
     if (fieldGuide) add(new LineString(outlinePath(record.polygon).map(fm.coord)), 'guide')
     if (lineGuide) add(new LineString(edge.map(fm.coord)), 'guide')
     add(new LineString(outlinePath(poly).map(fm.coord)), 'field', 'outline')
     if (!r) return
-    add(new LineString(line.map(fm.coord)), 'split', 'split')
+    const splitLine = add(new LineString(line.map(fm.coord)), 'split', 'split')
+    // The first time GSA's line appears, it draws itself along the edge, so he sees it is a proposal being made.
+    if (!drawnIn.current) {
+      drawnIn.current = true
+      if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) drawIn(splitLine, line.map(fm.coord))
+    }
     r.parts.forEach((part, i) => {
       const chip = chips.current[i]
       if (!chip) return
@@ -86,6 +117,27 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
   }, [fm, key, labels[0], labels[1], !!r, lineGuide, fieldGuide, interactive])
 
   useEffect(() => () => fm.extra.clear(), [fm])
+
+  // The loupe, for a finger that covers the point it drags.
+  const loupe = useRef<ReturnType<typeof createLoupe> | null>(null)
+  useEffect(() => {
+    if (!interactive) return
+    const l = createLoupe(fm.map, () => {
+      const { d: cur } = latest.current
+      const sel = cur.selected
+      const p = sel && (sel.on === 'line' ? cur.draft.line[sel.i] : cur.field.polygon[sel.i])
+      return p ? fm.map.getPixelFromCoordinate(fm.coord(p)) : null
+    })
+    loupe.current = l
+    return () => {
+      l.destroy()
+      loupe.current = null
+    }
+  }, [fm, interactive])
+  const fingerAt = (e: PointerEvent) => {
+    const r = fm.map.getViewport().getBoundingClientRect()
+    return [e.clientX - r.left, e.clientY - r.top]
+  }
 
   // A handle for every bend, end and corner: real buttons on the map, so they take focus and arrow keys.
   useEffect(() => {
@@ -113,9 +165,12 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
         latest.current.d.setSelected(sel)
       })
       el.addEventListener('pointermove', (e) => {
-        if (dragging) latest.current.moves.movePoint(sel, at(e), false)
+        if (!dragging) return
+        latest.current.moves.movePoint(sel, at(e), false)
+        if (e.pointerType === 'touch') loupe.current?.show(fingerAt(e))
       })
       const stop = () => {
+        loupe.current?.hide()
         if (dragging) latest.current.moves.letGo()
         dragging = false
         delete el.dataset.dragging
@@ -150,8 +205,14 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
 
   // The point he is working on looks selected.
   useEffect(() => {
-    handles.current.forEach((o) => o.getElement()?.toggleAttribute('data-selected', same(o.get('sel'), d.selected)))
-  }, [d.selected, shape])
+    handles.current.forEach((o) => {
+      const el = o.getElement()
+      const sel = same(o.get('sel'), d.selected)
+      el?.toggleAttribute('data-selected', sel)
+      // The point he moves pulses once when it joins an edge.
+      el?.toggleAttribute('data-snapped', sel && d.snapped && d.snap)
+    })
+  }, [d.selected, d.snapped, d.snap, shape])
 
   // Pulling the line or the field's edge: pressing anywhere on it makes a point there, or takes the one he pressed near.
   useEffect(() => {
@@ -171,9 +232,13 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
         return true
       },
       handleDragEvent: (e) => {
-        if (sel) latest.current.moves.movePoint(sel, round(fm.point(e.coordinate)), false)
+        if (!sel) return
+        latest.current.moves.movePoint(sel, round(fm.point(e.coordinate)), false)
+        const pe = e.originalEvent as PointerEvent
+        if (pe.pointerType === 'touch') loupe.current?.show(fingerAt(pe))
       },
       handleUpEvent: () => {
+        loupe.current?.hide()
         latest.current.moves.letGo()
         sel = null
         return false
@@ -219,9 +284,25 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
     }
   }, [fm, interactive])
 
-  // A tap on a part goes to that part's crop.
+  // A tap on a part goes to that part's crop: the part under the pointer lights up, so he sees it can be tapped.
   useEffect(() => {
     if (!onPickPart) return
+    const lit = new Feature<Geometry>()
+    lit.setStyle(mapStyle('hover'))
+    fm.extra.addFeature(lit)
+    const light = (e: { coordinate: number[]; dragging: boolean }) => {
+      if (e.dragging) return
+      const p = fm.point(e.coordinate)
+      const part = latest.current.d.result?.parts.find((q) => pointInPolygon(p, q))
+      lit.setGeometry(part ? new OlPolygon(fm.ring(part)) : undefined)
+      fm.map.getViewport().style.cursor = part ? 'pointer' : ''
+    }
+    fm.map.on('pointermove', light)
+    const offLight = () => {
+      fm.map.un('pointermove', light)
+      if (fm.extra.hasFeature(lit)) fm.extra.removeFeature(lit)
+      fm.map.getViewport().style.cursor = ''
+    }
     const pick = (e: { coordinate: number[] }) => {
       const p = fm.point(e.coordinate)
       const parts = latest.current.d.result?.parts
@@ -229,7 +310,10 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       if (i === 0 || i === 1) latest.current.onPickPart?.(i)
     }
     fm.map.on('singleclick', pick)
-    return () => fm.map.un('singleclick', pick)
+    return () => {
+      fm.map.un('singleclick', pick)
+      offLight()
+    }
   }, [fm, !!onPickPart]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return null

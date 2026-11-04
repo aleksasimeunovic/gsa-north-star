@@ -35,7 +35,7 @@ function NextAction({ flow }: { flow: Flow }) {
   const heading = needsHim ? (first && tasks.start[task.id]) || actionTitle(task.id, derived.items) : flow.title(task.id)
 
   return (
-    <section id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
+    <section key={task.id} id="next" className="next" data-kind={task.kind} aria-labelledby="next-title">
       <div className="next-top">
         <div className="next-titles">
           {task.kind === 'change' && <Note kind="ai" />}

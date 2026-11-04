@@ -298,6 +298,10 @@ export function LineTools({ d }: { d: SplitDraft }) {
   const order = orderOf(d)
   const r = d.result
   const areas = r ? order.map((i) => copy.partArea(partLabel(d, i), formatHa(r.areasHa[i]))).join(', ') : ''
+  // A short tick under the finger when a point joins an edge, where the phone can.
+  useEffect(() => {
+    if (d.snapped && d.snap) navigator.vibrate?.(8)
+  }, [d.snapped, d.snap])
   const status = d.stopped ? (
     <MapStatus>{copy.stopped[d.stopped]}</MapStatus>
   ) : !d.snap ? (

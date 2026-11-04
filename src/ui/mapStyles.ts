@@ -43,7 +43,7 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
   return new Style({
     text: new Text({
       text,
-      font: `${strong ? 700 : 400} ${size}px system-ui, -apple-system, sans-serif`,
+      font: `${strong ? 600 : 400} ${size}px Geist, system-ui, -apple-system, sans-serif`,
       fill: new Fill({ color: white }),
       stroke: new Stroke({ color: halo, width: 4 }),
       textAlign: align,
@@ -62,8 +62,9 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
  * - split: the line that splits a field
  * - guide: the edge in the photo, once the line has left it
  * - spot: land in question that isn't his field yet (the parcel he bought)
+ * - hover: the part of his field under the pointer, when tapping it does something
  */
-export type MapRole = 'field' | 'faint' | 'land' | 'flag' | 'strip' | 'split' | 'guide' | 'spot'
+export type MapRole = 'field' | 'faint' | 'land' | 'flag' | 'strip' | 'split' | 'guide' | 'spot' | 'hover'
 
 export function mapStyle(role: MapRole): Style[] {
   switch (role) {
@@ -81,6 +82,8 @@ export function mapStyle(role: MapRole): Style[] {
       return line(3)
     case 'guide':
       return line(1.5, [6, 5])
+    case 'hover':
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.22)' }) })]
     case 'spot':
       return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.18)' }) }), ...line(3, [10, 6])]
   }
