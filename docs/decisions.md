@@ -416,3 +416,4 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 335. **Headings are now a modern serif, Source Serif 4** (weight 600, slight negative tracking); body stays Inter. Small headings go up to 16 px, since a serif reads smaller than a sans at the same size. Rejected: Bricolage Grotesque (Aleksa: a bad fit for headlines).
 336. **Compared values sit one under the other** (last year, then the registry today; the old account, then the new one), so they read as before and after. Rejected: side by side.
 337. **Progress bars fill in the primary green, and the part's bar says "x/y" beside it**, so how far he is reads at a glance. An exception to green only on the primary action, at Aleksa's request.
+338. **Headings are now Domine** (Google Fonts, weight 600); body stays Inter. Rejected: Source Serif 4 (Aleksa asked for Domine).
