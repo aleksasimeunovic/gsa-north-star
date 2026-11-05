@@ -561,3 +561,7 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 .goal-open { display: inline-flex; align-items: center; gap: var(--space-1); padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .goal-open:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
 .goal-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+
+/* A hidden digit keeps its width under a dot, so a number is as long hidden as shown */
+.account-mask { position: relative; color: transparent; }
+.account-mask::after { content: '•'; position: absolute; inset: 0; text-align: center; color: var(--foreground); }
