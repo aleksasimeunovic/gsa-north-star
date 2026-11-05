@@ -9,13 +9,14 @@ export const formatAccount = (n: string) => {
 }
 
 /** An account number, hidden to its last four digits until he asks to see it whole with the eye. */
-export function Account({ number }: { number: string }) {
+/** `eyeFirst`: in a column of values, the eye goes before the number, so the digits end where every value ends. */
+export function Account({ number, eyeFirst }: { number: string; eyeFirst?: boolean }) {
   const [shown, setShown] = useState(false)
   const digits = number.replace(/\D/g, '')
   const label = shown ? tasks.bank.hide : tasks.bank.show
   const Eyes = shown ? EyeOff : Eye
   return (
-    <span className="inline-flex max-w-full flex-wrap items-center gap-x-[var(--gap-inline)] tabular-nums">
+    <span className={`inline-flex max-w-full flex-wrap items-center gap-x-[var(--gap-inline)] tabular-nums ${eyeFirst ? 'flex-row-reverse' : ''}`}>
       {/* Whole, it breaks only between its groups, a size smaller so it fits a phone's half width. */}
       {shown ? (
         <span className="min-w-0 text-[0.8em] leading-tight">

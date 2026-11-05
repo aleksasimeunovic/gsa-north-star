@@ -158,10 +158,13 @@ function Row({ row, onOpen }: { row: RecordRow; onOpen: (id: TaskId) => void }) 
           </dd>
         )}
       </div>
-      {e && (
+      {/* Every row keeps the pen's column, so values end on one line whether or not they can be changed. */}
+      {e ? (
         <button type="button" className="records-pen" onClick={pen} aria-label={copy.edit(row.label)} title={copy.edit(row.label)}>
           <Icon name="edit" size="sm" />
         </button>
+      ) : (
+        <span className="records-pen" data-empty aria-hidden="true" />
       )}
     </div>
   )
@@ -368,7 +371,7 @@ export function detailRows(derived: Derived, a: State['answers']): RecordRow[] {
       key: 'bank',
       label: tasks.title.bank,
       value: tasks.bank.ending(number.replace(/\D/g, '').slice(-4)),
-      show: <Account number={number} />,
+      show: <Account number={number} eyeFirst />,
       source: bank?.status === 'complete' ? 'confirmed' : 'records',
       edit: { open: 'bank' },
     })
