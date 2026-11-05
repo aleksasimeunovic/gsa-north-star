@@ -99,10 +99,10 @@
 
   /*
    * Type: one family for headings, one for body text. Changing the pair is these two lines and the font link
-   * in index.html. Headings: Domine. Body: Inter.
+   * in index.html. Headings: Domine. Body: Instrument Sans.
    */
   --font-heading: 'Domine', ui-serif, Georgia, serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --heading-weight: 600;
   --heading-tracking: -0.01em;
 
