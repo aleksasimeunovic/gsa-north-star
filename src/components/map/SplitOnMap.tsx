@@ -294,6 +294,22 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
     }
   }, [fm, interactive])
 
+  // A part the panel says is wrong is red on the map, the whole part, so he sees which one.
+  const faultyRef = useRef<Feature<Geometry>[]>([])
+  const faultyKey = `${d.faulty.join()}|${key}`
+  useEffect(() => {
+    faultyRef.current.forEach((f) => fm.extra.hasFeature(f) && fm.extra.removeFeature(f))
+    faultyRef.current = d.faulty.flatMap((i) => {
+      const part = r?.parts[i]
+      if (!part) return []
+      const f = new Feature<Geometry>(new OlPolygon(fm.ring(part)))
+      f.setStyle(mapStyle('error'))
+      fm.extra.addFeature(f)
+      return [f]
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fm, faultyKey])
+
   // The part the panel points at (the crop he is choosing) lights up too.
   useEffect(() => {
     const part = d.lit !== null ? d.result?.parts[d.lit] : undefined

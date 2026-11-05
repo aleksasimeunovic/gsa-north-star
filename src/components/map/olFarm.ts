@@ -40,6 +40,8 @@ export interface FarmMapOptions {
   added?: { id: string; polygon: Polygon; name: string; yard?: Polygon }[]
   /** A place in question that isn't a field yet (the parcel he bought): outlined, named, and framed. */
   spot?: { polygon: Polygon; label: string; yard?: { polygon: Polygon; label: string; settled?: boolean }; above?: boolean }
+  /** Fields a measure covers: drawn bright and named, his other fields faint. */
+  highlight?: { polygon: Polygon; label: string }[]
   /** Registered farmland he can put a field on, outlined and named so he can tap it. */
   lands?: { id: string; polygon: Polygon; label: string }[]
   /** Leave this added field out: it is the one being changed. */
@@ -132,8 +134,9 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   let focusShape: Feature<Geometry> | null = null
   for (const f of fields) {
     // With a place in question (a parcel, farmland to pick), his fields are only there for orientation.
-    const strong = (!focused && !opts.spot && !opts.lands?.length) || f.id === focused?.id
-    const drawn = shape(f.polygon, strong ? 'field' : 'faint')
+    const lit = !!opts.highlight?.some((h) => h.polygon === f.polygon)
+    const strong = (!focused && !opts.spot && !opts.lands?.length && !opts.highlight?.length) || f.id === focused?.id || lit
+    const drawn = shape(f.polygon, lit ? 'lit' : strong ? 'field' : 'faint')
     if (f.id === focused?.id) focusShape = drawn
     // On a still preview only the field in question is named; on a map he moves around, every field is.
     if (strong || opts.interactive) name(f.polygon, en.fields[f.id], strong)
@@ -141,7 +144,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
 
   for (const f of opts.parcel ? [] : (opts.added ?? [])) {
     if (f.id === opts.skip) continue
-    const strong = !focused && !opts.spot && !opts.lands?.length
+    const strong = !focused && !opts.spot && !opts.lands?.length && !opts.highlight?.length
     shape(f.polygon, strong ? 'field' : 'faint')
     // The yard he left out is hatched, like other land that doesn't count.
     if (f.yard) shape(f.yard, 'strip')
@@ -158,6 +161,12 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
       chip({ x: (b.minX + b.maxX) / 2, y: b.minY - 7 }, yard.label)
     } else if (opts.spot.above) name(opts.spot.polygon, opts.spot.label, true)
     else chip(centroid(opts.spot.polygon), opts.spot.label)
+  }
+  // A whole field he chose is named above like any field; a part of one says which part on it.
+  for (const h of opts.highlight ?? []) {
+    if (s.fields.some((f) => f.polygon === h.polygon)) continue
+    shape(h.polygon, 'lit')
+    chip(centroid(h.polygon), h.label)
   }
   for (const l of opts.lands ?? []) {
     shape(l.polygon, 'land')
@@ -190,6 +199,8 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   const all = [...s.fields.map((f) => f.polygon), ...(opts.added ?? []).map((f) => f.polygon), ...(s.bought ? [s.bought.polygon] : [])]
   const home = opts.parcel
     ? [opts.parcel]
+    : opts.highlight?.length
+    ? opts.highlight.map((h) => h.polygon)
     : opts.spot
       ? [opts.spot.polygon, ...(opts.lands ?? []).map((l) => l.polygon)]
       : opts.lands?.length

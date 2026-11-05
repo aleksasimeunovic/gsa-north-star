@@ -1,8 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { Suspense, useRef, useState, type ReactNode } from 'react'
 import { en, formatDinars, formatHa, formatNumber, split, tasks } from '../copy/en'
 import type { Measure, MeasureId, Requirement, Suggestion } from '../data/scenarios'
 import { fitting, goalGain, measureGaps, readyToApply, shown } from '../logic/status'
-import { carriedFields, fieldChoices, newCrops } from '../logic/farm'
+import { carriedFields, fieldChoices, newCrops, riverParts } from '../logic/farm'
 import type { PartName } from '../logic/geometry'
 import type { MeasureValue } from '../state/actions'
 import { Banner } from '../ui/Banner'
@@ -18,6 +18,7 @@ import { RadioGroup } from '../ui/RadioGroup'
 import { Icon } from '../ui/Icon'
 import { StatusBadge } from '../ui/StatusBadge'
 import { useApp, type AppCtx } from './AppContext'
+import { FarmMap, MapFallback } from './TaskBodies'
 
 type Derived = AppCtx['derived']
 type Inputs = Record<string, MeasureValue>
@@ -232,7 +233,10 @@ function MeasureFields({ m, inputs, suggestedFields, showErrors, onChange }: { m
         .filter((r) => shown(m, r, inputs))
         .map((r) =>
           r.kind === 'auto' ? (
-            <AutoLine key={r.id} r={r} d={derived} />
+            <Stack key={r.id} gap="sm">
+              <AutoLine r={r} d={derived} />
+              {r.id === 'land' && <FieldsOnMap ids={[...derived.scenario.fields.map((f) => f.id as string), ...state.answers.newFields.map((f) => f.id)]} label={en.measures[m.id]} />}
+            </Stack>
           ) : (
             <Stack key={r.id} gap="sm">
               {/* The fields GSA's evidence was about: suggested, never ticked for him. One tap uses them. */}
@@ -251,9 +255,49 @@ function MeasureFields({ m, inputs, suggestedFields, showErrors, onChange }: { m
                 error={showErrors && gaps.missing.includes(r.id) ? t.error[r.kind] : undefined}
                 onChange={(v) => onChange(`${m.id}.${r.id}`, v)}
               />
+              {r.kind === 'fields' && (
+                <FieldsOnMap ids={carriedFields((inputs[`${m.id}.${r.id}`] as string[] | undefined) ?? [], derived.scenario, state.answers)} label={en.measures[m.id]} />
+              )}
             </Stack>
           ),
         )}
+    </div>
+  )
+}
+
+/**
+ * The fields a measure covers, on the photo on request: they stand out, his other fields stay faint. Only
+ * there once a field is chosen, so the button always has something to show.
+ */
+function FieldsOnMap({ ids, label }: { ids: string[]; label: string }) {
+  const { derived, state } = useApp()
+  const [open, setOpen] = useState(false)
+  const s = derived.scenario
+  const parts = riverParts(s, state.answers)
+  const shapes = ids.flatMap((id) => {
+    const part = parts?.find((p) => p.id === id)
+    if (part) return [{ polygon: part.polygon, label: fieldName(id) }]
+    const f = s.fields.find((x) => x.id === id)
+    if (f) return [{ polygon: f.polygon, label: fieldName(id) }]
+    const added = state.answers.newFields.find((x) => x.id === id)
+    return added ? [{ polygon: added.polygon, label: added.name }] : []
+  })
+  if (!shapes.length) return null
+  return (
+    <div className="flex flex-col gap-[var(--gap-inline)]">
+      <div>
+        <Button variant="link" aria-expanded={open} onClick={() => setOpen(!open)}>
+          <Icon name="map" size="sm" />
+          {open ? t.hideMap : t.showMap(shapes.length)}
+        </Button>
+      </div>
+      {open && (
+        <figure className="measure-map">
+          <Suspense fallback={<MapFallback mode="preview" />}>
+            <FarmMap scenario={s} mode="explore" label={`${label}: ${shapes.map((x) => x.label).join(', ')}`} highlight={shapes} />
+          </Suspense>
+        </figure>
+      )}
     </div>
   )
 }

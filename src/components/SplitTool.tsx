@@ -80,6 +80,8 @@ export function useSplitDraft(record: Field, stored: Split | null) {
   const [slider, setSlider] = useState(false)
   // The part the panel is talking about right now, lit on the map too.
   const [lit, setLit] = useState<0 | 1 | null>(null)
+  // Parts the panel says something is wrong with (no crop yet), red on the map too.
+  const [faulty, setFaulty] = useState<number[]>([])
   const field = fieldWith(record, draft.boundary)
   const result = splitField(field.polygon, draft.line, field.areaHa)
 
@@ -110,7 +112,7 @@ export function useSplitDraft(record: Field, stored: Split | null) {
   }
   const undo = () => travel(past, future, setPast, setFuture)
   const redo = () => travel(future, past, setFuture, setPast)
-  return { record, field, draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, selected, setSelected, editing, setEditing, snap, setSnap, snapped, setSnapped, slider, setSlider, lit, setLit, pastLand: pastLand(record.land, field.polygon) }
+  return { record, field, draft, result, update, remember, settle, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0, stopped, setStopped, selected, setSelected, editing, setEditing, snap, setSnap, snapped, setSnapped, slider, setSlider, lit, setLit, faulty, setFaulty, pastLand: pastLand(record.land, field.polygon) }
 }
 
 export type SplitDraft = ReturnType<typeof useSplitDraft>
@@ -444,6 +446,13 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
   const options = PART_CROPS.map((c) => ({ value: c, label: en.crops[c] }))
   // Continue is never grey: pressed too early, it says which part still needs a crop and goes there.
   const [tried, setTried] = useState(false)
+  const errorAt = (i: number) => (same && i === order[1] ? copy.sameError : tried && !draft.crops[i] ? copy.cropMissing : undefined)
+  const faultyKey = order.filter((i) => errorAt(i)).join()
+  useEffect(() => {
+    d.setFaulty(faultyKey ? faultyKey.split(',').map(Number) : [])
+    return () => d.setFaulty([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [faultyKey])
   const next = () => {
     if (complete) return onNext()
     setTried(true)
@@ -464,7 +473,7 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
             placeholder={copy.choose}
             options={options}
             value={draft.crops[i] ?? ''}
-            error={same && i === order[1] ? copy.sameError : tried && !draft.crops[i] ? copy.cropMissing : undefined}
+            error={errorAt(i)}
             onChange={(e) => {
               const crops: Split['crops'] = [...draft.crops]
               crops[i] = (e.target.value || null) as PartCrop | null

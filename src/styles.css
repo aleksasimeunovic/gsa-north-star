@@ -166,6 +166,12 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-option[data-on] { border-color: var(--foreground); }
 .measure-option[data-state='applied'] { border-color: var(--success); }
 .measure-option[data-state='error'] { border-color: var(--error); }
+/* The fields a measure covers, on the photo: a plain figure, so the card keeps its own height */
+.measure-map { margin: 0; }
+/* A ticked measure says where it stands in its box too: orange while something is still to fill in, red when it's wrong */
+.measure-option[data-state='open'] { border-color: var(--warning-border); }
+.measure-option[data-state='open'] > .measure-head [data-slot='checkbox'][data-state='checked'] { background: var(--warning); border-color: var(--warning); color: #fff; }
+.measure-option[data-state='error'] > .measure-head [data-slot='checkbox'][data-state='checked'] { background: var(--error); border-color: var(--error); color: #fff; }
 .measure-fields { display: flex; flex-direction: column; gap: var(--gap-group); margin: 0 var(--space-4) var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border); }
 .measure-fields .auto-line { padding: 0; background: none; }
 .auto-mark { display: inline-flex; color: var(--muted-foreground); }

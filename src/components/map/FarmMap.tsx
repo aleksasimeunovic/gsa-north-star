@@ -30,6 +30,8 @@ interface Props {
   spot?: { polygon: Polygon; label: string; yard?: { polygon: Polygon; label: string; settled?: boolean }; above?: boolean }
   /** The house and yard he leaves out of the spot; he moves it when interactive. */
   yard?: { d: YardDraft; interactive: boolean; settled?: boolean }
+  /** Fields a measure covers, drawn bright. */
+  highlight?: { polygon: Polygon; label: string }[]
   /** Registered farmland he can tap to put a field on. */
   lands?: { id: string; polygon: Polygon; label: string }[]
   onPickLand?: (id: string) => void
@@ -40,7 +42,7 @@ interface Props {
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, yard, lands, onPickLand, skip, dock }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, yard, highlight, lands, onPickLand, skip, dock }: Props) {
   const { state } = useApp()
   const added = state.answers.newFields
   // While he edits the split the draft is on the map; otherwise, the split he confirmed.
@@ -61,7 +63,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, lands, skip, done, docked: !!split || !!dock || !!yard, onAway: setAway })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, highlight, lands, skip, done, docked: !!split || !!dock || !!yard, onAway: setAway })
     // A tap on registered farmland picks it: one large target, never a point to place.
     if (lands?.length) {
       h.map.on('singleclick', (e) => {
@@ -82,7 +84,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
       h.destroy()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, !!spot?.yard, lands?.length, skip, doneKey, splitOpen])
+  }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, !!spot?.yard, highlight?.map((h) => h.label).join(), lands?.length, skip, doneKey, splitOpen])
 
   useEffect(() => fm?.showFlag(!hideFlag), [fm, hideFlag])
 
