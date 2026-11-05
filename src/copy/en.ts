@@ -643,7 +643,7 @@ export const records = {
   textError: 'Enter the right value',
   youSaid: (v: string) => `You said ${v}`,
   youSay: (v: string) => `You say ${v}`,
-  state: { records: 'Unconfirmed', confirmed: 'Confirmed by you', checking: 'Waiting for a check' } satisfies Record<Source, string>,
+  state: { records: 'Unconfirmed', confirmed: 'Confirmed', checking: 'Waiting for a check' } satisfies Record<Source, string>,
   cattle: 'Cattle',
   pigs: 'Pigs',
   calvings: 'Cows that calved',
