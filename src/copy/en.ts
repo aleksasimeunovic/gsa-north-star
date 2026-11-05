@@ -275,7 +275,7 @@ export const tasks = {
     showPhoto: 'What the satellite shows',
     showField: 'Your field last year',
     question: "What's growing along the river this year?",
-    same: 'The same as the rest',
+    same: 'The same as the rest of the field',
     other: 'Something else',
     oneCrop: 'The same crop in the whole field',
     mayCheck: 'the state may still check it',
@@ -503,7 +503,7 @@ export const split = {
   step: (n: number) => `Step ${n} of 3`,
   lineTitle: 'Where does the crop change?',
   check: {
-    suggested: "GSA's guess from the photo. Shadows and the season can fool it.",
+    suggested: 'GSA split this automatically from the photo, so it may be inaccurate.',
     yours: 'Your line.',
     parts: (areas: string) => `This makes ${areas}.`,
     question: 'Is this where the crop changes?',

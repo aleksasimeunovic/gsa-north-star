@@ -22,12 +22,16 @@ export function Select({ id: given, label, options, placeholder, error, ...rest 
           {error}
         </span>
       )}
-      <NativeSelect id={id} aria-invalid={!!error || undefined} aria-describedby={error ? `${id}-error` : undefined} {...rest}>
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </NativeSelect>
+      {/* Our own chevron, as far from the right edge as the text is from the left. */}
+      <div className="relative">
+        <NativeSelect id={id} className="appearance-none pr-10" aria-invalid={!!error || undefined} aria-describedby={error ? `${id}-error` : undefined} {...rest}>
+          {placeholder && <option value="">{placeholder}</option>}
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </NativeSelect>
+        <Icon name="expand" size="sm" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      </div>
     </div>
   )
 }

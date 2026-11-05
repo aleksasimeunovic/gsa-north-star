@@ -430,6 +430,8 @@ button.drawer-row:hover { background: var(--hover); }
   .page[data-screen='welcome'] .next:has(.map-figure) { flex: 1; min-height: 0; }
   .page[data-screen='welcome'] .next:has(.map-figure) > .flex-col { flex: 1; min-height: 0; }
   .page[data-screen='welcome'] .next .map-figure { flex: 1; min-height: 200px; }
+  /* Here the action bar sits outside the card's scroll, so the answer is pinned to the card's own bottom, never over the map. */
+  .page[data-screen='welcome'] .next .stage-action { bottom: 0; }
   .page[data-screen='welcome'] .next .map-figure > .map-link, .page[data-screen='welcome'] .next .map-figure .map-frame { height: 100%; }
   .page[data-screen='welcome'] .next .map-figure .farm-map { height: 100%; }
 }
