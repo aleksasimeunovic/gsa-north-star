@@ -14,6 +14,7 @@ import { FileInput } from '../ui/FileInput'
 import { Compare, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { Problem } from '../ui/Problem'
 import { Answers } from '../ui/Fact'
+import { Account } from '../ui/Account'
 import { Note } from '../ui/Note'
 import { StageAction } from '../ui/MapStage'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
@@ -135,11 +136,12 @@ function HerdBody() {
             save()
           }}
         >
-          <Stack gap="sm">
+          {/* The button right under the field, never pinned over it, so the field is never cut off. */}
+          <Stack gap="group">
             <Field label={tasks.herd.countLabel} hint={tasks.herd.countHint} error={error} inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
-            <StageAction>
+            <div>
               <Button type="submit" variant="primary">{tasks.herd.countSave}</Button>
-            </StageAction>
+            </div>
           </Stack>
         </form>
       )}
@@ -164,7 +166,9 @@ function ReplyToJelena() {
     <Stack gap="section">
       <Banner tone="attention">{tasks.jelena.asks}</Banner>
       <Field multiline label={tasks.jelena.replyLabel} value={note} rows={3} onChange={(e) => setNote(e.target.value)} />
-      <Primary onClick={() => dispatch({ type: 'reply_to_jelena', note: note.trim() })}>{tasks.jelena.reply}</Primary>
+      <div>
+        <Button variant="primary" onClick={() => dispatch({ type: 'reply_to_jelena', note: note.trim() })}>{tasks.jelena.reply}</Button>
+      </div>
     </Stack>
   )
 }
@@ -359,8 +363,8 @@ function BankBody() {
     <Stack gap="section">
       <Compare
         items={[
-          { label: b.registered, value: <>{b.ending(acc.ending)} <Text variant="small" as="span">{b.closed}</Text></> },
-          { label: b.fromBank, value: b.ending(acc.newEnding) },
+          { label: b.registered, value: <Account number={acc.number} /> },
+          { label: b.fromBank, value: <Account number={acc.newNumber} /> },
         ]}
       />
       <Question

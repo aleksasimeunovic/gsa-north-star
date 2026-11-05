@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { en, formatDateYear, formatHa, records as copy, tasks } from '../copy/en'
 import type { StepId, TaskId } from '../logic/application'
 import type { Source } from '../logic/farm'
 import { roundHa } from '../logic/geometry'
 import { correctionOf, UNCHANGED, type Unchanged } from '../logic/status'
+import { Account } from '../ui/Account'
 import { Button } from '../ui/Button'
+import { Drawer } from '../ui/Drawer'
 import { Field } from '../ui/Field'
 import { Icon } from '../ui/Icon'
 import { SourceTag } from '../ui/SourceTag'
@@ -22,6 +24,8 @@ export interface RecordRow {
   key: string
   label: string
   value: string
+  /** How the value is shown, when it is more than words (an account number he can reveal). */
+  show?: ReactNode
   /** A second line: the period it covers, or his value next to the record's. */
   sub?: string
   /** Where the line stands. Nothing for what GSA reuses without asking: there's nothing to confirm. */
@@ -38,6 +42,14 @@ export interface RecordRow {
 export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) => void }) {
   const rows = useRecordRows(step)
   const { go } = useApp()
+  const [all, setAll] = useState(false)
+  const opener = useRef<HTMLButtonElement>(null)
+  // A pen that leads somewhere else closes the panel on the way.
+  useEffect(() => {
+    const close = () => setAll(false)
+    window.addEventListener('hashchange', close)
+    return () => window.removeEventListener('hashchange', close)
+  }, [])
   if (!rows) return null
   return (
     <section className="records" aria-labelledby={`records-${step}`}>
@@ -49,18 +61,40 @@ export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) =
             <Icon name="added" size="sm" /> {copy.addField}
           </Button>
         )}
-        {/* Prototype: the full record isn't built, so this leads nowhere yet. */}
-        <Button variant="ghost" className="w-full" onClick={() => undefined}>
-          {copy.seeAll} <Icon name="disclose" size="sm" />
+        <Button ref={opener} variant="ghost" className="w-full" onClick={() => setAll(true)}>
+          {copy.more} <Icon name="disclose" size="sm" />
         </Button>
       </div>
+      <Drawer open={all} title={copy.allTitle} onClose={() => setAll(false)} returnFocusTo={opener}>
+        <AllRecords
+          onOpen={(id) => {
+            setAll(false)
+            onOpen(id)
+          }}
+        />
+      </Drawer>
     </section>
+  )
+}
+
+/** Everything the registers hold about him, part by part, each line with where it stands and a pen. */
+function AllRecords({ onOpen }: { onOpen: (id: TaskId) => void }) {
+  const groups = useAllRecords()
+  return (
+    <div className="records-all">
+      {groups.map((g) => (
+        <section key={g.id} aria-labelledby={`all-${g.id}`}>
+          <h3 id={`all-${g.id}`} className="records-title">{copy.group[g.id]}</h3>
+          <RecordList rows={g.rows} onOpen={onOpen} />
+        </section>
+      ))}
+    </div>
   )
 }
 
 export function RecordList({ rows, onOpen }: { rows: RecordRow[]; onOpen: (id: TaskId) => void }) {
   return (
-    <dl className="records-rows">
+    <dl className="records-rows" data-dense>
       {rows.map((r) => (
         <Row key={r.key} row={r} onOpen={onOpen} />
       ))}
@@ -93,7 +127,7 @@ function Row({ row, onOpen }: { row: RecordRow; onOpen: (id: TaskId) => void }) 
     <div className="records-row">
       <div className="records-text">
         <dt>{row.label}</dt>
-        <dd className="records-value">{row.value}</dd>
+        <dd className="records-value">{row.show ?? row.value}</dd>
         {row.sub && <dd className="records-sub">{row.sub}</dd>}
         {row.source && (
           <dd>
@@ -209,14 +243,37 @@ export function detailRows(derived: ReturnType<typeof useApp>['derived'], a: Ret
   })
   if (g.account) {
     const bank = derived.items.find((i) => i.id === 'bank')
-    const ending = bank?.detail === 'bank_own' ? (a.bank.account ?? '').slice(-4) : g.account.newEnding
+    const number = bank?.detail === 'bank_own' ? (a.bank.account ?? '') : g.account.newNumber
     rows.push({
       key: 'bank',
       label: tasks.title.bank,
-      value: tasks.bank.ending(ending),
+      value: tasks.bank.ending(number.replace(/\D/g, '').slice(-4)),
+      show: <Account number={number} />,
       source: bank?.status === 'complete' ? 'confirmed' : 'records',
       edit: { open: 'bank' },
     })
   }
   return rows
+}
+
+/**
+ * Ten lines the registers hold about him, in three groups: his details, his animals, his land. Each says where
+ * it stands (unconfirmed, confirmed by him, waiting for a check) and has a pen where he can change it.
+ */
+function useAllRecords(): { id: 'details' | 'animals' | 'land'; rows: RecordRow[] }[] {
+  const { derived, state } = useApp()
+  const g = derived.scenario.generalData
+  const details = detailRows(derived, state.answers)
+  // The farm number and phone sit with his name and address, where he would look for them.
+  details.splice(1, 0, { key: 'farm', label: copy.farmNumber, value: g.farmNumber })
+  const phone = correctionOf(state.answers, 'details', 'phone')
+  details.splice(3, 0, { key: 'phone', label: copy.phone, value: g.phone, sub: phone ? copy.youSaid(phone) : undefined, source: phone ? 'checking' : undefined, edit: { correct: { itemId: 'details', what: 'phone', value: phone ?? g.phone } } })
+  const animals = useRecordRows('animals') ?? []
+  const f = derived.farm.fields
+  const land: RecordRow = { key: 'land', label: copy.land, value: copy.landValue(f.count, formatHa(f.totalHa)), source: f.source, edit: { screen: 'welcome/step-land' } }
+  return [
+    { id: 'details' as const, rows: details },
+    { id: 'animals' as const, rows: animals },
+    { id: 'land' as const, rows: [land] },
+  ].filter((x) => x.rows.length)
 }

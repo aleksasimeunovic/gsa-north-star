@@ -3,10 +3,14 @@ import { en } from '../copy/en'
 import { Icon } from './Icon'
 
 /**
- * One line about what just happened, in the lower right above the action bar. It leaves on its own after a
+ * What just happened, in a bold line with its sign (saved, sent for a check, added, no longer needed), and
+ * under it what comes next. One line about what just happened, in the lower right above the action bar. It leaves on its own after a
  * while, but never while the pointer or focus is on it, so Undo stays reachable. Announced politely.
  */
-export function Toast({ id, title, undo, onClose, seconds = 4 }: { id: number; title: string; undo?: { label: string; hint: string; onClick: () => void }; onClose: () => void; seconds?: number }) {
+export type ToastKind = 'done' | 'waiting' | 'added' | 'removed'
+const ICON = { done: 'complete', waiting: 'warning', added: 'added', removed: 'removed' } as const
+
+export function Toast({ id, kind = 'done', title, detail, undo, onClose, seconds = 5 }: { id: number; kind?: ToastKind; title: string; detail?: string; undo?: { label: string; hint: string; onClick: () => void }; onClose: () => void; seconds?: number }) {
   const [paused, setPaused] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const close = useRef(onClose)
@@ -48,7 +52,13 @@ export function Toast({ id, title, undo, onClose, seconds = 4 }: { id: number; t
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      <p className="toast-title">{title}</p>
+      <span className="toast-icon" data-kind={kind}>
+        <Icon name={ICON[kind]} size="md" />
+      </span>
+      <p className="toast-text">
+        <span className="toast-title">{title}</span>
+        {detail && <span className="toast-detail">{detail}</span>}
+      </p>
       {undo && (
         <button type="button" className="toast-action" aria-label={undo.hint} onClick={undo.onClick}>
           {undo.label}

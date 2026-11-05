@@ -50,6 +50,8 @@ export interface FarmMapOptions {
   done?: { line: Point[]; parts: { polygon: Polygon; label: string }[] }
   /** Tools float over the bottom of the map, so his field is framed above them. */
   docked?: boolean
+  /** Frame this land instead (where he draws a field). */
+  frame?: Polygon[]
   /** He has moved away from the field in question, or come back to it. */
   onAway?: (away: boolean) => void
 }
@@ -170,7 +172,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   }
   for (const l of opts.lands ?? []) {
     shape(l.polygon, 'land')
-    chip(centroid(l.polygon), l.label)
+    if (l.label) chip(centroid(l.polygon), l.label)
   }
 
   // What changed, in place: the satellite flag, the road strip.
@@ -197,7 +199,9 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
 
   const extentOf = (polys: Polygon[]) => boundingExtent(polys.flat().map(coord))
   const all = [...s.fields.map((f) => f.polygon), ...(opts.added ?? []).map((f) => f.polygon), ...(s.bought ? [s.bought.polygon] : [])]
-  const home = opts.parcel
+  const home = opts.frame?.length
+    ? opts.frame
+    : opts.parcel
     ? [opts.parcel]
     : opts.highlight?.length
     ? opts.highlight.map((h) => h.polygon)

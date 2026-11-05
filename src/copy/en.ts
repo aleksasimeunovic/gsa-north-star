@@ -6,6 +6,7 @@ import type { Source } from '../logic/farm'
 import type { Severity } from '../logic/readiness'
 import type { ImpactReason } from '../logic/status'
 import type { Mark } from '../logic/severity'
+import type { DrawProblem } from '../logic/drawing'
 
 const num = new Intl.NumberFormat('en-GB')
 export const formatNumber = (n: number) => num.format(Math.round(n))
@@ -117,7 +118,7 @@ export const home = {
   stepWaiting: (n: number) => (n === 1 ? '1 thing waits for a check. You can still submit' : `${n} things wait for a check. You can still submit`),
   continueTo: (step: string) => `Continue: ${step}`,
   now: 'Now',
-  stepFinished: (step: string) => `${step}: done`,
+  stepFinished: (step: string) => `${step} edited`,
   submitted: 'Your application is submitted.',
   seeReceipt: 'See your receipt',
   // Said to screen readers when the list changes.
@@ -130,12 +131,13 @@ export const home = {
   },
 }
 
-/** What his last answer did, in one line. */
+/** What his last answer did, in one line, and what comes next. */
 export const after = {
-  done: (task: string) => `${task}: done`,
-  waiting: (task: string) => `${task}: waiting for a check`,
+  done: (task: string) => `${task} saved`,
+  waiting: (task: string) => `${task} sent for a check`,
   removed: (work: string) => `No longer needed: ${work.toLowerCase()}`,
   more: (work: string) => `Added: ${work.toLowerCase()}`,
+  next: (what: string) => `Next: ${what}`,
   undo: 'Undo',
   undoLabel: 'Undo your last answer',
 }
@@ -186,15 +188,16 @@ export const tasks = {
     context: (date: string) => `Your bank closed the account payments went to on ${date}`,
     registered: 'In the farm register',
     fromBank: 'New account from your bank',
-    ending: (n: string) => `**** **** **** ${n}`,
-    closed: 'Closed',
+    ending: (n: string) => `•••• ${n}`,
+    show: 'Show the whole number',
+    hide: 'Hide the number',
     question: (n: string) => `Should your subsidy be paid into the account ending ${n}?`,
     answerYes: 'Yes, the new account',
     answerNo: 'No, another account',
     label: 'Account number for payments',
     hint: '18 digits, for example 160-0000000123456-78',
     error: 'Enter the 18 digits of the account number',
-    save: 'Save changes',
+    save: 'Save',
     paidTo: (n: string) => `Paid into the account ending ${n}`,
   },
 
@@ -228,7 +231,7 @@ export const tasks = {
 
   renewal: {
     body: 'You need it to submit. You can prepare everything else first',
-    button: 'Renew now',
+    button: 'Renew',
   },
 
   herd: {
@@ -242,7 +245,7 @@ export const tasks = {
     countLabel: 'How many cattle do you have today?',
     countHint: 'Include calves',
     countError: 'Enter a whole number, like 41',
-    countSave: 'Save my number',
+    countSave: 'Save',
     /** Same words wherever the herd appears. */
     waiting: (reg: number) => `The animal registry checks it, and its ${reg} counts until then`,
     registryOnly: 'The animal registry',
@@ -262,7 +265,7 @@ export const tasks = {
     } satisfies Record<CaseState, string>,
     asks: 'Jelena asks: when did you sell or slaughter the cattle that left?',
     replyLabel: 'Your reply',
-    reply: 'Send reply',
+    reply: 'Send',
   },
 
   river: {
@@ -317,7 +320,7 @@ export const tasks = {
     question: 'Will you farm it this year?',
     yes: 'Yes, I farm it',
     no: 'No, not this year',
-    draw: 'Add it to your fields',
+    draw: 'Add it',
     notFarmed: 'Not farmed this year',
   },
 
@@ -582,7 +585,7 @@ export const split = {
   },
   next: 'Continue',
   back: 'Back',
-  confirm: 'Confirm the split',
+  confirm: 'Confirm',
 }
 
 export const finish = {
@@ -598,7 +601,7 @@ export const finish = {
     },
     declarationTitle: 'Declaration',
     declaration: 'I confirm under full criminal and material liability that the information in this application is true.',
-    button: 'Submit application',
+    button: 'Submit',
     signFirst: 'Tick the declaration to submit',
   },
   receipt: {
@@ -616,23 +619,23 @@ export const finish = {
     ],
     amendTitle: 'Need to change something?',
     amendText: 'You can amend it until the national deadline, and sign the declaration again',
-    amend: 'Amend your application',
+    amend: 'Amend',
   },
   renewal: {
     title: 'Renew your active farmer status',
     why: 'You need it to submit',
-    button: 'Renew my status',
+    button: 'Renew',
     doneTitle: "You're an active farmer.",
     doneNext: 'Next: your application',
-    continue: 'Continue to your application',
+    continue: 'Continue',
   },
 }
 
 /** What GSA knows about each part of his farm right now, each line changed with a pen. */
 export const records = {
-  title: 'What GSA knows',
+  title: "Farmer's data",
   edit: (what: string) => `Change: ${what}`,
-  save: 'Send the correction',
+  save: 'Send',
   cancel: 'Cancel',
   correctionHint: "The record's office checks it, and its value counts until then",
   numberError: 'Enter a whole number, like 14',
@@ -647,7 +650,13 @@ export const records = {
   unchangedFields: 'Unchanged fields',
   unchangedValue: (n: number, ha: string) => `${n} fields, ${ha}`,
   addField: 'Add a field',
-  seeAll: 'See all your records',
+  more: 'More data',
+  allTitle: "Farmer's data",
+  group: { details: 'Your details', animals: 'Animals', land: 'Land' },
+  farmNumber: 'Farm number',
+  phone: 'Phone',
+  land: 'Land',
+  landValue: (n: number, ha: string) => `${n} fields, ${ha}`,
 }
 
 /** Adding a field on the map: where, its name and crop, its measures. */
@@ -666,10 +675,12 @@ export const fieldEdit = {
   nameError: 'Give the field a name',
   cropError: 'Choose what you grow there',
   crop: 'What are you growing there this year?',
-  save: 'Add the field',
-  saveChanges: 'Save the field',
-  change: 'Change the field',
-  remove: 'Remove this field',
+  save: 'Save',
+  saveChanges: 'Save',
+  change: 'Change',
+  remove: 'Remove',
+  draw: 'Draw it on the map',
+  edges: 'Change its edges',
   line: (name: string, ha: string, crop: string) => `${name}, ${ha}, ${crop}`,
   yard: {
     seen: 'The photo shows a house on it',
@@ -700,6 +711,47 @@ export const fieldEdit = {
       too_small: 'A yard needs at least 0.01 ha to leave out, so it stopped here',
     },
   },
+}
+
+/** Drawing a field corner by corner on the photo. */
+export const drawField = {
+  title: 'Draw your field',
+  start: 'Move the map until the cross sits on a corner of your field, then add the corner.',
+  startMouse: 'Or click each corner on the map.',
+  next: 'Go round your field, one corner at a time.',
+  three: 'Add more corners, or create the field.',
+  editTitle: "Check your field's edges",
+  editHint: 'Pull a corner, or the dot in the middle of an edge, to where your field ends.',
+  continue: 'Continue',
+  addCorner: 'Add corner',
+  closeHere: 'Close the field',
+  onFirst: 'On your first corner',
+  create: (ha: string) => `Create the field, ${ha}`,
+  problem: {
+    outside_farmland: "Only registered farmland can get support. Move the cross onto the land outlined on the photo",
+    crosses_itself: "The edges can't cross each other. Move the cross",
+  } satisfies Record<DrawProblem, string>,
+  stopped: {
+    outside_farmland: 'Your field stays on registered farmland, so it stopped here',
+    crosses_itself: "The edges can't cross each other, so it stopped here",
+  } satisfies Record<DrawProblem, string>,
+  overlaps: (field: string) => `This takes land from your ${field}, which you already declare`,
+  leaveOut: 'Leave it out',
+  tooSmall: 'A field needs at least 0.10 ha. Add corners or pull them out',
+  metres: (m: number) => `${m} m`,
+  areaSaid: (ha: string, n: number) => `${n} corners, ${ha}`,
+  tools: 'Tools for drawing your field',
+  undo: 'Undo',
+  undoHint: 'Undo your last corner or move',
+  redo: 'Redo',
+  redoHint: 'Redo your last corner or move',
+  remove: 'Remove',
+  removeHint: 'Take out this corner',
+  reset: 'Reset',
+  resetHint: 'Go back to the field as you created it',
+  cornerLabel: (n: number) => `Corner ${n} of your field`,
+  midLabel: (n: number) => `Middle of edge ${n}. Pull it to add a corner`,
+  keys: 'Arrow keys move it, and Delete takes it out',
 }
 
 export const proto = {

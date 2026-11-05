@@ -8,6 +8,8 @@ import type { SplitDraft } from '../SplitTool'
 import { createFarmMap, type FarmMap as Handle } from './olFarm'
 import { SplitOnMap } from './SplitOnMap'
 import { YardOnMap } from './YardOnMap'
+import { DrawOnMap } from './DrawOnMap'
+import type { FieldDraw } from '../DrawTool'
 import type { YardDraft } from '../YardTool'
 import { useApp } from '../AppContext'
 
@@ -39,10 +41,12 @@ interface Props {
   skip?: string
   /** The tools for what he is doing here, floating over the bottom of the map. */
   dock?: ReactNode
+  /** A field he draws corner by corner, and the fields it must stay clear of. */
+  draw?: { d: FieldDraw; fields: Polygon[] }
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, yard, highlight, lands, onPickLand, skip, dock }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, yard, highlight, lands, onPickLand, skip, dock, draw }: Props) {
   const { state } = useApp()
   const added = state.answers.newFields
   // While he edits the split the draft is on the map; otherwise, the split he confirmed.
@@ -63,7 +67,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, highlight, lands, skip, done, docked: !!split || !!dock || !!yard, onAway: setAway })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, highlight, lands, skip, done, docked: !!split || !!dock || !!yard || !!draw, frame: draw ? lands?.map((l) => l.polygon) : undefined, onAway: setAway })
     // A tap on registered farmland picks it: one large target, never a point to place.
     if (lands?.length) {
       h.map.on('singleclick', (e) => {
@@ -121,6 +125,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
       {dock && <div className="map-dock">{dock}</div>}
       {split && fm && <SplitOnMap fm={fm} {...split} />}
       {yard && fm && <YardOnMap fm={fm} {...yard} />}
+      {draw && fm && <DrawOnMap fm={fm} {...draw} />}
     </div>
   )
 }

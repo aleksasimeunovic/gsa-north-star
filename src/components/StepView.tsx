@@ -7,7 +7,7 @@ import { Icon } from '../ui/Icon'
 import { Text } from '../ui/Layout'
 import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
-import { Toast } from '../ui/Toast'
+import { Toast, type ToastKind } from '../ui/Toast'
 import { useApp } from './AppContext'
 import { nextActionLabel } from './ReadinessBar'
 import { MapReviewButton, TaskBody, taskSummary } from './TaskBodies'
@@ -94,13 +94,17 @@ export function AfterAnswerToast({ flow }: { flow: Flow }) {
   if (!a || a === seen) return null
   // Work his answer added comes first, so the finish line never moves silently; then a part he finished.
   const finished = derived.list.steps.find((st) => st.id !== 'submit' && st.left === 0 && a.done.some((id) => stepOf(id) === st.id))
-  const title = [
-    ...a.more.map(({ work }) => copy.more(tasks.work[work.id])),
-    ...a.added.map((id) => copy.more(flow.title(id))),
-    ...(finished ? [home.stepFinished(steps.name[finished.id])] : []),
-    ...a.done.map((id) => copy.done(flow.title(id))),
-    ...a.waiting.map((id) => copy.waiting(flow.title(id))),
-    ...a.removed.map(({ work }) => copy.removed(tasks.work[work.id])),
-  ][0]
-  return <Toast id={count.current} title={title} onClose={() => setSeen(a)} undo={state.past.length > 0 ? { label: copy.undo, hint: copy.undoLabel, onClick: () => dispatch({ type: 'undo' }) } : undefined} />
+  const lines: { kind: ToastKind; title: string }[] = [
+    ...a.more.map(({ work }) => ({ kind: 'added' as const, title: copy.more(tasks.work[work.id]) })),
+    ...a.added.map((id) => ({ kind: 'added' as const, title: copy.more(flow.title(id)) })),
+    ...(finished ? [{ kind: 'done' as const, title: home.stepFinished(steps.name[finished.id]) }] : []),
+    ...a.done.map((id) => ({ kind: 'done' as const, title: copy.done(flow.title(id)) })),
+    ...a.waiting.map((id) => ({ kind: 'waiting' as const, title: copy.waiting(flow.title(id)) })),
+    ...a.removed.map(({ work }) => ({ kind: 'removed' as const, title: copy.removed(tasks.work[work.id]) })),
+  ]
+  const line = lines[0]
+  if (!line) return null
+  // Under it, what comes next: the next task in this part, or the next part once this one is done.
+  const next = flow.focusTask?.status === 'action_required' ? flow.title(flow.focusTask.id) : finished && flow.nextStep ? steps.name[flow.nextStep.id] : undefined
+  return <Toast id={count.current} kind={line.kind} title={line.title} detail={next && copy.next(next)} onClose={() => setSeen(a)} undo={state.past.length > 0 ? { label: copy.undo, hint: copy.undoLabel, onClick: () => dispatch({ type: 'undo' }) } : undefined} />
 }

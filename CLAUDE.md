@@ -213,6 +213,7 @@ Paths:
 - **The split carries through:** every map draws it, the land list and crops show it, measures offer each part (a choice of the river field carries to both, and back), the estimate and readiness follow, all derived.
 - **Only the river field's edge moves (round 15, Aleksa):** no dragging of sides or edges for the road field, the parcel he bought or a field he adds; the land is taken whole as the record has it. The road field is where he disagrees with the government's map instead. River and road are the hero moments; check at 360 px, then 1280.
 - **New land stays small (round 13, Earl):** adding a field is its place, name and crop. It joins his land, so measures cover it like the rest; there is no measures step of its own.
+- **Drawing a field (round 20, Aleksa):** if he doesn't take registered farmland whole, he draws it: a cross marks the next corner (pan the map under it, or click with a mouse), live area and edge lengths, Create from the third corner, then corners and edge middles pull. Red: a corner off registered farmland or edges crossing; orange: it takes land he declares ("Leave it out") or is under 0.10 ha. See `docs/decisions.md` 349 to 351.
 
 ### Readiness through submit
 - Readiness is the application list itself, with a one-line verdict on every screen, text plus icon shape, announced politely.

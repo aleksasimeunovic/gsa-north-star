@@ -32,11 +32,11 @@ export function VisuallyHidden({ as: As = 'span', children }: { as?: ElementType
 
 /** Two values side by side, both kept (record vs his answer). */
 export function Compare({ items }: { items: { label: string; value: ReactNode }[] }) {
-  // One under the other, so the two values read as a before and after (last year, then the registry today).
+  // Side by side, so the two values are compared at a glance: before on the left, now on the right.
   return (
-    <dl className="grid grid-cols-1 gap-[var(--gap-inline)]">
+    <dl className="grid auto-cols-fr grid-flow-col gap-[var(--gap-inline)]">
       {items.map((i) => (
-        <div key={i.label} className="rounded-xl bg-muted px-4 py-3">
+        <div key={i.label} className="min-w-0 rounded-xl bg-muted px-4 py-3">
           <dt className="text-sm text-muted-foreground">{i.label}</dt>
           <dd className="text-lg leading-snug font-semibold [&_p]:text-sm [&_p]:font-normal">{i.value}</dd>
         </div>

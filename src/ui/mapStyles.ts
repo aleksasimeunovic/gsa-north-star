@@ -110,3 +110,24 @@ export function mapStyle(role: MapRole): Style[] {
       return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.18)' }) }), ...line(3, [10, 6])]
   }
 }
+
+/** How a field he draws reads: white while it's fine, orange while something is left to do, red where it can't be. */
+export type DrawMark = 'ok' | 'look' | 'error'
+const markColour = (mark: DrawMark, alpha = 1) =>
+  mark === 'error' ? token('--error', 'rgb(220 38 38)', alpha) : mark === 'look' ? token('--warning', 'rgb(249 115 22)', alpha) : `rgba(255,255,255,${alpha})`
+
+/**
+ * - shape: the field as it would be, filled lightly so the photo stays readable
+ * - path: the edges he has placed
+ * - band: from his last corner to the cross, and back to his first, dashed: not placed yet
+ */
+export function drawStyle(part: 'shape' | 'path' | 'band', mark: DrawMark): Style[] {
+  const colour = markColour(mark)
+  if (part === 'shape') return [new Style({ fill: new Fill({ color: markColour(mark, mark === 'ok' ? 0.18 : 0.3) }) })]
+  const width = part === 'band' ? 2 : 3
+  const dash = part === 'band' ? [8, 6] : undefined
+  return [new Style({ stroke: new Stroke({ color: halo, width: width + 3, lineDash: dash }) }), new Style({ stroke: new Stroke({ color: colour, width, lineDash: dash }) })]
+}
+
+/** The land his drawing takes from a field he already declares, veiled orange. */
+export const overlapColour = () => token('--warning', 'rgb(249 115 22)', 0.55)

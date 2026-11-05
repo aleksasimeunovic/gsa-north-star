@@ -83,19 +83,24 @@
 .answer strong { color: var(--foreground); }
 
 /* What his last answer did: one line in the lower right, above the action bar. Undo and close are the same control. */
-.toast { position: fixed; z-index: 45; right: 16px; bottom: 88px; max-width: calc(100vw - 32px); display: inline-flex; gap: var(--space-1); align-items: center; padding: 6px 6px 6px var(--space-4); border-radius: 12px; background: var(--foreground); color: #fff; box-shadow: 0 12px 32px -8px rgb(28 42 34 / 0.4); }
+.toast { position: fixed; z-index: 45; right: 16px; bottom: 88px; width: min(400px, calc(100vw - 32px)); display: flex; gap: var(--space-1); align-items: center; padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3); border-radius: 14px; background: var(--card); color: var(--foreground); border: 1px solid var(--border); box-shadow: var(--shadow-float); }
+.toast-icon { flex: none; display: inline-flex; margin-right: var(--space-2); color: var(--muted-foreground); }
+.toast-icon[data-kind='done'] { color: var(--success); }
+.toast-icon[data-kind='waiting'] { color: var(--warning); }
+.toast-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; margin: 0 var(--space-2) 0 0; }
+.toast-detail { font-size: 0.8125rem; color: var(--muted-foreground); }
 /* On a phone it sits at the top, so it never covers the action he needs next */
-@media (max-width: 639px) { .toast { top: calc(var(--topbar-h) + var(--space-1)); bottom: auto; left: 16px; right: 16px; } .toast-title { flex: 1; } }
-.toast-title { font-size: 0.875rem; font-weight: 500; margin-right: var(--space-3); }
-.toast-action { flex: none; min-width: 36px; min-height: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: none; color: #fff; font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background-color 0.15s; }
-.toast-action:hover { background: rgb(255 255 255 / 0.14); }
-.toast-action:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+@media (max-width: 639px) { .toast { top: calc(var(--topbar-h) + var(--space-1)); bottom: auto; left: 16px; right: 16px; width: auto; } }
+.toast-title { font-size: 0.9375rem; font-weight: 600; }
+.toast-action { flex: none; min-width: 36px; min-height: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: none; color: var(--foreground); font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background-color 0.15s; }
+.toast-action:hover { background: var(--hover); }
+.toast-action:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 @media (pointer: coarse) { .toast-action { min-width: 44px; min-height: 44px; } }
 @media (prefers-reduced-motion: no-preference) {
   .toast { animation: toast-in 0.25s ease-out; overflow: hidden; }
   .toast[data-leaving] { opacity: 0; translate: 0 6px; transition: opacity 0.18s, translate 0.18s; }
   /* How long it stays, as a line draining along its foot; it stops while he points at it */
-  .toast::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: rgb(255 255 255 / 0.35); transform-origin: left; animation: toast-time var(--toast-time, 4s) linear both; }
+  .toast::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--border); transform-origin: left; animation: toast-time var(--toast-time, 4s) linear both; }
   .toast[data-paused]::after { animation-play-state: paused; }
   @keyframes toast-time { from { scale: 1 1; } to { scale: 0 1; } }
   @keyframes toast-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -250,7 +255,7 @@ button.drawer-row:hover { background: var(--hover); }
 /* The tools for what he is doing: floating over the bottom of the map, always in the same place */
 .map-dock { position: absolute; z-index: 2; left: 8px; right: 8px; bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); pointer-events: none; }
 .map-dock > * { pointer-events: auto; max-width: 100%; }
-.map-dock > [aria-live] { pointer-events: none; }
+.map-dock > [aria-live] { pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-1); }
 .tool-island { display: inline-flex; align-items: center; gap: var(--gap-row); padding: 6px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow-float); }
 .tool-island[data-switch] { padding: var(--space-1); border-radius: 14px; }
 .tool { width: 72px; height: 56px; flex: none; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-row); padding: 0; border: 0; border-radius: 12px; background: none; color: var(--foreground); font: inherit; cursor: pointer; transition: background-color 0.15s; }
@@ -278,7 +283,7 @@ button.drawer-row:hover { background: var(--hover); }
 .map-status[data-error] { box-shadow: inset 0 0 0 1.5px var(--error), var(--shadow-float); }
 .map-status[data-error] svg { color: var(--error); }
 .map-status[data-info] svg { color: #fff; }
-.map-status-action { margin-left: var(--space-1); padding: 0; border: 0; background: none; color: #fff; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 32px; }
+.map-status-action { margin-left: var(--space-1); padding: 0; border: 0; background: none; color: #fff; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 32px; pointer-events: auto; }
 .map-status-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
 .effects-group { display: flex; flex-direction: column; gap: var(--space-2); }
 .effects-group h3 { margin: 0; font-size: 0.875rem; font-weight: 600; }
@@ -300,10 +305,10 @@ button.drawer-row:hover { background: var(--hover); }
 
 /* A large map with the question built in: the map fills the screen between the stepper and the action bar */
 /* The map screen is exactly the window: header, stepper, the stage filling the rest, the action bar. Nothing scrolls but the panel. */
-.page[data-screen='review'] { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding-bottom: calc(var(--bar-h) + var(--space-4)); }
-.page[data-screen='review'] .main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.page[data-screen='review'] .step { flex: 1; min-height: 0; }
-.page[data-screen='review'] .map-stage { flex: 1; min-height: 0; height: auto; }
+.page:is([data-screen='review'], [data-screen='field']) { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding-bottom: calc(var(--bar-h) + var(--space-4)); }
+.page:is([data-screen='review'], [data-screen='field']) .main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.page:is([data-screen='review'], [data-screen='field']) .step { flex: 1; min-height: 0; }
+.page:is([data-screen='review'], [data-screen='field']) .map-stage { flex: 1; min-height: 0; height: auto; }
 .map-stage { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: max(520px, calc(100dvh - var(--topbar-h) - var(--stepper-h) - var(--bar-h) - var(--space-6))); border-radius: 24px; overflow: hidden; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-card); }
 .map-stage-map { position: relative; min-height: 0; min-width: 0; }
 .map-stage-panel { display: flex; flex-direction: column; gap: var(--gap-group); min-height: 0; overflow-y: auto; padding: var(--space-6) var(--space-6) 0; border-left: 1px solid var(--border); }
@@ -312,14 +317,14 @@ button.drawer-row:hover { background: var(--hover); }
 .map-stage-panel [role='group'] > .grid { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 1023px) {
   /* Below the map on a phone: a tall map, then the panel, and the page scrolls as one, so nothing is clipped inside a small box */
-  .page[data-screen='review'] { height: auto; display: block; overflow: visible; }
+  .page:is([data-screen='review'], [data-screen='field']) { height: auto; display: block; overflow: visible; }
   .map-stage { display: flex; flex-direction: column; height: auto; }
   .map-stage-map { flex: none; height: 48dvh; min-height: 300px; }
   /* While he works on the line the map is what matters: the panel keeps to what he needs */
   .map-stage[data-working] .map-stage-map { height: 56dvh; }
   /* A question to answer: the map gives way so the answers are in view; editing gets the tall map */
   .map-stage[data-answering] .map-stage-map { height: 34dvh; min-height: 220px; }
-  .page[data-screen='review'] { --bar-h: 70px; }
+  .page:is([data-screen='review'], [data-screen='field']) { --bar-h: 70px; }
   .check-parts { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .map-stage[data-working] .review-head, .map-stage[data-working] .answer > span:first-child, .map-stage[data-working] .split-lead { display: none; }
   .split-head h2 { font-size: 1.125rem; line-height: 1.3; }
@@ -409,19 +414,23 @@ button.drawer-row:hover { background: var(--hover); }
 .records-title { margin: 0; display: flex; align-items: center; gap: var(--gap-inline); font-size: 1rem; color: var(--muted-foreground); }
 /* Rows are divided by a hairline, never shaded, so nothing reads as hover or selection. */
 .records-rows { margin: 0; display: flex; flex-direction: column; }
-.records-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--border); }
+.records-row { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 6px 0; border-top: 1px solid var(--border); }
 .records-row:first-child { border-top: 0; }
-.records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+/* Dense, like a register: the label on the left, the value on the right, where it stands under the value */
+.records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .records-text dt { font-size: 0.8125rem; color: var(--muted-foreground); }
 .records-text dd { margin: 0; }
-.records-value { font-weight: 600; }
-.records-sub { font-size: 0.875rem; color: var(--muted-foreground); }
-.goal-open { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 44px; margin: -10px 0 calc(-1 * var(--space-2)); padding: 0; border: 0; background: none; font: inherit; color: var(--foreground); font-weight: 500; text-align: left; cursor: pointer; }
-.goal-open:hover { text-decoration: underline; text-underline-offset: 4px; }
-.goal-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+.records-rows[data-dense] .records-text { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-3); row-gap: 2px; align-items: baseline; }
+.records-rows[data-dense] .records-text dd { grid-column: 2; text-align: right; justify-self: end; }
+.records-value { font-weight: 600; font-size: 0.9375rem; }
+.records-value .tabular-nums { gap: 2px; }
+.records-value button { margin: -8px -6px -8px 0; }
+.records-sub { font-size: 0.8125rem; color: var(--muted-foreground); }
+.records-all { display: flex; flex-direction: column; gap: var(--space-6); }
+.records-all .records-rows { margin-top: var(--space-1); }
 .records-text dd.goal-gain { font-size: 0.875rem; font-weight: 500; }
 .goal-section { display: flex; flex-direction: column; gap: var(--gap-text); }
-.records-pen { flex: none; width: 44px; height: 44px; margin: -6px -10px -6px 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.records-pen { flex: none; width: 40px; height: 40px; margin: -4px -10px -4px 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .records-pen:hover { border-color: var(--hover-border); color: var(--foreground); }
 .records-pen:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .records-row[data-editing] { display: block; }
@@ -495,3 +504,49 @@ button.drawer-row:hover { background: var(--hover); }
 .map-frame[data-mode='preview'] .map-date { top: auto; right: auto; bottom: 8px; left: 8px; }
 /* Keyboard focus and in-page jumps stop clear of the sticky header and stepper and the fixed action bar */
 html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padding-bottom: calc(var(--bar-h) + var(--space-4)); }
+
+/* Drawing a field: the cross where the next corner goes. White on the photo, red where a corner can't go,
+   a ring once it sits on his first corner, so he sees he can close the field. */
+.map-cross { position: relative; width: 44px; height: 44px; pointer-events: none; color: #fff; filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.9)); }
+.map-cross::before, .map-cross::after { content: ''; position: absolute; background: currentColor; }
+.map-cross::before { left: 21px; top: 0; width: 2px; height: 44px; clip-path: polygon(0 0, 100% 0, 100% 38%, 0 38%, 0 62%, 100% 62%, 100% 100%, 0 100%); }
+.map-cross::after { top: 21px; left: 0; height: 2px; width: 44px; clip-path: polygon(0 0, 38% 0, 38% 100%, 0 100%, 0 0, 62% 0, 100% 0, 100% 100%, 62% 100%); }
+.map-cross[data-state='error'] { color: var(--error); filter: drop-shadow(0 0 1.5px #fff); }
+.map-cross[data-state='snapped']::before, .map-cross[data-state='snapped']::after { box-shadow: none; }
+.map-cross[data-state='snapped'] { scale: 1.1; }
+.map-cross[data-state='closes'] { color: var(--success); filter: drop-shadow(0 0 1.5px #fff); }
+.map-cross[data-state='closes'] { background: radial-gradient(circle, transparent 11px, currentColor 11.5px, currentColor 13px, transparent 13.5px); border-radius: 50%; }
+@media (prefers-reduced-motion: no-preference) { .map-cross { transition: scale 0.12s, color 0.12s; } }
+/* A corner of a field he draws: a white dot on a dark ring, larger than a split's bend so it reads as a corner */
+.map-handle[data-vertex]::before { inset: 14px; }
+.map-handle[data-vertex]:hover::before, .map-handle[data-vertex][data-selected]::before, .map-handle[data-vertex][data-dragging]::before { inset: 12px; }
+@media (pointer: coarse) { .map-handle[data-vertex]::before { inset: 20px; } }
+/* The middle of an edge: smaller and hollow, so it reads as "pull here to bend", not as a corner */
+.map-handle[data-mid]::before { inset: 17px; background: rgb(255 255 255 / 0.55); box-shadow: 0 0 0 1.5px var(--foreground); }
+.map-handle[data-mid]:hover::before, .map-handle[data-mid][data-dragging]::before { background: #fff; }
+@media (pointer: coarse) { .map-handle[data-mid]::before { inset: 23px; } }
+/* While he pulls one point, the other middles step aside until he lets go */
+.ol-viewport[data-pulling] .map-handle[data-mid]:not([data-dragging]) { visibility: hidden; }
+/* Chips while he draws: an edge's length quietly, the area strong and in the shape's colour */
+.map-chip[data-kind='edge'] { padding: 1px 6px; font-size: 0.75rem; background: rgb(0 0 0 / 0.65); }
+.map-chip[data-kind='area-ok'] { background: #fff; color: var(--foreground); font-weight: 600; }
+.map-chip[data-kind='area-look'] { background: var(--warning); color: #fff; font-weight: 600; }
+.map-chip[data-kind='area-error'] { background: var(--error); color: #fff; font-weight: 600; }
+/* The one big button under his thumb: a corner at the cross */
+.tool-add { height: 56px; padding: 0 var(--space-5); margin-left: var(--space-1); border: 0; border-radius: 12px; background: var(--primary); color: var(--primary-foreground); font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background-color 0.15s, scale 0.12s; }
+.tool-add:hover { background: color-mix(in oklch, var(--primary) 88%, black); }
+.tool-add:active { scale: 0.96; }
+.tool-add[data-quiet] { background: var(--muted); color: var(--foreground); }
+.tool-add[aria-disabled] { background: var(--muted); color: var(--muted-foreground); cursor: not-allowed; }
+.tool-add:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.map-create { box-shadow: var(--shadow-float); }
+.map-create[aria-disabled] { cursor: not-allowed; }
+/* The live area in the panel, in the shape's colour with its word beside it on the map */
+.draw-area { margin: 0; font-family: var(--font-heading); font-size: 2rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.draw-area[data-mark='look'] { color: var(--warning-text); }
+.draw-area[data-mark='error'] { color: var(--error); }
+@media (max-width: 1023px) { .draw-area { font-size: 1.5rem; } }
+
+/* Said only where it's true: a mouse can click a corner straight onto the map */
+@media (pointer: coarse) { .fine-only { display: none; } }
+.records-rows[data-dense] .records-text dd.records-sub { grid-column: 1 / -1; justify-self: start; text-align: left; }

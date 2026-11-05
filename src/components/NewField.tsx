@@ -1,7 +1,9 @@
-import { Suspense, useEffect, useState } from 'react'
-import { bar, en, fieldEdit as copy, formatDateYear, formatHa, map, records, tasks } from '../copy/en'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { bar, drawField, en, fieldEdit as copy, formatDateYear, formatHa, map, records, tasks } from '../copy/en'
 import { CROPS, type Crop, type Polygon } from '../data/scenarios'
 import { areaWithout } from '../logic/geometry'
+import { drawnHa, type DrawContext } from '../logic/drawing'
+import { DrawIsland, useFieldDraw } from './DrawTool'
 import type { TaskId } from '../logic/application'
 import type { Item } from '../logic/status'
 import type { NewField } from '../state/actions'
@@ -122,7 +124,7 @@ export function AddedBody({ id }: { id: string }) {
   )
 }
 
-type Stage = 'place' | 'yard' | 'details'
+type Stage = 'place' | 'draw' | 'yard' | 'details'
 
 /**
  * Adding a field on the satellite photo, the land taken whole as the record has it: where it is (the parcel
@@ -136,8 +138,18 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const isBought = id === 'bought'
   const [landId, setLandId] = useState<string | null>(existing?.landId ?? (isBought ? 'bought' : null))
   const land = landId === 'bought' ? s.bought! : s.otherLand.find((l) => l.id === landId)
-  const polygon = existing?.polygon ?? land?.polygon
-  const recordHa = land?.areaHa ?? existing?.areaHa ?? 0
+  // A field he draws can go on any registered farmland, his own fields included, but can't take land he declares.
+  const ctx = useMemo<DrawContext>(() => {
+    const others = state.answers.newFields.filter((f) => f.id !== existing?.id)
+    return {
+      farmland: [...s.otherLand.map((l) => l.polygon), ...s.fields.flatMap((f) => [f.polygon, ...(f.land ? [f.land] : [])]), ...(s.bought ? [s.bought.polygon] : [])],
+      fields: [...s.fields.map((f) => ({ name: en.fields[f.id], polygon: f.polygon })), ...others.map((f) => ({ name: f.name, polygon: f.polygon }))],
+    }
+  }, [s, state.answers.newFields, existing?.id])
+  const d = useFieldDraw(ctx, existing?.landId === 'drawn' ? existing.polygon : undefined)
+  const drawing = landId === 'drawn'
+  const polygon = drawing ? (d.closed ? d.corners : undefined) : (existing?.polygon ?? land?.polygon)
+  const recordHa = drawing ? drawnHa(d.corners) : (land?.areaHa ?? existing?.areaHa ?? 0)
   // A house the photo shows on the parcel he bought: GSA's outline, or the one he saved.
   const yardStart = landId === 'bought' ? (existing?.yard ?? s.bought?.yard) : undefined
   const yd = useYardDraft(polygon ?? [], recordHa, yardStart ?? [])
@@ -145,13 +157,17 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const yard = yardStart && leftOut ? yd.yard : undefined
   const areaHa = polygon ? areaWithout(polygon, recordHa, yard) : 0
   const [stage, setStage] = useState<Stage>(polygon ? (yardStart ? 'yard' : 'details') : 'place')
+  const toDraw = () => {
+    setLandId('drawn')
+    setStage('draw')
+  }
   const [name, setName] = useState(existing?.name ?? '')
   const [nameError, setNameError] = useState<string>()
   const [cropError, setCropError] = useState<string>()
   const [crop, setCrop] = useState<Crop | null>(existing?.crop ?? null)
-  // With the land already known, there is no place to pick.
-  const of = 2
-  const step = stage === 'place' ? 1 : 2
+  // With the land already known, there is no place to pick; a field he draws has the drawing as its own step.
+  const of = drawing ? 3 : 2
+  const step = stage === 'place' ? 1 : stage === 'draw' || !drawing ? 2 : 3
   const title = existing?.name ?? (isBought ? tasks.title.field_bought : copy.yourField)
   const back = () => go('welcome')
 
@@ -159,7 +175,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
     window.scrollTo(0, 0)
     document.querySelector('.map-stage-panel')?.scrollTo(0, 0)
     document.getElementById('field-title')?.focus({ preventScroll: true })
-  }, [stage, yd.editing])
+  }, [stage, yd.editing, d.closed])
 
   // On a keyboard, undo and redo work as everywhere else while he edits the yard.
   useEffect(() => {
@@ -176,7 +192,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   })
 
   const save = (shape: Polygon) => {
-    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, areaHa, name: name.trim(), crop: crop!, ...(yard ? { yard } : {}) }
+    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, areaHa: drawing ? drawnHa(shape) : areaHa, name: name.trim(), crop: crop!, ...(yard ? { yard } : {}) }
     dispatch({ type: 'save_field', field })
     const task: TaskId = isBought ? 'field_bought' : `added_${field.id}`
     go('welcome')
@@ -186,8 +202,10 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const head = (
     <header className="review-head">
       {!(isBought || existing) && <p className="hint">{copy.step(step, of)}</p>}
-      <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}</h2>
-      {polygon && <p className="hint">{yard ? copy.yard.without(formatHa(areaHa)) : formatHa(areaHa)}</p>}
+      <h2 id="field-title" tabIndex={-1}>
+        {stage === 'place' ? copy.place : stage === 'draw' ? (d.closed ? drawField.editTitle : drawField.title) : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}
+      </h2>
+      {polygon && stage !== 'draw' && <p className="hint">{yard ? copy.yard.without(formatHa(areaHa)) : formatHa(areaHa)}</p>}
     </header>
   )
 
@@ -242,9 +260,57 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
     </MapStage>
   )
 
+  // Drawing it corner by corner, then pulling its edges into place.
+  const drawStage = stage === 'draw' && (
+    <MapStage
+      key="draw"
+      label={title}
+      working
+      map={
+        <Suspense fallback={<MapFallback mode="explore" fill />}>
+          <FarmMap
+            scenario={s}
+            mode="explore"
+            fill
+            label={`${map.title}: ${drawField.title}`}
+            lands={s.otherLand.map((l) => ({ id: l.id, polygon: l.polygon, label: '' }))}
+            skip={existing?.id}
+            draw={{ d, fields: ctx.fields.map((f) => f.polygon) }}
+            dock={<DrawIsland d={d} onCreate={d.close} />}
+          />
+        </Suspense>
+      }
+    >
+      {head}
+      {/* The area, always measured: what he has, or what he would have with a corner at the cross. */}
+      {d.preview.length >= 3 && (
+        <p className="draw-area" data-mark={d.mark} aria-hidden="true">
+          {formatHa(d.areaHa)}
+        </p>
+      )}
+      <Text variant="secondary">{d.closed ? drawField.editHint : d.corners.length === 0 ? <>{drawField.start} <span className="fine-only">{drawField.startMouse}</span></> : d.corners.length < 3 ? drawField.next : drawField.three}</Text>
+      <StageAction>
+        <Inline>
+          <Button onClick={() => (d.closed && !existing ? d.undo() : setStage(existing ? 'details' : 'place'))}>
+            <Icon name="back" size="sm" />
+            {bar.back}
+          </Button>
+          {d.closed && (
+            <Button variant="primary" aria-disabled={!!d.issues.length || undefined} onClick={() => !d.issues.length && setStage('details')}>
+              {drawField.continue}
+              <Icon name="forward" size="sm" />
+            </Button>
+          )}
+        </Inline>
+      </StageAction>
+    </MapStage>
+  )
+
   return (
     <>
-      {yardStage ? (
+      {drawStage ? (
+        drawStage
+      ) : yardStage ? (
         yardStage
       ) : polygon ? (
         <MapStage
@@ -272,6 +338,11 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
             >
               <Field label={copy.name} hint={copy.nameHint} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
               <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} error={cropError} onChange={(c) => { setCrop(c); setCropError(undefined) }} />
+              {drawing && (
+                <div>
+                  <Button variant="link" onClick={() => setStage('draw')}>{copy.edges}</Button>
+                </div>
+              )}
               {existing && !isBought && (
                 <div>
                   <Button
@@ -296,6 +367,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                   {!(isBought || existing) && (
                     <Button
                       onClick={() => {
+                        if (drawing) return setStage('draw')
                         setLandId(null)
                         setStage('place')
                       }}
@@ -344,6 +416,11 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                   {copy.landChoice(copy.landNames[l.id] ?? copy.landLabel, formatHa(l.areaHa))}
                 </Button>
               ))}
+              {/* Only part of it, or somewhere else: he draws it himself. */}
+              <Button variant="choice" onClick={toDraw}>
+                <Icon name="edit" size="sm" />
+                {copy.draw}
+              </Button>
             </div>
           </StageAction>
         </MapStage>

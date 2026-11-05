@@ -105,7 +105,7 @@ const closestOnSegment = (p: Point, a: Point, b: Point): { point: Point; t: numb
 export const nearestOnLine = (line: SplitLine, p: Point): Point => closestOnPath(p, line).point
 
 /** The nearest place on a chain of segments. */
-function closestOnPath(p: Point, path: Point[]) {
+export function closestOnPath(p: Point, path: Point[]) {
   let best = { ...closestOnSegment(p, path[0], path[1]), segment: 0 }
   for (let i = 1; i < path.length - 1; i++) {
     const c = closestOnSegment(p, path[i], path[i + 1])
@@ -169,7 +169,7 @@ export function splitField(poly: Polygon, line: SplitLine, wholeHa = polygonArea
 }
 
 const cross = (a: Point, b: Point, c: Point) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
-const segmentsCross = (a: Point, b: Point, c: Point, d: Point) =>
+export const segmentsCross = (a: Point, b: Point, c: Point, d: Point) =>
   cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0
 
 export type LineProblem = 'crosses_itself' | 'too_small' | 'leaves_field'

@@ -141,7 +141,10 @@ export interface GeneralData {
   holder: string
   place: string
   /** The farm account payments go to. The bank reported it closed and a new one open in his name. */
-  account: { ending: string; closedOn: string; newEnding: string } | null
+  account: { ending: string; closedOn: string; newEnding: string; number: string; newNumber: string } | null
+  /** More of what the farm register holds about him, for his records (prototype placeholders). */
+  farmNumber: string
+  phone: string
 }
 
 export type ScenarioId = 'second_year'
@@ -302,7 +305,10 @@ const BASE: Scenario = {
   generalData: {
     holder: 'Milan Dragović',
     place: 'Bečanj, near Čačak',
-    account: { ending: '0417', closedOn: '2026-03-03', newEnding: '2291' },
+    // Prototype placeholders: 18-digit accounts ending in the digits the bank reported.
+    account: { ending: '0417', closedOn: '2026-03-03', newEnding: '2291', number: '205-0000000033304-17', newNumber: '160-0000000452922-91' },
+    farmNumber: '714882',
+    phone: '064 123 4567',
   },
   place: { lon: 20.55172, lat: 43.86748, rotationDeg: 12.5 },
   herd: HERD,
