@@ -417,3 +417,5 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 336. **Compared values sit one under the other** (last year, then the registry today; the old account, then the new one), so they read as before and after. Rejected: side by side.
 337. **Progress bars fill in the primary green, and the part's bar says "x/y" beside it**, so how far he is reads at a glance. An exception to green only on the primary action, at Aleksa's request.
 338. **Headings are now Domine** (Google Fonts, weight 600); body stays Inter. Rejected: Source Serif 4 (Aleksa asked for Domine).
+339. **Waiting for a check uses the same orange warning sign as the readiness drawer** in the part outline, stepper and badges (was an amber clock). One sign for "look at this" everywhere. Rejected: a clock for waiting (two signs for one meaning).
+340. **Leaving out a yard inside a field is a change task GSA raises from the photo, confirmed first and edited with the divider's tools**, explored in `docs/cut-out-exploration.md`, not built: no building sits inside any of Milan's fields on the real photo. Rejected: a hole-drawing tool on the island (a GIS tool he has to find).
