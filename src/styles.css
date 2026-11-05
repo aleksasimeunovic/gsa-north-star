@@ -153,7 +153,7 @@ button.drawer-row:hover { background: var(--hover); }
 .drawer-mark { display: inline-flex; margin-top: 2px; }
 .drawer-mark[data-severity='error'] { color: var(--error); }
 .drawer-mark[data-severity='look'] { color: var(--warning); }
-.drawer-mark[data-severity='todo'] { color: var(--muted-foreground); }
+.drawer-mark[data-severity='todo'] { color: var(--warning); }
 .drawer-mark[data-severity='info'] { color: var(--info); }
 .item-list { list-style: none; padding: 0; margin: var(--space-2) 0 0; display: flex; flex-direction: column; gap: var(--gap-item); }
 

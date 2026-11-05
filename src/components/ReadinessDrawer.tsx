@@ -9,7 +9,7 @@ import { readinessCount } from './ReadinessBar'
 import { taskSummary } from './TaskBodies'
 import { taskTitle } from './useApplicationFlow'
 
-const ICON = { error: 'error', todo: 'todo', look: 'warning', info: 'info', done: 'complete' } as const
+const ICON = { error: 'error', todo: 'warning', look: 'warning', info: 'info', done: 'complete' } as const
 const KIND = { ...en.readiness.group, done: en.mark.done }
 
 /**

@@ -2,8 +2,8 @@ import type { Source } from '../logic/farm'
 import { cn } from '../lib/utils'
 import { Icon } from './Icon'
 
-const ICON = { records: 'todo', confirmed: 'complete', checking: 'warning' } as const
-const TONE: Record<Source, string> = { records: 'text-muted-foreground', confirmed: 'text-success font-medium', checking: 'text-warning-text [&_svg]:text-warning' }
+const ICON = { records: 'warning', confirmed: 'complete', checking: 'warning' } as const
+const TONE: Record<Source, string> = { records: 'text-muted-foreground [&_svg]:text-warning', confirmed: 'text-success font-medium', checking: 'text-warning-text [&_svg]:text-warning' }
 
 /** Where a fact stands: text plus an icon shape, never colour alone. */
 export function SourceTag({ source, children }: { source: Source; children: string }) {
