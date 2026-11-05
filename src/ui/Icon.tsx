@@ -1,7 +1,7 @@
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Copy, CircleAlert, CircleCheck,
+  ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Baby, Beef, Calendar, Check, Circle, CheckCircle2, ChevronDown, ChevronRight, Copy, CircleAlert, CircleCheck,
   CircleX, Clock, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, LocateFixed, Magnet, Map, Minus,
-  PencilLine, PiggyBank, Plus, Receipt, Redo2, RotateCcw, Satellite, Send, Slash, SlidersHorizontal, Sprout, Target, TriangleAlert, Undo2, Upload, Wheat, X, type LucideIcon,
+  PencilLine, PiggyBank, Plus, Receipt, Redo2, RotateCcw, Satellite, Send, Slash, SlidersHorizontal, Sprout, Target, Undo2, Upload, Wheat, X, type LucideIcon,
 } from 'lucide-react'
 import { useDensity } from './Density'
 
@@ -26,8 +26,8 @@ const ICONS = {
   yes: CircleCheck,
   no: CircleX,
   check: Check,
-  // Still to do: a warning sign in neutral grey, so it reads as needing him without reading as an error.
-  todo: TriangleAlert,
+  // Still to do: an empty circle in neutral grey. The warning sign is only ever the orange one: look at this.
+  todo: Circle,
   now: ArrowRight,
   back: ArrowLeft,
   forward: ArrowRight,

@@ -397,7 +397,7 @@ button.drawer-row:hover { background: var(--hover); }
 .records-title { margin: 0; display: flex; align-items: center; gap: var(--gap-inline); font-size: 1rem; color: var(--muted-foreground); }
 /* Rows are divided by a hairline, never shaded, so nothing reads as hover or selection. */
 .records-rows { margin: 0; display: flex; flex-direction: column; }
-.records-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--border); }
+.records-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--border); }
 .records-row:first-child { border-top: 0; }
 .records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
 .records-text dt { font-size: 0.8125rem; color: var(--muted-foreground); }
@@ -409,7 +409,7 @@ button.drawer-row:hover { background: var(--hover); }
 .goal-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
 .records-text dd.goal-gain { font-size: 0.875rem; font-weight: 500; }
 .goal-section { display: flex; flex-direction: column; gap: var(--gap-text); }
-.records-pen { flex: none; width: 44px; height: 44px; margin: -6px -10px 0 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.records-pen { flex: none; width: 44px; height: 44px; margin: -6px -10px -6px 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .records-pen:hover { border-color: var(--hover-border); color: var(--foreground); }
 .records-pen:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .records-row[data-editing] { display: block; }
