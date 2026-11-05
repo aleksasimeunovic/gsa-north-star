@@ -70,7 +70,7 @@ export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) =
             </Button>
           )}
           {full && (
-            <Button ref={opener} variant="ghost" className="w-full" onClick={() => setAll(true)}>
+            <Button ref={opener} className="w-full" onClick={() => setAll(true)}>
               {copy.more[kind]} <Icon name="disclose" size="sm" />
             </Button>
           )}
@@ -129,42 +129,40 @@ function Row({ row, onOpen }: { row: RecordRow; onOpen: (id: TaskId) => void }) 
   const pen = () => (!e ? undefined : 'open' in e ? onOpen(e.open) : 'screen' in e ? go(...(e.screen.split('/') as [string, string])) : setEditing(true))
   return (
     <div className="records-row" data-parts={row.lines ? '' : undefined}>
-      <div className="records-text">
-        <div className="records-head">
-          <dt>{row.label}</dt>
-          <dd className="records-value">{row.show ?? row.value}</dd>
-        </div>
-        {!!row.lines?.length && (
-          <dd>
-            <ul className="records-lines">
-              {row.lines.map((l) => (
-                <li key={l.label}>
-                  <span>{l.label}</span>
-                  {l.value && <span className="records-line-value">{l.value}</span>}
-                </li>
-              ))}
-            </ul>
-          </dd>
-        )}
-        {row.sub && <dd className="records-sub">{row.sub}</dd>}
-        {row.problem && (
-          <dd className="records-problem">
-            <Icon name="error" size="sm" /> {row.problem}
-          </dd>
-        )}
+      {/* First line: what it is, and where it stands. Second: the value, and the pen that changes it. */}
+      <div className="records-head">
+        <dt>{row.label}</dt>
         {row.source && (
           <dd>
             <SourceTag source={row.source}>{copy.state[row.source]}</SourceTag>
           </dd>
         )}
       </div>
-      {/* Every row keeps the pen's column, so values end on one line whether or not they can be changed. */}
-      {e ? (
-        <button type="button" className="records-pen" onClick={pen} aria-label={copy.edit(row.label)} title={copy.edit(row.label)}>
-          <Icon name="edit" size="sm" />
-        </button>
-      ) : (
-        <span className="records-pen" data-empty aria-hidden="true" />
+      <div className="records-main">
+        <dd className="records-value">{row.show ?? row.value}</dd>
+        {e && (
+          <button type="button" className="records-pen" onClick={pen} aria-label={copy.edit(row.label)} title={copy.edit(row.label)}>
+            <Icon name="edit" size="sm" />
+          </button>
+        )}
+      </div>
+      {!!row.lines?.length && (
+        <dd>
+          <ul className="records-lines">
+            {row.lines.map((l) => (
+              <li key={l.label}>
+                <span>{l.label}</span>
+                {l.value && <span className="records-line-value">{l.value}</span>}
+              </li>
+            ))}
+          </ul>
+        </dd>
+      )}
+      {row.sub && <dd className="records-sub">{row.sub}</dd>}
+      {row.problem && (
+        <dd className="records-problem">
+          <Icon name="error" size="sm" /> {row.problem}
+        </dd>
       )}
     </div>
   )
@@ -371,7 +369,7 @@ export function detailRows(derived: Derived, a: State['answers']): RecordRow[] {
       key: 'bank',
       label: tasks.title.bank,
       value: tasks.bank.ending(number.replace(/\D/g, '').slice(-4)),
-      show: <Account number={number} eyeFirst />,
+      show: <Account number={number} />,
       source: bank?.status === 'complete' ? 'confirmed' : 'records',
       edit: { open: 'bank' },
     })
