@@ -76,7 +76,7 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
         )}
         {/* What Milan sees on his item: the same status signal and words as his application. */}
         {herd && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-[var(--gap-inline)]">
             <Text variant="small">{advisor.inApp}</Text>
             <StatusBadge mark={markOf(herd)} />
             <Text variant="small">{taskSummary('herd', derived, state)}</Text>
@@ -84,7 +84,7 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
         )}
         {/* The likely next step is primary: an official record goes to its owner; the owner's decision resolves it. */}
         {c.state === 'waiting_office' ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-[var(--gap-inline)]">
             <Text variant="strong">{advisor.act.decided(office)}</Text>
             <Inline>
               {(['changed', 'kept'] as const).map((o) => (

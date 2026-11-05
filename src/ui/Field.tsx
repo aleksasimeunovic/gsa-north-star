@@ -32,7 +32,7 @@ export function Field(props: InputProps | TextareaProps) {
       <Label htmlFor={id} className="text-base">{label}</Label>
       {hint && <span id={`${id}-hint`} className="text-sm text-muted-foreground">{hint}</span>}
       {error && (
-        <span id={`${id}-error`} className="flex items-center gap-1.5 text-sm font-medium text-destructive" role="alert">
+        <span id={`${id}-error`} className="flex items-center gap-[var(--gap-inline)] text-sm font-medium text-destructive" role="alert">
           <Icon name="error" size="sm" />
           {error}
         </span>

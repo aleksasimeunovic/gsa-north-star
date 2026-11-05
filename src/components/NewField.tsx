@@ -331,7 +331,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
           {head}
           <Text>{copy.placeHint}</Text>
           <StageAction>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-[var(--gap-inline)]">
               {s.otherLand.map((l) => (
                 <Button
                   key={l.id}

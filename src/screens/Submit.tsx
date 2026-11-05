@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { bar, en, finish } from '../copy/en'
+import { bar, finish } from '../copy/en'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
-import { ActionPoints } from '../components/ReadinessDrawer'
-import { FarmPicture } from '../components/FarmPicture'
+import { PartSummary } from '../components/PartSummary'
 import { UnchangedReview } from '../components/UnchangedReview'
 import type { Flow } from '../components/useApplicationFlow'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
@@ -14,9 +13,8 @@ import { Checkbox } from '../ui/Checkbox'
 import { Stack } from '../ui/Layout'
 
 /**
- * The last part: whether he can submit, only what to fix or look at (the stepper already shows the rest),
- * his farm as he is about to declare it and the estimate, then an unambiguous submission: what the state
- * still checks, the declaration, one primary action.
+ * The last part: his application part by part, with what is left to do inside each part, the estimate and
+ * what GSA reused, then an unambiguous submission: what the state still checks, the declaration, one primary action.
  */
 export function SubmitStep({ flow }: { flow: Flow }) {
   const { derived, state, dispatch, go } = useApp()
@@ -29,15 +27,8 @@ export function SubmitStep({ flow }: { flow: Flow }) {
 
   return (
     <Stack gap="lg">
-      {(left.length > 0 || derived.report.warnings.length > 0 || derived.report.errors.length > 0) && (
-        <section className="action-points" aria-label={finish.submit.blockedTitle}>
-          <h3 className="group-title">{left.length > 0 ? finish.submit.blockedTitle : en.readiness.group.look}</h3>
-          <ActionPoints onPick={goTo} todo />
-        </section>
-      )}
-
       <div className="submit-picture">
-        <FarmPicture detailed />
+        <PartSummary onPick={goTo} />
         <div className="submit-side">
           <EstimateBlock />
           <UnchangedReview />

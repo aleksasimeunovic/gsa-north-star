@@ -83,10 +83,13 @@
   --space-8: 32px;
   --space-10: 40px;
   /*
-   * Gaps by relation, so the same relation looks the same on every screen:
-   * text: a title and the text it introduces. label: a label and its control. inline: an icon and its words.
-   * item: rows in a list. group: groups in a block. section: the parts of a card or a page.
+   * Gaps by relation, so the same relation looks the same on every screen. From closest to furthest:
+   * row: rows of a list that each have their own hover, almost touching. text: a title and the text it introduces.
+   * label: a label and its control. inline: an icon and its words, buttons side by side. item: rows or options
+   * in a list. group: groups in a block. section: the parts of a card or a page.
+   * Padding inside a surface uses --stage-pad, --panel-pad or the --space-* scale.
    */
+  --gap-row: 2px;
   --gap-text: 6px;
   --gap-label: var(--space-2);
   --gap-inline: var(--space-2);

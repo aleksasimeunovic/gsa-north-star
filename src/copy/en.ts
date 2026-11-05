@@ -584,7 +584,6 @@ export const split = {
 export const finish = {
   submit: {
     readyTitle: 'Ready to submit. The state still checks:',
-    blockedTitle: 'Not ready to submit yet',
     goTo: (what: string) => `Go to: ${what}`,
     awaitingNote: 'You can still submit',
     checks: {
@@ -807,21 +806,3 @@ export const bar = {
   next: (task: string) => `Next: ${task}`,
 }
 
-/** His farm as GSA knows it now, updated by every answer. */
-export const farm = {
-  title: 'Your farm this year',
-  fields: 'Fields',
-  cattleLabel: 'Cattle',
-  pigsLabel: 'Pigs',
-  measures: 'Measures',
-  landValue: (ha: string, n: number) => `${ha} in ${n} fields`,
-  crop: (crop: string, ha: string) => `${crop} ${ha}`,
-  cattle: (n: number) => `${n} cattle`,
-  cattleChecking: (his: number, reg: number) => `${his} cattle. The animal registry checks it, and its ${reg} counts until then`,
-  pigs: (n: number) => `${n} pigs`,
-  pigsHousehold: (n: number) => `${n} pigs for the household`,
-  measuresValue: (n: number, fit: number) => `${n} of ${fit} you can apply for`,
-  source: records.state,
-  partly: (n: number, of: number) => `${n} of ${of} confirmed by you`,
-  details: 'See each part',
-}

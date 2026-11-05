@@ -14,10 +14,10 @@ export function Select({ id: given, label, options, placeholder, error, ...rest 
   const own = useId()
   const id = given ?? own
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-[var(--gap-label)]">
       <Label htmlFor={id} className="text-base">{label}</Label>
       {error && (
-        <span id={`${id}-error`} className="flex items-center gap-1.5 text-sm font-medium text-destructive" role="alert">
+        <span id={`${id}-error`} className="flex items-center gap-[var(--gap-inline)] text-sm font-medium text-destructive" role="alert">
           <Icon name="error" size="sm" />
           {error}
         </span>

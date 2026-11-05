@@ -7,7 +7,7 @@ export function Disclosure({ label, children, open, onOpenChange }: { label: str
   const [own, setOwn] = useState(false)
   return (
     <Collapsible open={open ?? own} onOpenChange={onOpenChange ?? setOwn}>
-      <CollapsibleTrigger className="group inline-flex min-h-11 cursor-pointer items-center gap-2 text-left font-medium text-foreground">
+      <CollapsibleTrigger className="group inline-flex min-h-11 cursor-pointer items-center gap-[var(--gap-inline)] text-left font-medium text-foreground">
         <span className="text-muted-foreground transition-transform group-data-[state=open]:rotate-90">
           <Icon name="disclose" />
         </span>

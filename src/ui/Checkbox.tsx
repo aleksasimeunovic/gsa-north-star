@@ -16,22 +16,22 @@ export function Checkbox({ id: given, label, hint, checked, error, invalid, onCh
     <label
       htmlFor={id}
       className={cn(
-        'flex cursor-pointer items-start gap-3',
+        'flex cursor-pointer items-start gap-[var(--gap-inline)]',
         compact ? 'min-h-8 py-1' : 'min-h-11 py-2',
         card && 'rounded-xl border bg-card px-4 py-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/50',
         card && (invalid || error) && 'border-error',
       )}
     >
       <Base id={id} checked={checked} aria-invalid={!!error || invalid || undefined} aria-describedby={[hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined} onCheckedChange={(v) => onChange(v === true)} className="mt-0.5" />
-      <span className="flex flex-col gap-0.5">
+      <span className="flex flex-col gap-[var(--gap-text)]">
         <span className="font-medium leading-snug">{label}</span>
         {hint && (
-          <span id={`${id}-hint`} className="flex flex-col gap-0.5 text-sm text-muted-foreground">
+          <span id={`${id}-hint`} className="flex flex-col gap-[var(--gap-row)] text-sm text-muted-foreground">
             {hint}
           </span>
         )}
         {error && (
-          <span id={`${id}-error`} role="alert" className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+          <span id={`${id}-error`} role="alert" className="flex items-center gap-[var(--gap-inline)] text-sm font-medium text-destructive">
             <Icon name="error" size="sm" />
             {error}
           </span>
@@ -44,10 +44,10 @@ export function Checkbox({ id: given, label, hint, checked, error, invalid, onCh
 /** Several checkboxes answering one question. */
 export function CheckboxGroup({ legend, options, value, error, onChange }: { legend: string; options: { value: string; label: string }[]; value: string[]; error?: string; onChange: (v: string[]) => void }) {
   return (
-    <fieldset className="flex min-w-0 flex-col gap-2" aria-invalid={!!error || undefined}>
+    <fieldset className="flex min-w-0 flex-col gap-[var(--gap-label)]" aria-invalid={!!error || undefined}>
       <legend className="mb-2 font-medium">{legend}</legend>
       {error && (
-        <span className="flex items-center gap-1.5 text-sm font-medium text-destructive" role="alert">
+        <span className="flex items-center gap-[var(--gap-inline)] text-sm font-medium text-destructive" role="alert">
           <Icon name="error" size="sm" />
           {error}
         </span>

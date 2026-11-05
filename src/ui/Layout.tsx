@@ -1,15 +1,23 @@
 import type { ElementType, ReactNode } from 'react'
 import { cn } from '../lib/utils'
 
-// sm and md for items, group for groups in a block, section for the parts of a task (map, what GSA reads, the action).
-const GAP = { sm: 'gap-2', md: 'gap-4', lg: 'gap-8', group: 'gap-[var(--gap-group)]', section: 'gap-[var(--gap-section)]' }
+// By relation (index.css): text, sm (inline), item, md and group, lg and section. Never a bare number.
+const GAP = {
+  text: 'gap-[var(--gap-text)]',
+  sm: 'gap-[var(--gap-inline)]',
+  item: 'gap-[var(--gap-item)]',
+  md: 'gap-[var(--gap-group)]',
+  group: 'gap-[var(--gap-group)]',
+  lg: 'gap-[var(--gap-section)]',
+  section: 'gap-[var(--gap-section)]',
+}
 
 export function Stack({ gap = 'md', as: As = 'div', children }: { gap?: keyof typeof GAP; as?: ElementType; children: ReactNode }) {
   return <As className={cn('flex flex-col', GAP[gap])}>{children}</As>
 }
 
 export function Inline({ children }: { children: ReactNode }) {
-  return <div className="flex flex-wrap items-center gap-2">{children}</div>
+  return <div className="flex flex-wrap items-center gap-[var(--gap-inline)]">{children}</div>
 }
 
 const TEXT = { body: '', secondary: 'text-muted-foreground', small: 'text-sm text-muted-foreground', strong: 'font-semibold' }
@@ -26,7 +34,7 @@ export function VisuallyHidden({ as: As = 'span', children }: { as?: ElementType
 export function Compare({ items }: { items: { label: string; value: ReactNode }[] }) {
   // One under the other, so the two values read as a before and after (last year, then the registry today).
   return (
-    <dl className="grid grid-cols-1 gap-2">
+    <dl className="grid grid-cols-1 gap-[var(--gap-inline)]">
       {items.map((i) => (
         <div key={i.label} className="rounded-xl bg-muted px-4 py-3">
           <dt className="text-sm text-muted-foreground">{i.label}</dt>

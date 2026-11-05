@@ -9,7 +9,7 @@ export function FileInput({ label, hint, invalid, onFile }: { label: string; hin
     <label
       htmlFor={id}
       className={cn(
-        'flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-input bg-muted/60 px-4 py-6 text-center transition-colors hover:border-ring hover:bg-hover focus-within:ring-[3px] focus-within:ring-ring/40',
+        'flex cursor-pointer flex-col items-center gap-[var(--gap-inline)] rounded-xl border border-dashed border-input bg-muted/60 px-4 py-6 text-center transition-colors hover:border-ring hover:bg-hover focus-within:ring-[3px] focus-within:ring-ring/40',
         invalid && 'border-error bg-error-surface',
       )}
     >

@@ -26,13 +26,13 @@ export function RadioGroup<T extends string>({ legend, hint, options, value, onC
   const id = useId()
   const compact = useDensity() === 'compact'
   return (
-    <div role="group" aria-labelledby={`${id}-legend`} className="flex min-w-0 flex-col gap-3">
+    <div role="group" aria-labelledby={`${id}-legend`} className="flex min-w-0 flex-col gap-[var(--gap-item)]">
       <p id={`${id}-legend`} className="text-base font-semibold">
         {legend}
         {hint && <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{hint}</span>}
       </p>
       {error && (
-        <span role="alert" className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+        <span role="alert" className="flex items-center gap-[var(--gap-inline)] text-sm font-medium text-destructive">
           <Icon name="error" size="sm" />
           {error}
         </span>
@@ -43,7 +43,7 @@ export function RadioGroup<T extends string>({ legend, hint, options, value, onC
             key={o.value}
             htmlFor={`${id}-${o.value}`}
             className={cn(
-              'flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/50',
+              'flex cursor-pointer items-center gap-[var(--gap-inline)] rounded-xl border bg-card px-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/50',
               compact ? 'min-h-9 py-2' : 'min-h-14 py-3',
             )}
           >

@@ -191,7 +191,7 @@ Earl: one connected experience, not separate features. How the application chang
 - **Progressive disclosure:** only the open part is shown; detail opens on request.
 - Each change is asked as GSA's best guess from a record, so the usual answer is one tap.
 - After each decision, the next action takes the top slot, done work collapses, and unneeded work leaves with a one-line reason (a toast, with Undo). This visible change is the defining interaction. Announced with `aria-live`.
-- **"Your farm this year", the estimate and "Unchanged since last year" are on Check and submit.** The farm shows every part and where it stands ("Unconfirmed", "Confirmed by you", "Waiting for a check"). He cares whether a line is true, not where it came from, except the date of the photo, which is on every map.
+- **The Summary shows the application part by part (5 Nov, Aleksa), with the estimate and "Unchanged since last year" beside it.** Each part says where it stands, then what is left there as the thing to do (to fix, to do, to look at), each leading to it, then what he declared. There is no separate "Not ready" panel and no "Your farm this year". He cares whether a line is true, not where it came from, except the date of the photo, which is on every map.
 - The estimate is a separate block, never mixed with status, in three states (pure, tested): **no basis yet** (no number; "Your estimate appears once you choose your measures"), **provisional** (amount and what it waits for), **current** (amount and caveat). Never "About 0 dinars".
 
 ### Change cards: evidence before the question
