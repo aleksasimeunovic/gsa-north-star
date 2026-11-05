@@ -438,3 +438,7 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 357. **Buttons say one word where one is enough**: Save, Send, Renew, Submit, Amend, Confirm, Continue, Change, Remove.
 358. **The cattle count's Save sits right under the field, never pinned over it**, so the field is never cut off (also Jelena's reply).
 359. `src/copy/en.ts`: 4,852 to 5,176 words (`wc -w`): the drawing flow and the ten records add words this round.
+360. **"Farmer's data" is only his details, on the first part.** Each part has its own widget in its own shape: Your animals, Your fields, Your documents. Rejected: one "Farmer's data" title on every part (fields and animals aren't his personal data).
+361. **A line is shaped by its content.** A short fact reads label left, value right. Something made of parts (a field) puts its name and the area that counts on the first line, then each crop and its area on its own line, then a few words for a check ("You say 1.80 ha"), then its state. Rejected: one long sentence as the value ("Sunflowers 1.20 ha, wheat 1.20 ha. The land registry checks…"), repeated as a sub-line, which squeezed the name into a corner.
+362. **Each part's side panel holds everything about it**: More data (his details, with farm number and phone), All about your animals (last year, registry today, his number), All your fields (every field with its crops, and all his land in total), All your files (each receipt with its date and what's wrong). Measures has none.
+363. **The Land part counts "parcels to resolve"**, not "fields to go".

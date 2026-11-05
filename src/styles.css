@@ -414,14 +414,22 @@ button.drawer-row:hover { background: var(--hover); }
 .records-title { margin: 0; display: flex; align-items: center; gap: var(--gap-inline); font-size: 1rem; color: var(--muted-foreground); }
 /* Rows are divided by a hairline, never shaded, so nothing reads as hover or selection. */
 .records-rows { margin: 0; display: flex; flex-direction: column; }
-.records-row { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 6px 0; border-top: 1px solid var(--border); }
+.records-row { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: var(--space-2) 0; border-top: 1px solid var(--border); }
 .records-row:first-child { border-top: 0; }
 /* Dense, like a register: the label on the left, the value on the right, where it stands under the value */
-.records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.records-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* A short fact: label left, value right on one line; a long value wraps under itself, never under the label */
+.records-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.records-head dt { flex: 0 1 auto; min-width: 5.5rem; }
+.records-head .records-value { flex: 0 1 auto; min-width: 0; text-align: right; overflow-wrap: anywhere; }
+/* Something made of parts: its name reads as the row's title, each part on its own line under it */
+.records-row[data-parts] .records-head dt { font-size: 0.9375rem; font-weight: 600; color: var(--foreground); }
+.records-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.8125rem; color: var(--muted-foreground); }
+.records-lines li { display: flex; justify-content: space-between; gap: var(--space-3); }
+.records-line-value { font-variant-numeric: tabular-nums; color: var(--foreground); }
+.records-problem { display: flex; align-items: center; gap: var(--space-1); font-size: 0.8125rem; font-weight: 500; color: var(--error); }
 .records-text dt { font-size: 0.8125rem; color: var(--muted-foreground); }
 .records-text dd { margin: 0; }
-.records-rows[data-dense] .records-text { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-3); row-gap: 2px; align-items: baseline; }
-.records-rows[data-dense] .records-text dd { grid-column: 2; text-align: right; justify-self: end; }
 .records-value { font-weight: 600; font-size: 0.9375rem; }
 .records-value .tabular-nums { gap: 2px; }
 .records-value button { margin: -8px -6px -8px 0; }
@@ -549,4 +557,3 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 
 /* Said only where it's true: a mouse can click a corner straight onto the map */
 @media (pointer: coarse) { .fine-only { display: none; } }
-.records-rows[data-dense] .records-text dd.records-sub { grid-column: 1 / -1; justify-self: start; text-align: left; }

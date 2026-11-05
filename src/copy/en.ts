@@ -633,7 +633,8 @@ export const finish = {
 
 /** What GSA knows about each part of his farm right now, each line changed with a pen. */
 export const records = {
-  title: "Farmer's data",
+  titles: { details: "Farmer's data", animals: 'Your animals', land: 'Your fields', documents: 'Your documents' },
+  more: { details: 'More data', animals: 'All about your animals', land: 'All your fields', documents: 'All your files' },
   edit: (what: string) => `Change: ${what}`,
   save: 'Send',
   cancel: 'Cancel',
@@ -641,22 +642,19 @@ export const records = {
   numberError: 'Enter a whole number, like 14',
   textError: 'Enter the right value',
   youSaid: (v: string) => `You said ${v}`,
+  youSay: (v: string) => `You say ${v}`,
   state: { records: 'Unconfirmed', confirmed: 'Confirmed by you', checking: 'Waiting for a check' } satisfies Record<Source, string>,
   cattle: 'Cattle',
   pigs: 'Pigs',
   calvings: 'Cows that calved',
   period: (from: string, to: string) => `${from} to ${to}`,
-  fieldValue: (ha: string, crop: string) => `${ha}, ${crop}`,
   unchangedFields: 'Unchanged fields',
-  unchangedValue: (n: number, ha: string) => `${n} fields, ${ha}`,
+  total: 'All your land',
+  fieldCount: (n: number) => `${n} fields`,
+  files: (n: number) => `${n} files`,
   addField: 'Add a field',
-  more: 'More data',
-  allTitle: "Farmer's data",
-  group: { details: 'Your details', animals: 'Animals', land: 'Land' },
   farmNumber: 'Farm number',
   phone: 'Phone',
-  land: 'Land',
-  landValue: (n: number, ha: string) => `${n} fields, ${ha}`,
 }
 
 /** Adding a field on the map: where, its name and crop, its measures. */
@@ -851,7 +849,7 @@ export const steps = {
   left: (id: StepId, n: number) => {
     if (n === 0) return 'Done'
     if (id === 'measures') return 'Choose yours'
-    if (id === 'land') return n === 1 ? '1 field to go' : `${n} fields to go`
+    if (id === 'land') return n === 1 ? '1 parcel to resolve' : `${n} parcels to resolve`
     return `${n} thing${n === 1 ? '' : 's'} to ${{ details: 'confirm', documents: 'sort out' }[id as string] ?? 'answer'}`
   },
 }

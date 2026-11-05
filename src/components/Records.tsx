@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { en, formatDateYear, formatHa, records as copy, tasks } from '../copy/en'
+import { en, formatDate, formatDateYear, formatHa, records as copy, tasks } from '../copy/en'
 import type { StepId, TaskId } from '../logic/application'
-import type { Source } from '../logic/farm'
+import { riverParts, type Source } from '../logic/farm'
 import { roundHa } from '../logic/geometry'
 import { correctionOf, UNCHANGED, type Unchanged } from '../logic/status'
 import { Account } from '../ui/Account'
@@ -10,9 +10,7 @@ import { Drawer } from '../ui/Drawer'
 import { Field } from '../ui/Field'
 import { Icon } from '../ui/Icon'
 import { SourceTag } from '../ui/SourceTag'
-import { useApp } from './AppContext'
-import { herdLine, newFieldRows } from './NewField'
-import { taskSummary } from './TaskBodies'
+import { useApp, type AppCtx } from './AppContext'
 
 /**
  * How he changes a line: open the task that asks about it, or type the right value, which goes to the
@@ -26,21 +24,30 @@ export interface RecordRow {
   value: string
   /** How the value is shown, when it is more than words (an account number he can reveal). */
   show?: ReactNode
-  /** A second line: the period it covers, or his value next to the record's. */
+  /** A short second line: the period it covers, or his value next to the record's. */
   sub?: string
+  /** What it is made of, one per line: the crops in a field and their areas, last year next to today. */
+  lines?: { label: string; value?: string }[]
+  /** Something wrong with it, said in red. */
+  problem?: string
   /** Where the line stands. Nothing for what GSA reuses without asking: there's nothing to confirm. */
   source?: Source
   edit?: Edit
 }
 
+type Kind = 'details' | 'animals' | 'land' | 'documents'
+const KINDS: Kind[] = ['details', 'animals', 'land', 'documents']
+
 /**
- * What GSA knows about this part of his farm right now, from government records and his own answers,
- * updated as he answers: the state of the registers, not last year's copy. He cares whether a line is true,
- * so it says whether he has confirmed it, and a pen changes it, in the place that asks about it or as a
- * correction to the record's owner.
+ * What GSA has about this part, right now: his details on the first part, then his animals, his fields and his
+ * documents, each in its own shape. A line says where it stands, and a pen changes it, in the place that asks
+ * about it or as a correction to the record's owner. Where there is more than fits beside the task, it opens
+ * in a side panel: every detail, every animal, every field.
  */
 export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) => void }) {
+  const kind = KINDS.find((k) => k === step)
   const rows = useRecordRows(step)
+  const full = useAllRows(kind)
   const { go } = useApp()
   const [all, setAll] = useState(false)
   const opener = useRef<HTMLButtonElement>(null)
@@ -50,51 +57,43 @@ export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) =
     window.addEventListener('hashchange', close)
     return () => window.removeEventListener('hashchange', close)
   }, [])
-  if (!rows) return null
+  if (!rows || !kind) return null
   return (
     <section className="records" aria-labelledby={`records-${step}`}>
-      <h3 id={`records-${step}`} className="records-title">{copy.title}</h3>
+      <h3 id={`records-${step}`} className="records-title">{copy.titles[kind]}</h3>
       <RecordList rows={rows} onOpen={onOpen} />
-      <div className="records-foot">
-        {step === 'land' && (
-          <Button className="w-full" onClick={() => go('field', 'new')}>
-            <Icon name="added" size="sm" /> {copy.addField}
-          </Button>
-        )}
-        <Button ref={opener} variant="ghost" className="w-full" onClick={() => setAll(true)}>
-          {copy.more} <Icon name="disclose" size="sm" />
-        </Button>
-      </div>
-      <Drawer open={all} title={copy.allTitle} onClose={() => setAll(false)} returnFocusTo={opener}>
-        <AllRecords
-          onOpen={(id) => {
-            setAll(false)
-            onOpen(id)
-          }}
-        />
-      </Drawer>
+      {(step === 'land' || full) && (
+        <div className="records-foot">
+          {step === 'land' && (
+            <Button className="w-full" onClick={() => go('field', 'new')}>
+              <Icon name="added" size="sm" /> {copy.addField}
+            </Button>
+          )}
+          {full && (
+            <Button ref={opener} variant="ghost" className="w-full" onClick={() => setAll(true)}>
+              {copy.more[kind]} <Icon name="disclose" size="sm" />
+            </Button>
+          )}
+        </div>
+      )}
+      {full && (
+        <Drawer open={all} title={copy.titles[kind]} onClose={() => setAll(false)} returnFocusTo={opener}>
+          <RecordList
+            rows={full}
+            onOpen={(id) => {
+              setAll(false)
+              onOpen(id)
+            }}
+          />
+        </Drawer>
+      )}
     </section>
-  )
-}
-
-/** Everything the registers hold about him, part by part, each line with where it stands and a pen. */
-function AllRecords({ onOpen }: { onOpen: (id: TaskId) => void }) {
-  const groups = useAllRecords()
-  return (
-    <div className="records-all">
-      {groups.map((g) => (
-        <section key={g.id} aria-labelledby={`all-${g.id}`}>
-          <h3 id={`all-${g.id}`} className="records-title">{copy.group[g.id]}</h3>
-          <RecordList rows={g.rows} onOpen={onOpen} />
-        </section>
-      ))}
-    </div>
   )
 }
 
 export function RecordList({ rows, onOpen }: { rows: RecordRow[]; onOpen: (id: TaskId) => void }) {
   return (
-    <dl className="records-rows" data-dense>
+    <dl className="records-rows">
       {rows.map((r) => (
         <Row key={r.key} row={r} onOpen={onOpen} />
       ))}
@@ -102,6 +101,11 @@ export function RecordList({ rows, onOpen }: { rows: RecordRow[]; onOpen: (id: T
   )
 }
 
+/**
+ * One line of what GSA has. A short fact reads label left, value right. Something made of parts (a field with
+ * two crops, last year next to today) puts its name and total on the first line and each part on its own line
+ * under it, so a long answer never squeezes the name. Then what's wrong, then where it stands.
+ */
 function Row({ row, onOpen }: { row: RecordRow; onOpen: (id: TaskId) => void }) {
   const { dispatch, go } = useApp()
   const [editing, setEditing] = useState(false)
@@ -124,11 +128,30 @@ function Row({ row, onOpen }: { row: RecordRow; onOpen: (id: TaskId) => void }) 
   }
   const pen = () => (!e ? undefined : 'open' in e ? onOpen(e.open) : 'screen' in e ? go(...(e.screen.split('/') as [string, string])) : setEditing(true))
   return (
-    <div className="records-row">
+    <div className="records-row" data-parts={row.lines ? '' : undefined}>
       <div className="records-text">
-        <dt>{row.label}</dt>
-        <dd className="records-value">{row.show ?? row.value}</dd>
+        <div className="records-head">
+          <dt>{row.label}</dt>
+          <dd className="records-value">{row.show ?? row.value}</dd>
+        </div>
+        {!!row.lines?.length && (
+          <dd>
+            <ul className="records-lines">
+              {row.lines.map((l) => (
+                <li key={l.label}>
+                  <span>{l.label}</span>
+                  {l.value && <span className="records-line-value">{l.value}</span>}
+                </li>
+              ))}
+            </ul>
+          </dd>
+        )}
         {row.sub && <dd className="records-sub">{row.sub}</dd>}
+        {row.problem && (
+          <dd className="records-problem">
+            <Icon name="error" size="sm" /> {row.problem}
+          </dd>
+        )}
         {row.source && (
           <dd>
             <SourceTag source={row.source}>{copy.state[row.source]}</SourceTag>
@@ -167,65 +190,162 @@ function CorrectionForm({ label, initial, numeric, onSave, onCancel }: { label: 
   )
 }
 
-/** The rows for one part, from the scenario's records and his answers so far. */
+type Derived = AppCtx['derived']
+type State = AppCtx['state']
+const sourceIn = (d: Derived) => (id: string): Source => {
+  const st = d.items.find((i) => i.id === id)?.status
+  return st === 'complete' ? 'confirmed' : st === 'awaiting_verification' ? 'checking' : 'records'
+}
+
+/** The rows beside the task, for one part. */
 export function useRecordRows(step: StepId): RecordRow[] | null {
   const { derived, state } = useApp()
-  const s = derived.scenario
-  const a = state.answers
-  const item = (id: string) => derived.items.find((i) => i.id === id)
-  const sourceOf = (id: string): Source => {
-    const st = item(id)?.status
-    return st === 'complete' ? 'confirmed' : st === 'awaiting_verification' ? 'checking' : 'records'
-  }
-
-  if (step === 'details') return detailRows(derived, a)
-
-  if (step === 'animals') {
-    if (!s.herd) return null
-    const rows: RecordRow[] = []
-    const herd = item('herd')
-    rows.push({ key: 'herd', label: copy.cattle, value: String(s.herd.registryCount), sub: herdLine(herd), source: sourceOf('herd'), edit: { open: 'herd' } })
-    if (s.pigs && s.pigs.registryCount > 0) {
-      const pigs = item('pigs')
-      rows.push({ key: 'pigs', label: copy.pigs, value: String(s.pigs.registryCount), sub: pigs?.status === 'complete' ? taskSummary('pigs', derived, state) : undefined, source: sourceOf('pigs'), edit: { open: 'pigs' } })
-    }
-    const asked = correctionOf(a, 'calvings')
-    rows.push({
-      key: 'calvings',
-      label: copy.calvings,
-      value: String(s.herd.cowsCalved),
-      sub: asked ? copy.youSaid(asked) : copy.period(formatDateYear(s.herd.calvingPeriod.from), formatDateYear(s.herd.calvingPeriod.to)),
-      source: asked ? 'checking' : undefined,
-      edit: { correct: { itemId: 'calvings', numeric: true, value: asked ?? String(s.herd.cowsCalved) } },
-    })
-    return rows
-  }
-
-  if (step === 'land') {
-    // Fields with a change have their own line; the rest GSA reuses without asking, so they share one.
-    const same = s.fields.filter((f) => !f.signal)
-    const rows: RecordRow[] = s.fields.filter((f) => f.signal).map((f) => {
-      const id = `field_${f.id}`
-      const it = item(id)
-      const lost = it?.status === 'complete' ? (it.paymentImpact?.areaHa ?? 0) : 0
-      const split = it?.detail === 'river_split_done' || it?.detail === 'river_past_land'
-      return {
-        key: f.id,
-        label: en.fields[f.id],
-        value: split ? taskSummary(id as TaskId, derived, state) : copy.fieldValue(formatHa(roundHa(f.areaHa - lost)), en.crops[f.cropLastYear].toLowerCase()),
-        sub: it?.status === 'awaiting_verification' ? taskSummary(id as TaskId, derived, state) : undefined,
-        source: sourceOf(id),
-        edit: { open: id as TaskId },
-      }
-    })
-    const unchanged = { key: 'unchanged', label: copy.unchangedFields, value: copy.unchangedValue(same.length, formatHa(roundHa(same.reduce((sum, f) => sum + f.areaHa, 0)))) }
-    return [...rows, ...newFieldRows(derived, state), ...(same.length ? [unchanged] : [])]
-  }
+  if (step === 'details') return detailRows(derived, state.answers)
+  if (step === 'animals') return animalRows(derived, state, false)
+  if (step === 'land') return fieldRows(derived, state, false)
+  if (step === 'documents') return documentRows(derived, state, false)
   return null
 }
 
+/** Everything about the part, for the side panel; null where the rows beside the task are already all there is. */
+function useAllRows(kind: Kind | undefined): RecordRow[] | null {
+  const { derived, state } = useApp()
+  if (kind === 'details') return allDetails(derived, state)
+  if (kind === 'animals') return animalRows(derived, state, true)
+  if (kind === 'land') return fieldRows(derived, state, true)
+  if (kind === 'documents') return documentRows(derived, state, true)
+  return null
+}
+
+/** His animals. In the panel, each says last year next to the registry today, and his own answer. */
+function animalRows(d: Derived, state: State, full: boolean): RecordRow[] | null {
+  const s = d.scenario
+  const a = state.answers
+  if (!s.herd) return null
+  const src = sourceIn(d)
+  const herd = d.items.find((i) => i.id === 'herd')
+  const his = herd?.conflict && herd.detail !== 'herd_settled' ? herd.conflict.his : null
+  const rows: RecordRow[] = [
+    {
+      key: 'herd',
+      label: copy.cattle,
+      value: String(s.herd.registryCount),
+      sub: his !== null && !full ? copy.youSaid(String(his)) : undefined,
+      lines: full
+        ? [
+            { label: tasks.herd.lastYear, value: String(s.herd.lastYearDeclared ?? 0) },
+            { label: tasks.herd.registry, value: String(s.herd.registryCount) },
+            ...(his !== null ? [{ label: tasks.herd.yoursToday, value: String(his) }] : []),
+          ]
+        : undefined,
+      source: src('herd'),
+      edit: { open: 'herd' },
+    },
+  ]
+  if (s.pigs && s.pigs.registryCount > 0) {
+    const pigs = d.items.find((i) => i.id === 'pigs')
+    const answer = pigs?.detail === 'pigs_household' ? tasks.pigs.answerYes : pigs?.detail === 'pigs_declared' ? tasks.pigs.answerNo : undefined
+    rows.push({
+      key: 'pigs',
+      label: copy.pigs,
+      value: String(s.pigs.registryCount),
+      sub: full ? undefined : answer,
+      lines: full ? [{ label: tasks.herd.lastYear, value: String(s.pigs.lastYearDeclared) }, { label: tasks.herd.registry, value: String(s.pigs.registryCount) }, ...(answer ? [{ label: answer }] : [])] : undefined,
+      source: src('pigs'),
+      edit: { open: 'pigs' },
+    })
+  }
+  const asked = correctionOf(a, 'calvings')
+  const period = copy.period(formatDateYear(s.herd.calvingPeriod.from), formatDateYear(s.herd.calvingPeriod.to))
+  rows.push({
+    key: 'calvings',
+    label: copy.calvings,
+    value: String(s.herd.cowsCalved),
+    lines: full ? [{ label: period }] : undefined,
+    sub: asked ? copy.youSaid(asked) : full ? undefined : period,
+    source: asked ? 'checking' : src('calvings'),
+    edit: { correct: { itemId: 'calvings', numeric: true, value: asked ?? String(s.herd.cowsCalved) } },
+  })
+  return rows
+}
+
+/**
+ * His fields: the name and the area that counts on the first line, then what grows there, one crop per line
+ * when there are two. A field waiting for a check says what counts until then in a few words. Beside the
+ * task, the fields with a change and the ones he added, the rest in one line; in the panel, every field.
+ */
+function fieldRows(d: Derived, state: State, full: boolean): RecordRow[] {
+  const s = d.scenario
+  const a = state.answers
+  const src = sourceIn(d)
+  const crop = (c: keyof typeof en.crops) => [{ label: en.crops[c] }]
+  const rows: RecordRow[] = []
+  for (const f of s.fields) {
+    const id = `field_${f.id}` as TaskId
+    const it = d.items.find((i) => i.id === id)
+    if (!f.signal && !full) continue
+    if (f.signal?.kind === 'satellite_difference') {
+      const parts = riverParts(s, a)
+      const counted = it?.conflict ? it.conflict.record : f.areaHa
+      rows.push({
+        key: f.id,
+        label: en.fields[f.id],
+        value: formatHa(counted),
+        lines: parts ? parts.map((p) => ({ label: en.crops[p.crop], value: formatHa(p.ha) })) : crop(f.cropLastYear),
+        sub: it?.conflict ? copy.youSay(formatHa(it.conflict.his)) : undefined,
+        source: src(id),
+        edit: { open: id },
+      })
+    } else if (f.signal?.kind === 'road_strip') {
+      const left = roundHa(f.areaHa - f.signal.stripHa)
+      const answered = it?.status !== 'action_required'
+      rows.push({
+        key: f.id,
+        label: en.fields[f.id],
+        value: formatHa(answered ? left : f.areaHa),
+        lines: crop(f.cropLastYear),
+        sub: it?.status === 'awaiting_verification' ? copy.youSay(formatHa(f.areaHa)) : undefined,
+        source: src(id),
+        edit: { open: id },
+      })
+    } else rows.push({ key: f.id, label: en.fields[f.id], value: formatHa(f.areaHa), lines: crop(f.cropLastYear) })
+  }
+  if (s.bought) {
+    const field = a.newFields.find((f) => f.landId === 'bought')
+    rows.push(
+      field
+        ? { key: 'bought', label: field.name, value: formatHa(field.areaHa), lines: crop(field.crop), source: 'confirmed', edit: { screen: 'field/bought' } }
+        : { key: 'bought', label: tasks.title.field_bought, value: formatHa(s.bought.areaHa), lines: [], sub: a.bought.answer === 'no' ? tasks.bought.notFarmed : undefined, source: a.bought.answer === 'no' ? 'confirmed' : 'records', edit: { open: 'field_bought' } },
+    )
+  }
+  for (const f of a.newFields.filter((x) => x.landId !== 'bought')) rows.push({ key: f.id, label: f.name, value: formatHa(f.areaHa), lines: crop(f.crop), source: 'confirmed', edit: { screen: `field/${f.id}` } })
+  const same = s.fields.filter((f) => !f.signal)
+  if (!full && same.length) rows.push({ key: 'unchanged', label: copy.unchangedFields, value: formatHa(roundHa(same.reduce((n, f) => n + f.areaHa, 0))), lines: [], sub: same.map((f) => en.fields[f.id]).join(', ') })
+  if (full) rows.push({ key: 'total', label: copy.total, value: formatHa(d.farm.fields.totalHa), lines: [], sub: copy.fieldCount(d.farm.fields.count) })
+  return rows
+}
+
+/** His documents: beside the task, each document with how many files and what's wrong; in the panel, every file with its date. */
+function documentRows(d: Derived, state: State, full: boolean): RecordRow[] | null {
+  const docs = d.scenario.documents.filter((x) => x.attached || state.answers.attachedDocuments.includes(x.id))
+  if (!docs.length) return null
+  const sent = state.answers.attachedDocuments.includes('unreadable_receipt')
+  const done = d.items.find((i) => i.id === 'receipts')?.status === 'complete'
+  const source = done ? ('confirmed' as const) : ('records' as const)
+  const edit = { open: 'receipts' as TaskId }
+  const blurry = (name?: string) => (name && !sent ? tasks.unreadable.context : undefined)
+  if (!full) return docs.map((doc) => ({ key: doc.id, label: tasks.title.receipts, value: copy.files(doc.files.length), lines: [], problem: blurry(doc.unreadable) && `${doc.unreadable}: ${tasks.unreadable.context.toLowerCase()}`, source: blurry(doc.unreadable) ? undefined : source, edit }))
+  // A file with something wrong says only that: red is the one state that matters until it's fixed.
+  return docs.flatMap((doc) =>
+    doc.files.map((f) => {
+      const problem = f.name === doc.unreadable ? blurry(f.name) : undefined
+      return { key: f.name, label: f.name, value: formatDate(f.date), lines: [], problem, source: problem ? undefined : source, edit }
+    }),
+  )
+}
+
 /** His details: what the farm register and his bank say, each changed in place. Also the review before he signs. */
-export function detailRows(derived: ReturnType<typeof useApp>['derived'], a: ReturnType<typeof useApp>['state']['answers']): RecordRow[] {
+export function detailRows(derived: Derived, a: State['answers']): RecordRow[] {
   const g = derived.scenario.generalData
   const c = tasks.details
   const value: Record<Unchanged, string> = { holder: g.holder, place: g.place, active: c.activeYes }
@@ -256,24 +376,12 @@ export function detailRows(derived: ReturnType<typeof useApp>['derived'], a: Ret
   return rows
 }
 
-/**
- * Ten lines the registers hold about him, in three groups: his details, his animals, his land. Each says where
- * it stands (unconfirmed, confirmed by him, waiting for a check) and has a pen where he can change it.
- */
-function useAllRecords(): { id: 'details' | 'animals' | 'land'; rows: RecordRow[] }[] {
-  const { derived, state } = useApp()
-  const g = derived.scenario.generalData
-  const details = detailRows(derived, state.answers)
-  // The farm number and phone sit with his name and address, where he would look for them.
-  details.splice(1, 0, { key: 'farm', label: copy.farmNumber, value: g.farmNumber })
+/** His details in full for the panel: the farm number and phone sit with his name and address, where he looks for them. */
+function allDetails(d: Derived, state: State): RecordRow[] {
+  const g = d.scenario.generalData
+  const rows = detailRows(d, state.answers)
+  rows.splice(1, 0, { key: 'farm', label: copy.farmNumber, value: g.farmNumber })
   const phone = correctionOf(state.answers, 'details', 'phone')
-  details.splice(3, 0, { key: 'phone', label: copy.phone, value: g.phone, sub: phone ? copy.youSaid(phone) : undefined, source: phone ? 'checking' : undefined, edit: { correct: { itemId: 'details', what: 'phone', value: phone ?? g.phone } } })
-  const animals = useRecordRows('animals') ?? []
-  const f = derived.farm.fields
-  const land: RecordRow = { key: 'land', label: copy.land, value: copy.landValue(f.count, formatHa(f.totalHa)), source: f.source, edit: { screen: 'welcome/step-land' } }
-  return [
-    { id: 'details' as const, rows: details },
-    { id: 'animals' as const, rows: animals },
-    { id: 'land' as const, rows: [land] },
-  ].filter((x) => x.rows.length)
+  rows.splice(3, 0, { key: 'phone', label: copy.phone, value: g.phone, sub: phone ? copy.youSaid(phone) : undefined, source: phone ? 'checking' : undefined, edit: { correct: { itemId: 'details', what: 'phone', value: phone ?? g.phone } } })
+  return rows
 }

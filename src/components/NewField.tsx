@@ -1,11 +1,10 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
-import { bar, drawField, en, fieldEdit as copy, formatDateYear, formatHa, map, records, tasks } from '../copy/en'
+import { bar, drawField, en, fieldEdit as copy, formatDateYear, formatHa, map, tasks } from '../copy/en'
 import { CROPS, type Crop, type Polygon } from '../data/scenarios'
 import { areaWithout } from '../logic/geometry'
 import { drawnHa, type DrawContext } from '../logic/drawing'
 import { DrawIsland, useFieldDraw } from './DrawTool'
 import type { TaskId } from '../logic/application'
-import type { Item } from '../logic/status'
 import type { NewField } from '../state/actions'
 import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
@@ -14,45 +13,15 @@ import { Inline, Stack, Text } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
 import { RadioGroup } from '../ui/RadioGroup'
 import { ActionBar } from './ActionBar'
-import { useApp, type AppCtx } from './AppContext'
-import type { RecordRow } from './Records'
+import { useApp } from './AppContext'
 import { FarmMap, MapFallback } from './TaskBodies'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { useYardDraft, YardIsland } from './YardTool'
 import type { Flow } from './useApplicationFlow'
 
-type Derived = AppCtx['derived']
-type State = AppCtx['state']
 
 /** A new field in one line: its name, area and crop. */
 export const fieldLine = (f: NewField) => copy.line(f.name, formatHa(f.areaHa), en.crops[f.crop].toLowerCase())
-
-/** The herd's second line in his records: his own number next to the registry's, while it is checked. */
-export function herdLine(item?: Item): string | undefined {
-  if (item?.detail === 'herd_settled') return undefined
-  return item?.conflict ? records.youSaid(String(item.conflict.his)) : undefined
-}
-
-/** The parcel he bought and the fields he added, as lines in his land records. */
-export function newFieldRows(derived: Derived, state: State): RecordRow[] {
-  const s = derived.scenario
-  const a = state.answers
-  const rows: RecordRow[] = []
-  if (s.bought) {
-    const field = a.newFields.find((f) => f.landId === 'bought')
-    rows.push(
-      field
-        ? { key: 'bought', label: field.name, value: fieldLine(field).slice(field.name.length + 2), source: 'confirmed', edit: { screen: 'field/bought' } }
-        : a.bought.answer === 'no'
-          ? { key: 'bought', label: tasks.title.field_bought, value: tasks.bought.notFarmed, source: 'confirmed', edit: { open: 'field_bought' } }
-          : { key: 'bought', label: tasks.title.field_bought, value: formatHa(s.bought.areaHa), source: 'records', edit: { open: 'field_bought' } },
-    )
-  }
-  for (const f of a.newFields.filter((x) => x.landId !== 'bought')) {
-    rows.push({ key: f.id, label: f.name, value: fieldLine(f).slice(f.name.length + 2), source: 'confirmed', edit: { screen: `field/${f.id}` } })
-  }
-  return rows
-}
 
 /** A still picture of the parcel he bought, his other fields faint around it. */
 function BoughtPreview({ field }: { field?: NewField }) {
