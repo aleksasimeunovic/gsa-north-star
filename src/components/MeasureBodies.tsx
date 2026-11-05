@@ -1,5 +1,5 @@
 import { Suspense, useRef, useState, type ReactNode } from 'react'
-import { en, formatDinars, formatHa, formatNumber, split, tasks } from '../copy/en'
+import { en, formatDinars, formatHa, formatNumber, map, split, tasks } from '../copy/en'
 import type { Measure, MeasureId, Requirement, Suggestion } from '../data/scenarios'
 import { fitting, goalGain, measureGaps, readyToApply, shown } from '../logic/status'
 import { carriedFields, fieldChoices, newCrops, riverParts } from '../logic/farm'
@@ -255,13 +255,51 @@ function MeasureFields({ m, inputs, suggestedFields, showErrors, onChange }: { m
                 error={showErrors && gaps.missing.includes(r.id) ? t.error[r.kind] : undefined}
                 onChange={(v) => onChange(`${m.id}.${r.id}`, v)}
               />
-              {r.kind === 'fields' && (
-                <FieldsOnMap ids={carriedFields((inputs[`${m.id}.${r.id}`] as string[] | undefined) ?? [], derived.scenario, state.answers)} label={en.measures[m.id]} />
-              )}
             </Stack>
           ),
         )}
     </div>
+  )
+}
+
+/** The shape and name of a field he can choose: a whole field, a part of the river field, or one he added. */
+function useFieldShape() {
+  const { derived, state } = useApp()
+  const s = derived.scenario
+  const parts = riverParts(s, state.answers)
+  return (id: string) => {
+    const part = parts?.find((p) => p.id === id)
+    if (part) return { polygon: part.polygon, label: fieldName(id) }
+    const f = s.fields.find((x) => x.id === id)
+    if (f) return { polygon: f.polygon, label: fieldName(id) }
+    const added = state.answers.newFields.find((x) => x.id === id)
+    return added ? { polygon: added.polygon, label: added.name } : null
+  }
+}
+
+/** Beside each field he can choose: that one field on the photo, in a side panel, so he knows which land it is. */
+function FieldMapButton({ id }: { id: string }) {
+  const { derived } = useApp()
+  const shape = useFieldShape()(id)
+  const [open, setOpen] = useState(false)
+  const opener = useRef<HTMLButtonElement>(null)
+  if (!shape) return null
+  return (
+    <>
+      <Button ref={opener} variant="ghost" aria-label={t.showOne(shape.label)} onClick={() => setOpen(true)}>
+        <Icon name="map" size="sm" />
+        <span className="max-sm:sr-only">{t.showMap}</span>
+      </Button>
+      <Drawer open={open} title={shape.label} onClose={() => setOpen(false)} returnFocusTo={opener}>
+        {open && (
+          <figure className="measure-map">
+            <Suspense fallback={<MapFallback mode="preview" />}>
+              <FarmMap scenario={derived.scenario} mode="explore" label={`${map.title}: ${shape.label}`} highlight={[shape]} />
+            </Suspense>
+          </figure>
+        )}
+      </Drawer>
+    </>
   )
 }
 
@@ -270,25 +308,18 @@ function MeasureFields({ m, inputs, suggestedFields, showErrors, onChange }: { m
  * there once a field is chosen, so the button always has something to show.
  */
 function FieldsOnMap({ ids, label }: { ids: string[]; label: string }) {
-  const { derived, state } = useApp()
+  const { derived } = useApp()
   const [open, setOpen] = useState(false)
   const s = derived.scenario
-  const parts = riverParts(s, state.answers)
-  const shapes = ids.flatMap((id) => {
-    const part = parts?.find((p) => p.id === id)
-    if (part) return [{ polygon: part.polygon, label: fieldName(id) }]
-    const f = s.fields.find((x) => x.id === id)
-    if (f) return [{ polygon: f.polygon, label: fieldName(id) }]
-    const added = state.answers.newFields.find((x) => x.id === id)
-    return added ? [{ polygon: added.polygon, label: added.name }] : []
-  })
+  const toShape = useFieldShape()
+  const shapes = ids.flatMap((id) => toShape(id) ?? [])
   if (!shapes.length) return null
   return (
     <div className="flex flex-col gap-[var(--gap-inline)]">
       <div>
         <Button variant="link" aria-expanded={open} onClick={() => setOpen(!open)}>
           <Icon name="map" size="sm" />
-          {open ? t.hideMap : t.showMap(shapes.length)}
+          {open ? t.hideMap : t.showAll}
         </Button>
       </div>
       {open && (
@@ -452,6 +483,7 @@ function RequirementInput({ r, value, error, onChange }: { r: Requirement; value
           options={fieldChoices(derived.scenario, state.answers).map((f) => ({ value: f.id, label: `${fieldName(f.id)}, ${formatHa(f.ha)}` }))}
           value={carriedFields((value as string[]) ?? [], derived.scenario, state.answers)}
           onChange={onChange}
+          aside={(id) => <FieldMapButton id={id} />}
         />
       )
     case 'confirm':

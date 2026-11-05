@@ -358,7 +358,9 @@ export const tasks = {
     } satisfies Record<GoalKind, (n: number) => string>,
     gain: (about: string) => `About ${about} more a year for your household`,
     goalOpen: (name: string) => `All about ${name}`,
-    showMap: (n: number) => (n === 1 ? 'Show the field on the map' : `Show the ${n} fields on the map`),
+    showMap: 'Show on map',
+    showOne: (field: string) => `Show ${field} on the map`,
+    showAll: 'Show your fields on the map',
     hideMap: 'Hide the map',
     /** The side panel: everything about a measure he can't apply for yet. */
     goalPanel: {

@@ -6,9 +6,10 @@ import { Icon } from './Icon'
 
 /**
  * A checkbox; `hint` sits under the label and is read with it. `card` draws it as a selectable card.
- * `error` says what's missing, under it, and `id` lets an action take him straight to it.
+ * `error` says what's missing, under it, and `id` lets an action take him straight to it. `aside` is one
+ * action of its own on the right of the card (a button inside a label never ticks the box).
  */
-export function Checkbox({ id: given, label, hint, checked, error, invalid, onChange, card }: { id?: string; label: string; hint?: ReactNode; checked: boolean; error?: string; invalid?: boolean; onChange: (v: boolean) => void; card?: boolean }) {
+export function Checkbox({ id: given, label, hint, checked, error, invalid, onChange, card, aside }: { id?: string; label: string; hint?: ReactNode; checked: boolean; error?: string; invalid?: boolean; onChange: (v: boolean) => void; card?: boolean; aside?: ReactNode }) {
   const own = useId()
   const id = given ?? own
   const compact = useDensity() === 'compact'
@@ -16,9 +17,11 @@ export function Checkbox({ id: given, label, hint, checked, error, invalid, onCh
     <label
       htmlFor={id}
       className={cn(
-        'flex cursor-pointer items-start gap-[var(--gap-inline)]',
+        'flex cursor-pointer gap-[var(--gap-inline)]',
+        aside ? 'items-center' : 'items-start',
         compact ? 'min-h-8 py-1' : 'min-h-11 py-2',
         card && 'rounded-xl border bg-card px-4 py-4 transition-colors hover:border-ring/50 has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted/50',
+        card && aside && 'py-2 pr-2',
         card && (invalid || error) && 'border-error',
       )}
     >
@@ -37,12 +40,13 @@ export function Checkbox({ id: given, label, hint, checked, error, invalid, onCh
           </span>
         )}
       </span>
+      {aside && <span className="ml-auto shrink-0 self-center">{aside}</span>}
     </label>
   )
 }
 
 /** Several checkboxes answering one question. */
-export function CheckboxGroup({ legend, options, value, error, onChange }: { legend: string; options: { value: string; label: string }[]; value: string[]; error?: string; onChange: (v: string[]) => void }) {
+export function CheckboxGroup({ legend, options, value, error, onChange, aside }: { legend: string; options: { value: string; label: string }[]; value: string[]; error?: string; onChange: (v: string[]) => void; aside?: (value: string) => ReactNode }) {
   return (
     <fieldset className="flex min-w-0 flex-col gap-[var(--gap-label)]" aria-invalid={!!error || undefined}>
       <legend className="mb-2 font-medium">{legend}</legend>
@@ -59,6 +63,7 @@ export function CheckboxGroup({ legend, options, value, error, onChange }: { leg
           invalid={!!error}
           label={o.label}
           checked={value.includes(o.value)}
+          aside={aside?.(o.value)}
           onChange={(on) => onChange(on ? [...value, o.value] : value.filter((v) => v !== o.value))}
         />
       ))}
