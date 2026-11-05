@@ -307,13 +307,19 @@ export function LineTools({ d }: { d: SplitDraft }) {
     if (d.snapped && d.snap) navigator.vibrate?.(8)
   }, [d.snapped, d.snap])
   const status = d.stopped ? (
-    <MapStatus>{copy.stopped[d.stopped]}</MapStatus>
+    <MapStatus>
+      {copy.stopped[d.stopped]}
+      {d.stopped === 'too_small' && <Note kind="design" />}
+    </MapStatus>
   ) : !d.snap ? (
     <MapStatus action={{ label: t.snapOn, onClick: () => d.setSnap(true) }}>{t.snapOff}</MapStatus>
   ) : d.snapped ? (
-    <MapStatus icon="snap" action={{ label: t.free, onClick: () => { d.setSnap(false); d.setSnapped(false) } }}>{t.joined}</MapStatus>
+    <MapStatus icon="snap" action={{ label: t.free, onClick: () => { d.setSnap(false); d.setSnapped(false) } }}>{t.joined} <Note kind="design" />
+    </MapStatus>
   ) : d.pastLand ? (
-    <MapStatus>{copy.pastLand}</MapStatus>
+    <MapStatus>
+      {copy.pastLand} <Note kind="design" />
+    </MapStatus>
   ) : null
 
   return (

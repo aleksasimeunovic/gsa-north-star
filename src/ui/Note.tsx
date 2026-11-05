@@ -3,12 +3,13 @@ import { Badge } from './shadcn/badge'
 
 // Design note tags. Shown only when design notes are on (prototype controls).
 // Everything is North Star, so only real distinctions are tagged. 'ai' shows Earl where AI works; Milan never sees it.
-export type NoteKind = 'tested' | 'eu_mandate' | 'assumption' | 'ai'
+export type NoteKind = 'tested' | 'eu_mandate' | 'assumption' | 'design' | 'ai'
 
 const LABEL: Record<NoteKind, string> = {
   tested: 'Tested (44 sessions)',
   eu_mandate: 'EU mandate',
   assumption: 'Assumption to confirm with the ministry',
+  design: 'Design assumption, to validate with farmers',
   ai: 'AI behind the scenes',
 }
 
