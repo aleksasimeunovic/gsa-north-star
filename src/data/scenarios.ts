@@ -132,6 +132,8 @@ export interface BoughtParcel {
   areaHa: number
   /** When the land registry recorded it in his name (prototype placeholder). */
   on: string
+  /** A house and its yard the photo shows on it, outlined by GSA: a guess he confirms, changes or rejects. */
+  yard?: Polygon
 }
 
 /** Records GSA brings in. Read-only for Milan. */
@@ -307,7 +309,14 @@ const BASE: Scenario = {
   pigs: PIGS,
   fields: FIELDS,
   // 0.80 ha above the road field, in his name since February (round 11, Aleksa).
-  bought: { polygon: shape([350, -146], [386, -140], [380, -33], [331, -33], [331, -80], [340, -120]), areaHa: 0.8, on: '2026-02-12' },
+  // The orchard beside the road field, traced on its tree lines and the path along its south side, with a real
+  // house and yard in the middle of it.
+  bought: {
+    polygon: shape([419, -12], [486, -9], [540, -6], [542, 20], [530, 40], [513, 48], [457, 46], [415, 47], [417, 18]),
+    areaHa: 0.8,
+    on: '2026-02-12',
+    yard: shape([467, 20], [490, 22], [491, 40], [466, 38]),
+  },
   otherLand: OTHER_LAND,
   measures: MEASURES,
   suggestions: [

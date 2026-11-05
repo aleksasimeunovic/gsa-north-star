@@ -27,10 +27,12 @@ export interface NewField {
   /** The registered farmland it sits on, or 'bought' for the parcel in his name. */
   landId: string
   polygon: Polygon
-  /** The record's area, which is what counts. */
+  /** The record's area, which is what counts, less the yard he left out. */
   areaHa: number
   name: string
   crop: Crop
+  /** A house and its yard inside it, left out: not farmland. */
+  yard?: Polygon
 }
 
 // Only what people answered. Tasks, statuses and the estimate are derived.

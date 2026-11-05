@@ -1,5 +1,8 @@
 # Leaving out a yard inside a field: exploration (5 Nov)
 
+**Built (5 Nov):** on the parcel he bought, moved to the real orchard beside the road field with a real house in
+the middle (decision 341). The sections below are the reasoning; the open question is settled.
+
 The case: a house, yard or barn sits inside the land Milan farms. The field is everything around it, so the
 building must come out of the middle. Today the editor can only move the field's outer edge and the divider
 line; it cannot make a hole.

@@ -37,9 +37,9 @@ export interface FarmMapOptions {
   /** Someone else's parcel, shown alone and framed. */
   parcel?: Polygon
   /** Fields he added this year, drawn and named like the rest. */
-  added?: { id: string; polygon: Polygon; name: string }[]
+  added?: { id: string; polygon: Polygon; name: string; yard?: Polygon }[]
   /** A place in question that isn't a field yet (the parcel he bought): outlined, named, and framed. */
-  spot?: { polygon: Polygon; label: string }
+  spot?: { polygon: Polygon; label: string; yard?: { polygon: Polygon; label: string; settled?: boolean }; above?: boolean }
   /** Registered farmland he can put a field on, outlined and named so he can tap it. */
   lands?: { id: string; polygon: Polygon; label: string }[]
   /** Leave this added field out: it is the one being changed. */
@@ -143,11 +143,21 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     if (f.id === opts.skip) continue
     const strong = !focused && !opts.spot && !opts.lands?.length
     shape(f.polygon, strong ? 'field' : 'faint')
+    // The yard he left out is hatched, like other land that doesn't count.
+    if (f.yard) shape(f.yard, 'strip')
     if (strong || opts.interactive) name(f.polygon, f.name, strong)
   }
   if (opts.spot) {
     shape(opts.spot.polygon, 'spot')
-    chip(centroid(opts.spot.polygon), opts.spot.label)
+    const yard = opts.spot.yard
+    if (yard) {
+      // The house in the middle keeps the parcel's name off it: the name goes above, the house says what it is.
+      shape(yard.polygon, yard.settled ? 'strip' : 'flag')
+      name(opts.spot.polygon, opts.spot.label, true)
+      const b = bounds(yard.polygon)
+      chip({ x: (b.minX + b.maxX) / 2, y: b.minY - 7 }, yard.label)
+    } else if (opts.spot.above) name(opts.spot.polygon, opts.spot.label, true)
+    else chip(centroid(opts.spot.polygon), opts.spot.label)
   }
   for (const l of opts.lands ?? []) {
     shape(l.polygon, 'land')

@@ -28,6 +28,9 @@ import {
   tidyLine,
   toFieldEdge,
   type SplitLine,
+  areaWithout,
+  yardHa,
+  yardProblem,
 } from './geometry'
 
 const fields = SCENARIOS.second_year.fields
@@ -236,5 +239,32 @@ describe('moving the line', () => {
     expect(followsEdge(flat, edge)).toBe(false)
     expect(sameLine(edge, [...edge])).toBe(true)
     expect(sameLine(edge, flat)).toBe(false)
+  })
+})
+
+describe('leaving a yard out of a field', () => {
+  const bought = SCENARIOS.second_year.bought!
+  const yard = [{ x: 80, y: 40 }, { x: 120, y: 40 }, { x: 120, y: 80 }, { x: 80, y: 80 }]
+
+  it("GSA's outline of the house and yard on the photo is a valid yard inside the parcel he bought", () => {
+    expect(yardProblem(bought.polygon, bought.yard!)).toBeNull()
+  })
+
+  it("the yard takes its share of the record's area, and the field keeps the rest", () => {
+    // 0.16 ha of a 2.40 ha rectangle is a fifteenth of it.
+    expect(areaWithout(river, 2.4, yard)).toBe(2.24)
+    expect(yardHa(river, 2.4, yard)).toBe(0.16)
+    expect(areaWithout(bought.polygon, bought.areaHa, bought.yard)).toBe(0.75)
+    expect(areaWithout(river, 2.4)).toBe(2.4)
+  })
+
+  it('a yard stays wholly inside the field: on or past the edge is a change to the edge instead', () => {
+    expect(yardProblem(river, [{ x: 180, y: 40 }, { x: 220, y: 40 }, { x: 220, y: 80 }, { x: 180, y: 80 }])).toBe('touches_edge')
+    expect(yardProblem(river, [{ x: 0, y: 40 }, { x: 40, y: 40 }, { x: 40, y: 80 }, { x: 0, y: 80 }])).toBe('touches_edge')
+  })
+
+  it("a yard can't cross itself, and is at least 0.01 ha", () => {
+    expect(yardProblem(river, [{ x: 80, y: 40 }, { x: 120, y: 80 }, { x: 120, y: 40 }, { x: 80, y: 80 }])).toBe('crosses_itself')
+    expect(yardProblem(river, [{ x: 80, y: 40 }, { x: 88, y: 40 }, { x: 88, y: 48 }, { x: 80, y: 48 }])).toBe('too_small')
   })
 })

@@ -7,6 +7,8 @@ import { VisuallyHidden } from '../../ui/Layout'
 import type { SplitDraft } from '../SplitTool'
 import { createFarmMap, type FarmMap as Handle } from './olFarm'
 import { SplitOnMap } from './SplitOnMap'
+import { YardOnMap } from './YardOnMap'
+import type { YardDraft } from '../YardTool'
 import { useApp } from '../AppContext'
 
 interface Props {
@@ -25,7 +27,9 @@ interface Props {
   /** Someone else's parcel, alone on the photo (Jelena's case preview). */
   parcel?: Polygon
   /** A place in question that isn't his field yet (the parcel he bought). */
-  spot?: { polygon: Polygon; label: string }
+  spot?: { polygon: Polygon; label: string; yard?: { polygon: Polygon; label: string; settled?: boolean }; above?: boolean }
+  /** The house and yard he leaves out of the spot; he moves it when interactive. */
+  yard?: { d: YardDraft; interactive: boolean; settled?: boolean }
   /** Registered farmland he can tap to put a field on. */
   lands?: { id: string; polygon: Polygon; label: string }[]
   onPickLand?: (id: string) => void
@@ -36,7 +40,7 @@ interface Props {
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, lands, onPickLand, skip, dock }: Props) {
+export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, yard, lands, onPickLand, skip, dock }: Props) {
   const { state } = useApp()
   const added = state.answers.newFields
   // While he edits the split the draft is on the map; otherwise, the split he confirmed.
@@ -57,7 +61,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, lands, skip, done, docked: !!split || !!dock, onAway: setAway })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, lands, skip, done, docked: !!split || !!dock || !!yard, onAway: setAway })
     // A tap on registered farmland picks it: one large target, never a point to place.
     if (lands?.length) {
       h.map.on('singleclick', (e) => {
@@ -78,7 +82,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
       h.destroy()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, lands?.length, skip, doneKey, splitOpen])
+  }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, !!spot?.yard, lands?.length, skip, doneKey, splitOpen])
 
   useEffect(() => fm?.showFlag(!hideFlag), [fm, hideFlag])
 
@@ -114,6 +118,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
       )}
       {dock && <div className="map-dock">{dock}</div>}
       {split && fm && <SplitOnMap fm={fm} {...split} />}
+      {yard && fm && <YardOnMap fm={fm} {...yard} />}
     </div>
   )
 }

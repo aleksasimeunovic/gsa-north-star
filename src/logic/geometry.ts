@@ -315,3 +315,27 @@ export function straightAcross(poly: Polygon): SplitLine {
   })
   return [{ x: Math.min(...xs), y }, { x: Math.max(...xs), y }]
 }
+
+/** The smallest yard worth leaving out of a field (design assumption, to validate). */
+export const MIN_YARD_HA = 0.01
+
+export type YardProblem = 'crosses_itself' | 'touches_edge' | 'too_small'
+
+/**
+ * What's wrong with a yard left out of a field, or null. It sits wholly inside the field: land off the edge
+ * is a change to the field's edge, not a yard. The map stops at the last good shape, so none can exist.
+ */
+export function yardProblem(field: Polygon, yard: Polygon): YardProblem | null {
+  if (outlineCrosses(yard)) return 'crosses_itself'
+  const inside = (p: Point) => pointInPolygon(p, field) && closestOnPath(p, ring(field)).dist >= INSET_M
+  if (!yard.every((p, i) => inside(p) && staysInside(field, p, yard[(i + 1) % yard.length]))) return 'touches_edge'
+  if (polygonAreaHa(yard) < MIN_YARD_HA) return 'too_small'
+  return null
+}
+
+/** The record's area without the yard: the yard takes its share, the same scaling a moved edge uses. */
+export const areaWithout = (field: Polygon, recordHa: number, yard?: Polygon) =>
+  yard ? roundHa((recordHa * (polygonAreaHa(field) - polygonAreaHa(yard))) / polygonAreaHa(field)) : recordHa
+
+/** The yard's own share of the record's area, as he sees it on the map. */
+export const yardHa = (field: Polygon, recordHa: number, yard: Polygon) => roundHa(recordHa - areaWithout(field, recordHa, yard))

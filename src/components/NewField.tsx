@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { bar, en, fieldEdit as copy, formatDateYear, formatHa, map, records, tasks } from '../copy/en'
 import { CROPS, type Crop, type Polygon } from '../data/scenarios'
+import { areaWithout } from '../logic/geometry'
 import type { TaskId } from '../logic/application'
 import type { Item } from '../logic/status'
 import type { NewField } from '../state/actions'
@@ -14,6 +15,8 @@ import { ActionBar } from './ActionBar'
 import { useApp, type AppCtx } from './AppContext'
 import type { RecordRow } from './Records'
 import { FarmMap, MapFallback } from './TaskBodies'
+import { ChoiceButtons } from '../ui/ChoiceButtons'
+import { useYardDraft, YardIsland } from './YardTool'
 import type { Flow } from './useApplicationFlow'
 
 type Derived = AppCtx['derived']
@@ -54,7 +57,10 @@ function BoughtPreview({ field }: { field?: NewField }) {
   const { derived } = useApp()
   const s = derived.scenario
   // Once he has drawn it, his field and its name; before that, the parcel as the land registry has it.
-  const spot = field ? { polygon: field.polygon, label: field.name } : { polygon: s.bought!.polygon, label: tasks.title.field_bought }
+  const yard = s.bought!.yard
+  const spot = field
+    ? { polygon: field.polygon, label: field.name, yard: field.yard && { polygon: field.yard, label: copy.yard.house, settled: true } }
+    : { polygon: s.bought!.polygon, label: tasks.title.field_bought, yard: yard && { polygon: yard, label: copy.yard.house } }
   return (
     <figure className="map-figure">
       <Suspense fallback={<MapFallback mode="preview" />}>
@@ -77,7 +83,9 @@ export function BoughtBody({ Question }: { Question: (p: { legend: string; value
   return (
     <Stack gap="section">
       {a.answer === null ? (
-        <Text>{b.context(formatDateYear(s.bought!.on))}</Text>
+        <Text>
+          {b.context(formatDateYear(s.bought!.on))}. {s.bought!.yard && `${copy.yard.seen}.`}
+        </Text>
       ) : (
         field && <Text>{fieldLine(field)}</Text>
       )}
@@ -114,7 +122,7 @@ export function AddedBody({ id }: { id: string }) {
   )
 }
 
-type Stage = 'place' | 'details'
+type Stage = 'place' | 'yard' | 'details'
 
 /**
  * Adding a field on the satellite photo, the land taken whole as the record has it: where it is (the parcel
@@ -129,8 +137,14 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const [landId, setLandId] = useState<string | null>(existing?.landId ?? (isBought ? 'bought' : null))
   const land = landId === 'bought' ? s.bought! : s.otherLand.find((l) => l.id === landId)
   const polygon = existing?.polygon ?? land?.polygon
-  const areaHa = existing?.areaHa ?? land?.areaHa ?? 0
-  const [stage, setStage] = useState<Stage>(polygon ? 'details' : 'place')
+  const recordHa = land?.areaHa ?? existing?.areaHa ?? 0
+  // A house the photo shows on the parcel he bought: GSA's outline, or the one he saved.
+  const yardStart = landId === 'bought' ? (existing?.yard ?? s.bought?.yard) : undefined
+  const yd = useYardDraft(polygon ?? [], recordHa, yardStart ?? [])
+  const [leftOut, setLeftOut] = useState(existing ? !!existing.yard : true)
+  const yard = yardStart && leftOut ? yd.yard : undefined
+  const areaHa = polygon ? areaWithout(polygon, recordHa, yard) : 0
+  const [stage, setStage] = useState<Stage>(polygon ? (yardStart ? 'yard' : 'details') : 'place')
   const [name, setName] = useState(existing?.name ?? '')
   const [nameError, setNameError] = useState<string>()
   const [cropError, setCropError] = useState<string>()
@@ -145,10 +159,24 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
     window.scrollTo(0, 0)
     document.querySelector('.map-stage-panel')?.scrollTo(0, 0)
     document.getElementById('field-title')?.focus({ preventScroll: true })
-  }, [stage])
+  }, [stage, yd.editing])
+
+  // On a keyboard, undo and redo work as everywhere else while he edits the yard.
+  useEffect(() => {
+    if (!yd.editing || stage !== 'yard') return
+    const key = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) yd.redo()
+        else yd.undo()
+      }
+    }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  })
 
   const save = (shape: Polygon) => {
-    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, areaHa, name: name.trim(), crop: crop! }
+    const field: NewField = { id: existing?.id ?? (isBought ? 'bought' : `f${Date.now().toString(36)}`), landId: landId!, polygon: shape, areaHa, name: name.trim(), crop: crop!, ...(yard ? { yard } : {}) }
     dispatch({ type: 'save_field', field })
     const task: TaskId = isBought ? 'field_bought' : `added_${field.id}`
     go('welcome')
@@ -158,19 +186,72 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
   const head = (
     <header className="review-head">
       {!(isBought || existing) && <p className="hint">{copy.step(step, of)}</p>}
-      <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : copy.details}</h2>
-      {polygon && <p className="hint">{formatHa(areaHa)}</p>}
+      <h2 id="field-title" tabIndex={-1}>{stage === 'place' ? copy.place : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}</h2>
+      {polygon && <p className="hint">{yard ? copy.yard.without(formatHa(areaHa)) : formatHa(areaHa)}</p>}
     </header>
+  )
+
+  const yardStage = polygon && stage === 'yard' && (
+    <MapStage
+      label={title}
+      working={yd.editing}
+      answering={!yd.editing}
+      map={
+        <Suspense fallback={<MapFallback mode="explore" fill />}>
+          <FarmMap
+            scenario={s}
+            mode="explore"
+            fill
+            label={`${map.title}: ${title}`}
+            spot={{ polygon, label: title, above: true }}
+            skip={existing?.id}
+            yard={{ d: yd, interactive: yd.editing }}
+            dock={yd.editing ? <YardIsland d={yd} /> : undefined}
+          />
+        </Suspense>
+      }
+    >
+      {head}
+      {!yd.editing && <Text variant="secondary">{copy.yard.why}</Text>}
+      <StageAction>
+        <Stack gap="sm">
+          {yd.editing ? (
+            <div>
+              <Button variant="primary" onClick={() => { setLeftOut(true); setStage('details') }}>{copy.yard.done}</Button>
+            </div>
+          ) : (
+            <ChoiceButtons
+              legend={copy.yard.title}
+              options={[
+                { value: 'yes' as const, label: copy.yard.yes },
+                { value: 'no' as const, label: copy.yard.no },
+              ]}
+              onChoose={(v) => {
+                if (v === 'yes') {
+                  setLeftOut(true)
+                  setStage('details')
+                } else yd.setEditing(true)
+              }}
+            />
+          )}
+          <div>
+            <Button variant="link" onClick={() => { setLeftOut(false); setStage('details') }}>{copy.yard.none}</Button>
+          </div>
+        </Stack>
+      </StageAction>
+    </MapStage>
   )
 
   return (
     <>
-      {polygon ? (
+      {yardStage ? (
+        yardStage
+      ) : polygon ? (
         <MapStage
           label={title}
           map={
             <Suspense fallback={<MapFallback mode="explore" fill />}>
-              <FarmMap scenario={s} mode="explore" fill label={`${map.title}: ${title}`} spot={{ polygon, label: title }} skip={existing?.id} />
+              <FarmMap scenario={s} mode="explore" fill label={`${map.title}: ${title}`} spot={{ polygon, label: title, above: !!yard }} skip={existing?.id} yard={yard ? { d: yd, interactive: false, settled: true } : undefined} />
             </Suspense>
           }
         >
@@ -206,6 +287,12 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
               )}
               <StageAction>
                 <Inline>
+                  {yardStart && (
+                    <Button onClick={() => setStage('yard')}>
+                      <Icon name="back" size="sm" />
+                      {bar.back}
+                    </Button>
+                  )}
                   {!(isBought || existing) && (
                     <Button
                       onClick={() => {
