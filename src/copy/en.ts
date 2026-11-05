@@ -648,6 +648,7 @@ export const records = {
   pigs: 'Pigs',
   calvings: 'Cows that calved',
   period: (from: string, to: string) => `${from} to ${to}`,
+  areaCrop: (ha: string, crop: string) => `${ha} (${crop})`,
   unchangedFields: 'Unchanged fields',
   total: 'All your land',
   fieldCount: (n: number) => `${n} fields`,

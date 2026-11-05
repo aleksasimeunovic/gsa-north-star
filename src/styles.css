@@ -126,7 +126,8 @@
 .outline-list li[data-mark='done'] .row-title { color: var(--muted-foreground); }
 
 /* Readiness: answers "Is my application ready?" */
-.readiness-link { display: inline-flex; align-items: center; gap: var(--gap-item); font: inherit; font-size: 0.875rem; font-weight: 500; background: none; border: 0; padding: var(--space-2) 10px var(--space-2) var(--space-2); margin-left: calc(-1 * var(--space-2)); border-radius: 12px; min-height: 44px; color: var(--foreground); cursor: pointer; text-align: left; transition: background-color 0.15s; }
+/* As tall and as round as the buttons beside it (Back), so its hover reads as the same kind of control */
+.readiness-link { display: inline-flex; align-items: center; gap: var(--gap-item); font: inherit; font-size: 0.875rem; font-weight: 500; background: none; border: 0; padding: 0 var(--space-3) 0 var(--space-2); margin-left: calc(-1 * var(--space-2)); border-radius: var(--radius); height: var(--control-h); color: var(--foreground); cursor: pointer; text-align: left; transition: background-color 0.15s; }
 .readiness-link:hover { background: var(--hover); }
 .readiness-link:hover .readiness-text { text-decoration-color: currentColor; }
 .readiness-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -565,3 +566,4 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 /* A hidden digit keeps its width under a dot, so a number is as long hidden as shown */
 .account-mask { position: relative; color: transparent; }
 .account-mask::after { content: '•'; position: absolute; inset: 0; text-align: center; color: var(--foreground); }
+.records-values { display: flex; flex-direction: column; }

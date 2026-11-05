@@ -279,7 +279,19 @@ function fieldRows(d: Derived, state: State, full: boolean): RecordRow[] {
   const s = d.scenario
   const a = state.answers
   const src = sourceIn(d)
-  const crop = (c: keyof typeof en.crops) => [{ label: en.crops[c] }]
+  // A field's value is its area and what grows there: "2.40 ha (Wheat)", one line per crop when there are two.
+  const area = (ha: number, c: keyof typeof en.crops) => copy.areaCrop(formatHa(ha), en.crops[c])
+  const field = (key: string, label: string, parts: { ha: number; crop: keyof typeof en.crops }[], rest: Partial<RecordRow> = {}): RecordRow => {
+    const values = parts.map((p) => area(p.ha, p.crop))
+    return {
+      key,
+      label,
+      value: values.join(', '),
+      show: values.length > 1 ? <span className="records-values">{values.map((v) => <span key={v}>{v}</span>)}</span> : undefined,
+      lines: [],
+      ...rest,
+    }
+  }
   const rows: RecordRow[] = []
   for (const f of s.fields) {
     const id = `field_${f.id}` as TaskId
@@ -288,38 +300,22 @@ function fieldRows(d: Derived, state: State, full: boolean): RecordRow[] {
     if (f.signal?.kind === 'satellite_difference') {
       const parts = riverParts(s, a)
       const counted = it?.conflict ? it.conflict.record : f.areaHa
-      rows.push({
-        key: f.id,
-        label: en.fields[f.id],
-        value: formatHa(counted),
-        lines: parts ? parts.map((p) => ({ label: en.crops[p.crop], value: formatHa(p.ha) })) : crop(f.cropLastYear),
-        sub: it?.conflict ? copy.youSay(formatHa(it.conflict.his)) : undefined,
-        source: src(id),
-        edit: { open: id },
-      })
+      rows.push(field(f.id, en.fields[f.id], parts ? parts.map((p) => ({ ha: p.ha, crop: p.crop })) : [{ ha: counted, crop: f.cropLastYear }], { sub: it?.conflict ? copy.youSay(formatHa(it.conflict.his)) : undefined, source: src(id), edit: { open: id } }))
     } else if (f.signal?.kind === 'road_strip') {
       const left = roundHa(f.areaHa - f.signal.stripHa)
       const answered = it?.status !== 'action_required'
-      rows.push({
-        key: f.id,
-        label: en.fields[f.id],
-        value: formatHa(answered ? left : f.areaHa),
-        lines: crop(f.cropLastYear),
-        sub: it?.status === 'awaiting_verification' ? copy.youSay(formatHa(f.areaHa)) : undefined,
-        source: src(id),
-        edit: { open: id },
-      })
-    } else rows.push({ key: f.id, label: en.fields[f.id], value: formatHa(f.areaHa), lines: crop(f.cropLastYear) })
+      rows.push(field(f.id, en.fields[f.id], [{ ha: answered ? left : f.areaHa, crop: f.cropLastYear }], { sub: it?.status === 'awaiting_verification' ? copy.youSay(formatHa(f.areaHa)) : undefined, source: src(id), edit: { open: id } }))
+    } else rows.push(field(f.id, en.fields[f.id], [{ ha: f.areaHa, crop: f.cropLastYear }]))
   }
   if (s.bought) {
-    const field = a.newFields.find((f) => f.landId === 'bought')
+    const nf = a.newFields.find((f) => f.landId === 'bought')
     rows.push(
-      field
-        ? { key: 'bought', label: field.name, value: formatHa(field.areaHa), lines: crop(field.crop), source: 'confirmed', edit: { screen: 'field/bought' } }
+      nf
+        ? field('bought', nf.name, [{ ha: nf.areaHa, crop: nf.crop }], { source: 'confirmed', edit: { screen: 'field/bought' } })
         : { key: 'bought', label: tasks.title.field_bought, value: formatHa(s.bought.areaHa), lines: [], sub: a.bought.answer === 'no' ? tasks.bought.notFarmed : undefined, source: a.bought.answer === 'no' ? 'confirmed' : 'records', edit: { open: 'field_bought' } },
     )
   }
-  for (const f of a.newFields.filter((x) => x.landId !== 'bought')) rows.push({ key: f.id, label: f.name, value: formatHa(f.areaHa), lines: crop(f.crop), source: 'confirmed', edit: { screen: `field/${f.id}` } })
+  for (const f of a.newFields.filter((x) => x.landId !== 'bought')) rows.push(field(f.id, f.name, [{ ha: f.areaHa, crop: f.crop }], { source: 'confirmed', edit: { screen: `field/${f.id}` } }))
   const same = s.fields.filter((f) => !f.signal)
   if (!full && same.length) rows.push({ key: 'unchanged', label: copy.unchangedFields, value: formatHa(roundHa(same.reduce((n, f) => n + f.areaHa, 0))), lines: [], sub: same.map((f) => en.fields[f.id]).join(', ') })
   if (full) rows.push({ key: 'total', label: copy.total, value: formatHa(d.farm.fields.totalHa), lines: [], sub: copy.fieldCount(d.farm.fields.count) })
