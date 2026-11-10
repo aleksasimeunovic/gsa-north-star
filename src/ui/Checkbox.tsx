@@ -26,7 +26,7 @@ export function Checkbox({ id: given, label, hint, checked, error, invalid, onCh
       )}
     >
       <Base id={id} checked={checked} aria-invalid={!!error || invalid || undefined} aria-describedby={[hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined} onCheckedChange={(v) => onChange(v === true)} className="mt-0.5" />
-      <span className="flex flex-col gap-[var(--gap-text)]">
+      <span className="flex flex-col gap-[var(--gap-heading)]">
         <span className="font-medium leading-snug">{label}</span>
         {hint && (
           <span id={`${id}-hint`} className="flex flex-col gap-[var(--gap-row)] text-sm text-muted-foreground">

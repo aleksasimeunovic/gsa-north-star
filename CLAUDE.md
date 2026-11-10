@@ -33,6 +33,7 @@ This file is the single source of truth. Read it fully before planning. If somet
 - Keep chat output short: no long explanations, no recaps of code you wrote. At the end of a phase, list what to click to check it, in under 10 lines.
 - Don't re-read files you just wrote. Make small, targeted edits.
 - Ask before adding any dependency beyond those in section 9 (OpenLayers, lucide-react, Tailwind, shadcn/ui's Radix packages, class-variance-authority, clsx and tailwind-merge are approved).
+- Spacing: every gap names its relation (`--gap-heading`, `--gap-list`, `--gap-group`, `--gap-object`, `--gap-section`, …; `docs/spacing.md`), never a bare number.
 - Styling: `src/index.css` (Tailwind and the shadcn theme tokens), shadcn components in `src/ui/shadcn/`, our primitives in `src/ui/` (Tailwind classes), composed pieces and page layout in `src/styles.css` (plain CSS on the same tokens).
 - Tests: only unit tests for the pure logic in `src/logic/`. No UI tests. Update the tests when a rule changes.
 - Commit at the end of each phase with a one-line message, push the working branch, then merge it straight into `main` (fast-forward) and push `main`, which deploys to GitHub Pages. Aleksa asked for this until the end of the project (4 Nov); no pull requests.
@@ -280,6 +281,8 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 **Round 18 (Aleksa, 4 Nov):** the map experience, motion and states, after research into GIS editing on phones: a loupe above the finger, quiet field corners, the farmland shown only when it matters, the sliver past it veiled orange, GSA's line drawing itself in, panel and map lighting the same part, snapping felt and seen, purposeful motion under reduced-motion rules, never a grey button without a reason, the answer in view on a phone.
 
 **Round 21 (Aleksa, 10 Nov):** the river field is the Tree line field; secondary buttons stronger; Snap in the island; the road field's old shape runs onto the road; the parcel he bought asked on the map like the others; a lower payment is a fact; a finished part lists its decisions with Change (see `docs/decisions.md` 371 to 380).
+
+**Round 22 (Aleksa, 10 Nov):** a pass on the whole application for clarity and on Land's interactions: gaps named by relation (`docs/spacing.md`), a toast that never covers an answer, one header for steps inside a task, the line he was pulling kept when he leaves the map, the loupe under a mouse, what a handle or a tool does said on hover, the field framed for the room the map has (see `docs/decisions.md` 381 to 395).
 
 **Round 19 (Aleksa, 4 Nov):** alternatives for the key decision points across the whole application, in the Figma file North Star only (frames 5 to 12), never in the code; every state of the journey audited for clipping and keyboard focus at 360, 768, 1024 and 1280 px.
 

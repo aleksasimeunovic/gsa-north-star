@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { after as copy, en, home, steps, tasks } from '../copy/en'
 import type { TaskId } from '../logic/application'
 import { isMapTask, stepOf } from '../logic/application'
@@ -124,7 +124,7 @@ function StepDone({ flow }: { flow: Flow }) {
  * The defining moment, said briefly: one line about what his answer did to the application, with Undo.
  * The next action has already taken the top slot under it.
  */
-export function AfterAnswerToast({ flow }: { flow: Flow }) {
+export function AfterAnswerToast({ flow, onMap }: { flow: Flow; onMap?: boolean }) {
   const { derived, state, dispatch } = useApp()
   const a = flow.after
   const [seen, setSeen] = useState<AfterAnswer | null>(null)
@@ -134,11 +134,11 @@ export function AfterAnswerToast({ flow }: { flow: Flow }) {
     last.current = a
     count.current++
   }
-  if (!a || a === seen) return null
   // Work his answer added comes first, so the finish line never moves silently; then a part he finished.
-  const finished = derived.list.steps.find((st) => st.id !== 'submit' && st.left === 0 && a.done.some((id) => stepOf(id) === st.id))
-  const lines: { kind: ToastKind; title: string }[] = [
-    ...a.more.map(({ work }) => ({ kind: 'added' as const, title: copy.more(tasks.work[work.id]) })),
+  const finished = !a ? undefined : derived.list.steps.find((st) => st.id !== 'submit' && st.left === 0 && a.done.some((id) => stepOf(id) === st.id))
+  const lines: { kind: ToastKind; title: string }[] = !a ? [] : [
+    // On the map he is already inside the work his answer added (the steps say so), so it isn't said twice.
+    ...(onMap ? [] : a.more.map(({ work }) => ({ kind: 'added' as const, title: copy.more(tasks.work[work.id]) }))),
     ...a.added.map((id) => ({ kind: 'added' as const, title: copy.more(flow.title(id)) })),
     ...(finished ? [{ kind: 'done' as const, title: home.stepFinished(steps.name[finished.id]) }] : []),
     ...a.done.map((id) => ({ kind: 'done' as const, title: copy.done(flow.title(id)) })),
@@ -146,7 +146,12 @@ export function AfterAnswerToast({ flow }: { flow: Flow }) {
     ...a.removed.map(({ work }) => ({ kind: 'removed' as const, title: copy.removed(tasks.work[work.id]) })),
   ]
   const line = lines[0]
-  if (!line) return null
+  // Nothing to say about this answer here: it is spent, so it isn't said late on the next screen.
+  useEffect(() => {
+    if (a && !line) flow.spend()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [a, line])
+  if (!a || a === seen || !line) return null
   // Under it, what comes next: the next task in this part, or the next part once this one is done.
   const next = flow.focusTask?.status === 'action_required' ? flow.title(flow.focusTask.id) : finished && flow.nextStep ? steps.name[flow.nextStep.id] : undefined
   return <Toast id={count.current} kind={line.kind} title={line.title} detail={next && copy.next(next)} onClose={() => setSeen(a)} undo={state.past.length > 0 ? { label: copy.undo, hint: copy.undoLabel, onClick: () => dispatch({ type: 'undo' }) } : undefined} />

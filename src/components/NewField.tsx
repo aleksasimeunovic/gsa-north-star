@@ -8,6 +8,7 @@ import type { TaskId } from '../logic/application'
 import type { NewField } from '../state/actions'
 import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
+import { StepHeader } from '../ui/StepHeader'
 import { Field } from '../ui/Field'
 import { Inline, Stack, Text } from '../ui/Layout'
 import { MapStage, StageAction } from '../ui/MapStage'
@@ -33,11 +34,9 @@ function BoughtPreview({ field }: { field?: NewField }) {
     ? { polygon: field.polygon, label: field.name, yard: field.yard && { polygon: field.yard, label: copy.yard.house, settled: true } }
     : { polygon: s.bought!.polygon, label: tasks.title.field_bought, yard: yard && { polygon: yard, label: copy.yard.house } }
   return (
-    <figure className="map-figure">
-      <Suspense fallback={<MapFallback mode="preview" />}>
-        <FarmMap scenario={s} mode="preview" skip={field?.id} spot={spot} label={`${map.title}: ${tasks.bought.context(formatDateYear(s.bought!.on))}`} />
-      </Suspense>
-    </figure>
+    <Suspense fallback={<MapFallback mode="preview" />}>
+      <FarmMap scenario={s} mode="preview" skip={field?.id} spot={spot} label={`${map.title}: ${tasks.bought.context(formatDateYear(s.bought!.on))}`} />
+    </Suspense>
   )
 }
 
@@ -50,9 +49,12 @@ export function BoughtBody() {
   const field = state.answers.newFields.find((f) => f.landId === 'bought')
   return (
     <Stack gap="section">
-      <div className="map-link" onClick={() => go('review', 'field_bought')}>
-        <BoughtPreview field={field} />
-      </div>
+      {/* The same shape as the other land cards, so the preview takes the room the card has. */}
+      <figure className="map-figure">
+        <div className="map-link" onClick={() => go('review', 'field_bought')}>
+          <BoughtPreview field={field} />
+        </div>
+      </figure>
     </Stack>
   )
 }
@@ -154,7 +156,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
 
   const head = (
     <header className="review-head">
-      {!(isBought || existing) && <p className="hint">{copy.step(step, of)}</p>}
+      {!(isBought || existing) && <StepHeader step={step} of={of} label={copy.step(step, of)} />}
       <h2 id="field-title" tabIndex={-1}>
         {stage === 'place' ? copy.place : stage === 'draw' ? (d.closed ? drawField.editTitle : drawField.title) : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}
       </h2>
@@ -185,30 +187,32 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
       {head}
       {!yd.editing && <Text variant="secondary">{copy.yard.why}</Text>}
       <StageAction>
-        <Stack gap="sm">
-          {yd.editing ? (
-            <div>
-              <Button variant="primary" onClick={() => { setLeftOut(true); setStage('details') }}>{copy.yard.done}</Button>
-            </div>
-          ) : (
-            <ChoiceButtons
-              legend={copy.yard.title}
-              options={[
-                { value: 'yes' as const, label: copy.yard.yes },
-                { value: 'no' as const, label: copy.yard.no },
-              ]}
-              onChoose={(v) => {
-                if (v === 'yes') {
-                  setLeftOut(true)
-                  setStage('details')
-                } else yd.setEditing(true)
-              }}
-            />
-          )}
-          <div>
-            <Button variant="link" onClick={() => { setLeftOut(false); setStage('details') }}>{copy.yard.none}</Button>
-          </div>
-        </Stack>
+        {yd.editing ? (
+          <Inline>
+            {/* Back to the question keeps his outline; "No house here" is an answer there. */}
+            <Button onClick={() => yd.setEditing(false)}>
+              <Icon name="back" size="sm" />
+              {copy.yard.back}
+            </Button>
+            <Button variant="primary" onClick={() => { setLeftOut(true); setStage('details') }}>{copy.yard.done}</Button>
+          </Inline>
+        ) : (
+          // The heading asks; the three answers are three buttons of the same weight.
+          <ChoiceButtons
+            quiet
+            legend={copy.yard.title}
+            options={[
+              { value: 'yes' as const, label: copy.yard.yes },
+              { value: 'no' as const, label: copy.yard.no },
+              { value: 'none' as const, label: copy.yard.none },
+            ]}
+            onChoose={(v) => {
+              if (v === 'no') return yd.setEditing(true)
+              setLeftOut(v === 'yes')
+              setStage('details')
+            }}
+          />
+        )}
       </StageAction>
     </MapStage>
   )
@@ -276,7 +280,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
         >
           {head}
             <form
-              className="flex flex-col gap-6"
+              className="flex flex-col gap-[var(--gap-section)]"
               onSubmit={(e) => {
                 e.preventDefault()
                 setNameError(name.trim() ? undefined : copy.nameError)

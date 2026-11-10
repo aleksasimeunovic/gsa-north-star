@@ -3,7 +3,7 @@ import { en, fieldEdit, formatDateYear, formatHa, map, split, tasks } from '../c
 import type { Field, FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
-import { CropsStep, EffectsStep, LineStep, LineTools, partLabels, useSplitDraft } from '../components/SplitTool'
+import { CropsStep, EffectsStep, forgetSplitDraft, LineStep, LineTools, partLabels, useSplitDraft } from '../components/SplitTool'
 import { FarmMap, MapFacts, MapFallback, RoadDispute, mapContext, taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
@@ -12,7 +12,7 @@ import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { Compare, Inline, Text, VisuallyHidden } from '../ui/Layout'
 import { Answers } from '../ui/Fact'
 import { MapStage, StageAction } from '../ui/MapStage'
-import { Icon } from '../ui/Icon'
+import { StepHeader } from '../ui/StepHeader'
 import { Note } from '../ui/Note'
 import { ToolSwitch } from '../ui/MapTools'
 
@@ -115,10 +115,16 @@ function RiverReview({ onAnswer, head }: BodyProps) {
   }
   const answer = (v: YesNo) => {
     if (v === 'no') onAnswer()
+    // A new answer starts from GSA's line again, not from a line he left half-pulled.
+    forgetSplitDraft()
     setAsking(false)
     dispatch({ type: 'answer_river', answer: v })
     go(v === 'yes' ? 'line' : null)
   }
+  // Editing makes the map taller on a phone: start at its top, with the whole field in view.
+  useEffect(() => {
+    if (draft.editing) window.scrollTo(0, 0)
+  }, [draft.editing])
   const titles = { line: split.lineTitle, crops: split.cropsTitle, effects: split.effectsTitle }
   // Back between the steps sits beside "Step n of 3", where he moves between them; it never loses his line.
   const stepBack = () => {
@@ -175,13 +181,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
     >
       {step ? (
         <header className="split-head">
-          <div className="split-nav">
-            <Button onClick={stepBack}>
-              <Icon name="back" size="sm" />
-              {split.back}
-            </Button>
-            <p className="hint">{split.step(RIVER_STEPS.indexOf(step) + 1)}</p>
-          </div>
+          <StepHeader step={RIVER_STEPS.indexOf(step) + 1} of={3} label={split.step(RIVER_STEPS.indexOf(step) + 1)} back={{ label: split.back, onClick: stepBack }} />
           <h2 id="split-title" tabIndex={-1}>{titles[step]}</h2>
         </header>
       ) : (

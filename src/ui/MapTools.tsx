@@ -17,9 +17,10 @@ export function ToolIsland({ label, children }: { label: string; children: React
 export const ToolDivider = () => <span className="tool-divider" aria-hidden="true" />
 
 /** `short`: a phone has no room for its caption, because undo and redo are known by their icons. */
-export function ToolButton({ icon, caption, hint, on, disabled, short, onClick }: { icon: IconName; caption: string; hint: string; on?: boolean; disabled?: boolean; short?: boolean; onClick: () => void }) {
+/** `hint` shows above it when a mouse rests there or it has focus; `idle` says why it is grey while it is. */
+export function ToolButton({ icon, caption, hint, idle, on, disabled, short, onClick }: { icon: IconName; caption: string; hint: string; idle?: string; on?: boolean; disabled?: boolean; short?: boolean; onClick: () => void }) {
   return (
-    <button type="button" className="tool" data-on={on || undefined} data-short={short || undefined} aria-pressed={on} aria-label={hint} title={hint} disabled={disabled} onClick={onClick}>
+    <button type="button" className="tool" data-on={on || undefined} data-short={short || undefined} aria-pressed={on} aria-label={hint} data-tip={disabled ? (idle ?? hint) : hint} aria-disabled={disabled || undefined} onClick={() => !disabled && onClick()}>
       <Icon name={icon} />
       <span>{caption}</span>
     </button>

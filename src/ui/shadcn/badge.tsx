@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils'
 
 // shadcn/ui Badge (MIT), with status tones. Status is always text plus an icon, never colour alone.
 export const badgeVariants = cva(
-  'inline-flex items-center gap-1 rounded-full border px-3 py-0.5 text-xs font-medium whitespace-nowrap [&_svg]:size-3.5',
+  'inline-flex items-center gap-[var(--gap-snug)] rounded-full border px-3 py-0.5 text-xs font-medium whitespace-nowrap [&_svg]:size-3.5',
   {
     variants: {
       variant: {

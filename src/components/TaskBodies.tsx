@@ -373,7 +373,7 @@ function BankBody() {
   }
   return (
     <Stack gap="section">
-      <Compare
+      <Compare long
         items={[
           { label: b.registered, value: <Account number={acc.number} /> },
           { label: b.fromBank, value: <Account number={acc.newNumber} /> },

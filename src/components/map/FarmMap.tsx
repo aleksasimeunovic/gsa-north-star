@@ -67,7 +67,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, highlight, lands, skip, done, docked: !!split || !!dock || !!yard || !!draw, frame: draw ? lands?.map((l) => l.polygon) : undefined, onAway: setAway })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, highlight, lands, skip, done, docked: !!dock, frame: draw ? lands?.map((l) => l.polygon) : undefined, onAway: setAway })
     // A tap on registered farmland picks it: one large target, never a point to place.
     if (lands?.length) {
       h.map.on('singleclick', (e) => {
@@ -91,6 +91,8 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
   }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, !!spot?.yard, highlight?.map((h) => h.label).join(), lands?.length, skip, doneKey, splitOpen])
 
   useEffect(() => fm?.showFlag(!hideFlag), [fm, hideFlag])
+  const docked = !!dock
+  useEffect(() => fm?.setDocked(docked), [fm, docked])
 
   return (
     <div className="map-frame" data-mode={mode} data-fill={fill || undefined}>

@@ -52,6 +52,8 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
   const latest = useRef({ d, moves: splitMoves(d), onPickPart })
   latest.current = { d, moves: splitMoves(d), onPickPart }
   const handles = useRef<Overlay[]>([])
+  // The dot that follows the pointer along the line; it goes while the pointer is on a handle.
+  const ghostRef = useRef<Overlay | null>(null)
   const drawnIn = useRef(false)
   const litRef = useRef<Feature<Geometry> | null>(null)
   const chips = useRef<Overlay[]>([])
@@ -164,12 +166,21 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       if (sel.on === 'field') el.dataset.corner = ''
       const name = sel.on === 'field' ? copy.cornerLabel(sel.i + 1) : sel.i === 0 ? copy.endStart : sel.i === count - 1 ? copy.endEnd : copy.bendLabel(sel.i)
       el.setAttribute('aria-label', `${name}. ${copy.keys}`)
+      // What this handle does, said beside it when a mouse rests on it, until he has dragged one.
+      const tip = document.createElement('span')
+      tip.className = 'map-tip'
+      tip.setAttribute('aria-hidden', 'true')
+      tip.textContent = sel.on === 'field' ? copy.tips.corner : end ? copy.tips.end : copy.tips.bend
+      el.appendChild(tip)
       let dragging = false
+      el.addEventListener('pointerenter', () => ghostRef.current?.setPosition(undefined))
       el.addEventListener('pointerdown', (e) => {
         e.preventDefault()
+        ghostRef.current?.setPosition(undefined)
         el.setPointerCapture(e.pointerId)
         el.focus({ preventScroll: true })
         dragging = true
+        fm.map.getViewport().dataset.dragged = ''
         el.dataset.dragging = ''
         latest.current.d.remember()
         latest.current.d.setSelected(sel)
@@ -177,7 +188,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       el.addEventListener('pointermove', (e) => {
         if (!dragging) return
         latest.current.moves.movePoint(sel, at(e), false)
-        if (e.pointerType === 'touch') loupe.current?.show(fingerAt(e))
+        loupe.current?.show(fingerAt(e), e.pointerType === 'touch')
       })
       const stop = () => {
         loupe.current?.hide()
@@ -237,6 +248,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
         if (!what) return false
         const p = round(fm.point(e.coordinate))
         sel = what === 'split' ? latest.current.moves.pull(p) : latest.current.moves.pullEdge(p)
+        pulled[what] = true
         ghost.setPosition(undefined)
         // A press on the line or the edge never moves the map.
         return true
@@ -245,7 +257,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
         if (!sel) return
         latest.current.moves.movePoint(sel, round(fm.point(e.coordinate)), false)
         const pe = e.originalEvent as PointerEvent
-        if (pe.pointerType === 'touch') loupe.current?.show(fingerAt(pe))
+        loupe.current?.show(fingerAt(pe), pe.pointerType === 'touch')
       },
       handleUpEvent: () => {
         loupe.current?.hide()
@@ -258,22 +270,34 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
     // A small dot follows the pointer along the line and the edge, to show they can be pulled from anywhere.
     const dot = document.createElement('div')
     dot.className = 'map-ghost'
+    // Beside the dot, what a press here does, until he has done it once.
+    const tip = document.createElement('span')
+    tip.className = 'map-tip'
+    dot.appendChild(tip)
+    const pulled = { split: false, outline: false }
     const ghost = new Overlay({ element: dot, positioning: 'center-center', stopEvent: false })
     fm.map.addOverlay(ghost)
+    ghostRef.current = ghost
     const hover = (e: { pixel: number[]; coordinate: number[]; dragging: boolean }) => {
       if (e.dragging) return
       const what = hit(e.pixel)
       fm.map.getViewport().style.cursor = what ? 'grab' : ''
       const cur = latest.current.d
       const path = what === 'split' ? cur.draft.line : what === 'outline' ? outlinePath(cur.field.polygon) : null
+      if (what) {
+        tip.textContent = what === 'split' ? copy.tips.line : copy.tips.edge
+        tip.hidden = pulled[what]
+      }
       ghost.setPosition(path ? fm.coord(nearestOnLine(path, fm.point(e.coordinate))) : undefined)
     }
     fm.map.on('pointermove', hover)
     return () => {
       fm.map.removeInteraction(along)
       fm.map.removeOverlay(ghost)
+      ghostRef.current = null
       fm.map.un('pointermove', hover)
       fm.map.getViewport().style.cursor = ''
+      delete fm.map.getViewport().dataset.dragged
     }
   }, [fm, interactive])
 

@@ -8,7 +8,7 @@ const TONE: Record<Source, string> = { records: 'text-muted-foreground [&_svg]:t
 /** Where a fact stands: text plus an icon shape, never colour alone. */
 export function SourceTag({ source, children }: { source: Source; children: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-[var(--space-1)] text-xs', TONE[source])}>
+    <span className={cn('inline-flex items-center gap-[var(--gap-snug)] text-xs', TONE[source])}>
       <Icon name={ICON[source]} size="sm" /> {children}
     </span>
   )

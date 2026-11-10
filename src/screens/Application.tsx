@@ -64,7 +64,7 @@ export function Application({ target, review, field }: { target: string | null; 
         {reviewing ? (
           <>
             {/* On the map too, an answer that adds work says what and why. */}
-            <AfterAnswerToast flow={flow} />
+            <AfterAnswerToast flow={flow} onMap />
             <Review id={reviewing} flow={flow} />
           </>
         ) : drawing ? (

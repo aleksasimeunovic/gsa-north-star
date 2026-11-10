@@ -1,11 +1,13 @@
 import type { ElementType, ReactNode } from 'react'
 import { cn } from '../lib/utils'
 
-// By relation (index.css): text, sm (inline), item, md and group, lg and section. Never a bare number.
+// By relation (index.css): heading, sm (inline), list, md and group, lg and section. Never a bare number.
 const GAP = {
-  text: 'gap-[var(--gap-text)]',
+  text: 'gap-[var(--gap-heading)]',
+  heading: 'gap-[var(--gap-heading)]',
+  list: 'gap-[var(--gap-list)]',
   sm: 'gap-[var(--gap-inline)]',
-  item: 'gap-[var(--gap-item)]',
+  item: 'gap-[var(--gap-list)]',
   md: 'gap-[var(--gap-group)]',
   group: 'gap-[var(--gap-group)]',
   lg: 'gap-[var(--gap-section)]',
@@ -31,10 +33,11 @@ export function VisuallyHidden({ as: As = 'span', children }: { as?: ElementType
 }
 
 /** Two values side by side, both kept (record vs his answer). */
-export function Compare({ items }: { items: { label: string; value: ReactNode }[] }) {
+/** `long`: values too long for half a phone's width (account numbers) sit one above the other there. */
+export function Compare({ items, long }: { items: { label: string; value: ReactNode }[]; long?: boolean }) {
   // Side by side, so the two values are compared at a glance: before on the left, now on the right.
   return (
-    <dl className="grid auto-cols-fr grid-flow-col gap-[var(--gap-inline)]">
+    <dl className={cn('grid auto-cols-fr gap-[var(--gap-inline)]', long ? 'sm:grid-flow-col' : 'grid-flow-col')}>
       {items.map((i) => (
         <div key={i.label} className="min-w-0 rounded-xl bg-muted px-4 py-3">
           <dt className="text-sm text-muted-foreground">{i.label}</dt>

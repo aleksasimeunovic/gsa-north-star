@@ -229,7 +229,7 @@ export function DrawOnMap({ fm, d, fields }: { fm: FarmMap; d: FieldDraw; fields
         if (corner === null) return
         o.set('drag', corner)
         latest.current.move(corner, at(e))
-        if (e.pointerType === 'touch') loupe.current?.show(finger(e))
+        loupe.current?.show(finger(e), e.pointerType === 'touch')
       })
       const stop = () => {
         loupe.current?.hide()

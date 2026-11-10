@@ -65,8 +65,22 @@ const samePoly = (a: Polygon, b: Polygon) => sameLine(a, b)
  * as declared. Whatever he does, the draft is always a field and a line the field can be split by.
  * `record` is the field as registered; the draft may move its edge.
  */
+/**
+ * The line he was pulling when he left the map (Back, the stepper, a look at another field): kept until he
+ * confirms the split or answers the question again, so leaving never costs him his work.
+ */
+let kept: { key: string; draft: Split } | null = null
+const keptKey = (record: Field, stored: Split | null) => `${record.id}:${JSON.stringify(stored)}`
+export const forgetSplitDraft = () => {
+  kept = null
+}
+
 export function useSplitDraft(record: Field, stored: Split | null) {
-  const [draft, setDraft] = useState<Split>(() => stored ?? proposal(record))
+  const key = keptKey(record, stored)
+  const [draft, setDraft] = useState<Split>(() => (kept?.key === key ? kept.draft : (stored ?? proposal(record))))
+  useEffect(() => {
+    kept = { key, draft }
+  }, [key, draft])
   const [past, setPast] = useState<Split[]>([])
   const [future, setFuture] = useState<Split[]>([])
   const [stopped, setStopped] = useState<Stopped>(null)
@@ -344,14 +358,14 @@ export function LineTools({ d }: { d: SplitDraft }) {
         </label>
       )}
       <ToolIsland label={t.label}>
-        <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} disabled={!d.canUndo} onClick={d.undo} />
-        <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} disabled={!d.canRedo} onClick={d.redo} />
+        <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} idle={t.undoIdle} disabled={!d.canUndo} onClick={d.undo} />
+        <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} idle={t.redoIdle} disabled={!d.canRedo} onClick={d.redo} />
         <ToolDivider />
         {/* Snapping is always in view, so he can see whether it is on and turn it off or on in one tap. */}
         <ToolButton
           icon="snap"
           caption={t.snap}
-          hint={t.snapHint}
+          hint={d.snap ? t.snapOn : t.snapOff}
           on={d.snap}
           onClick={() => {
             d.setSnap(!d.snap)
@@ -362,7 +376,7 @@ export function LineTools({ d }: { d: SplitDraft }) {
         {sel ? (
           <ToolButton icon="close" caption={t.remove} hint={t.removeHint} onClick={() => moves.drop(sel)} />
         ) : (
-          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} disabled={moves.isReset} onClick={moves.reset} />
+          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} idle={t.resetIdle} disabled={moves.isReset} onClick={moves.reset} />
         )}
       </ToolIsland>
     </>

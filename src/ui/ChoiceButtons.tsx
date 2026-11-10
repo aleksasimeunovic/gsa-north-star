@@ -7,14 +7,16 @@ interface Props<T extends string> {
   hint?: string
   options: { value: T; label: string }[]
   onChoose: (value: T) => void
+  /** The heading above already asks it: the legend stays for screen readers only. */
+  quiet?: boolean
 }
 
 /** One question answered with a large button per answer, for when answering moves him on. */
-export function ChoiceButtons<T extends string>({ legend, hint, options, onChoose }: Props<T>) {
+export function ChoiceButtons<T extends string>({ legend, hint, options, onChoose, quiet }: Props<T>) {
   const id = useId()
   return (
     <div role="group" aria-labelledby={id} className="flex flex-col gap-[var(--gap-label)]">
-      <p id={id} className="text-base font-semibold">
+      <p id={id} className={quiet ? 'sr-only' : 'text-base font-semibold'}>
         {legend}
         {hint && <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{hint}</span>}
       </p>

@@ -118,7 +118,7 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
       el.addEventListener('pointermove', (e) => {
         if (!dragging) return
         latest.current.moves.move(i, at(e))
-        if (e.pointerType === 'touch') loupe.current?.show(fingerAt(e))
+        loupe.current?.show(fingerAt(e), e.pointerType === 'touch')
       })
       const stop = () => {
         loupe.current?.hide()
@@ -180,7 +180,7 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
         if (corner !== null) latest.current.moves.move(corner, p)
         else if (whole) latest.current.moves.shift(whole.from, { x: p.x - whole.at.x, y: p.y - whole.at.y })
         const pe = e.originalEvent as PointerEvent
-        if (corner !== null && pe.pointerType === 'touch') loupe.current?.show(fingerAt(pe))
+        if (corner !== null) loupe.current?.show(fingerAt(pe), pe.pointerType === 'touch')
       },
       handleUpEvent: () => {
         loupe.current?.hide()

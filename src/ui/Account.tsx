@@ -20,7 +20,7 @@ export function Account({ number }: { number: string }) {
   const whole = formatAccount(number)
   let left = digits.length - 4
   return (
-    <span className="inline-flex max-w-full items-center gap-x-[var(--gap-inline)] tabular-nums">
+    <span className="inline-flex max-w-full items-center gap-x-[var(--gap-inline)] tabular-nums max-[479px]:text-[0.9375rem]">
       <span className="min-w-0 shrink" aria-hidden="true">
         {whole.split(/(?<=-)/).map((group, g) => (
           // Groups break between them first; on a narrow phone a long group breaks too, the same hidden or shown.

@@ -172,7 +172,7 @@ export function useApplicationFlow(target: string | null) {
     })
   }, [bring])
 
-  return { step: current, index, nextStep, focus, focusTask, held, after, announce, show, goStep, back, forward, forwardIsPrimary, title }
+  return { step: current, index, nextStep, focus, focusTask, held, after, spend: () => setAfter(null), announce, show, goStep, back, forward, forwardIsPrimary, title }
 }
 
 export type Flow = ReturnType<typeof useApplicationFlow>

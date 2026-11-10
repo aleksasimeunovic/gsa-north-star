@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils'
 
 // shadcn/ui RadioGroup (MIT).
 export function RadioGroup({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
-  return <RadioGroupPrimitive.Root data-slot="radio-group" className={cn('grid gap-2', className)} {...props} />
+  return <RadioGroupPrimitive.Root data-slot="radio-group" className={cn('grid gap-[var(--gap-inline)]', className)} {...props} />
 }
 
 export function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {

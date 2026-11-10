@@ -4,7 +4,7 @@ import { Icon } from './Icon'
 
 /**
  * What just happened, in a bold line with its sign (saved, sent for a check, added, no longer needed), and
- * under it what comes next. One line about what just happened, in the lower right above the action bar. It leaves on its own after a
+ * under it what comes next. It sits where it covers no answer (in the action bar on a map screen). It leaves on its own after a
  * while, but never while the pointer or focus is on it, so Undo stays reachable. Announced politely.
  */
 export type ToastKind = 'done' | 'waiting' | 'added' | 'removed'

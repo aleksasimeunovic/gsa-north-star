@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../../lib/utils'
 
 // shadcn/ui Alert (MIT), with the app's tones.
-const alertVariants = cva('relative w-full rounded-xl border px-4 py-3 text-sm flex flex-col gap-1', {
+const alertVariants = cva('relative w-full rounded-xl border px-4 py-3 text-sm flex flex-col gap-[var(--gap-snug)]', {
   variants: {
     variant: {
       default: 'bg-card text-card-foreground',

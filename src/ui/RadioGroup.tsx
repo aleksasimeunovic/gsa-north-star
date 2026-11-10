@@ -26,7 +26,7 @@ export function RadioGroup<T extends string>({ legend, hint, options, value, onC
   const id = useId()
   const compact = useDensity() === 'compact'
   return (
-    <div role="group" aria-labelledby={`${id}-legend`} className="flex min-w-0 flex-col gap-[var(--gap-item)]">
+    <div role="group" aria-labelledby={`${id}-legend`} className="flex min-w-0 flex-col gap-[var(--gap-list)]">
       <p id={`${id}-legend`} className="text-base font-semibold">
         {legend}
         {hint && <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{hint}</span>}

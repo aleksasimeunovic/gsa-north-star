@@ -126,7 +126,9 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   /** Its name, just above its top edge, so the inside stays clear for what changed and the split areas. */
   const name = (poly: Polygon, text: string, strong: boolean) => {
     const c = centroid(poly)
-    label(labels, { x: c.x, y: topEdgeAt(poly, c.x) - 3 }, text, { above: true, strong, size: strong ? 15 : 13 })
+    // Above the highest point of the edge across the name's width, so a slanted edge never runs through it.
+    const tops = [-40, -20, 0, 20, 40].map((dx) => topEdgeAt(poly, c.x + dx)).filter(Number.isFinite)
+    label(labels, { x: c.x, y: Math.min(...tops) - 4 }, text, { above: true, strong, size: strong ? 15 : 13 })
   }
 
   const focused = opts.focus ? s.fields.find((f) => f.id === opts.focus) : undefined
@@ -254,8 +256,9 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   // A short map (a phone, or a tablet answering a question) needs less padding, or the field ends up tiny.
   const small = Math.min(target.clientWidth, target.clientHeight || target.clientWidth) < 640
   const edge = small ? 28 : 56
-  // Clear of the zoom buttons on the left, and of the tools floating over the bottom.
-  const padding = opts.interactive ? [edge, small ? 16 : edge, opts.docked ? edge + 76 : edge, small ? 64 : edge] : [20, 20, 20, 20]
+  // Clear of the zoom buttons on the left, and of the tools floating over the bottom while they are there.
+  let docked = !!opts.docked
+  const paddingNow = () => (opts.interactive ? [edge, small ? 16 : edge, docked ? edge + 76 : edge, small ? 64 : edge] : [20, 20, 20, 20])
   // Until he moves the map himself, it keeps his field framed when its size changes (the panel beside it grows and shrinks).
   let framing = false
   let moved = false
@@ -264,17 +267,25 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     if (v !== away) opts.onAway?.(v)
     away = v
   }
+  // The map's own size changing (the panel beside it grows, a phone's map gets taller) isn't him moving it.
+  let sizeKey = ''
+  const sizeNow = () => (map.getSize() ?? []).join('x')
   const onMove = () => {
-    if (framing) return
+    if (framing || sizeNow() !== sizeKey) return
     moved = true
     setAway(true)
   }
   view.on('change:center', onMove)
   view.on('change:resolution', onMove)
   const fit = (polys: Polygon[], animate: boolean) => {
+    // A framing still under way was worked out for the old size: it stops, or it would win.
+    view.cancelAnimations()
     framing = true
+    sizeKey = sizeNow()
     view.fit(extentOf(polys), {
-      padding,
+      padding: paddingNow(),
+      // The map's size as it is now: the view's own copy can be a frame behind when the map has just grown.
+      size: map.getSize(),
       maxZoom: 18.5,
       duration: animate && !reducedMotion() ? 450 : undefined,
       callback: () => {
@@ -293,6 +304,7 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   map.on('change:size', () => {
     const size = map.getSize()
     if (!moved && size && size[0] > 0 && size[1] > 0) fit(home, false)
+    else sizeKey = sizeNow()
   })
 
   return {
@@ -323,6 +335,12 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
         else flagLayer.setVisible(on)
       }
       requestAnimationFrame(step)
+    },
+    /** Tools came onto the map or left it: his field is framed in the room that leaves, unless he moved the map. */
+    setDocked: (on: boolean) => {
+      if (on === docked) return
+      docked = on
+      if (!moved) fit(home, true)
     },
     /** Back to the field in question (or the fields shown). */
     fitHome: (animate = true) => {

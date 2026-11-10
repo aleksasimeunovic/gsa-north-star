@@ -6,10 +6,10 @@ const ZOOM = 2
 const LIFT = 96
 
 /**
- * A magnifier for a finger: while he drags a point on a touch screen, his finger covers exactly the spot he is
- * placing. The loupe floats above it and shows that spot twice as large, with a mark at the point, so he can
- * see the edge he is following. Drawn from the map's own canvases, so it shows the photo, his field and the
- * line as they are at that moment. Only for touch; a mouse pointer covers nothing.
+ * A magnifier for the point he drags: a finger covers exactly the spot he is placing, and a handle under a
+ * mouse covers the edge he is following. The loupe shows that spot twice as large, with a mark at the point.
+ * Above a finger; up and to the side of a mouse pointer, so it never sits where he is heading. Drawn from the
+ * map's own canvases, so it shows the photo, his field and the line as they are at that moment.
  */
 export function createLoupe(map: OlMap, pointAt: () => number[] | null) {
   const viewport = map.getViewport()
@@ -23,6 +23,7 @@ export function createLoupe(map: OlMap, pointAt: () => number[] | null) {
   viewport.appendChild(el)
   const ctx = canvas.getContext('2d')
   let finger: number[] | null = null
+  let touch = true
 
   const draw = () => {
     const point = finger && pointAt()
@@ -47,16 +48,20 @@ export function createLoupe(map: OlMap, pointAt: () => number[] | null) {
     // The point itself is marked by the loupe's own centre dot (CSS), drawn like its handle.
     // Above the finger; below it if the finger is near the top of the map.
     const [fx, fy] = finger
-    const left = Math.min(Math.max(fx - SIZE / 2, 8), w - SIZE - 8)
-    const top = fy - LIFT - SIZE / 2 < 8 ? fy + LIFT - SIZE / 2 : fy - LIFT - SIZE / 2
+    // A mouse: beside the pointer, on whichever side has room.
+    const side = fx + 36 + SIZE > w - 8 ? fx - 36 - SIZE : fx + 36
+    const left = touch ? Math.min(Math.max(fx - SIZE / 2, 8), w - SIZE - 8) : side
+    const lift = touch ? LIFT : 56
+    const top = Math.min(fy - lift - SIZE / 2 < 8 ? fy + lift - SIZE / 2 : fy - lift - SIZE / 2, h - SIZE - 8)
     el.style.transform = `translate(${left}px, ${top}px)`
   }
   map.on('postrender', draw)
 
   return {
     /** Where his finger is, in map pixels; the loupe shows the point he moves, wherever it lands. */
-    show: (at: number[]) => {
+    show: (at: number[], byTouch = true) => {
       finger = at
+      touch = byTouch
       el.dataset.on = ''
       draw()
     },
