@@ -623,3 +623,4 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 @media (hover: hover) { .tool:hover::after { opacity: 1; transition: opacity 0.15s 0.4s; } }
 .tool:first-child::after { left: 0; translate: 0 0; }
 .tool:last-child::after { left: auto; right: 0; translate: 0 0; }
+.answer > button { margin-left: auto; }

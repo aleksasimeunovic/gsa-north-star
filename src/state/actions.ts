@@ -40,7 +40,8 @@ export interface Answers {
   herd: { answer: YesNo | null; ownCount: number | null }
   river: { answer: YesNo | null; split: Split | null }
   /** No sends the correction: the land map's area counts until it is checked. */
-  road: { answer: YesNo | null }
+  /** `strip`: his own outline of the road, when he moved GSA's. */
+  road: { answer: YesNo | null; strip?: Polygon }
   /** Yes: household only, nothing to declare. */
   pigs: { answer: YesNo | null }
   /** Yes: payments go to the new account the bank reported. No: he gives the account. */
@@ -113,7 +114,7 @@ export type Action =
   | { type: 'ask_record_check'; itemId: string; what?: string; value?: string }
   | { type: 'answer_river'; answer: YesNo }
   | { type: 'set_split'; split: Split | null }
-  | { type: 'answer_road'; answer: YesNo }
+  | { type: 'answer_road'; answer: YesNo; strip?: Polygon }
   | { type: 'answer_pigs'; answer: YesNo }
   | { type: 'answer_bank'; answer: YesNo }
   | { type: 'set_bank_account'; account: string }

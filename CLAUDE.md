@@ -284,6 +284,8 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 22 (Aleksa, 10 Nov):** a pass on the whole application for clarity and on Land's interactions: gaps named by relation (`docs/spacing.md`), a toast that never covers an answer, one header for steps inside a task, the line he was pulling kept when he leaves the map, the loupe under a mouse, what a handle or a tool does said on hover, the field framed for the room the map has (see `docs/decisions.md` 381 to 395).
 
+**Round 23 (Aleksa, 10 Nov):** the road strip and the house and yard are edited like the divider line: confirm first, the same island with Snap, Back in the step header, and actions are buttons, never links (see `docs/decisions.md` 396 to 398).
+
 **Round 19 (Aleksa, 4 Nov):** alternatives for the key decision points across the whole application, in the Figma file North Star only (frames 5 to 12), never in the code; every state of the journey audited for clipping and keyboard focus at 360, 768, 1024 and 1280 px.
 
 Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset. Design notes are switched off (Aleksa, 3 Nov).

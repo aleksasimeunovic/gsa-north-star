@@ -1,7 +1,7 @@
 import type { FieldId, Goal, Measure, Requirement, Scenario } from '../data/scenarios'
 import type { Answers, MeasureValue } from '../state/actions'
 import type { CaseState } from './advisor'
-import { roundHa, splitField } from './geometry'
+import { roundHa, sameLine, scaledHa, splitField } from './geometry'
 
 export type Status = 'complete' | 'action_required' | 'awaiting_verification'
 export type ItemId =
@@ -46,6 +46,7 @@ export type ItemDetail =
   | 'road_unanswered'
   | 'road_confirmed'
   | 'road_correction_requested'
+  | 'road_strip_moved'
   | 'pigs_unanswered'
   | 'pigs_household'
   | 'pigs_declared'
@@ -145,6 +146,19 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
   if (signal?.kind === 'road_strip') {
     const r = a.road
     if (r.answer === null) return { id: itemId, status: 'action_required', detail: 'road_unanswered' }
+    if (r.answer === 'yes' && r.strip && !sameLine(r.strip, signal.stripPolygon)) {
+      const his = scaledHa(signal.stripPolygon, signal.stripHa, r.strip)
+      // A wider road than the land map's is his to declare: less land, nothing to check.
+      if (his >= signal.stripHa) return { id: itemId, status: 'complete', detail: 'road_confirmed', paymentImpact: impactOf(s, his, 'road_took_area') }
+      // A narrower one is a correction: the land map's strip counts until the land registry checks his.
+      return {
+        id: itemId,
+        status: 'awaiting_verification',
+        detail: 'road_strip_moved',
+        paymentImpact: impactOf(s, signal.stripHa, 'road_pending_correction'),
+        conflict: { record: roundHa(field.areaHa - signal.stripHa), his: roundHa(field.areaHa - his), owner: 'land_map' },
+      }
+    }
     if (r.answer === 'yes') {
       return { id: itemId, status: 'complete', detail: 'road_confirmed', paymentImpact: impactOf(s, signal.stripHa, 'road_took_area') }
     }

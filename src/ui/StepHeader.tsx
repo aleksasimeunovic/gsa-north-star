@@ -14,12 +14,17 @@ export function StepHeader({ step, of, label, back }: { step: number; of: number
           {back.label}
         </button>
       )}
-      <span className="step-marks" aria-hidden="true">
-        {Array.from({ length: of }, (_, i) => (
-          <span key={i} data-on={i < step || undefined} />
-        ))}
-      </span>
-      <p className="hint">{label}</p>
+      {/* A task of one step has only the way back. */}
+      {of > 0 && (
+        <>
+          <span className="step-marks" aria-hidden="true">
+            {Array.from({ length: of }, (_, i) => (
+              <span key={i} data-on={i < step || undefined} />
+            ))}
+          </span>
+          <p className="hint">{label}</p>
+        </>
+      )}
     </div>
   )
 }

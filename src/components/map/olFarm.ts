@@ -39,6 +39,9 @@ export interface FarmMapOptions {
   /** Fields he added this year, drawn and named like the rest. */
   added?: { id: string; polygon: Polygon; name: string; yard?: Polygon }[]
   /** A place in question that isn't a field yet (the parcel he bought): outlined, named, and framed. */
+  /** He is working on, or gave, his own outline of the road: GSA's strip isn't drawn. */
+  ownStrip?: boolean
+  roadStrip?: { polygon: Polygon; ha: number }
   spot?: { polygon: Polygon; label: string; yard?: { polygon: Polygon; label: string; settled?: boolean }; above?: boolean }
   /** Fields a measure covers: drawn bright and named, his other fields faint. */
   highlight?: { polygon: Polygon; label: string }[]
@@ -192,10 +195,12 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
     shapes.addFeature(f)
     if (focused?.id === 'river') opts.done.parts.forEach((p) => chip(centroid(p.polygon), p.label))
   }
-  if (signal?.kind === 'road_strip') {
-    shape(signal.stripPolygon, 'strip')
-    const b = bounds(signal.stripPolygon)
-    chip({ x: (b.minX + b.maxX) / 2, y: b.minY - 16 }, copy.strip(formatHa(signal.stripHa)))
+  if (signal?.kind === 'road_strip' && !opts.ownStrip) {
+    // His own outline of the road, once he gave one; otherwise the land map's.
+    const strip = opts.roadStrip ?? { polygon: signal.stripPolygon, ha: signal.stripHa }
+    shape(strip.polygon, 'strip')
+    const b = bounds(strip.polygon)
+    chip({ x: (b.minX + b.maxX) / 2, y: b.minY - 16 }, copy.strip(formatHa(strip.ha)))
   }
 
   const extentOf = (polys: Polygon[]) => boundingExtent(polys.flat().map(coord))

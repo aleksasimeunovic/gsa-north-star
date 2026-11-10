@@ -1,9 +1,11 @@
 import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { en, fieldEdit, formatDateYear, formatHa, map, split, tasks } from '../copy/en'
-import type { Field, FieldId } from '../data/scenarios'
+import type { Field, FieldId, Polygon } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { CropsStep, EffectsStep, forgetSplitDraft, LineStep, LineTools, partLabels, useSplitDraft } from '../components/SplitTool'
+import { useYardDraft, YardIsland } from '../components/YardTool'
+import { roundHa } from '../logic/geometry'
 import { FarmMap, MapFacts, MapFallback, RoadDispute, mapContext, taskSummary } from '../components/TaskBodies'
 import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
@@ -72,7 +74,7 @@ function AnswerLine({ legend, answer, onChange }: { legend: string; answer: stri
   return (
     <p className="answer">
       <span>{legend}</span> <strong>{answer}</strong>{' '}
-      <Button variant="link" onClick={onChange}>
+      <Button onClick={onChange}>
         {en.change}
         <VisuallyHidden>: {legend}</VisuallyHidden>
       </Button>
@@ -220,7 +222,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
             <AnswerLine legend={tasks.river.question} answer={a.answer === 'yes' ? tasks.river.other : tasks.river.same} onChange={() => setAsking(true)} />
             {a.answer === 'yes' && (
               <div>
-                <Button variant="link" onClick={() => go('line')}>{tasks.changeSplit}</Button>
+                <Button onClick={() => go('line')}>{tasks.changeSplit}</Button>
               </div>
             )}
             {item.conflict && <RiverDispute counted={item.conflict.record} claimed={item.conflict.his} />}
@@ -261,41 +263,104 @@ function RiverCompare({ field }: { field: Field }) {
   )
 }
 
-/** The strip the land map now calls road: its size and what it does to the payment, on the map, before he answers. */
+/**
+ * The strip the land map now calls road: its size and what it does to the payment, on the map, before he
+ * answers. Confirmation first, as everywhere on the map: yes, or change it (he moves the road's outline like
+ * the yard and the divider line, with the same tools), or none of it is road. His draft stays while he steps back.
+ */
 function RoadReview({ onAnswer, head }: BodyProps) {
   const { derived, state, dispatch } = useApp()
   const a = state.answers.road
   const item = derived.items.find((i) => i.id === 'field_road')!
+  const field = derived.scenario.fields.find((f) => f.id === 'road')!
+  const sig = field.signal?.kind === 'road_strip' ? field.signal : null
+  const d = useYardDraft(field.polygon, sig?.stripHa ?? 0, sig?.stripPolygon ?? [], 'road', a.strip)
   const [asking, setAsking] = useState(a.answer === null)
   const disputed = item.status === 'awaiting_verification' && !asking
+  const own = d.editing || (!!a.strip && !asking)
+  const r = tasks.road
+  const left = formatHa(roundHa(field.areaHa - d.yardHa))
+  const answer = a.strip && a.answer === 'yes' && !d.moves.isReset ? r.moved : a.answer === 'yes' ? r.yes : r.no
+
+  // On a keyboard, undo and redo work as everywhere else while he edits the road.
+  useEffect(() => {
+    if (!d.editing) return
+    const key = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) d.redo()
+        else d.undo()
+      }
+    }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  })
+
+  const save = (v: YesNo, strip?: Polygon) => {
+    onAnswer()
+    setAsking(false)
+    d.setEditing(false)
+    dispatch({ type: 'answer_road', answer: v, ...(strip ? { strip } : {}) })
+  }
+
   return (
     <MapStage
       label={en.fields.road}
+      working={d.editing}
+      answering={asking && !d.editing}
       map={
         <Suspense fallback={<MapFallback mode="explore" fill />}>
-          <FarmMap scenario={derived.scenario} focus="road" mode="explore" fill label={`${map.title}: ${en.fields.road}. ${mapContext(derived.scenario, 'field_road')}`} />
+          <FarmMap
+            scenario={derived.scenario}
+            focus="road"
+            mode="explore"
+            fill
+            label={`${map.title}: ${en.fields.road}. ${mapContext(derived.scenario, 'field_road')}`}
+            yard={own ? { d, interactive: d.editing, settled: !d.editing } : undefined}
+            dock={d.editing ? <YardIsland d={d} /> : undefined}
+          />
         </Suspense>
       }
     >
-      {head}
-      {asking && <MapFacts id="field_road" />}
-      {asking ? (
-        <StageAction>
-          <ChoiceButtons
-            legend={tasks.road.question}
-            options={options(tasks.road.yes, tasks.road.no)}
-            onChoose={(v) => {
-              // Saying the land map is wrong keeps him here, to see who settles it and what happens next.
-              if (v === 'yes') onAnswer()
-              setAsking(false)
-              dispatch({ type: 'answer_road', answer: v })
-            }}
-          />
-        </StageAction>
+      {d.editing ? (
+        <>
+          <header className="split-head">
+            <StepHeader step={0} of={0} label="" back={{ label: split.back, onClick: () => d.setEditing(false) }} />
+            <h2 id="review-title" tabIndex={-1}>{r.editTitle}</h2>
+          </header>
+          <Text variant="secondary">{r.editHint}</Text>
+          <ul className="facts" aria-live="polite">
+            <li>{r.area(formatHa(field.areaHa), left)}</li>
+          </ul>
+          <StageAction>
+            <Inline>
+              <Button variant="primary" onClick={() => save('yes', d.moves.isReset ? undefined : d.yard)}>{fieldEdit.yard.done}</Button>
+            </Inline>
+          </StageAction>
+        </>
       ) : (
-        <AnswerLine legend={tasks.road.question} answer={a.answer === 'yes' ? tasks.road.yes : tasks.road.no} onChange={() => setAsking(true)} />
+        <>
+          {head}
+          {asking && <MapFacts id="field_road" />}
+          {asking ? (
+            <StageAction>
+              {/* Three answers of one weight, as for the house and yard. None of it road keeps him here, to see who settles it. */}
+              <ChoiceButtons
+                legend={r.question}
+                options={[
+                  { value: 'yes' as const, label: split.check.yes },
+                  { value: 'edit' as const, label: split.check.no },
+                  { value: 'no' as const, label: r.no },
+                ]}
+                onChoose={(v) => (v === 'edit' ? d.setEditing(true) : save(v))}
+              />
+            </StageAction>
+          ) : (
+            <AnswerLine legend={r.question} answer={answer} onChange={() => setAsking(true)} />
+          )}
+          {disputed && <RoadDispute />}
+        </>
       )}
-      {disputed && <RoadDispute />}
     </MapStage>
   )
 }

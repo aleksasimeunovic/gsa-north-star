@@ -68,7 +68,7 @@ function reduceAnswers(a: Answers, action: Action, at: string): Answers {
     case 'set_split':
       return { ...a, river: { ...a.river, split: action.split } }
     case 'answer_road':
-      return { ...a, road: { ...a.road, answer: action.answer } }
+      return { ...a, road: { answer: action.answer, ...(action.strip ? { strip: action.strip } : {}) } }
     case 'answer_pigs':
       return { ...a, pigs: { answer: action.answer } }
     case 'answer_bank':

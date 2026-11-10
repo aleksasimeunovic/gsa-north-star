@@ -23,6 +23,8 @@ interface Props {
   /** The split line, drawn on the map; he moves it when interactive. */
   split?: { d: SplitDraft; interactive: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }
   /** Hide what the photo flagged, to compare it with last year's field. */
+  /** His own outline of the road strip, drawn instead of the land map's. */
+  roadStrip?: { polygon: Polygon; ha: number }
   hideFlag?: boolean
   /** Fills a map stage: as large as the screen allows, with its tools on the map. */
   fill?: boolean
@@ -46,7 +48,8 @@ interface Props {
 }
 
 /** His fields on the real satellite photo. Loaded only when a map is shown. */
-export default function FarmMap({ scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, yard, highlight, lands, onPickLand, skip, dock, draw }: Props) {
+export default function FarmMap({ roadStrip, scenario, focus, only, mode, label, split, hideFlag, fill, parcel, spot, yard, highlight, lands, onPickLand, skip, dock, draw }: Props) {
+  const ownStrip = !!yard && focus === 'road'
   const { state } = useApp()
   const added = state.answers.newFields
   // While he edits the split the draft is on the map; otherwise, the split he confirmed.
@@ -67,7 +70,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
 
   useEffect(() => {
     if (!el.current) return
-    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, highlight, lands, skip, done, docked: !!dock, frame: draw ? lands?.map((l) => l.polygon) : undefined, onAway: setAway })
+    const h = createFarmMap(el.current, scenario, { interactive: explore, focus, only, parcel, added, spot, highlight, lands, skip, done, ownStrip, roadStrip, docked: !!dock, frame: draw ? lands?.map((l) => l.polygon) : undefined, onAway: setAway })
     // A tap on registered farmland picks it: one large target, never a point to place.
     if (lands?.length) {
       h.map.on('singleclick', (e) => {
@@ -88,7 +91,7 @@ export default function FarmMap({ scenario, focus, only, mode, label, split, hid
       h.destroy()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario, focus, onlyKey, explore, addedKey, spot?.label, !!spot?.yard, highlight?.map((h) => h.label).join(), lands?.length, skip, doneKey, splitOpen])
+  }, [ownStrip, roadStrip?.ha, scenario, focus, onlyKey, explore, addedKey, spot?.label, !!spot?.yard, highlight?.map((h) => h.label).join(), lands?.length, skip, doneKey, splitOpen])
 
   useEffect(() => fm?.showFlag(!hideFlag), [fm, hideFlag])
   const docked = !!dock

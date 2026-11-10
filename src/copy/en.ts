@@ -307,9 +307,12 @@ export const tasks = {
     payment: (about: string) => `About ${about} less`,
     question: 'Is this strip road now?',
     yes: "Yes, it's road now",
-    no: "No, it's still my field",
+    no: "None of it is road, it's still my field",
+    moved: 'Yes, but I moved its edge',
+    editTitle: 'Move the outline onto the road',
+    editHint: 'Pull its edge onto the road.',
     done: (left: string) => `Now ${left}`,
-    correctionAsked: "The land registry checks the strip, and the land map's area counts until then",
+    correctionAsked: "The land registry checks the strip. The land map's area counts until then",
     landMap: 'On the land map',
     yours: 'You say',
     strip: 'the strip',
@@ -326,7 +329,7 @@ export const tasks = {
   },
 
   pigs: {
-    context: (n: number) => `The animal registry shows ${n} pigs, and you didn't declare any last year`,
+    context: (n: number) => `The animal registry shows ${n} pigs. You declared none last year`,
     question: 'Are they only for your household?',
     hint: "Household pigs don't need declaring",
     answerYes: 'Household only',
@@ -504,7 +507,28 @@ export const draw = {
   loading: 'Loading the map',
 }
 
-const EDGE_STOP = "The line stops at your field's edge, because land outside it can't get support"
+const KEYS = 'Arrow keys move it, and Delete takes it out'
+const CROSSES = "The outline can't cross itself"
+
+/** The same tools wherever he moves a shape on the map. */
+export const shapeTools = {
+  undo: 'Undo',
+  undoHint: 'Undo your last move',
+  redo: 'Redo',
+  redoHint: 'Redo your last move',
+  snap: 'Snap',
+  snapHint: 'Snap to edges on the photo',
+  snapOn: 'On: points join edges on the photo',
+  snapOff: 'Off: points stay where you put them',
+  undoIdle: 'Nothing to undo yet',
+  redoIdle: 'Nothing to redo',
+  joined: 'Joined the edge on the photo',
+  reset: 'Reset',
+  remove: 'Remove',
+  removeHint: 'Take out this corner',
+}
+
+const EDGE_STOP = "The line stops at your field's edge: land outside it gets no support"
 
 export const split = {
   step: (n: number) => `Step ${n} of 3`,
@@ -528,32 +552,21 @@ export const split = {
   cornerLabel: (n: number) => `Corner ${n} of your field`,
   endStart: 'Start of the line, on the edge of the field',
   endEnd: 'End of the line, on the edge of the field',
-  keys: 'Arrow keys move it, and Delete takes it out',
+  keys: KEYS,
   tips: { line: 'Pull to bend', edge: 'Pull to move', bend: 'Drag to move', end: 'Slides along the edge', corner: 'Drag to move' },
   tools: {
+    ...shapeTools,
     label: 'Tools for the line and your field',
-    undo: 'Undo',
-    undoHint: 'Undo your last move',
-    undoIdle: 'Nothing to undo yet',
-    redo: 'Redo',
-    redoHint: 'Redo your last move',
-    redoIdle: 'Nothing to redo',
     resetIdle: "This is GSA's line",
-    snapOn: 'On: points join edges on the photo',
-    snapOff: 'Off: points stay where you put them',
-    joined: 'Joined the edge on the photo',
-    snap: 'Snap',
     sliderLabel: 'Move the whole line',
-    reset: 'Reset',
     resetHint: "Go back to GSA's line and your field as registered",
-    remove: 'Remove',
     removeHint: 'Take out this point',
   },
   stopped: {
     edge: EDGE_STOP,
     leaves_field: EDGE_STOP,
     crosses_itself: "The line can't cross itself, so it stopped here",
-    too_small: 'Each part needs at least 0.10 ha to be declared, so the line stopped here',
+    too_small: 'Each part needs at least 0.10 ha, so the line stopped here',
   },
   part: { top: 'Tree line side', bottom: 'Road side', left: 'Left part', right: 'Right part' },
   partArea: (part: string, area: string) => `${part} ${area}`,
@@ -621,7 +634,7 @@ export const finish = {
       "You'll see the decision and the payment in GSA",
     ],
     amendTitle: 'Need to change something?',
-    amendText: 'You can amend it until the national deadline, and sign the declaration again',
+    amendText: 'You can amend it until the national deadline, signing again',
     amend: 'Amend',
   },
   renewal: {
@@ -694,24 +707,31 @@ export const fieldEdit = {
     yes: "Yes, that's right",
     no: 'No, I need to change it',
     none: 'No house here',
-    back: 'Back',
     done: 'Done',
     label: (ha: string) => `House and yard, ${ha}`,
     corner: (n: number) => `Corner ${n} of the yard`,
-    keys: 'Arrow keys move it, and Delete takes it out',
+    keys: KEYS,
     tools: 'Tools for the yard',
-    undo: 'Undo',
-    undoHint: 'Undo your last move',
-    redo: 'Redo',
-    redoHint: 'Redo your last move',
-    reset: 'Reset',
     resetHint: "Go back to GSA's outline",
-    remove: 'Remove',
-    removeHint: 'Take out this corner',
+    resetIdle: "This is GSA's outline",
     stopped: {
-      crosses_itself: "The outline can't cross itself, so it stopped here",
-      touches_edge: 'The yard stays inside your field, so it stopped here',
-      too_small: 'A yard needs at least 0.01 ha to leave out, so it stopped here',
+      crosses_itself: CROSSES,
+      touches_edge: 'The yard stays inside your field',
+      too_small: 'A yard needs at least 0.01 ha',
+    },
+  },
+  /** The road strip, edited like the yard when the land map's outline is wrong. */
+  road: {
+    label: (ha: string) => `Road, ${ha}`,
+    corner: (n: number) => `Corner ${n} of the road`,
+    keys: KEYS,
+    tools: 'Tools for the road',
+    resetHint: "Go back to the land map's road",
+    resetIdle: "This is the land map's road",
+    stopped: {
+      crosses_itself: CROSSES,
+      touches_edge: "The road stays inside last year's field",
+      too_small: 'The road needs at least 0.01 ha',
     },
   },
 }
@@ -719,19 +739,19 @@ export const fieldEdit = {
 /** Drawing a field corner by corner on the photo. */
 export const drawField = {
   title: 'Draw your field',
-  start: 'Move the map until the cross sits on a corner of your field, then add the corner.',
+  start: 'Move the map until the cross is on a corner of your field, then add it.',
   startMouse: 'Or click each corner on the map.',
   next: 'Go round your field, one corner at a time.',
   three: 'Add more corners, or create the field.',
   editTitle: "Check your field's edges",
-  editHint: 'Pull a corner, or the dot in the middle of an edge, to where your field ends.',
+  editHint: "Pull a corner, or an edge's middle dot, to where your field ends.",
   continue: 'Continue',
   addCorner: 'Add corner',
   closeHere: 'Close the field',
   onFirst: 'On your first corner',
   create: (ha: string) => `Create the field, ${ha}`,
   problem: {
-    outside_farmland: "Only registered farmland can get support. Move the cross onto the land outlined on the photo",
+    outside_farmland: "Only registered farmland gets support. Move the cross onto the outlined land",
     crosses_itself: "The edges can't cross each other. Move the cross",
   } satisfies Record<DrawProblem, string>,
   stopped: {
@@ -754,7 +774,7 @@ export const drawField = {
   resetHint: 'Go back to the field as you created it',
   cornerLabel: (n: number) => `Corner ${n} of your field`,
   midLabel: (n: number) => `Middle of edge ${n}. Pull it to add a corner`,
-  keys: 'Arrow keys move it, and Delete takes it out',
+  keys: KEYS,
 }
 
 export const proto = {

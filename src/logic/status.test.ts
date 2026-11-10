@@ -104,6 +104,19 @@ describe('status per item', () => {
     expect(r.estimate.totalDinars).toBe(run('second_year').estimate.totalDinars)
   })
 
+  it('a road strip he narrows waits for the land registry; the land map counts until then', () => {
+    const road = SCENARIOS.second_year.fields.find((f) => f.id === 'road')!
+    const gsa = road.signal?.kind === 'road_strip' ? road.signal.stripPolygon : []
+    // Half as deep: the road took half of what the land map says.
+    const half = gsa.map((p, i) => (i < 2 ? p : { x: p.x, y: (p.y + gsa[0].y) / 2 }))
+    const it = item(run('second_year', { type: 'answer_road', answer: 'yes', strip: half }), 'field_road')
+    expect(it.status).toBe('awaiting_verification')
+    expect(it.conflict).toEqual({ record: 1.68, his: 1.74, owner: 'land_map' })
+    expect(it.paymentImpact?.reason).toBe('road_pending_correction')
+    // Unchanged, his outline is GSA's: a plain yes.
+    expect(item(run('second_year', { type: 'answer_road', answer: 'yes', strip: gsa }), 'field_road').status).toBe('complete')
+  })
+
   it('road yes is complete but still lowers the payment', () => {
     const road = item(run('second_year', { type: 'answer_road', answer: 'yes' }), 'field_road')
     expect(road.status).toBe('complete')

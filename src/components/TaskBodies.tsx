@@ -1,10 +1,10 @@
 import { lazy, Suspense, useRef, useState } from 'react'
 import { draw, en, finish, formatDate, formatDateYear, formatDinars, formatHa, formatNumber, home, map, tasks } from '../copy/en'
-import type { FieldId } from '../data/scenarios'
+import type { FieldId, Polygon } from '../data/scenarios'
 import { milanCaseState, milanOutcome } from '../logic/advisor'
 import { isMapChange, type Task, type TaskId } from '../logic/application'
 import { riverParts } from '../logic/farm'
-import { roundHa } from '../logic/geometry'
+import { roundHa, sameLine, scaledHa } from '../logic/geometry'
 import { impactOf, type Item, type ItemId } from '../logic/status'
 import type { Confirmable, YesNo } from '../state/actions'
 import { Banner } from '../ui/Banner'
@@ -47,7 +47,7 @@ function Question({ legend, hint, value, answer, onAnswer }: { legend: string; h
     return (
       <p className="answer" ref={line} tabIndex={-1}>
         <span>{legend}</span> <strong>{answer ?? (value === 'yes' ? en.yes : en.no)}</strong>{' '}
-        <Button variant="link" onClick={() => setEditing(true)}>
+        <Button onClick={() => setEditing(true)}>
           {en.change}
           <VisuallyHidden>: {legend}</VisuallyHidden>
         </Button>
@@ -204,10 +204,12 @@ export function MapFacts({ id }: { id: 'field_river' | 'field_road' }) {
   const field = s.fields.find((f) => `field_${f.id}` === id)!
   const signal = field.signal
   if (signal?.kind === 'road_strip') {
+    // Once he has said how much the road took, his own outline's size.
+    const took = itemOf(derived, id).paymentImpact?.reason === 'road_took_area' ? itemOf(derived, id).paymentImpact!.areaHa : signal.stripHa
     return (
       <ul className="facts">
-        <li>{tasks.road.area(formatHa(field.areaHa), formatHa(roundHa(field.areaHa - signal.stripHa)))}</li>
-        <li>{tasks.road.payment(about(impactOf(s, signal.stripHa, 'road_took_area').amountDinars))}</li>
+        <li>{tasks.road.area(formatHa(field.areaHa), formatHa(roundHa(field.areaHa - took)))}</li>
+        <li>{tasks.road.payment(about(impactOf(s, took, 'road_took_area').amountDinars))}</li>
       </ul>
     )
   }
@@ -223,8 +225,10 @@ export function RoadDispute() {
   const s = derived.scenario
   const field = s.fields.find((f) => f.id === 'road')!
   const strip = field.signal?.kind === 'road_strip' ? field.signal.stripHa : 0
-  const left = formatHa(roundHa(field.areaHa - strip))
-  const whole = formatHa(field.areaHa)
+  // His side: the whole field, or what his own outline of the road leaves.
+  const c = itemOf(derived, 'field_road').conflict
+  const left = formatHa(c?.record ?? roundHa(field.areaHa - strip))
+  const whole = formatHa(c?.his ?? field.areaHa)
   return (
     <>
       <Compare
@@ -233,7 +237,7 @@ export function RoadDispute() {
           { label: tasks.road.yours, value: whole },
         ]}
       />
-      <Answers items={tasks.settled(tasks.landWho, tasks.landChecks(tasks.road.strip, left), tasks.road.gain(whole, about(impactOf(s, strip, 'road_pending_correction').amountDinars)))} />
+      <Answers items={tasks.settled(tasks.landWho, tasks.landChecks(tasks.road.strip, left), tasks.road.gain(whole, about(impactOf(s, (c ? c.his - c.record : strip), 'road_pending_correction').amountDinars)))} />
       <Note kind="assumption" />
     </>
   )
@@ -254,7 +258,7 @@ export function mapContext(s: Derived['scenario'], id: 'field_river' | 'field_ro
  * what changed highlighted, the facts, and one way in: review the boundary on the map.
  */
 function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
-  const { derived, go } = useApp()
+  const { derived, state, go } = useApp()
   const fieldId = id.slice(6) as FieldId
   const item = itemOf(derived, id)
   const unanswered = item.detail.endsWith('_unanswered')
@@ -268,6 +272,7 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
               scenario={derived.scenario}
               focus={fieldId}
               mode="preview"
+              roadStrip={roadStripOf(derived, state.answers.road.strip)}
               label={`${map.title}: ${en.fields[fieldId]}. ${mapContext(derived.scenario, id)}`}
             />
           </Suspense>
@@ -283,6 +288,12 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
       )}
     </Stack>
   )
+}
+
+/** His own outline of the road and its share of the land map's strip, or nothing if he kept the land map's. */
+const roadStripOf = (d: Derived, strip?: Polygon) => {
+  const sig = d.scenario.fields.find((f) => f.id === 'road')?.signal
+  return strip && sig?.kind === 'road_strip' && !sameLine(strip, sig.stripPolygon) ? { polygon: strip, ha: scaledHa(sig.stripPolygon, sig.stripHa, strip) } : undefined
 }
 
 /** The way into the map, beside the task's heading, so the map gets the room under it. */
@@ -422,7 +433,7 @@ function CalvingsBody() {
       ) : (
         item.status === 'action_required' && (
           <div>
-            <Button variant="link" onClick={() => dispatch({ type: 'ask_record_check', itemId: 'calvings' })}>{tasks.calvings.wrong}</Button>
+            <Button onClick={() => dispatch({ type: 'ask_record_check', itemId: 'calvings' })}>{tasks.calvings.wrong}</Button>
           </div>
         )
       )}
@@ -498,7 +509,7 @@ export function taskSummary(id: TaskId, d: Derived, state: AppCtx['state']): str
     }
     case 'field_road': {
       const f = s.fields.find((x) => x.id === 'road')!
-      const strip = f.signal?.kind === 'road_strip' ? f.signal.stripHa : 0
+      const strip = item.paymentImpact?.areaHa ?? 0
       if (done && item.paymentImpact) return `${tasks.road.done(formatHa(roundHa(f.areaHa - strip)))}, ${tasks.road.payment(about(item.paymentImpact.amountDinars)).toLowerCase()}`
       if (item.status === 'awaiting_verification') return tasks.road.correctionAsked
       return mapContext(s, id)
