@@ -593,6 +593,8 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 .step-marks span[data-on] { background: var(--foreground); }
 .split-head, .review-head { gap: var(--gap-heading); }
 .split-head .step-head, .review-head .step-head { margin-bottom: var(--gap-snug); }
+/* A heading sits nearer the text it introduces (heading to body) than the next group. */
+.map-stage-panel > header, .next > h3:has(+ p) { margin-bottom: calc(var(--gap-heading) - var(--gap-group)); }
 
 /* What a handle or a press on the line does, said beside it when a mouse rests there */
 .map-tip { position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 0; padding: 2px var(--space-2); border-radius: 8px; background: var(--foreground); color: #fff; font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; line-height: 1.5; white-space: nowrap; pointer-events: none; opacity: 0; }
