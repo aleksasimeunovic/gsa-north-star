@@ -90,6 +90,8 @@ function kindOf(id: TaskId): TaskKind {
 
 /** Whether a map shows this change: he reviews the boundary on the map, not from a description. */
 export const isMapChange = (id: TaskId): id is 'field_river' | 'field_road' => id === 'field_river' || id === 'field_road'
+/** A task he answers with the map in front of him: the two changes, and the parcel he bought. */
+export const isMapTask = (id: TaskId): id is 'field_river' | 'field_road' | 'field_bought' => isMapChange(id) || id === 'field_bought'
 
 const removed = (id: WorkId, reason: RemovalReason): Work => ({ id, state: 'removed', reason })
 
@@ -151,7 +153,7 @@ export function applicationList(s: Scenario, a: Answers, items: Item[], role: Ro
       left: tasks.filter((t) => t.status === 'action_required').length,
       waiting: tasks.filter((t) => t.status === 'awaiting_verification').length,
       errors: tasks.filter((t) => t.mark === 'error').length,
-      look: tasks.filter((t) => t.mark === 'waiting' || t.mark === 'payment').length,
+      look: tasks.filter((t) => t.mark === 'waiting').length,
     }
   }).filter((st) => st.tasks.length > 0 || st.id === 'submit')
   return {

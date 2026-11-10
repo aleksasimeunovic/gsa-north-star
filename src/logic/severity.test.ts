@@ -7,11 +7,14 @@ describe('one status signal', () => {
     expect(markOf({ status: 'action_required' })).toBe('todo')
     expect(markOf({ status: 'action_required', problem: true })).toBe('error')
     expect(markOf({ status: 'awaiting_verification' })).toBe('waiting')
-    expect(markOf({ status: 'complete', paymentImpact: { amountDinars: -2160, areaHa: 0.12, reason: 'road_took_area' } })).toBe('payment')
     expect(markOf({ status: 'complete' })).toBe('done')
-    expect(['todo', 'error', 'waiting', 'payment', 'done'].map((m) => blocks(m as never))).toEqual([true, true, false, false, false])
+    expect(['todo', 'error', 'waiting', 'done'].map((m) => blocks(m as never))).toEqual([true, true, false, false])
     expect(severityOf('waiting')).toBe('look')
-    expect(severityOf('payment')).toBe('look')
+  })
+
+  it('a lower payment is a fact, not a mark', () => {
+    const r = run('second_year', { type: 'answer_road', answer: 'yes' })
+    expect(r.list.done.find((t) => t.id === 'field_road')!.mark).toBe('done')
   })
 
   it('animals waiting for a check read the same in the list, the stepper and the readiness report', () => {

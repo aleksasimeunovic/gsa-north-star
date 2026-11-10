@@ -179,7 +179,6 @@ export function createFarmMap(target: HTMLElement, s: Scenario, opts: FarmMapOpt
   const signal = focused?.signal
   let flagChip: Overlay | null = null
   if (signal?.kind === 'satellite_difference') {
-    label(notes, signal.riverAt, copy.river, { strong: false, size: 13 })
     if (!opts.done) {
       shape(signal.flagPolygon, 'flag', flagged)
       flagChip = chip(centroid(signal.flagPolygon), copy.flag)

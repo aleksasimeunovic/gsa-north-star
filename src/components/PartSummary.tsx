@@ -58,8 +58,8 @@ function Part({ step, onPick }: { step: Step; onPick: (id: TaskId) => void }) {
               severity={severity ?? 'done'}
               title={title(t)}
               hint={taskSummary(t.id, derived, state)}
-              // What's done is what he declared; what isn't leads to where he finishes it.
-              onClick={severity ? () => onPick(t.id) : undefined}
+              // What isn't done leads to where he finishes it; what's done leads to where he can change it.
+              onClick={() => onPick(t.id)}
             />
           )
         })}
@@ -72,7 +72,7 @@ function Part({ step, onPick }: { step: Step; onPick: (id: TaskId) => void }) {
 function PartState({ step }: { step: Step }) {
   if (step.errors) return <StatusBadge mark="error" />
   if (step.left) return <span className="part-summary-left">{steps.left(step.id, step.left)}</span>
-  if (step.look) return <StatusBadge mark={step.waiting ? 'waiting' : 'payment'} />
+  if (step.look) return <StatusBadge mark="waiting" />
   return <StatusBadge mark="done" />
 }
 

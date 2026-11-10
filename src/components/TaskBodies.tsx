@@ -273,7 +273,8 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
           </Suspense>
         </div>
       </figure>
-      {unanswered && <MapFacts id={id} />}
+      {/* The strip's size and what it does to the payment, before he answers and after: plain facts. */}
+      {(unanswered || (id === 'field_road' && item.status === 'complete')) && <MapFacts id={id} />}
       {id === 'field_road' && item.status === 'awaiting_verification' && <RoadDispute />}
       {id !== 'field_road' && item.status === 'awaiting_verification' && (
         <Text variant="secondary">
@@ -286,7 +287,18 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
 
 /** The way into the map, beside the task's heading, so the map gets the room under it. */
 export function MapReviewButton({ id }: { id: TaskId }) {
-  const { derived, go } = useApp()
+  const { derived, state, go } = useApp()
+  if (id === 'field_bought') {
+    const item = itemOf(derived, id)
+    const unanswered = state.answers.bought.answer === null
+    const todo = item.status === 'action_required'
+    return (
+      <Button variant={todo ? 'primary' : 'secondary'} onClick={() => (todo && !unanswered ? go('field', 'bought') : go('review', id))}>
+        {unanswered ? tasks.reviewParcel : todo ? tasks.bought.draw : en.change}
+        <VisuallyHidden>: {tasks.title.field_bought}</VisuallyHidden>
+      </Button>
+    )
+  }
   if (id !== 'field_river' && id !== 'field_road') return null
   const item = itemOf(derived, id)
   const action = item.detail === 'river_needs_split' ? tasks.reviewSplit : tasks.review
@@ -435,7 +447,7 @@ export function TaskBody({ task }: { task: Task }) {
     case 'calvings':
       return <CalvingsBody />
     case 'field_bought':
-      return <BoughtBody Question={Question} />
+      return <BoughtBody />
     case 'measures':
       return <MeasuresBody />
     case 'receipts':

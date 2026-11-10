@@ -33,7 +33,7 @@ export function Stepper({ flow, onStep = flow.goStep }: { flow: Flow; onStep?: (
           const current = s.id === flow.step.id
           const mark = stepMark(s, flow.step.id)
           // What's left in the open part lives in the panel beside it; here only what to fix or look at.
-          const status = current ? '' : mark === 'error' ? en.mark.error : mark === 'look' ? (s.waiting ? en.mark.waiting : en.mark.payment) : ''
+          const status = current ? '' : mark === 'error' ? en.mark.error : mark === 'look' ? en.mark.waiting : ''
           return (
             <li key={s.id} data-state={current ? 'current' : 'todo'} data-mark={mark}>
               <button type="button" aria-current={current ? 'step' : undefined} onClick={() => onStep(s.id)}>

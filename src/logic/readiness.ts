@@ -53,7 +53,7 @@ export type Severity = 'error' | 'todo' | 'look' | 'info'
 export type Verdict = 'renewal' | 'blocked' | 'ready_with_warnings' | 'ready' | 'submitted'
 export interface Warning {
   id: ItemId
-  why: 'waiting' | 'payment'
+  why: 'waiting'
 }
 export type Info = 'state_checks' | 'unpriced'
 export interface Report {
@@ -70,7 +70,7 @@ export function readinessReport(s: Scenario, a: Answers, tasks: Task[]): Report 
   const errors = tasks.filter((t) => t.mark === 'error').map((t) => t.id)
   const todo = tasks.filter((t) => t.mark === 'todo').map((t) => t.id)
   const warnings: Warning[] = tasks.flatMap((t): Warning[] =>
-    t.id !== 'renewal' && (t.mark === 'waiting' || t.mark === 'payment') ? [{ id: t.id, why: t.mark }] : [],
+    t.id !== 'renewal' && t.mark === 'waiting' ? [{ id: t.id, why: t.mark }] : [],
   )
   const unpriced = s.measures.some((m) => m.fits && !m.rateDinars && a.measures.chosen.includes(m.id))
   const info: Info[] = ['state_checks', ...(unpriced ? (['unpriced'] as const) : [])]

@@ -291,7 +291,7 @@ export function partLabels(d: SplitDraft, step: 'line' | 'crops' | 'effects'): [
 /**
  * Step 1's toolbar, once he edits: direct manipulation does the work, so the island holds only Undo, Redo and
  * Reset (Remove while a point is selected). Snapping works on its own, and the map says when it joined an edge,
- * with a way to turn it off. Why a move stopped is said in the same place, and so is an edge past the
+ * and Snap sits in the island so he always sees whether it is on. Why a move stopped is said in the same place, and so is an edge past the
  * registered farmland, which is flagged for a check rather than stopped.
  */
 export function LineTools({ d }: { d: SplitDraft }) {
@@ -311,10 +311,9 @@ export function LineTools({ d }: { d: SplitDraft }) {
       {copy.stopped[d.stopped]}
       {d.stopped === 'too_small' && <Note kind="design" />}
     </MapStatus>
-  ) : !d.snap ? (
-    <MapStatus action={{ label: t.snapOn, onClick: () => d.setSnap(true) }}>{t.snapOff}</MapStatus>
-  ) : d.snapped ? (
-    <MapStatus icon="snap" action={{ label: t.free, onClick: () => { d.setSnap(false); d.setSnapped(false) } }}>{t.joined} <Note kind="design" />
+  ) : d.snap && d.snapped ? (
+    <MapStatus icon="snap">
+      {t.joined} <Note kind="design" />
     </MapStatus>
   ) : d.pastLand ? (
     <MapStatus>
@@ -348,6 +347,18 @@ export function LineTools({ d }: { d: SplitDraft }) {
         <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} disabled={!d.canUndo} onClick={d.undo} />
         <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} disabled={!d.canRedo} onClick={d.redo} />
         <ToolDivider />
+        {/* Snapping is always in view, so he can see whether it is on and turn it off or on in one tap. */}
+        <ToolButton
+          icon="snap"
+          caption={t.snap}
+          hint={t.snapHint}
+          on={d.snap}
+          onClick={() => {
+            d.setSnap(!d.snap)
+            d.setSnapped(false)
+          }}
+        />
+        <ToolDivider />
         {sel ? (
           <ToolButton icon="close" caption={t.remove} hint={t.removeHint} onClick={() => moves.drop(sel)} />
         ) : (
@@ -363,7 +374,7 @@ export function LineTools({ d }: { d: SplitDraft }) {
  * so he confirms it without touching the map. Only if it's wrong does he edit it, or reject it and start from a
  * straight line. The tools are on the map.
  */
-export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => void; onNext: () => void }) {
+export function LineStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) {
   const onEdge = followsEdge(d.draft.line, edgeOf(d.record)) && !d.draft.boundary
   const moves = splitMoves(d)
 
@@ -400,22 +411,16 @@ export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => v
         <Text variant="secondary">
           {onEdge ? copy.check.suggested : copy.check.yours} <Note kind="ai" />
         </Text>
-        {/* The areas are on the map; on a phone, where room is short, the sentence is for screen readers. */}
-        {r && <p className="check-parts">{copy.check.parts(areas)}</p>}
+        {r && <VisuallyHidden>{areas}</VisuallyHidden>}
         <StageAction>
-          <Stack gap="sm">
-            <ChoiceButtons
-              legend={copy.check.question}
-              options={[
-                { value: 'yes' as const, label: copy.check.yes },
-                { value: 'no' as const, label: copy.check.no },
-              ]}
-              onChoose={(v) => (v === 'yes' ? onNext() : d.setEditing(true))}
-            />
-            <div>
-              <Button variant="link" onClick={onBack}>{copy.back}</Button>
-            </div>
-          </Stack>
+          <ChoiceButtons
+            legend={copy.check.question}
+            options={[
+              { value: 'yes' as const, label: copy.check.yes },
+              { value: 'no' as const, label: copy.check.no },
+            ]}
+            onChoose={(v) => (v === 'yes' ? onNext() : d.setEditing(true))}
+          />
         </StageAction>
       </Stack>
     )
@@ -430,12 +435,11 @@ export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => v
       {moved !== 0 && <Text variant="secondary">{copy.fieldNow(formatHa(claimed ?? d.field.areaHa), formatHa(Math.abs(moved)), moved > 0)}</Text>}
       {d.pastLand && <Text variant="secondary">{copy.pastLandCounts(formatHa(d.field.areaHa))}</Text>}
       <Inline>
-        {onEdge && <Button variant="link" onClick={moves.straight}>{copy.straight}</Button>}
-        <Button variant="link" onClick={() => d.setSlider(!d.slider)}>{d.slider ? copy.sliderOff : copy.sliderOn}</Button>
+        {onEdge && <Button onClick={moves.straight}>{copy.straight}</Button>}
+        <Button onClick={() => d.setSlider(!d.slider)}>{d.slider ? copy.sliderOff : copy.sliderOn}</Button>
       </Inline>
       <StageAction>
         <Inline>
-          <Button onClick={() => d.setEditing(false)}>{copy.back}</Button>
           <Button variant="primary" disabled={!d.result} onClick={onNext}>{copy.next}</Button>
         </Inline>
       </StageAction>
@@ -444,7 +448,7 @@ export function LineStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => v
 }
 
 /** Step 2: what grows in each part, in the order they sit on the map. A tap on a part comes here. */
-export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => void; onNext: () => void }) {
+export function CropsStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) {
   const { draft, result } = d
   const same = !!draft.crops[0] && draft.crops[0] === draft.crops[1]
   const complete = !!result && !!draft.crops[0] && !!draft.crops[1] && !same
@@ -490,7 +494,6 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
         ))}
       <StageAction>
         <Inline>
-          <Button onClick={onBack}>{copy.back}</Button>
           <Button variant="primary" onClick={next}>{copy.next}</Button>
         </Inline>
       </StageAction>
@@ -503,7 +506,7 @@ export function CropsStep({ d, onBack, onNext }: { d: SplitDraft; onBack: () => 
  * rules as the estimate, in three groups so cause and effect can't be missed: what changes, what stays the
  * same, and what still needs his decision. GSA never applies for a measure because a crop or an edge changed.
  */
-export function EffectsStep({ d, onBack, onConfirm }: { d: SplitDraft; onBack: () => void; onConfirm: (s: Split) => void }) {
+export function EffectsStep({ d, onConfirm }: { d: SplitDraft; onConfirm: (s: Split) => void }) {
   const { derived, state } = useApp()
   const e = splitEffects(derived.base, state.answers, d.draft)
   if (!e) return null
@@ -538,7 +541,6 @@ export function EffectsStep({ d, onBack, onConfirm }: { d: SplitDraft; onBack: (
       {(e.lostHa > 0 || e.newCrop || e.pastLand) && <Note kind="assumption" />}
       <StageAction>
         <Inline>
-          <Button onClick={onBack}>{copy.back}</Button>
           <Button variant="primary" onClick={() => onConfirm(d.draft)}>{copy.confirm}</Button>
         </Inline>
       </StageAction>

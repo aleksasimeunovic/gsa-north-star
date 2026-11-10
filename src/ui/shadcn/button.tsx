@@ -10,7 +10,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground shadow-xs enabled:hover:bg-primary-hover',
-        outline: 'border border-input bg-card shadow-xs enabled:hover:bg-hover enabled:hover:border-hover-border',
+        outline: 'border-[1.5px] border-control-border bg-card font-semibold shadow-xs enabled:hover:bg-hover enabled:hover:border-hover-border',
         secondary: 'bg-secondary text-secondary-foreground enabled:hover:bg-border',
         ghost: 'enabled:hover:bg-hover',
         link: 'text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground justify-start text-left px-1',

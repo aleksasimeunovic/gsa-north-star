@@ -11,6 +11,7 @@
   --stone-100: oklch(0.966 0.007 95);
   --stone-200: oklch(0.925 0.01 95);
   --stone-300: oklch(0.87 0.012 95);
+  --stone-400: oklch(0.74 0.015 105);
   --stone-500: oklch(0.56 0.018 120);
   --stone-600: oklch(0.47 0.02 135);
   --forest-50: oklch(0.966 0.022 150);
@@ -52,6 +53,8 @@
   --destructive: var(--red-600);
   --border: var(--stone-200);
   --input: var(--stone-300);
+  /* A secondary button's edge: clearly a button, never as loud as the primary */
+  --control-border: var(--stone-400);
   /* Neutral hover for everything that isn't a semantic action */
   --hover: var(--stone-100);
   --hover-border: var(--stone-500);
@@ -158,6 +161,7 @@
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-control-border: var(--control-border);
   --color-hover: var(--hover);
   --color-hover-border: var(--hover-border);
   --color-ring: var(--ring);

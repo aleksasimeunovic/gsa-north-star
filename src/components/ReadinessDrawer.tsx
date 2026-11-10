@@ -14,7 +14,7 @@ const KIND = { ...en.readiness.group, done: en.mark.done }
 
 /**
  * Only what went wrong and what to look at, never the work he simply hasn't reached: what to fix (red),
- * then what he can submit with but should look at (a check, a lower payment). Each row takes him to the
+ * then what he can submit with but should look at (a check). Each row takes him to the
  * place it is about.
  */
 export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open: boolean; onClose: () => void; onPick: (id: TaskId) => void; returnFocusTo: RefObject<HTMLElement> }) {

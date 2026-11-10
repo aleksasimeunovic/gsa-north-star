@@ -10,7 +10,7 @@ import { useApp } from './AppContext'
  */
 /**
  * The bar speaks only when there's something beyond the questions he is working through: something to fix
- * (red), something to look at (a check or a lower payment, orange), or that he can submit (green). Questions
+ * (red), something to look at (a check, orange), or that he can submit (green). Questions
  * he hasn't reached are never counted here; the stepper and the part's outline show those, so the bar never
  * reads as a finish line that moves. It opens everything in the drawer.
  */

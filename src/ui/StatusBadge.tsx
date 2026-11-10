@@ -6,9 +6,9 @@ import { Icon, type IconName } from './Icon'
 
 // One warning sign, always orange: still to confirm or do, or something to look at; the words say which.
 // Done is a green tick, red is an error.
-export const MARK_ICON: Record<Mark, IconName> = { done: 'complete', todo: 'warning', waiting: 'warning', payment: 'warning', error: 'error' }
-const TONE = { done: 'success', todo: 'outline', waiting: 'warning', payment: 'warning', error: 'error' } as const
-const ICON_TONE: Record<Mark, string> = { done: 'text-success', todo: 'text-warning', waiting: 'text-warning', payment: 'text-warning', error: 'text-error' }
+export const MARK_ICON: Record<Mark, IconName> = { done: 'complete', todo: 'warning', waiting: 'warning', error: 'error' }
+const TONE = { done: 'success', todo: 'outline', waiting: 'warning', error: 'error' } as const
+const ICON_TONE: Record<Mark, string> = { done: 'text-success', todo: 'text-warning', waiting: 'text-warning', error: 'text-error' }
 
 // Text plus icon shape, never colour alone. iconOnly keeps the text for screen readers and as a tooltip.
 export function StatusBadge({ mark, iconOnly }: { mark: Mark; iconOnly?: boolean }) {

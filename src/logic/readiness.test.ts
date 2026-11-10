@@ -63,13 +63,13 @@ describe('readiness verdict', () => {
     expect(r.errors).toContain('measures')
   })
 
-  it('the road lowers the payment: ready, with one thing to look at', () => {
+  it('the road lowers the payment: a fact, not something to look at', () => {
     const r = run('second_year', ...ready).report
-    expect(r.verdict).toBe('ready_with_warnings')
-    expect(r.warnings.map((w) => w.id)).toEqual(['field_road'])
+    expect(r.verdict).toBe('ready')
+    expect(r.warnings).toEqual([])
   })
 
-  it('warnings never stop him submitting: a check and a lower payment', () => {
+  it('warnings never stop him submitting: a check', () => {
     const r = run(
       'second_year',
       ...ready,
@@ -79,7 +79,7 @@ describe('readiness verdict', () => {
     ).report
     expect(r.verdict).toBe('ready_with_warnings')
     expect(r.errors).toEqual([])
-    expect(r.warnings).toEqual(expect.arrayContaining([{ id: 'herd', why: 'waiting' }, { id: 'field_road', why: 'payment' }]))
+    expect(r.warnings).toEqual(expect.arrayContaining([{ id: 'herd', why: 'waiting' }]))
   })
 
   it('a measure without a rate is good to know, not a warning', () => {

@@ -16,8 +16,8 @@ export type FieldId = 'river' | 'road' | 'upper' | 'meadow' | 'house'
 
 /** Each signal is a fact with its source's date (prototype placeholders): GSA says what it saw and when. */
 export type FieldSignal =
-  /** `edge`: where the photo changes, from one side of the field to the other. GSA's line starts here. `riverAt`: where the river runs beside it. */
-  | { kind: 'satellite_difference'; edge: Point[]; flagPolygon: Polygon; flagHa: number; riverAt: Point }
+  /** `edge`: where the photo changes, from one side of the field to the other. GSA's line starts here.*/
+  | { kind: 'satellite_difference'; edge: Point[]; flagPolygon: Polygon; flagHa: number }
   | { kind: 'road_strip'; stripPolygon: Polygon; stripHa: number; seen: string }
 
 export interface Field {
@@ -176,7 +176,7 @@ const shape = (...points: [number, number][]): Polygon => points.map(([x, y]) =>
 // Every shape is traced on the edges the satellite photo shows. Coordinates are metres on the local grid.
 // The record's area is what counts: a shape says where the land is, and a part of a field is its share of that area.
 
-// The pale ground along the river, where the photo changes to green wheat: a real edge across a real field.
+// The pale ground along the tree line, where the photo changes to green wheat: a real edge across a real field.
 const RIVER_TOP = shape([147, 1], [168, -5], [190, -12], [215, -18], [245, -24], [268, -28], [275, -26], [279, -18], [278, 10], [280, 30])
 const RIVER_EDGE = shape([283.75, 37.5], [250, 39], [200, 42.5], [157.64, 46.5])
 const RIVER_LEFT = shape([154, 38], [149, 22], [145, 8])
@@ -185,14 +185,14 @@ const RIVER_BOTTOM = shape([287, 60], [290, 100], [290, 116], [172, 116], [166, 
 const FIELDS: Field[] = [
   {
     id: 'river',
-    name: 'River field',
+    name: 'Tree line field',
     areaHa: 2.4,
     cropLastYear: 'wheat',
     arable: true,
     polygon: [...RIVER_TOP, RIVER_EDGE[0], ...RIVER_BOTTOM, RIVER_EDGE[3], ...RIVER_LEFT],
-    // The part along the river stays wet for longer every spring, so the photo sees it differently.
-    signal: { kind: 'satellite_difference', edge: [...RIVER_EDGE].reverse(), flagPolygon: [...RIVER_TOP, ...RIVER_EDGE, ...RIVER_LEFT], flagHa: 1.08, riverAt: { x: 268, y: -37 } },
-    // Registered farmland around it, from the trees along the river to the road (prototype placeholder).
+    // The part along the tree line looks different on the photo; GSA can't tell why, so it asks.
+    signal: { kind: 'satellite_difference', edge: [...RIVER_EDGE].reverse(), flagPolygon: [...RIVER_TOP, ...RIVER_EDGE, ...RIVER_LEFT], flagHa: 1.08 },
+    // Registered farmland around it, from the tree line to the road (prototype placeholder).
     land: shape([136, 2], [164, -12], [212, -26], [266, -36], [282, -32], [288, -18], [288, 28], [295, 58], [298, 100], [297, 121], [168, 121], [159, 90], [152, 54], [143, 26]),
   },
   {
@@ -201,9 +201,9 @@ const FIELDS: Field[] = [
     areaHa: 1.8,
     cropLastYear: 'maize',
     arable: true,
-    polygon: shape([344, -20], [380, -18], [414, -15], [413, -5], [410, 45], [407, 75], [406, 112], [404, 117], [335, 117], [332, 112], [331, 72], [339, 45], [340, 20], [344, -5]),
-    // The strip along the road, where the road was widened.
-    signal: { kind: 'road_strip', stripPolygon: shape([331.6, 108], [406.2, 108], [406, 112], [404, 117], [335, 117], [332, 112]), stripHa: 0.12, seen: '2026-03-16' },
+    polygon: shape([344, -20], [380, -18], [414, -15], [413, -5], [410, 45], [407, 75], [406, 113], [405, 131], [334, 131], [332, 113], [331, 72], [339, 45], [340, 20], [344, -5]),
+    // Last year the field ran to the old road. The road was widened onto its south edge, and the land map now marks that strip as road.
+    signal: { kind: 'road_strip', stripPolygon: shape([332, 113], [406, 113], [405, 131], [334, 131]), stripHa: 0.12, seen: '2026-03-16' },
   },
   { id: 'upper', name: 'Upper field', areaHa: 2.0, cropLastYear: 'wheat', arable: true, polygon: shape([190, 190], [235, 197], [277, 212], [270, 247], [262, 282], [279, 292], [208, 295], [146, 282], [115, 273], [111, 259], [119, 233], [133, 218], [151, 202]) },
   { id: 'meadow', name: 'Meadow', areaHa: 1.5, cropLastYear: 'grassland', arable: false, polygon: shape([305, 140], [360, 139], [408, 138], [405, 175], [400, 205], [398, 236], [372, 236], [352, 227], [310, 216], [303, 207]) },

@@ -42,33 +42,17 @@ function BoughtPreview({ field }: { field?: NewField }) {
 }
 
 /**
- * The land registry shows a parcel in his name since last year. The fact, the place on the photo, and his
- * question: does he farm it this year? Yes adds the whole parcel as a field; No leaves it out.
+ * The land registry shows a parcel in his name since last year: the place on the photo, and the way in to
+ * answer beside the map, like the other land changes. Once added, the field in one line.
  */
-export function BoughtBody({ Question }: { Question: (p: { legend: string; value: 'yes' | 'no' | null; answer?: string; onAnswer: (a: 'yes' | 'no') => void }) => JSX.Element }) {
-  const { derived, state, dispatch, go } = useApp()
-  const s = derived.scenario
-  const a = state.answers.bought
+export function BoughtBody() {
+  const { state, go } = useApp()
   const field = state.answers.newFields.find((f) => f.landId === 'bought')
-  const b = tasks.bought
   return (
     <Stack gap="section">
-      {a.answer === null ? (
-        <Text>
-          {b.context(formatDateYear(s.bought!.on))}. {s.bought!.yard && `${copy.yard.seen}.`}
-        </Text>
-      ) : (
-        field && <Text>{fieldLine(field)}</Text>
-      )}
-      <BoughtPreview field={field} />
-      <Question legend={b.question} value={a.answer} answer={a.answer === 'yes' ? b.yes : b.no} onAnswer={(answer) => dispatch({ type: 'answer_bought', answer })} />
-      {a.answer === 'yes' && (
-        <StageAction>
-          <Button variant={field ? 'secondary' : 'primary'} onClick={() => go('field', 'bought')}>
-            {field ? copy.change : b.draw}
-          </Button>
-        </StageAction>
-      )}
+      <div className="map-link" onClick={() => go('review', 'field_bought')}>
+        <BoughtPreview field={field} />
+      </div>
     </Stack>
   )
 }

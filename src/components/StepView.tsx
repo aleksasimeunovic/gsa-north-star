@@ -1,16 +1,18 @@
 import { useRef, useState } from 'react'
-import { after as copy, home, steps, tasks } from '../copy/en'
+import { after as copy, en, home, steps, tasks } from '../copy/en'
 import type { TaskId } from '../logic/application'
-import { isMapChange, stepOf } from '../logic/application'
+import { isMapTask, stepOf } from '../logic/application'
 import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
-import { Text } from '../ui/Layout'
+import { Inline, Text, VisuallyHidden } from '../ui/Layout'
+import { StageAction } from '../ui/MapStage'
 import { Note } from '../ui/Note'
 import { StatusBadge } from '../ui/StatusBadge'
 import { Toast, type ToastKind } from '../ui/Toast'
 import { useApp } from './AppContext'
 import { nextActionLabel } from './ReadinessBar'
-import { MapReviewButton, TaskBody, taskSummary } from './TaskBodies'
+import { MapFacts, MapReviewButton, TaskBody, taskSummary } from './TaskBodies'
+import { taskIcon } from './taskIcon'
 import type { AfterAnswer, Flow } from './useApplicationFlow'
 
 /** One part of his application: what his last answer changed, then the one thing to do now in this part. */
@@ -45,11 +47,21 @@ function NextAction({ flow }: { flow: Flow }) {
             <h3 id="next-title" tabIndex={-1}>{heading}</h3>
             {!needsHim && <StatusBadge mark={task.mark} />}
           </div>
-          {isMapChange(task.id) && <p className="next-lead">{taskSummary(task.id, derived, state)}</p>}
+          {/* A road he gave up has its outcome as facts under the map, so the line isn't said twice. */}
+          {isMapTask(task.id) && !(task.id === 'field_road' && task.status === 'complete') && <p className="next-lead">{taskSummary(task.id, derived, state)}</p>}
         </div>
         <MapReviewButton id={task.id} />
       </div>
       <TaskBody task={task} />
+      {/* Changing a decision in a finished part: the way back to all of them. */}
+      {!needsHim && flow.step.left === 0 && (
+        <div>
+          <Button onClick={() => flow.goStep(flow.step.id)}>
+            <Icon name="back" size="sm" />
+            {home.backToList}
+          </Button>
+        </div>
+      )}
     </section>
   )
 }
@@ -57,8 +69,12 @@ function NextAction({ flow }: { flow: Flow }) {
 // Missing receipts are an upload, named as one; a blurry one is sent again; otherwise receipts are confirmed.
 const actionTitle = (id: TaskId, items: { id: string; detail: string }[]) => nextActionLabel(id, items)
 
-/** A part with nothing left: what waits for a check, and the way on to the next part. */
+/**
+ * A part with nothing left: every decision he made in it, one by one, each with its outcome and a way to
+ * change it, so a wrong tap is never final. Then what waits for a check, and the way on to the next part.
+ */
 function StepDone({ flow }: { flow: Flow }) {
+  const { derived, state } = useApp()
   const { step, nextStep } = flow
   return (
     <section id="next" className="next" data-done aria-labelledby="next-title">
@@ -68,10 +84,37 @@ function StepDone({ flow }: { flow: Flow }) {
           {home.stepWaiting(step.waiting)} <Note kind="assumption" />
         </Text>
       )}
+      <ul className="resolved-list">
+        {step.tasks.map((t) => {
+          const name = flow.title(t.id)
+          // The road's outcome is two plain facts: what the field becomes and what that does to the payment.
+          const facts = t.id === 'field_road' && t.status === 'complete'
+          return (
+            <li key={t.id} className="resolved">
+              <span className="resolved-icon" aria-hidden="true">
+                <Icon name={taskIcon(t.id)} />
+              </span>
+              <div className="resolved-text">
+                <div className="resolved-head">
+                  <strong>{name}</strong>
+                  <StatusBadge mark={t.mark} />
+                </div>
+                {facts ? <MapFacts id="field_road" /> : <span className="hint">{taskSummary(t.id, derived, state)}</span>}
+              </div>
+              <Button onClick={() => flow.show(t.id)}>
+                {en.change}
+                <VisuallyHidden>: {name}</VisuallyHidden>
+              </Button>
+            </li>
+          )
+        })}
+      </ul>
       {nextStep && (
-        <div>
-          <Button variant="primary" onClick={() => flow.goStep(nextStep.id)}>{home.continueTo(steps.name[nextStep.id])}<Icon name="forward" size="sm" /></Button>
-        </div>
+        <StageAction>
+          <Inline>
+            <Button variant="primary" onClick={() => flow.goStep(nextStep.id)}>{home.continueTo(steps.name[nextStep.id])}<Icon name="forward" size="sm" /></Button>
+          </Inline>
+        </StageAction>
       )}
     </section>
   )

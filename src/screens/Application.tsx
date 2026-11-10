@@ -1,5 +1,5 @@
 import { bar, home, steps } from '../copy/en'
-import { isMapChange } from '../logic/application'
+import { isMapTask } from '../logic/application'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { MeasureGoals } from '../components/MeasureBodies'
@@ -25,7 +25,7 @@ export function Application({ target, review, field }: { target: string | null; 
   // Opening a boundary review straight from a link still puts the stepper on its part.
   const flow = useApplicationFlow(target ?? (review ? `task-${review}` : field ? 'step-land' : null))
   const submitted = !!state.answers.submittedAt
-  const reviewing = review && isMapChange(review as never) && !submitted ? (review as MapTask) : null
+  const reviewing = review && isMapTask(review as never) && !submitted ? (review as MapTask) : null
   // Drawing a field he adds, or the parcel he bought, on the map.
   const drawing = field && !submitted ? field : null
   const onMap = reviewing || drawing
@@ -79,7 +79,8 @@ export function Application({ target, review, field }: { target: string | null; 
           <div className="app-layout">
             <StepView flow={flow} />
             <aside className="app-side">
-              <StepOutline flow={flow} />
+              {/* Once the part is done, its decisions are listed in the main column instead. */}
+              {step.left > 0 && <StepOutline flow={flow} />}
               <Records step={step.id} onOpen={(id) => flow.show(id)} />
               {step.id === 'measures' && <MeasureGoals />}
             </aside>

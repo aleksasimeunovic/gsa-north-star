@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
-import { en, formatHa, map, split, tasks } from '../copy/en'
+import { en, fieldEdit, formatDateYear, formatHa, map, split, tasks } from '../copy/en'
 import type { Field, FieldId } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
@@ -9,14 +9,15 @@ import type { Flow } from '../components/useApplicationFlow'
 import type { YesNo } from '../state/actions'
 import { Button } from '../ui/Button'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
-import { Compare, Text, VisuallyHidden } from '../ui/Layout'
+import { Compare, Inline, Text, VisuallyHidden } from '../ui/Layout'
 import { Answers } from '../ui/Fact'
 import { MapStage, StageAction } from '../ui/MapStage'
+import { Icon } from '../ui/Icon'
 import { Note } from '../ui/Note'
 import { ToolSwitch } from '../ui/MapTools'
 
 
-export type MapTask = 'field_river' | 'field_road'
+export type MapTask = 'field_river' | 'field_road' | 'field_bought'
 
 /**
  * Review this boundary: the satellite photo at the place GSA found, large enough to look around,
@@ -27,7 +28,7 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
   const { derived, state, go } = useApp()
   const item = derived.items.find((i) => i.id === id)
   const answered = useRef(false)
-  const fieldId = id.slice(6) as FieldId
+  const title = id === 'field_bought' ? tasks.title.field_bought : en.fields[id.slice(6) as FieldId]
   const back = () => go('welcome')
 
   useEffect(() => {
@@ -42,10 +43,10 @@ export function Review({ id, flow }: { id: MapTask; flow: Flow }) {
 
   if (!item) return null
   const onAnswer = () => (answered.current = true)
-  const Body = id === 'field_river' ? RiverReview : RoadReview
+  const Body = id === 'field_river' ? RiverReview : id === 'field_road' ? RoadReview : BoughtReview
   const head = (
     <header className="review-head">
-      <h2 id="review-title" tabIndex={-1}>{en.fields[fieldId]}</h2>
+      <h2 id="review-title" tabIndex={-1}>{title}</h2>
       <Text>{taskSummary(id, derived, state)}</Text>
     </header>
   )
@@ -119,6 +120,15 @@ function RiverReview({ onAnswer, head }: BodyProps) {
     go(v === 'yes' ? 'line' : null)
   }
   const titles = { line: split.lineTitle, crops: split.cropsTitle, effects: split.effectsTitle }
+  // Back between the steps sits beside "Step n of 3", where he moves between them; it never loses his line.
+  const stepBack = () => {
+    if (step === 'line' && draft.editing) return draft.setEditing(false)
+    if (step === 'line') {
+      setAsking(a.answer === null || item.status === 'action_required')
+      return go(null)
+    }
+    go(step === 'effects' ? 'crops' : 'line')
+  }
 
   return (
     <MapStage
@@ -165,7 +175,13 @@ function RiverReview({ onAnswer, head }: BodyProps) {
     >
       {step ? (
         <header className="split-head">
-          <p className="hint">{split.step(RIVER_STEPS.indexOf(step) + 1)}</p>
+          <div className="split-nav">
+            <Button onClick={stepBack}>
+              <Icon name="back" size="sm" />
+              {split.back}
+            </Button>
+            <p className="hint">{split.step(RIVER_STEPS.indexOf(step) + 1)}</p>
+          </div>
           <h2 id="split-title" tabIndex={-1}>{titles[step]}</h2>
         </header>
       ) : (
@@ -173,20 +189,12 @@ function RiverReview({ onAnswer, head }: BodyProps) {
       )}
       {!step && a.answer === null && <RiverCompare field={field} />}
       {step === 'line' && (
-        <LineStep
-          d={draft}
-          onBack={() => {
-            setAsking(true)
-            go(null)
-          }}
-          onNext={() => go('crops')}
-        />
+        <LineStep d={draft} onNext={() => go('crops')} />
       )}
-      {step === 'crops' && <CropsStep d={draft} onBack={() => go('line')} onNext={() => go('effects')} />}
+      {step === 'crops' && <CropsStep d={draft} onNext={() => go('effects')} />}
       {step === 'effects' && (
         <EffectsStep
           d={draft}
-          onBack={() => go('crops')}
           onConfirm={(s) => {
             onAnswer()
             dispatch({ type: 'set_split', split: s })
@@ -288,6 +296,64 @@ function RoadReview({ onAnswer, head }: BodyProps) {
         <AnswerLine legend={tasks.road.question} answer={a.answer === 'yes' ? tasks.road.yes : tasks.road.no} onChange={() => setAsking(true)} />
       )}
       {disputed && <RoadDispute />}
+    </MapStage>
+  )
+}
+
+/**
+ * The parcel he bought, asked like the other land changes: the parcel on the photo, the question beside it.
+ * Yes goes straight on to adding it as a field; No leaves it out, and either answer can be changed here.
+ */
+function BoughtReview({ onAnswer, head }: BodyProps) {
+  const { derived, state, dispatch, go } = useApp()
+  const s = derived.scenario
+  const a = state.answers.bought
+  const field = state.answers.newFields.find((f) => f.landId === 'bought')
+  const [asking, setAsking] = useState(a.answer === null)
+  const b = tasks.bought
+  const yard = s.bought!.yard
+  const spot = field
+    ? { polygon: field.polygon, label: field.name, yard: field.yard && { polygon: field.yard, label: fieldEdit.yard.house, settled: true } }
+    : { polygon: s.bought!.polygon, label: tasks.title.field_bought, yard: yard && { polygon: yard, label: fieldEdit.yard.house } }
+  return (
+    <MapStage
+      label={tasks.title.field_bought}
+      answering={asking}
+      map={
+        <Suspense fallback={<MapFallback mode="explore" fill />}>
+          <FarmMap scenario={s} mode="explore" fill skip={field?.id} spot={spot} label={`${map.title}: ${b.context(formatDateYear(s.bought!.on))}`} />
+        </Suspense>
+      }
+    >
+      {head}
+      {asking && yard && <Text variant="secondary">{fieldEdit.yard.seen}</Text>}
+      {asking ? (
+        <StageAction>
+          <ChoiceButtons
+            legend={b.question}
+            options={options(b.yes, b.no)}
+            onChoose={(v) => {
+              setAsking(false)
+              dispatch({ type: 'answer_bought', answer: v })
+              if (v === 'no') return onAnswer()
+              go('field', 'bought')
+            }}
+          />
+        </StageAction>
+      ) : (
+        <>
+          <AnswerLine legend={b.question} answer={a.answer === 'yes' ? b.yes : b.no} onChange={() => setAsking(true)} />
+          {a.answer === 'yes' && (
+            <StageAction>
+              <Inline>
+                <Button variant={field ? 'secondary' : 'primary'} onClick={() => go('field', 'bought')}>
+                  {field ? fieldEdit.change : b.draw}
+                </Button>
+              </Inline>
+            </StageAction>
+          )}
+        </>
+      )}
     </MapStage>
   )
 }
