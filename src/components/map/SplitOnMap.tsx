@@ -12,6 +12,7 @@ import type { Point } from '../../data/scenarios'
 import { centroid, followsEdge, nearestOnLine, outlinePath, pointInPolygon } from '../../logic/geometry'
 import { mapStyle } from '../../ui/mapStyles'
 import { edgeOf, splitMoves, type Selected, type SplitDraft } from '../SplitTool'
+import { isDoubleTap } from './doubleTap'
 import { createLoupe } from './loupe'
 import { outsideStyle, type FarmMap } from './olFarm'
 
@@ -173,26 +174,35 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       tip.textContent = sel.on === 'field' ? copy.tips.corner : end ? copy.tips.end : copy.tips.bend
       el.appendChild(tip)
       let dragging = false
+      let moved = false
       el.addEventListener('pointerenter', () => ghostRef.current?.setPosition(undefined))
       el.addEventListener('pointerdown', (e) => {
         e.preventDefault()
         ghostRef.current?.setPosition(undefined)
+        // A second press soon after the first takes the point out; there is no button for it.
+        if (isDoubleTap(el, e)) {
+          dragging = false
+          latest.current.moves.drop(sel)
+          return
+        }
         el.setPointerCapture(e.pointerId)
         el.focus({ preventScroll: true })
         dragging = true
-        fm.map.getViewport().dataset.dragged = ''
+        moved = false
         el.dataset.dragging = ''
         latest.current.d.remember()
         latest.current.d.setSelected(sel)
       })
       el.addEventListener('pointermove', (e) => {
         if (!dragging) return
+        if (!moved) fm.map.getViewport().dataset.dragged = ''
+        moved = true
         latest.current.moves.movePoint(sel, at(e), false)
         loupe.current?.show(fingerAt(e), e.pointerType === 'touch')
       })
       const stop = () => {
         loupe.current?.hide()
-        if (dragging) latest.current.moves.letGo()
+        if (dragging) latest.current.moves.letGo(moved)
         dragging = false
         delete el.dataset.dragging
       }
@@ -239,6 +249,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
   useEffect(() => {
     if (!interactive) return
     let sel: Selected = null
+    let moved = false
     // A finger is wider than a mouse, so a press near the line takes the line rather than moving the map.
     const hit = (pixel: number[], touch = false): 'split' | 'outline' | null =>
       fm.map.forEachFeatureAtPixel(pixel, (f) => (f.get('split') ? 'split' : f.get('outline') ? 'outline' : undefined), { hitTolerance: touch ? 24 : 12 }) ?? null
@@ -248,6 +259,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
         if (!what) return false
         const p = round(fm.point(e.coordinate))
         sel = what === 'split' ? latest.current.moves.pull(p) : latest.current.moves.pullEdge(p)
+        moved = false
         pulled[what] = true
         ghost.setPosition(undefined)
         // A press on the line or the edge never moves the map.
@@ -255,13 +267,15 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       },
       handleDragEvent: (e) => {
         if (!sel) return
+        moved = true
         latest.current.moves.movePoint(sel, round(fm.point(e.coordinate)), false)
         const pe = e.originalEvent as PointerEvent
         loupe.current?.show(fingerAt(pe), pe.pointerType === 'touch')
       },
       handleUpEvent: () => {
         loupe.current?.hide()
-        latest.current.moves.letGo()
+        // A click on the line places a point there, which stays for him to move; a drag bends the line at once.
+        latest.current.moves.letGo(moved)
         sel = null
         return false
       },

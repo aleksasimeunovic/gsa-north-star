@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { shapeTools } from '../copy/en'
 import { Icon, type IconName } from './Icon'
 
 /**
@@ -62,5 +63,15 @@ export function MapStatus({ children, error, icon, action }: { children: ReactNo
         </button>
       )}
     </p>
+  )
+}
+
+/** How to take a point out, said above the tools while he edits: there is no button for it. */
+export function RemoveHint() {
+  return (
+    <MapStatus icon="info">
+      <span className="fine-only">{shapeTools.removeMouse}</span>
+      <span className="coarse-only">{shapeTools.removeTouch}</span>
+    </MapStatus>
   )
 }

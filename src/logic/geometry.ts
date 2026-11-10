@@ -319,38 +319,45 @@ export function straightAcross(poly: Polygon): SplitLine {
 /** The smallest yard worth leaving out of a field (design assumption, to validate). */
 export const MIN_YARD_HA = 0.01
 
-export type YardProblem = 'crosses_itself' | 'touches_edge' | 'too_small'
+export type YardProblem = 'crosses_itself' | 'too_small'
 
 /**
- * What's wrong with a yard left out of a field, or null. It sits wholly inside the field: land off the edge
- * is a change to the field's edge, not a yard. The map stops at the last good shape, so none can exist.
+ * The part of a shape that lies inside a field, in hectares. A shape wholly inside is measured exactly; one
+ * that runs past the edge is counted on a half-metre grid, close enough for an area shown to 0.01 ha.
+ */
+export function areaInsideHa(shape: Polygon, field: Polygon): number {
+  if (shape.length < 3) return 0
+  const inside = shape.every((p, i) => pointInPolygon(p, field) && staysInside(field, p, shape[(i + 1) % shape.length]))
+  if (inside) return polygonAreaHa(shape)
+  const a = bounds(shape)
+  const b = bounds(field)
+  const box = { minX: Math.max(a.minX, b.minX), maxX: Math.min(a.maxX, b.maxX), minY: Math.max(a.minY, b.minY), maxY: Math.min(a.maxY, b.maxY) }
+  const cell = 0.5
+  let n = 0
+  for (let x = box.minX + cell / 2; x < box.maxX; x += cell)
+    for (let y = box.minY + cell / 2; y < box.maxY; y += cell) if (pointInPolygon({ x, y }, shape) && pointInPolygon({ x, y }, field)) n++
+  return (n * cell * cell) / M2_PER_HA
+}
+
+/**
+ * What's wrong with a yard left out of a field, or a road strip, or null. Its outline may run past the field's
+ * edge, since he follows the house or the road on the photo; only the part inside the field is left out.
  */
 export function yardProblem(field: Polygon, yard: Polygon): YardProblem | null {
   if (outlineCrosses(yard)) return 'crosses_itself'
-  const inside = (p: Point) => pointInPolygon(p, field) && closestOnPath(p, ring(field)).dist >= INSET_M
-  if (!yard.every((p, i) => inside(p) && staysInside(field, p, yard[(i + 1) % yard.length]))) return 'touches_edge'
-  if (polygonAreaHa(yard) < MIN_YARD_HA) return 'too_small'
+  if (areaInsideHa(yard, field) < MIN_YARD_HA) return 'too_small'
   return null
 }
 
 /** The record's area without the yard: the yard takes its share, the same scaling a moved edge uses. */
 export const areaWithout = (field: Polygon, recordHa: number, yard?: Polygon) =>
-  yard ? roundHa((recordHa * (polygonAreaHa(field) - polygonAreaHa(yard))) / polygonAreaHa(field)) : recordHa
+  yard ? roundHa((recordHa * (polygonAreaHa(field) - areaInsideHa(yard, field))) / polygonAreaHa(field)) : recordHa
 
 /** The yard's own share of the record's area, as he sees it on the map. */
 export const yardHa = (field: Polygon, recordHa: number, yard: Polygon) => roundHa(recordHa - areaWithout(field, recordHa, yard))
 
-/**
- * What's wrong with a strip he marks inside a field (the road), or null. Unlike a yard it may sit on the field's
- * edge, since the road runs along it, but never past it.
- */
-export function stripProblem(field: Polygon, strip: Polygon): YardProblem | null {
-  if (outlineCrosses(strip)) return 'crosses_itself'
-  const onOrIn = (p: Point) => pointInPolygon(p, field) || closestOnPath(p, ring(field)).dist <= 0.5
-  if (!strip.every(onOrIn)) return 'touches_edge'
-  if (polygonAreaHa(strip) < MIN_YARD_HA) return 'too_small'
-  return null
-}
+export const stripProblem = yardProblem
 
 /** A shape's share of a record's area, scaled from the shape the record was given for. */
-export const scaledHa = (ref: Polygon, refHa: number, poly: Polygon) => roundHa((refHa * polygonAreaHa(poly)) / polygonAreaHa(ref))
+export const scaledHa = (ref: Polygon, refHa: number, poly: Polygon, within?: Polygon) =>
+  roundHa((refHa * (within ? areaInsideHa(poly, within) : polygonAreaHa(poly))) / polygonAreaHa(ref))

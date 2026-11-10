@@ -20,7 +20,7 @@ export function ChoiceButtons<T extends string>({ legend, hint, options, onChoos
         {legend}
         {hint && <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{hint}</span>}
       </p>
-      <div className="grid grid-cols-1 gap-[var(--gap-inline)] sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-[var(--gap-buttons)] sm:grid-cols-2">
         {options.map((o) => (
           <Button key={o.value} variant="choice" onClick={() => onChoose(o.value)}>
             {(o.value === 'yes' || o.value === 'no') && <Icon name={o.value === 'yes' ? 'yes' : 'no'} />}

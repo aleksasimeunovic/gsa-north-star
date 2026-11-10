@@ -54,7 +54,7 @@ export default function FarmMap({ roadStrip, scenario, focus, only, mode, label,
   const added = state.answers.newFields
   // While he edits the split the draft is on the map; otherwise, the split he confirmed.
   const parts = split ? null : riverParts(scenario, state.answers)
-  const done = parts ? { line: state.answers.river.split!.line, parts: parts.map((p) => ({ polygon: p.polygon, label: `${en.crops[p.crop]}, ${formatHa(p.ha)}` })) } : undefined
+  const done = parts ? { line: state.answers.river.split!.line, parts: parts.map((p) => ({ polygon: p.polygon, label: `${formatHa(p.ha)} · ${en.crops[p.crop]}` })) } : undefined
   const doneKey = done ? JSON.stringify(done) : ''
   const splitOpen = !!split
   const addedKey = added.map((f) => `${f.id}:${f.name}:${f.polygon.map((p) => `${p.x},${p.y}`).join(' ')}`).join('|')

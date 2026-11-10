@@ -22,3 +22,16 @@ export function MapStage({ map, children, label, working, answering }: { map: Re
 export function StageAction({ children }: { children: ReactNode }) {
   return <div className="stage-action">{children}</div>
 }
+
+/**
+ * The panel's heading and the line under it, one group: the panel's groups stand a section apart, and a
+ * heading sits close to the text it introduces.
+ */
+export function PanelHead({ id, title, children }: { id: string; title: ReactNode; children?: ReactNode }) {
+  return (
+    <header className="panel-head split-head">
+      <h2 id={id} tabIndex={-1}>{title}</h2>
+      {children}
+    </header>
+  )
+}

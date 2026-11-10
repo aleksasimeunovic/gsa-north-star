@@ -19,7 +19,6 @@ import {
   pastLand,
   shapeProblem,
   shiftLine,
-  straightAcross,
   SNAP_M,
   snapToAny,
   splitField,
@@ -34,8 +33,8 @@ import { Button } from '../ui/Button'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { Answers } from '../ui/Fact'
 import { Inline, Stack, Text, VisuallyHidden } from '../ui/Layout'
-import { StageAction } from '../ui/MapStage'
-import { MapStatus, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
+import { PanelHead, StageAction } from '../ui/MapStage'
+import { MapStatus, RemoveHint, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
 import { Note } from '../ui/Note'
 import { Select } from '../ui/Select'
 import { useApp } from './AppContext'
@@ -219,8 +218,10 @@ export function splitMoves(d: SplitDraft) {
     d.setSelected(sel)
     return sel
   }
-  const letGo = () => {
-    // Only a point he let go on a straight stretch goes: the corners traced from the photo stay.
+  /** `moved` false: a click that placed a point, which stays where he put it until he moves or takes it out. */
+  const letGo = (moved = true) => {
+    if (!moved) return
+    // Only a point he dragged onto a straight stretch goes: the corners traced from the photo stay.
     const sel = d.selected
     const line = tidyLine(draft.line)
     const boundary = sel?.on === 'field' ? tidyOutline(poly, sel.i) : poly
@@ -268,15 +269,8 @@ export function splitMoves(d: SplitDraft) {
     d.setSelected(null)
     d.setSnapped(false)
   }
-  /** He rejects GSA's line entirely: a plain straight line across his field, to pull where he knows it is. */
-  const straight = () => {
-    d.update({ ...draft, line: straightAcross(poly) })
-    d.setSelected(null)
-    d.setSnap(false)
-    d.setSnapped(false)
-  }
   const isReset = sameLine(draft.line, edge) && !draft.boundary
-  return { movePoint, pull, pullEdge, letGo, drop, nudge, moveWhole, reset, straight, isReset, isEnd }
+  return { movePoint, pull, pullEdge, letGo, drop, nudge, moveWhole, reset, isReset, isEnd }
 }
 
 const namesOf = (d: SplitDraft) => (d.result ? partNames(d.result.parts) : null)
@@ -297,7 +291,7 @@ export function partLabels(d: SplitDraft, step: 'line' | 'crops' | 'effects'): [
   const label = (i: 0 | 1) => {
     const ha = formatHa(r.areasHa[i])
     const crop = d.draft.crops[i]
-    return step === 'line' || !crop ? copy.partArea(partLabel(d, i), ha) : copy.partArea(en.crops[crop], ha)
+    return step === 'line' || !crop ? copy.partArea(partLabel(d, i), ha) : copy.areaCrop(ha, en.crops[crop])
   }
   return [label(0), label(1)]
 }
@@ -312,7 +306,6 @@ export function LineTools({ d }: { d: SplitDraft }) {
   const { draft } = d
   const moves = splitMoves(d)
   const t = copy.tools
-  const sel = d.selected && !(d.selected.on === 'line' && moves.isEnd(d.selected.i)) ? d.selected : null
   const order = orderOf(d)
   const r = d.result
   const areas = r ? order.map((i) => copy.partArea(partLabel(d, i), formatHa(r.areasHa[i]))).join(', ') : ''
@@ -333,7 +326,9 @@ export function LineTools({ d }: { d: SplitDraft }) {
     <MapStatus>
       {copy.pastLand} <Note kind="design" />
     </MapStatus>
-  ) : null
+  ) : (
+    <RemoveHint />
+  )
 
   return (
     <>
@@ -373,11 +368,7 @@ export function LineTools({ d }: { d: SplitDraft }) {
           }}
         />
         <ToolDivider />
-        {sel ? (
-          <ToolButton icon="close" caption={t.remove} hint={t.removeHint} onClick={() => moves.drop(sel)} />
-        ) : (
-          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} idle={t.resetIdle} disabled={moves.isReset} onClick={moves.reset} />
-        )}
+        <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} idle={t.resetIdle} disabled={moves.isReset} onClick={moves.reset} />
       </ToolIsland>
     </>
   )
@@ -388,9 +379,8 @@ export function LineTools({ d }: { d: SplitDraft }) {
  * so he confirms it without touching the map. Only if it's wrong does he edit it, or reject it and start from a
  * straight line. The tools are on the map.
  */
-export function LineStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) {
+export function LineStep({ d, title, onNext }: { d: SplitDraft; title: string; onNext: () => void }) {
   const onEdge = followsEdge(d.draft.line, edgeOf(d.record)) && !d.draft.boundary
-  const moves = splitMoves(d)
 
   // On a keyboard, undo and redo work as everywhere else.
   useEffect(() => {
@@ -420,12 +410,14 @@ export function LineStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) {
 
   if (!d.editing)
     return (
-      <Stack gap="sm">
-        {/* Said on a phone too: the line is a suggestion, not a fact. */}
-        <Text variant="secondary">
-          {onEdge ? copy.check.suggested : copy.check.yours} <Note kind="ai" />
-        </Text>
-        {r && <VisuallyHidden>{areas}</VisuallyHidden>}
+      <>
+        <PanelHead id="split-title" title={title}>
+          {/* Said on a phone too: the line is a suggestion, not a fact. */}
+          <Text variant="secondary">
+            {onEdge ? copy.check.suggested : copy.check.yours} <Note kind="ai" />
+          </Text>
+          {r && <VisuallyHidden>{areas}</VisuallyHidden>}
+        </PanelHead>
         <StageAction>
           <ChoiceButtons
             legend={copy.check.question}
@@ -436,33 +428,38 @@ export function LineStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) {
             onChoose={(v) => (v === 'yes' ? onNext() : d.setEditing(true))}
           />
         </StageAction>
-      </Stack>
+      </>
     )
 
   return (
-    <Stack gap="sm">
-      <div className="split-lead">
-        <Text variant="secondary">{copy.yourLine}</Text>
-      </div>
-      {/* Only on a touch screen, where one finger now moves the line and never the map. */}
-      <p className="touch-hint hint">{copy.twoFingers}</p>
-      {moved !== 0 && <Text variant="secondary">{copy.fieldNow(formatHa(claimed ?? d.field.areaHa), formatHa(Math.abs(moved)), moved > 0)}</Text>}
-      {d.pastLand && <Text variant="secondary">{copy.pastLandCounts(formatHa(d.field.areaHa))}</Text>}
-      <Inline>
-        {onEdge && <Button onClick={moves.straight}>{copy.straight}</Button>}
+    <>
+      <PanelHead id="split-title" title={title}>
+        <div className="split-lead">
+          <Text variant="secondary">{copy.yourLine}</Text>
+        </div>
+        {/* Only on a touch screen, where one finger now moves the line and never the map. */}
+        <p className="touch-hint hint">{copy.twoFingers}</p>
+      </PanelHead>
+      {(moved !== 0 || d.pastLand) && (
+        <Stack gap="heading">
+          {moved !== 0 && <Text variant="secondary">{copy.fieldNow(formatHa(claimed ?? d.field.areaHa), formatHa(Math.abs(moved)), moved > 0)}</Text>}
+          {d.pastLand && <Text variant="secondary">{copy.pastLandCounts(formatHa(d.field.areaHa))}</Text>}
+        </Stack>
+      )}
+      <div>
         <Button onClick={() => d.setSlider(!d.slider)}>{d.slider ? copy.sliderOff : copy.sliderOn}</Button>
-      </Inline>
+      </div>
       <StageAction>
         <Inline>
           <Button variant="primary" disabled={!d.result} onClick={onNext}>{copy.next}</Button>
         </Inline>
       </StageAction>
-    </Stack>
+    </>
   )
 }
 
 /** Step 2: what grows in each part, in the order they sit on the map. A tap on a part comes here. */
-export function CropsStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) {
+export function CropsStep({ d, title, onNext }: { d: SplitDraft; title: string; onNext: () => void }) {
   const { draft, result } = d
   const same = !!draft.crops[0] && draft.crops[0] === draft.crops[1]
   const complete = !!result && !!draft.crops[0] && !!draft.crops[1] && !same
@@ -484,10 +481,11 @@ export function CropsStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) 
     document.getElementById(`part-crop-${missing}`)?.focus()
   }
   return (
-    <Stack gap="md">
-      <div className="split-lead">
+    <>
+      <PanelHead id="split-title" title={title}>
         <Text variant="secondary">{copy.cropsHint}</Text>
-      </div>
+      </PanelHead>
+      <Stack gap="md">
       {result &&
         order.map((i) => (
           <div key={i} onMouseEnter={() => d.setLit(i)} onMouseLeave={() => d.setLit(null)} onFocus={() => d.setLit(i)} onBlur={() => d.setLit(null)}>
@@ -506,12 +504,13 @@ export function CropsStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) 
           />
           </div>
         ))}
+      </Stack>
       <StageAction>
         <Inline>
           <Button variant="primary" onClick={next}>{copy.next}</Button>
         </Inline>
       </StageAction>
-    </Stack>
+    </>
   )
 }
 
@@ -520,13 +519,13 @@ export function CropsStep({ d, onNext }: { d: SplitDraft; onNext: () => void }) 
  * rules as the estimate, in three groups so cause and effect can't be missed: what changes, what stays the
  * same, and what still needs his decision. GSA never applies for a measure because a crop or an edge changed.
  */
-export function EffectsStep({ d, onConfirm }: { d: SplitDraft; onConfirm: (s: Split) => void }) {
+export function EffectsStep({ d, title, onConfirm }: { d: SplitDraft; title: string; onConfirm: (s: Split) => void }) {
   const { derived, state } = useApp()
   const e = splitEffects(derived.base, state.answers, d.draft)
   if (!e) return null
   const c = copy.effects
   const about = (n: number) => formatDinars(Math.round(Math.abs(n) / 100) * 100)
-  const parts = e.parts.map((p) => `${en.crops[p.crop].toLowerCase()} ${formatHa(p.ha)}`).join(' and ')
+  const parts = e.parts.map((p) => copy.areaCrop(formatHa(p.ha), en.crops[p.crop])).join(' and ')
   const money = e.movedDinars - e.lostDinars
   const changes: [string, string][] = [[c.field, c.fieldValue(parts)]]
   const same: [string, string][] = []
@@ -547,8 +546,10 @@ export function EffectsStep({ d, onConfirm }: { d: SplitDraft; onConfirm: (s: Sp
         <Answers items={items} />
       </section>
     )
+  // Each group stands a section apart: what changes, what stays the same, what needs his decision.
   return (
-    <Stack gap="sm">
+    <>
+      <PanelHead id="split-title" title={title} />
       {group(c.changes, changes)}
       {group(c.stays, same)}
       {decide.length ? group(c.decide, decide) : <Text variant="secondary">{c.nothingToDecide}</Text>}
@@ -558,6 +559,6 @@ export function EffectsStep({ d, onConfirm }: { d: SplitDraft; onConfirm: (s: Sp
           <Button variant="primary" onClick={() => onConfirm(d.draft)}>{copy.confirm}</Button>
         </Inline>
       </StageAction>
-    </Stack>
+    </>
   )
 }

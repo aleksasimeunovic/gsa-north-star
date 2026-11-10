@@ -5,7 +5,7 @@ import { closeProblem, cornerProblem, drawIssues, drawnHa, insertCorner, leaveOu
 import { sameLine } from '../logic/geometry'
 import { Button } from '../ui/Button'
 import { VisuallyHidden } from '../ui/Layout'
-import { MapStatus, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
+import { MapStatus, RemoveHint, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
 
 type Shape = { corners: Point[]; closed: boolean }
 const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } }
@@ -152,6 +152,15 @@ export function useFieldDraw(ctx: DrawContext, start?: Polygon) {
     redo: () => travel(future, past, setFuture, setPast),
     canUndo: past.length > 0,
     canRedo: future.length > 0,
+    /** Deleting the field he just drew: nothing left, nothing to undo. */
+    clear: () => {
+      set({ corners: [], closed: false })
+      setPast([])
+      setFuture([])
+      setSelected(null)
+      setStopped(null)
+      created.current = null
+    },
     /** Back to the field as he created it. */
     reset: () => {
       if (!created.current) return
@@ -166,6 +175,7 @@ export function useFieldDraw(ctx: DrawContext, start?: Polygon) {
   function drop(i: number) {
     const c = cur.current
     if (c.closed && c.corners.length <= 3) return
+    // While drawing, only a corner can go that leaves the rest a path he could have drawn.
     remember()
     if (tryCorners(c.corners.filter((_, k) => k !== i))) setSelected(null)
   }
@@ -186,7 +196,7 @@ export function drawMessages(d: FieldDraw): { text: string; error?: boolean; fix
 
 /**
  * On the map while he draws: what's wrong or left to do, the way to create the field once it has three
- * corners, then Undo, Redo and the corner itself, the one big button under his thumb.
+ * corners, then Undo and Redo. A corner goes where he taps or clicks, and a tap on his first corner closes it.
  */
 export function DrawIsland({ d, onCreate }: { d: FieldDraw; onCreate: () => void }) {
   const msgs = drawMessages(d)
@@ -200,6 +210,7 @@ export function DrawIsland({ d, onCreate }: { d: FieldDraw; onCreate: () => void
           <MapStatus key={m.text} error={m.error} action={m.fix ? { label: t.leaveOut, onClick: d.leaveOut } : undefined}>{m.text}</MapStatus>
         ))}
         {!msgs.length && d.cross?.closes && !d.closed && <MapStatus icon="info">{t.onFirst}</MapStatus>}
+        {!msgs.length && !d.cross?.closes && d.corners.length > 0 && <RemoveHint />}
         <VisuallyHidden>{t.areaSaid(formatHa(d.areaHa), d.corners.length)}</VisuallyHidden>
       </div>
       {/* Once there are three corners, the field can be made; until it's big enough the line above says why. */}
@@ -211,26 +222,11 @@ export function DrawIsland({ d, onCreate }: { d: FieldDraw; onCreate: () => void
       <ToolIsland label={t.tools}>
         <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} short disabled={!d.canUndo} onClick={d.undo} />
         <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} short disabled={!d.canRedo} onClick={d.redo} />
-        {d.closed ? (
+        {d.closed && (
           <>
             <ToolDivider />
-            {d.selected !== null && d.corners.length > 3 ? (
-              <ToolButton icon="close" caption={t.remove} hint={t.removeHint} onClick={() => d.drop(d.selected!)} />
-            ) : (
-              <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} disabled={d.isReset} onClick={d.reset} />
-            )}
+            <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} disabled={d.isReset} onClick={d.reset} />
           </>
-        ) : (
-          <button
-            type="button"
-            className="tool-add"
-            data-closes={d.cross?.closes || undefined}
-            data-quiet={ready || undefined}
-            aria-disabled={!!d.crossProblem || !d.cross || undefined}
-            onClick={() => (d.cross?.closes ? onCreate() : d.add())}
-          >
-            {d.cross?.closes ? t.closeHere : t.addCorner}
-          </button>
         )}
       </ToolIsland>
     </>

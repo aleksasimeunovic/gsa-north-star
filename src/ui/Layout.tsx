@@ -19,7 +19,7 @@ export function Stack({ gap = 'md', as: As = 'div', children }: { gap?: keyof ty
 }
 
 export function Inline({ children }: { children: ReactNode }) {
-  return <div className="flex flex-wrap items-center gap-[var(--gap-inline)]">{children}</div>
+  return <div className="flex flex-wrap items-center gap-[var(--gap-buttons)]">{children}</div>
 }
 
 const TEXT = { body: '', secondary: 'text-muted-foreground', small: 'text-sm text-muted-foreground', strong: 'font-semibold' }

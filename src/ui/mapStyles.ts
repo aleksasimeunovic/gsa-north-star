@@ -74,6 +74,7 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
  * - faint: his other fields, for orientation
  * - land: registered farmland he can put a field on
  * - flag: what the satellite flagged, a light veil and a dashed line, so the photo underneath stays readable
+ * - editing: an outline he is moving (road, yard): a light veil and a solid edge, so the edge he follows stays visible
  * - strip: what changed hands, hatched so it never relies on colour
  * - split: the line that splits a field
  * - guide: the edge in the photo, once the line has left it
@@ -82,7 +83,7 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
  * - error: a part with something wrong (no crop yet), veiled red with a red edge, so the map points at what the panel says
  * - lit: fields a measure covers, brighter than the rest
  */
-export type MapRole = 'field' | 'faint' | 'land' | 'flag' | 'strip' | 'split' | 'guide' | 'spot' | 'hover' | 'error' | 'lit'
+export type MapRole = 'field' | 'faint' | 'land' | 'flag' | 'editing' | 'strip' | 'split' | 'guide' | 'spot' | 'hover' | 'error' | 'lit'
 
 export function mapStyle(role: MapRole): Style[] {
   switch (role) {
@@ -94,6 +95,8 @@ export function mapStyle(role: MapRole): Style[] {
       return line(2, [14, 8])
     case 'flag':
       return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.16)' }) }), ...line(2, [8, 5])]
+    case 'editing':
+      return [new Style({ fill: new Fill({ color: 'rgba(255,255,255,0.2)' }) }), ...line(2.5)]
     case 'strip':
       return [new Style({ fill: new Fill({ color: fills().hatch }) }), ...line(2)]
     case 'split':

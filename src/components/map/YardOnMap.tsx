@@ -12,6 +12,7 @@ import type { Point, Polygon } from '../../data/scenarios'
 import { bounds, nearestOnLine, outlinePath, pointInPolygon } from '../../logic/geometry'
 import { mapStyle } from '../../ui/mapStyles'
 import type { YardDraft } from '../YardTool'
+import { isDoubleTap } from './doubleTap'
 import { createLoupe } from './loupe'
 import type { FarmMap } from './olFarm'
 
@@ -48,8 +49,9 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
   useEffect(() => {
     fm.extra.clear()
     const f = new Feature<Geometry>(new OlPolygon(fm.ring(yard)))
-    // GSA's guess is a light veil, like any flag; once he works on it or confirms it, it is hatched: land that doesn't count.
-    f.setStyle(mapStyle(interactive || settled ? 'strip' : 'flag'))
+    // GSA's guess is a light veil, like any flag, and so is the outline he is moving: a hatch hides the edge he
+    // follows, worst of all in the loupe. Once confirmed it is hatched: land that doesn't count.
+    f.setStyle(mapStyle(interactive ? 'editing' : settled ? 'strip' : 'flag'))
     f.set('yard', true)
     fm.extra.addFeature(f)
     const b = bounds(yard)
@@ -106,8 +108,16 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
       el.dataset.corner = ''
       el.setAttribute('aria-label', `${latest.current.words.corner(i + 1)}. ${latest.current.words.keys}`)
       let dragging = false
+      let moved = false
       el.addEventListener('pointerdown', (e) => {
         e.preventDefault()
+        // A second press soon after the first takes the corner out; there is no button for it.
+        if (isDoubleTap(el, e)) {
+          dragging = false
+          latest.current.moves.drop(i)
+          return
+        }
+        moved = false
         el.setPointerCapture(e.pointerId)
         el.focus({ preventScroll: true })
         dragging = true
@@ -117,12 +127,13 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
       })
       el.addEventListener('pointermove', (e) => {
         if (!dragging) return
+        moved = true
         latest.current.moves.move(i, at(e))
         loupe.current?.show(fingerAt(e), e.pointerType === 'touch')
       })
       const stop = () => {
         loupe.current?.hide()
-        if (dragging) latest.current.moves.letGo(i)
+        if (dragging) latest.current.moves.letGo(moved ? i : null)
         dragging = false
         delete el.dataset.dragging
       }
@@ -155,6 +166,7 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
   useEffect(() => {
     if (!interactive) return
     let corner: number | null = null
+    let moved = false
     let whole: { from: Polygon; at: Point } | null = null
     const onEdge = (pixel: number[], touch: boolean) =>
       !!fm.map.forEachFeatureAtPixel(pixel, (f) => (f.get('yard') ? true : undefined), { hitTolerance: touch ? 24 : 12 }) &&
@@ -165,6 +177,7 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
         const p = round(fm.point(e.coordinate))
         if (onEdge(e.pixel, touch)) {
           corner = latest.current.moves.pull(p)
+          moved = false
           ghost.setPosition(undefined)
           return true
         }
@@ -177,6 +190,7 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
       },
       handleDragEvent: (e) => {
         const p = round(fm.point(e.coordinate))
+        moved = true
         if (corner !== null) latest.current.moves.move(corner, p)
         else if (whole) latest.current.moves.shift(whole.from, { x: p.x - whole.at.x, y: p.y - whole.at.y })
         const pe = e.originalEvent as PointerEvent
@@ -184,7 +198,8 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
       },
       handleUpEvent: () => {
         loupe.current?.hide()
-        latest.current.moves.letGo(corner)
+        // A click on the edge places a corner there, which stays for him to move.
+        latest.current.moves.letGo(moved ? corner : null)
         corner = null
         whole = null
         return false

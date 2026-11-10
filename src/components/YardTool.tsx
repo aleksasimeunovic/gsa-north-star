@@ -3,7 +3,7 @@ import { fieldEdit, formatHa, shapeTools } from '../copy/en'
 import type { Point, Polygon } from '../data/scenarios'
 import { outlinePath, pullOutline, removeCorner, sameLine, scaledHa, snapToAny, stripProblem, tidyOutline, yardHa, yardProblem, type YardProblem } from '../logic/geometry'
 import { VisuallyHidden } from '../ui/Layout'
-import { MapStatus, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
+import { MapStatus, RemoveHint, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
 
 const STEP_M = 1
 const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } }
@@ -97,6 +97,7 @@ export function useYardDraft(field: Polygon, recordHa: number, start: Polygon, k
       return true
     },
     drop: (i: number) => {
+      if (cur.current.length <= 3) return
       remember()
       if (tryShape(removeCorner(cur.current, i))) setSelected(null)
     },
@@ -110,7 +111,7 @@ export function useYardDraft(field: Polygon, recordHa: number, start: Polygon, k
   return {
     field,
     yard,
-    yardHa: !yard.length || !field.length ? 0 : kind === 'road' ? scaledHa(start, recordHa, yard) : yardHa(field, recordHa, yard),
+    yardHa: !yard.length || !field.length ? 0 : kind === 'road' ? scaledHa(start, recordHa, yard, field) : yardHa(field, recordHa, yard),
     words,
     snap,
     setSnap: (on: boolean) => {
@@ -136,7 +137,7 @@ export type YardDraft = ReturnType<typeof useYardDraft>
 
 /**
  * On the map while he edits, the same island as the divider line: why a move stopped or that a corner joined
- * an edge, then Undo, Redo, Snap and Reset (Remove while a corner is selected).
+ * an edge, or how to take a corner out (a double click), then Undo, Redo, Snap and Reset.
  */
 export function YardIsland({ d }: { d: YardDraft }) {
   const t = shapeTools
@@ -144,7 +145,7 @@ export function YardIsland({ d }: { d: YardDraft }) {
   return (
     <>
       <div aria-live="polite">
-        {d.stopped ? <MapStatus>{w.stopped[d.stopped]}</MapStatus> : d.snap && d.snapped ? <MapStatus icon="snap">{t.joined}</MapStatus> : null}
+        {d.stopped ? <MapStatus>{w.stopped[d.stopped]}</MapStatus> : d.snap && d.snapped ? <MapStatus icon="snap">{t.joined}</MapStatus> : <RemoveHint />}
         <VisuallyHidden>{w.label(formatHa(d.yardHa))}</VisuallyHidden>
       </div>
       <ToolIsland label={w.tools}>
@@ -153,11 +154,7 @@ export function YardIsland({ d }: { d: YardDraft }) {
         <ToolDivider />
         <ToolButton icon="snap" caption={t.snap} hint={d.snap ? t.snapOn : t.snapOff} on={d.snap} onClick={() => d.setSnap(!d.snap)} />
         <ToolDivider />
-        {d.selected !== null && d.yard.length > 3 ? (
-          <ToolButton icon="close" caption={t.remove} hint={t.removeHint} onClick={() => d.moves.drop(d.selected!)} />
-        ) : (
-          <ToolButton icon="reset" caption={t.reset} hint={w.resetHint} idle={w.resetIdle} disabled={d.moves.isReset} onClick={d.moves.reset} />
-        )}
+        <ToolButton icon="reset" caption={t.reset} hint={w.resetHint} idle={w.resetIdle} disabled={d.moves.isReset} onClick={d.moves.reset} />
       </ToolIsland>
     </>
   )

@@ -292,8 +292,9 @@ function MapChangeCard({ id }: { id: 'field_river' | 'field_road' }) {
 
 /** His own outline of the road and its share of the land map's strip, or nothing if he kept the land map's. */
 const roadStripOf = (d: Derived, strip?: Polygon) => {
-  const sig = d.scenario.fields.find((f) => f.id === 'road')?.signal
-  return strip && sig?.kind === 'road_strip' && !sameLine(strip, sig.stripPolygon) ? { polygon: strip, ha: scaledHa(sig.stripPolygon, sig.stripHa, strip) } : undefined
+  const road = d.scenario.fields.find((f) => f.id === 'road')
+  const sig = road?.signal
+  return strip && sig?.kind === 'road_strip' && !sameLine(strip, sig.stripPolygon) ? { polygon: strip, ha: scaledHa(sig.stripPolygon, sig.stripHa, strip, road!.polygon) } : undefined
 }
 
 /** The way into the map, beside the task's heading, so the map gets the room under it. */

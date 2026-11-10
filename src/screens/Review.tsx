@@ -13,7 +13,7 @@ import { Button } from '../ui/Button'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { Compare, Inline, Text, VisuallyHidden } from '../ui/Layout'
 import { Answers } from '../ui/Fact'
-import { MapStage, StageAction } from '../ui/MapStage'
+import { MapStage, PanelHead, StageAction } from '../ui/MapStage'
 import { StepHeader } from '../ui/StepHeader'
 import { Note } from '../ui/Note'
 import { ToolSwitch } from '../ui/MapTools'
@@ -181,22 +181,14 @@ function RiverReview({ onAnswer, head }: BodyProps) {
         </Suspense>
       }
     >
-      {step ? (
-        <header className="split-head">
-          <StepHeader step={RIVER_STEPS.indexOf(step) + 1} of={3} label={split.step(RIVER_STEPS.indexOf(step) + 1)} back={{ label: split.back, onClick: stepBack }} />
-          <h2 id="split-title" tabIndex={-1}>{titles[step]}</h2>
-        </header>
-      ) : (
-        head
-      )}
+      {step ? <StepHeader step={RIVER_STEPS.indexOf(step) + 1} of={3} label={split.step(RIVER_STEPS.indexOf(step) + 1)} back={{ label: split.back, onClick: stepBack }} /> : head}
       {!step && a.answer === null && <RiverCompare field={field} />}
-      {step === 'line' && (
-        <LineStep d={draft} onNext={() => go('crops')} />
-      )}
-      {step === 'crops' && <CropsStep d={draft} onNext={() => go('effects')} />}
+      {step === 'line' && <LineStep d={draft} title={titles.line} onNext={() => go('crops')} />}
+      {step === 'crops' && <CropsStep d={draft} title={titles.crops} onNext={() => go('effects')} />}
       {step === 'effects' && (
         <EffectsStep
           d={draft}
+          title={titles.effects}
           onConfirm={(s) => {
             onAnswer()
             dispatch({ type: 'set_split', split: s })
@@ -256,7 +248,7 @@ function RiverCompare({ field }: { field: Field }) {
   return (
     <Compare
       items={[
-        { label: t.lastYear, value: t.lastYearValue(formatHa(field.areaHa), en.crops[field.cropLastYear].toLowerCase()) },
+        { label: t.lastYear, value: t.lastYearValue(formatHa(field.areaHa), en.crops[field.cropLastYear]) },
         { label: t.different, value: t.differentValue(formatHa(ha)) },
       ]}
     />
@@ -324,11 +316,10 @@ function RoadReview({ onAnswer, head }: BodyProps) {
     >
       {d.editing ? (
         <>
-          <header className="split-head">
-            <StepHeader step={0} of={0} label="" back={{ label: split.back, onClick: () => d.setEditing(false) }} />
-            <h2 id="review-title" tabIndex={-1}>{r.editTitle}</h2>
-          </header>
-          <Text variant="secondary">{r.editHint}</Text>
+          <StepHeader step={0} of={0} label="" back={{ label: split.back, onClick: () => d.setEditing(false) }} />
+          <PanelHead id="review-title" title={r.editTitle}>
+            <Text variant="secondary">{r.editHint}</Text>
+          </PanelHead>
           <ul className="facts" aria-live="polite">
             <li>{r.area(formatHa(field.areaHa), left)}</li>
           </ul>

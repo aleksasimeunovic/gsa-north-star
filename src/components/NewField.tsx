@@ -11,7 +11,7 @@ import { Icon } from '../ui/Icon'
 import { StepHeader } from '../ui/StepHeader'
 import { Field } from '../ui/Field'
 import { Inline, Stack, Text } from '../ui/Layout'
-import { MapStage, StageAction } from '../ui/MapStage'
+import { MapStage, PanelHead, StageAction } from '../ui/MapStage'
 import { RadioGroup } from '../ui/RadioGroup'
 import { ActionBar } from './ActionBar'
 import { useApp } from './AppContext'
@@ -22,7 +22,7 @@ import type { Flow } from './useApplicationFlow'
 
 
 /** A new field in one line: its name, area and crop. */
-export const fieldLine = (f: NewField) => copy.line(f.name, formatHa(f.areaHa), en.crops[f.crop].toLowerCase())
+export const fieldLine = (f: NewField) => copy.line(f.name, formatHa(f.areaHa), en.crops[f.crop])
 
 /** A still picture of the parcel he bought, his other fields faint around it. */
 function BoughtPreview({ field }: { field?: NewField }) {
@@ -61,7 +61,7 @@ export function BoughtBody() {
 
 /** A field he added: what it is, where, and a way back into it. */
 export function AddedBody({ id }: { id: string }) {
-  const { state, derived, go } = useApp()
+  const { state, derived, go, dispatch } = useApp()
   const field = state.answers.newFields.find((f) => `added_${f.id}` === id)
   if (!field) return null
   return (
@@ -73,7 +73,10 @@ export function AddedBody({ id }: { id: string }) {
         </Suspense>
       </figure>
       <StageAction>
-        <Button onClick={() => go('field', field.id)}>{copy.change}</Button>
+        <Inline>
+          <Button onClick={() => go('field', field.id)}>{copy.change}</Button>
+          <Button onClick={() => dispatch({ type: 'remove_field', id: field.id })}>{copy.remove}</Button>
+        </Inline>
       </StageAction>
     </Stack>
   )
@@ -154,6 +157,21 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
     flow.show(task)
   }
 
+  /** Any field he added can go: a saved one leaves his land, one just drawn is wiped, the parcel he bought isn't farmed. */
+  const remove = () => {
+    if (isBought) {
+      dispatch({ type: 'answer_bought', answer: 'no' })
+      return go('review', 'field_bought')
+    }
+    if (existing) {
+      dispatch({ type: 'remove_field', id: existing.id })
+      return back()
+    }
+    d.clear()
+    setLandId(null)
+    setStage('place')
+  }
+
   // Back sits beside the step, as on every map task, and never loses what he has done.
   const backFn =
     stage === 'draw'
@@ -175,14 +193,17 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                 }
               : undefined
           : undefined
+  // Where he is, then the heading and what it introduces: two groups, a section apart.
   const head = (
-    <header className="review-head">
+    <>
       {(backFn || !(isBought || existing)) && <StepHeader step={step} of={isBought || existing ? 0 : of} label={isBought || existing ? '' : copy.step(step, of)} back={backFn && { label: bar.back, onClick: backFn }} />}
-      <h2 id="field-title" tabIndex={-1}>
-        {stage === 'place' ? copy.place : stage === 'draw' ? (d.closed ? drawField.editTitle : drawField.title) : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}
-      </h2>
-      {polygon && stage !== 'draw' && <p className="hint">{yard ? copy.yard.without(formatHa(areaHa)) : formatHa(areaHa)}</p>}
-    </header>
+      <PanelHead id="field-title" title={stage === 'place' ? copy.place : stage === 'draw' ? (d.closed ? drawField.editTitle : drawField.title) : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}>
+        {polygon && stage !== 'draw' && <p className="hint">{yard ? copy.yard.without(formatHa(areaHa)) : formatHa(areaHa)}</p>}
+        {stage === 'yard' && !yd.editing && <Text variant="secondary">{copy.yard.why}</Text>}
+        {stage === 'place' && <Text>{copy.placeHint}</Text>}
+        {stage === 'draw' && <Text variant="secondary">{d.closed ? drawField.editHint : d.corners.length === 0 ? drawField.start : d.corners.length < 3 ? drawField.next : drawField.three}</Text>}
+      </PanelHead>
+    </>
   )
 
   const yardStage = polygon && stage === 'yard' && (
@@ -206,7 +227,6 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
       }
     >
       {head}
-      {!yd.editing && <Text variant="secondary">{copy.yard.why}</Text>}
       <StageAction>
         {yd.editing ? (
           <Inline>
@@ -261,17 +281,18 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
           {formatHa(d.areaHa)}
         </p>
       )}
-      <Text variant="secondary">{d.closed ? drawField.editHint : d.corners.length === 0 ? <>{drawField.start} <span className="fine-only">{drawField.startMouse}</span></> : d.corners.length < 3 ? drawField.next : drawField.three}</Text>
-      <StageAction>
-        <Inline>
-          {d.closed && (
+      {d.closed && (
+        <StageAction>
+          <Inline>
             <Button variant="primary" aria-disabled={!!d.issues.length || undefined} onClick={() => !d.issues.length && setStage('details')}>
               {drawField.continue}
               <Icon name="forward" size="sm" />
             </Button>
-          )}
-        </Inline>
-      </StageAction>
+            {/* Deleting is there as soon as the field exists, so a wrong drawing never has to be undone corner by corner. */}
+            <Button onClick={remove}>{copy.remove}</Button>
+          </Inline>
+        </StageAction>
+      )}
     </MapStage>
   )
 
@@ -307,26 +328,15 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
             >
               <Field label={copy.name} hint={copy.nameHint} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
               <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} error={cropError} onChange={(c) => { setCrop(c); setCropError(undefined) }} />
-              {drawing && (
+              {(existing || drawing) && (
                 <div>
-                  <Button onClick={() => setStage('draw')}>{copy.edges}</Button>
-                </div>
-              )}
-              {existing && !isBought && (
-                <div>
-                  <Button
-                    onClick={() => {
-                      dispatch({ type: 'remove_field', id: existing.id })
-                      back()
-                    }}
-                  >
-                    {copy.remove}
-                  </Button>
+                  <Button onClick={remove}>{copy.remove}</Button>
                 </div>
               )}
               <StageAction>
                 <Inline>
                   <Button type="submit" variant="primary">{existing ? copy.saveChanges : copy.save}</Button>
+                  {drawing && <Button onClick={() => setStage('draw')}>{copy.edges}</Button>}
                 </Inline>
               </StageAction>
             </form>
@@ -351,9 +361,8 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
           }
         >
           {head}
-          <Text>{copy.placeHint}</Text>
           <StageAction>
-            <div className="flex flex-col gap-[var(--gap-inline)]">
+            <div className="flex flex-col gap-[var(--gap-buttons)]">
               {s.otherLand.map((l) => (
                 <Button
                   key={l.id}

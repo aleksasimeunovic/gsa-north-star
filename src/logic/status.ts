@@ -147,7 +147,7 @@ function changedFieldItem(s: Scenario, a: Answers, id: FieldId): Item | null {
     const r = a.road
     if (r.answer === null) return { id: itemId, status: 'action_required', detail: 'road_unanswered' }
     if (r.answer === 'yes' && r.strip && !sameLine(r.strip, signal.stripPolygon)) {
-      const his = scaledHa(signal.stripPolygon, signal.stripHa, r.strip)
+      const his = scaledHa(signal.stripPolygon, signal.stripHa, r.strip, field.polygon)
       // A wider road than the land map's is his to declare: less land, nothing to check.
       if (his >= signal.stripHa) return { id: itemId, status: 'complete', detail: 'road_confirmed', paymentImpact: impactOf(s, his, 'road_took_area') }
       // A narrower one is a correction: the land map's strip counts until the land registry checks his.

@@ -9,6 +9,7 @@ import { Button } from '../ui/Button'
 import { Drawer } from '../ui/Drawer'
 import { Field } from '../ui/Field'
 import { Icon } from '../ui/Icon'
+import { VisuallyHidden } from '../ui/Layout'
 import { SourceTag } from '../ui/SourceTag'
 import { useApp, type AppCtx } from './AppContext'
 
@@ -141,8 +142,9 @@ function Row({ row, onOpen }: { row: RecordRow; onOpen: (id: TaskId) => void }) 
       <div className="records-main">
         <dd className="records-value">{row.show ?? row.value}</dd>
         {e && (
-          <button type="button" className="records-pen" onClick={pen} aria-label={copy.edit(row.label)} title={copy.edit(row.label)}>
-            <Icon name="edit" size="sm" />
+          <button type="button" className="records-pen" onClick={pen}>
+            {en.change}
+            <VisuallyHidden>: {row.label}</VisuallyHidden>
           </button>
         )}
       </div>
@@ -279,7 +281,7 @@ function fieldRows(d: Derived, state: State, full: boolean): RecordRow[] {
   const s = d.scenario
   const a = state.answers
   const src = sourceIn(d)
-  // A field's value is its area and what grows there: "2.40 ha (Wheat)", one line per crop when there are two.
+  // A field's value is its area and what grows there: "2.40 ha · Wheat", one line per crop when there are two.
   const area = (ha: number, c: keyof typeof en.crops) => copy.areaCrop(formatHa(ha), en.crops[c])
   const field = (key: string, label: string, parts: { ha: number; crop: keyof typeof en.crops }[], rest: Partial<RecordRow> = {}): RecordRow => {
     const values = parts.map((p) => area(p.ha, p.crop))

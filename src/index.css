@@ -107,7 +107,8 @@
   --gap-list: var(--space-3);
   --gap-group: var(--space-4);
   --gap-object: var(--space-4);
-  --gap-section: var(--space-6);
+  --gap-buttons: var(--space-4);
+  --gap-section: var(--space-10);
 
   /*
    * Type: one family for headings, one for body text. Changing the pair is these two lines and the font link

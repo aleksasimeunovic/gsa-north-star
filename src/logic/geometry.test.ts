@@ -31,6 +31,7 @@ import {
   areaWithout,
   yardHa,
   yardProblem,
+  areaInsideHa,
 } from './geometry'
 
 const fields = SCENARIOS.second_year.fields
@@ -258,9 +259,13 @@ describe('leaving a yard out of a field', () => {
     expect(areaWithout(river, 2.4)).toBe(2.4)
   })
 
-  it('a yard stays wholly inside the field: on or past the edge is a change to the edge instead', () => {
-    expect(yardProblem(river, [{ x: 180, y: 40 }, { x: 220, y: 40 }, { x: 220, y: 80 }, { x: 180, y: 80 }])).toBe('touches_edge')
-    expect(yardProblem(river, [{ x: 0, y: 40 }, { x: 40, y: 40 }, { x: 40, y: 80 }, { x: 0, y: 80 }])).toBe('touches_edge')
+  it('a yard may run past the edge: only the part inside the field is left out', () => {
+    const square = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]
+    const half = [{ x: 80, y: 40 }, { x: 120, y: 40 }, { x: 120, y: 80 }, { x: 80, y: 80 }]
+    expect(yardProblem(square, half)).toBeNull()
+    expect(areaInsideHa(half, square)).toBeCloseTo(0.08, 3)
+    expect(areaWithout(square, 1, half)).toBe(0.92)
+    expect(yardProblem(square, [{ x: 200, y: 40 }, { x: 240, y: 40 }, { x: 240, y: 80 }, { x: 200, y: 80 }])).toBe('too_small')
   })
 
   it("a yard can't cross itself, and is at least 0.01 ha", () => {

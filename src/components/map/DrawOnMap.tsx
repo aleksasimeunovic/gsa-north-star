@@ -12,6 +12,7 @@ import { edgeM, midpoints, overlaps } from '../../logic/drawing'
 import { centroid } from '../../logic/geometry'
 import { drawStyle, overlapColour } from '../../ui/mapStyles'
 import type { FieldDraw } from '../DrawTool'
+import { isDoubleTap } from './doubleTap'
 import { createLoupe } from './loupe'
 import type { FarmMap } from './olFarm'
 
@@ -33,17 +34,12 @@ export function DrawOnMap({ fm, d, fields }: { fm: FarmMap; d: FieldDraw; fields
   const handles = useRef<Overlay[]>([])
   const key = JSON.stringify([d.corners, d.closed, d.cross, d.mark])
 
-  // Where the next corner would go: the middle of the map, unless a mouse is over it.
+  // Where the next corner would go, under the mouse. A finger places it where it taps, so there is no cross.
   useEffect(() => {
     let mouse: number[] | null = null
-    const centre = () => {
-      const [w = 0, h = 0] = fm.map.getSize() ?? []
-      return [w / 2, h * 0.42]
-    }
     const update = () => {
-      if (latest.current.closed) return latest.current.setCross(null)
-      const px = mouse ?? centre()
-      const c = fm.map.getCoordinateFromPixel(px)
+      if (latest.current.closed || !mouse) return latest.current.setCross(null)
+      const c = fm.map.getCoordinateFromPixel(mouse)
       if (c) latest.current.setCross(round(fm.point(c)))
     }
     const view = fm.map.getView()
@@ -63,9 +59,9 @@ export function DrawOnMap({ fm, d, fields }: { fm: FarmMap; d: FieldDraw; fields
     }
     vp.addEventListener('pointermove', move)
     vp.addEventListener('pointerleave', leave)
-    // With a mouse, a click is a corner where he clicked; on touch the cross and the button place it.
-    const click = (e: { originalEvent: Event; coordinate: number[] }) => {
-      if ((e.originalEvent as PointerEvent).pointerType !== 'mouse' || latest.current.closed) return
+    // A click or a tap is a corner where he pressed; on his first corner it closes the field.
+    const click = (e: { coordinate: number[] }) => {
+      if (latest.current.closed) return
       latest.current.add(round(fm.point(e.coordinate)))
     }
     // Corners placed one after another are corners, never a double click that zooms; and with no wait for one.
@@ -213,6 +209,17 @@ export function DrawOnMap({ fm, d, fields }: { fm: FarmMap; d: FieldDraw; fields
       el.addEventListener('pointerdown', (e) => {
         e.preventDefault()
         e.stopPropagation()
+        const c = latest.current
+        // A press on his first corner closes the field at once, as soon as it has three.
+        if (!mid && !c.closed && i === 0 && c.corners.length >= 3) {
+          c.close()
+          return
+        }
+        // A second press soon after the first takes the corner out; there is no button for it.
+        if (!mid && isDoubleTap(el, e)) {
+          c.drop(i)
+          return
+        }
         el.setPointerCapture(e.pointerId)
         el.dataset.dragging = ''
         dragging.current = true

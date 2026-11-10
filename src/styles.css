@@ -67,8 +67,8 @@
 .next-head h3 { margin-right: auto; }
 .next h3 { font-size: 1.5rem; letter-spacing: -0.02em; }
 .next > p, .next .lead { color: var(--muted-foreground); }
-.review-head { display: flex; flex-direction: column; gap: var(--gap-heading); }
-.review-head h2 { font-size: 1.5rem; }
+.review-head, .panel-head { display: flex; flex-direction: column; gap: var(--gap-heading); }
+.review-head h2, .panel-head h2 { font-size: 1.5rem; }
 
 /* What GSA reads in the evidence */
 .insight { margin: 0; padding: var(--space-4) var(--space-4); list-style: none; display: flex; flex-direction: column; gap: var(--gap-inline); border-radius: 16px; background: var(--info-surface); color: var(--foreground); font-size: 0.9375rem; }
@@ -312,7 +312,7 @@ button.drawer-row:hover { background: var(--hover); }
 .page:is([data-screen='review'], [data-screen='field']) .map-stage { flex: 1; min-height: 0; height: auto; }
 .map-stage { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: max(520px, calc(100dvh - var(--topbar-h) - var(--stepper-h) - var(--bar-h) - var(--space-6))); border-radius: 24px; overflow: hidden; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-card); }
 .map-stage-map { position: relative; min-height: 0; min-width: 0; }
-.map-stage-panel { display: flex; flex-direction: column; gap: var(--gap-group); min-height: 0; overflow-y: auto; padding: var(--space-6) var(--space-6) 0; border-left: 1px solid var(--border); }
+.map-stage-panel { display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; overflow-y: auto; padding: var(--space-6) var(--space-6) 0; border-left: 1px solid var(--border); }
 .map-stage-panel::after { content: ''; flex: none; height: var(--space-2); }
 /* Answers stacked in the narrow panel, so each reads in one line */
 .map-stage-panel [role='group'] > .grid { grid-template-columns: minmax(0, 1fr); }
@@ -328,7 +328,7 @@ button.drawer-row:hover { background: var(--hover); }
   .page:is([data-screen='review'], [data-screen='field']) { --bar-h: 70px; }
   .map-stage[data-working] .review-head, .map-stage[data-working] .answer > span:first-child, .map-stage[data-working] .split-lead { display: none; }
   .split-head h2 { font-size: 1.125rem; line-height: 1.3; }
-  .map-stage-panel { overflow: visible; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--gap-group); }
+  .map-stage-panel { overflow: visible; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--gap-section); }
   .map-stage-panel .stage-action { position: static; }
   .map-stage-panel::after { display: none; }
 }
@@ -338,6 +338,8 @@ button.drawer-row:hover { background: var(--hover); }
 .stage-action { position: sticky; bottom: 0; z-index: 1; margin-top: auto; padding: var(--space-4) 0 var(--space-4); background: var(--card); }
 /* A step in the panel fills it, so its action sits at the bottom whatever the step holds */
 .map-stage-panel > div:has(> .stage-action) { flex: 1; }
+/* The answer is pinned to the bottom, so the gap above it is room, not a section's distance. */
+.map-stage-panel > .stage-action { margin-top: auto; }
 .next .stage-action { bottom: var(--bar-h); margin: 0 calc(-1 * var(--stage-pad)); padding: var(--space-4) var(--stage-pad); }
 @media (max-width: 639px) { .next .stage-action { margin: 0 calc(-1 * var(--space-5)); padding: var(--space-4) var(--space-5); } }
 /* An action that ends the card ends it: the card's own padding doesn't add to the action's. */
@@ -422,14 +424,12 @@ button.drawer-row:hover { background: var(--hover); }
 .records-head dt { font-size: 0.9375rem; line-height: 1.5; color: var(--muted-foreground); }
 /* Second line: the value, and its pen at the far end */
 .records-main { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-list); }
-/* The pen keeps its 40 px target without making the value's line taller */
-.records-main .records-pen { margin-block: -9px; }
-.records-value { min-width: 0; font-weight: 600; font-size: 0.9375rem; line-height: 1.5; overflow-wrap: anywhere; }
+.records-value { min-width: 0; font-weight: 400; font-size: 0.9375rem; line-height: 1.5; overflow-wrap: anywhere; }
 .records-value .tabular-nums { gap: var(--gap-row); flex-wrap: nowrap; align-items: center; }
 .records-value button { width: 36px; height: 36px; margin: -7px 0; }
 .records-row[data-parts] .records-head dt { font-weight: 600; color: var(--foreground); }
 .records-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; line-height: 1.4; font-size: 0.8125rem; color: var(--muted-foreground); }
-.records-lines li { display: flex; justify-content: space-between; gap: var(--gap-list); padding-right: 44px; }
+.records-lines li { display: flex; justify-content: space-between; gap: var(--gap-list); padding-right: 60px; }
 .records-line-value { font-variant-numeric: tabular-nums; color: var(--foreground); }
 .records-problem { display: flex; align-items: center; gap: var(--gap-snug); font-size: 0.8125rem; font-weight: 500; color: var(--error); }
 .records-sub { font-size: 0.8125rem; line-height: 1.4; color: var(--muted-foreground); }
@@ -439,9 +439,12 @@ button.drawer-row:hover { background: var(--hover); }
 .records-text dt { font-size: 0.9375rem; color: var(--muted-foreground); }
 .records-text dd.goal-gain { font-size: 0.875rem; font-weight: 500; }
 .goal-section { display: flex; flex-direction: column; gap: var(--gap-heading); }
-.records-pen { flex: none; width: 40px; height: 40px; margin: -4px -10px -4px 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
-.records-pen:hover { border-color: var(--hover-border); color: var(--foreground); }
-.records-pen:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+/* Change: an underlined word with no box, so it sits on the value's line like text */
+.records-pen { flex: none; padding: 0; border: 0; background: none; font: inherit; font-size: 0.9375rem; font-weight: 500; line-height: 1.5; color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); cursor: pointer; transition: text-decoration-color 0.15s; }
+.records-pen:hover { text-decoration-color: currentColor; }
+.records-pen:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+/* A finger gets its 44 px without the word growing a box */
+@media (pointer: coarse) { .records-pen { position: relative; } .records-pen::after { content: ''; position: absolute; inset: -12px -8px; } }
 .records-row[data-editing] { display: block; }
 .records-form { display: flex; flex-direction: column; gap: var(--gap-list); }
 .records-form-actions { display: flex; flex-wrap: wrap; gap: var(--gap-inline); }
@@ -540,12 +543,6 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 .map-chip[data-kind='area-look'] { background: var(--warning); color: #fff; font-weight: 600; }
 .map-chip[data-kind='area-error'] { background: var(--error); color: #fff; font-weight: 600; }
 /* The one big button under his thumb: a corner at the cross */
-.tool-add { height: 56px; padding: 0 var(--space-5); margin-left: var(--space-1); border: 0; border-radius: 12px; background: var(--primary); color: var(--primary-foreground); font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background-color 0.15s, scale 0.12s; }
-.tool-add:hover { background: color-mix(in oklch, var(--primary) 88%, black); }
-.tool-add:active { scale: 0.96; }
-.tool-add[data-quiet] { background: var(--muted); color: var(--foreground); }
-.tool-add[aria-disabled] { background: var(--muted); color: var(--muted-foreground); cursor: not-allowed; }
-.tool-add:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .map-create { box-shadow: var(--shadow-float); }
 .map-create[aria-disabled] { cursor: not-allowed; }
 /* The live area in the panel, in the shape's colour with its word beside it on the map */
@@ -556,6 +553,8 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 
 /* Said only where it's true: a mouse can click a corner straight onto the map */
 @media (pointer: coarse) { .fine-only { display: none; } }
+.coarse-only { display: none; }
+@media (pointer: coarse) { .coarse-only { display: inline; } }
 .goal-open { display: inline-flex; align-items: center; gap: var(--gap-snug); padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .goal-open:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
 .goal-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
@@ -582,19 +581,18 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 }
 
 /* Round 22. Where he is inside a task of a few steps: back, a mark per step, the words. */
-.step-head { display: flex; align-items: center; gap: var(--gap-list); min-height: 36px; }
+.step-head { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-group); width: 100%; min-height: 36px; }
 .step-head .hint { margin: 0; white-space: nowrap; }
 .step-back { flex: none; display: inline-flex; align-items: center; gap: var(--gap-snug); min-height: 36px; padding: 0 var(--space-3) 0 var(--space-2); border: 1.5px solid var(--control-border); border-radius: 10px; background: var(--card); color: var(--foreground); font: inherit; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s, border-color 0.15s; }
 .step-back:hover { background: var(--hover); border-color: var(--hover-border); }
 .step-back:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 @media (pointer: coarse) { .step-back { min-height: 44px; } }
-.step-marks { display: inline-flex; gap: var(--gap-snug); }
-.step-marks span { width: 20px; height: 4px; border-radius: 2px; background: var(--border); transition: background-color 0.2s; }
+.step-marks { flex: 1; display: flex; gap: var(--gap-snug); }
+.step-marks span { flex: 1; min-width: 12px; height: 4px; border-radius: 2px; background: var(--border); transition: background-color 0.2s; }
 .step-marks span[data-on] { background: var(--foreground); }
 .split-head, .review-head { gap: var(--gap-heading); }
-.split-head .step-head, .review-head .step-head { margin-bottom: var(--gap-snug); }
 /* A heading sits nearer the text it introduces (heading to body) than the next group. */
-.map-stage-panel > header, .next > h3:has(+ p) { margin-bottom: calc(var(--gap-heading) - var(--gap-group)); }
+.next > h3:has(+ p) { margin-bottom: calc(var(--gap-heading) - var(--gap-group)); }
 
 /* What a handle or a press on the line does, said beside it when a mouse rests there */
 .map-tip { position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 0; padding: 2px var(--space-2); border-radius: 8px; background: var(--foreground); color: #fff; font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; line-height: 1.5; white-space: nowrap; pointer-events: none; opacity: 0; }

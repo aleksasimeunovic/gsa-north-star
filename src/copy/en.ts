@@ -273,7 +273,7 @@ export const tasks = {
     /** What the photo shows, no more. */
     context: 'Part of this field looks different on the new photo',
     lastYear: 'Your field last year',
-    lastYearValue: (ha: string, crop: string) => `${ha}, ${crop}`,
+    lastYearValue: (ha: string, crop: string) => `${ha} · ${crop}`,
     different: 'Looks different',
     differentValue: (ha: string) => `About ${ha}`,
     showPhoto: 'New this year',
@@ -283,8 +283,8 @@ export const tasks = {
     other: 'Something else',
     oneCrop: 'The same crop in the whole field',
     mayCheck: 'the state may still check it',
-    split: (a: string, b: string) => `${a}, ${b.toLowerCase()}`,
-    part: (crop: string, area: string) => `${crop} ${area}`,
+    split: (a: string, b: string) => `${a} and ${b}`,
+    part: (crop: string, area: string) => `${area} · ${crop}`,
     pastLand: (counted: string) => `The land registry checks your edge, and ${counted} counts until then`,
     edge: 'your edge',
     counts: (ha: string) => `Your field counts as ${ha}`,
@@ -524,8 +524,8 @@ export const shapeTools = {
   redoIdle: 'Nothing to redo',
   joined: 'Joined the edge on the photo',
   reset: 'Reset',
-  remove: 'Remove',
-  removeHint: 'Take out this corner',
+  removeMouse: 'Double-click a point to remove it',
+  removeTouch: 'Double-tap a point to remove it',
 }
 
 const EDGE_STOP = "The line stops at your field's edge: land outside it gets no support"
@@ -541,7 +541,6 @@ export const split = {
     no: 'No, I need to change it',
   },
   yourLine: "Pull the line, or your field's edge, into place.",
-  straight: 'Start from a straight line',
   twoFingers: 'Move the map with two fingers',
   sliderOn: 'Hard to drag? Use a slider',
   sliderOff: 'Hide the slider',
@@ -560,7 +559,6 @@ export const split = {
     resetIdle: "This is GSA's line",
     sliderLabel: 'Move the whole line',
     resetHint: "Go back to GSA's line and your field as registered",
-    removeHint: 'Take out this point',
   },
   stopped: {
     edge: EDGE_STOP,
@@ -570,6 +568,7 @@ export const split = {
   },
   part: { top: 'Tree line side', bottom: 'Road side', left: 'Left part', right: 'Right part' },
   partArea: (part: string, area: string) => `${part} ${area}`,
+  areaCrop: (area: string, crop: string) => `${area} · ${crop}`,
   cropsTitle: "What's growing in each part?",
   cropsHint: 'Tap a part on the map, or choose here',
   cropFor: (part: string, area: string) => `${part}, ${area}`,
@@ -651,7 +650,6 @@ export const finish = {
 export const records = {
   titles: { details: "Farmer's data", animals: 'Your animals', land: 'Your fields', documents: 'Your documents' },
   more: { details: 'More data', animals: 'All about your animals', land: 'All your fields', documents: 'All your files' },
-  edit: (what: string) => `Change: ${what}`,
   save: 'Send',
   cancel: 'Cancel',
   correctionHint: "The record's office checks it, and its value counts until then",
@@ -664,7 +662,7 @@ export const records = {
   pigs: 'Pigs',
   calvings: 'Cows that calved',
   period: (from: string, to: string) => `${from} to ${to}`,
-  areaCrop: (ha: string, crop: string) => `${ha} (${crop})`,
+  areaCrop: (ha: string, crop: string) => `${ha} · ${crop}`,
   unchangedFields: 'Unchanged fields',
   total: 'All your land',
   fieldCount: (n: number) => `${n} fields`,
@@ -693,10 +691,10 @@ export const fieldEdit = {
   save: 'Save',
   saveChanges: 'Save',
   change: 'Change',
-  remove: 'Remove',
-  draw: 'Draw it on the map',
+  remove: 'Delete this field',
+  draw: 'Draw new parcel on the map',
   edges: 'Change its edges',
-  line: (name: string, ha: string, crop: string) => `${name}, ${ha}, ${crop}`,
+  line: (name: string, ha: string, crop: string) => `${name}, ${ha} · ${crop}`,
   yard: {
     seen: 'The photo shows a house on it',
     house: 'House',
@@ -716,7 +714,6 @@ export const fieldEdit = {
     resetIdle: "This is GSA's outline",
     stopped: {
       crosses_itself: CROSSES,
-      touches_edge: 'The yard stays inside your field',
       too_small: 'A yard needs at least 0.01 ha',
     },
   },
@@ -730,7 +727,6 @@ export const fieldEdit = {
     resetIdle: "This is the land map's road",
     stopped: {
       crosses_itself: CROSSES,
-      touches_edge: "The road stays inside last year's field",
       too_small: 'The road needs at least 0.01 ha',
     },
   },
@@ -739,15 +735,12 @@ export const fieldEdit = {
 /** Drawing a field corner by corner on the photo. */
 export const drawField = {
   title: 'Draw your field',
-  start: 'Move the map to put the cross on a corner, then add it.',
-  startMouse: 'Or click each corner on the map.',
+  start: 'Click or tap each corner of your field on the map.',
   next: 'Go round your field, one corner at a time.',
-  three: 'Add more corners, or create the field.',
+  three: 'Add more corners, or close the field on your first one.',
   editTitle: "Check your field's edges",
   editHint: "Pull a corner, or an edge's middle dot, to where your field ends.",
   continue: 'Continue',
-  addCorner: 'Add corner',
-  closeHere: 'Close the field',
   onFirst: 'On your first corner',
   create: (ha: string) => `Create the field, ${ha}`,
   problem: {
@@ -768,8 +761,6 @@ export const drawField = {
   undoHint: 'Undo your last corner or move',
   redo: 'Redo',
   redoHint: 'Redo your last corner or move',
-  remove: 'Remove',
-  removeHint: 'Take out this corner',
   reset: 'Reset',
   resetHint: 'Go back to the field as you created it',
   cornerLabel: (n: number) => `Corner ${n} of your field`,
