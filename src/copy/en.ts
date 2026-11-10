@@ -207,7 +207,7 @@ export const tasks = {
     source: 'From the animal registry',
     wrong: 'Not right? Ask the registry to check',
     asked: (n: number) => `The registry will check, and ${n} counts until then`,
-    askedWith: (his: string, n: number) => `You said ${his}, the registry will check, and ${n} counts until then`,
+    askedWith: (his: string, n: number) => `You said ${his}. ${n} counts until the registry checks`,
     done: (n: number) => `${n} cows calved`,
   },
 
@@ -226,12 +226,12 @@ export const tasks = {
   unreadable: {
     action: 'Send a clearer diesel receipt',
     context: 'Too blurry to read the amount',
-    hint: 'Take a new photo in good light, with the whole receipt in it',
+    hint: 'A new photo in good light, the whole receipt in it',
     upload: 'Choose a new photo',
   },
 
   renewal: {
-    body: 'You need it to submit. You can prepare everything else first',
+    body: 'You need it to submit. Prepare the rest first',
     button: 'Renew',
   },
 
@@ -241,7 +241,7 @@ export const tasks = {
     registryShort: 'Animal registry',
     yoursToday: 'You, today',
     question: (n: number) => `Do you have ${n} cattle now?`,
-    summary: (reg: number, last: number) => `The registry shows ${reg}, and last year you declared ${last}`,
+    summary: (reg: number, last: number) => `Registry ${reg}, declared last year ${last}`,
     done: (n: number) => `${n} cattle`,
     countLabel: 'How many cattle do you have today?',
     countHint: 'Include calves',
@@ -264,14 +264,14 @@ export const tasks = {
       waiting_farmer: 'Jelena needs more from you',
       resolved: 'Jelena has sorted this out',
     } satisfies Record<CaseState, string>,
-    asks: 'Jelena asks: when did you sell or slaughter the cattle that left?',
+    asks: 'Jelena asks: when did the cattle leave?',
     replyLabel: 'Your reply',
     reply: 'Send',
   },
 
   river: {
     /** What the photo shows, no more. */
-    context: 'Part of this field looks different on the new photo. Something may have changed',
+    context: 'Part of this field looks different on the new photo',
     lastYear: 'Your field last year',
     lastYearValue: (ha: string, crop: string) => `${ha}, ${crop}`,
     different: 'Looks different',
@@ -302,7 +302,7 @@ export const tasks = {
   landChecks: (what: string, counted: string) => `The land registry checks ${what}, and ${counted} counts until then`,
 
   road: {
-    context: (d: string) => `Last year this strip was in your field. Since ${d} the land map marks it road`,
+    context: (d: string) => `Part of your field last year. Road on the land map since ${d}`,
     area: (from: string, to: string) => `${from} becomes ${to}`,
     payment: (about: string) => `About ${about} less`,
     question: 'Is this strip road now?',
@@ -349,7 +349,7 @@ export const tasks = {
   },
 
   measures: {
-    lead: (fit: number) => `Tick the ones you want, out of ${fit}. Each counts once it's filled in`,
+    lead: (fit: number) => `Tick the ones you want, out of ${fit}`,
     groupLast: 'You applied for these last year',
     groupSuggested: 'GSA recommends for your farm',
     groupMore: (n: number) => `${n} more measures you can apply for`,
@@ -373,7 +373,7 @@ export const tasks = {
     goalPanel: {
       household: 'What it could mean for your household',
       working: { ha: (qty: string, rate: string) => `${qty} ha × ${rate} dinars`, animal: (qty: string, rate: string) => `${qty} animals × ${rate} dinars` },
-      caveat: "An estimate. The final amount depends on that year's rates and checks",
+      caveat: "An estimate: it depends on that year's rates and checks",
       need: "What you're missing",
       then: 'Then you can apply next year',
       checks: 'What the state checks',
@@ -381,15 +381,15 @@ export const tasks = {
     },
     goalAbout: {
       organic: {
-        pays: 'For each hectare farmed without synthetic fertiliser or sprays',
+        pays: 'Per hectare farmed without synthetic fertiliser or sprays',
         steps: ['Have a certification body confirm your land is organic'],
-        checks: 'That a certification body has approved your land, and that it stays organic',
+        checks: 'That your land is certified organic and stays so',
         provide: 'Your organic certificate',
       },
       milk: {
         pays: 'Support for each dairy cow whose milk you sell to a dairy',
         steps: ['Sign a contract with a dairy'],
-        checks: 'Your cows in the animal registry, and the milk the dairy reports',
+        checks: "Your cows in the registry, and the dairy's milk report",
         provide: 'Your contract with the dairy',
       },
       fattening: {
@@ -462,7 +462,7 @@ export const tasks = {
       label: 'Are your cows entered in the herd book?',
       short: 'herd book',
       options: { yes: 'Yes', no: 'No' },
-      ruledOut: 'It only pays for cows in the herd book, so leave it out this year',
+      ruledOut: 'It only pays for cows in the herd book',
     },
     vet_certificate: { label: "Your vet's insemination certificate", short: 'vet certificate' },
     cover_fields: { label: 'Which fields stay green over winter?', short: 'fields' },
@@ -493,7 +493,7 @@ export const map = {
   photoDate: (d: string) => `Satellite photo, ${d}`,
   strip: (ha: string) => `${ha} now road`,
   imagery: 'Imagery © Esri',
-  keys: 'Drag or use the arrow keys to move the map, plus or minus to zoom',
+  keys: 'Drag or arrow keys move the map, plus or minus zoom',
   zoomIn: 'Zoom in',
   zoomOut: 'Zoom out',
   backTo: (field: string) => `Back to the ${field.toLowerCase()}`,
@@ -588,7 +588,7 @@ export const split = {
     totalMoved: (ha: string, by: string, more: boolean) => `${ha}, ${by} ${more ? 'more' : 'less'}`,
     edge: 'Its edge',
     pastLand: (claimed: string, counted: string) => `You say ${claimed}. ${counted} counts until the land registry checks`,
-    newCrop: (crop: string) => `Could now cover seed for your ${crop}, if you choose it in Measures`,
+    newCrop: (crop: string) => `Could cover seed for your ${crop}, if chosen in Measures`,
     plant: 'Basic support for plant production',
     bothCount: 'Covers both parts',
     oneCounts: (ha: string) => `Covers only ${ha}, because nothing is sown on the rest`,
@@ -634,7 +634,7 @@ export const finish = {
       "You'll see the decision and the payment in GSA",
     ],
     amendTitle: 'Need to change something?',
-    amendText: 'You can amend it until the national deadline, signing again',
+    amendText: 'You can amend it until the national deadline',
     amend: 'Amend',
   },
   renewal: {
@@ -702,7 +702,7 @@ export const fieldEdit = {
     house: 'House',
     title: 'Is this the house and its yard?',
     editTitle: 'Move the outline onto the house and its yard',
-    why: "A house and yard aren't farmland, so they stay out. GSA drew this from the photo, which can be wrong.",
+    why: "A house and yard aren't farmland. GSA drew this from the photo, which can be wrong.",
     without: (field: string) => `${field} without the house and yard`,
     yes: "Yes, that's right",
     no: 'No, I need to change it',
@@ -739,7 +739,7 @@ export const fieldEdit = {
 /** Drawing a field corner by corner on the photo. */
 export const drawField = {
   title: 'Draw your field',
-  start: 'Move the map until the cross is on a corner of your field, then add it.',
+  start: 'Move the map to put the cross on a corner, then add it.',
   startMouse: 'Or click each corner on the map.',
   next: 'Go round your field, one corner at a time.',
   three: 'Add more corners, or create the field.',
@@ -751,16 +751,16 @@ export const drawField = {
   onFirst: 'On your first corner',
   create: (ha: string) => `Create the field, ${ha}`,
   problem: {
-    outside_farmland: "Only registered farmland gets support. Move the cross onto the outlined land",
+    outside_farmland: "Only registered farmland gets support. Move the cross onto it",
     crosses_itself: "The edges can't cross each other. Move the cross",
   } satisfies Record<DrawProblem, string>,
   stopped: {
-    outside_farmland: 'Your field stays on registered farmland, so it stopped here',
+    outside_farmland: 'Your field stays on registered farmland',
     crosses_itself: "The edges can't cross each other, so it stopped here",
   } satisfies Record<DrawProblem, string>,
-  overlaps: (field: string) => `This takes land from your ${field}, which you already declare`,
+  overlaps: (field: string) => `This takes land you already declare (${field})`,
   leaveOut: 'Leave it out',
-  tooSmall: 'A field needs at least 0.10 ha. Add corners or pull them out',
+  tooSmall: 'A field needs at least 0.10 ha',
   metres: (m: number) => `${m} m`,
   areaSaid: (ha: string, n: number) => `${n} corners, ${ha}`,
   tools: 'Tools for drawing your field',
