@@ -152,9 +152,41 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
     flow.show(task)
   }
 
+  // Back sits beside the step, as on every map task, and never loses what he has done.
+  const backFn =
+    stage === 'draw'
+      ? () => (d.closed && !existing ? d.undo() : setStage(existing ? 'details' : 'place'))
+      : stage === 'yard'
+        ? yd.editing
+          ? () => yd.setEditing(false)
+          : isBought
+            ? () => go('review', 'field_bought')
+            : undefined
+        : stage === 'details'
+          ? yardStart
+            ? () => setStage('yard')
+            : !(isBought || existing)
+              ? () => {
+                  if (drawing) return setStage('draw')
+                  setLandId(null)
+                  setStage('place')
+                }
+              : undefined
+          : undefined
+  const stepHint = !(isBought || existing) && <p className="hint">{copy.step(step, of)}</p>
   const head = (
     <header className="review-head">
-      {!(isBought || existing) && <p className="hint">{copy.step(step, of)}</p>}
+      {backFn ? (
+        <div className="split-nav">
+          <Button onClick={backFn}>
+            <Icon name="back" size="sm" />
+            {bar.back}
+          </Button>
+          {stepHint}
+        </div>
+      ) : (
+        stepHint
+      )}
       <h2 id="field-title" tabIndex={-1}>
         {stage === 'place' ? copy.place : stage === 'draw' ? (d.closed ? drawField.editTitle : drawField.title) : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}
       </h2>
@@ -187,9 +219,9 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
       <StageAction>
         <Stack gap="sm">
           {yd.editing ? (
-            <div>
+            <Inline>
               <Button variant="primary" onClick={() => { setLeftOut(true); setStage('details') }}>{copy.yard.done}</Button>
-            </div>
+            </Inline>
           ) : (
             <ChoiceButtons
               legend={copy.yard.title}
@@ -205,9 +237,11 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
               }}
             />
           )}
-          <div>
-            <Button variant="link" onClick={() => { setLeftOut(false); setStage('details') }}>{copy.yard.none}</Button>
-          </div>
+          {!yd.editing && (
+            <div>
+              <Button onClick={() => { setLeftOut(false); setStage('details') }}>{copy.yard.none}</Button>
+            </div>
+          )}
         </Stack>
       </StageAction>
     </MapStage>
@@ -244,10 +278,6 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
       <Text variant="secondary">{d.closed ? drawField.editHint : d.corners.length === 0 ? <>{drawField.start} <span className="fine-only">{drawField.startMouse}</span></> : d.corners.length < 3 ? drawField.next : drawField.three}</Text>
       <StageAction>
         <Inline>
-          <Button onClick={() => (d.closed && !existing ? d.undo() : setStage(existing ? 'details' : 'place'))}>
-            <Icon name="back" size="sm" />
-            {bar.back}
-          </Button>
           {d.closed && (
             <Button variant="primary" aria-disabled={!!d.issues.length || undefined} onClick={() => !d.issues.length && setStage('details')}>
               {drawField.continue}
@@ -293,13 +323,12 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
               <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} error={cropError} onChange={(c) => { setCrop(c); setCropError(undefined) }} />
               {drawing && (
                 <div>
-                  <Button variant="link" onClick={() => setStage('draw')}>{copy.edges}</Button>
+                  <Button onClick={() => setStage('draw')}>{copy.edges}</Button>
                 </div>
               )}
               {existing && !isBought && (
                 <div>
                   <Button
-                    variant="link"
                     onClick={() => {
                       dispatch({ type: 'remove_field', id: existing.id })
                       back()
@@ -311,24 +340,6 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
               )}
               <StageAction>
                 <Inline>
-                  {yardStart && (
-                    <Button onClick={() => setStage('yard')}>
-                      <Icon name="back" size="sm" />
-                      {bar.back}
-                    </Button>
-                  )}
-                  {!(isBought || existing) && (
-                    <Button
-                      onClick={() => {
-                        if (drawing) return setStage('draw')
-                        setLandId(null)
-                        setStage('place')
-                      }}
-                    >
-                      <Icon name="back" size="sm" />
-                      {bar.back}
-                    </Button>
-                  )}
                   <Button type="submit" variant="primary">{existing ? copy.saveChanges : copy.save}</Button>
                 </Inline>
               </StageAction>

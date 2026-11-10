@@ -302,9 +302,9 @@ function fieldRows(d: Derived, state: State, full: boolean): RecordRow[] {
       const counted = it?.conflict ? it.conflict.record : f.areaHa
       rows.push(field(f.id, en.fields[f.id], parts ? parts.map((p) => ({ ha: p.ha, crop: p.crop })) : [{ ha: counted, crop: f.cropLastYear }], { sub: it?.conflict ? copy.youSay(formatHa(it.conflict.his)) : undefined, source: src(id), edit: { open: id } }))
     } else if (f.signal?.kind === 'road_strip') {
-      const left = roundHa(f.areaHa - f.signal.stripHa)
+      const left = roundHa(f.areaHa - (it?.paymentImpact?.areaHa ?? f.signal.stripHa))
       const answered = it?.status !== 'action_required'
-      rows.push(field(f.id, en.fields[f.id], [{ ha: answered ? left : f.areaHa, crop: f.cropLastYear }], { sub: it?.status === 'awaiting_verification' ? copy.youSay(formatHa(f.areaHa)) : undefined, source: src(id), edit: { open: id } }))
+      rows.push(field(f.id, en.fields[f.id], [{ ha: answered ? left : f.areaHa, crop: f.cropLastYear }], { sub: it?.conflict ? copy.youSay(formatHa(it.conflict.his)) : undefined, source: src(id), edit: { open: id } }))
     } else rows.push(field(f.id, en.fields[f.id], [{ ha: f.areaHa, crop: f.cropLastYear }]))
   }
   if (s.bought) {

@@ -7,7 +7,7 @@ import PointerInteraction from 'ol/interaction/Pointer'
 import type MapBrowserEvent from 'ol/MapBrowserEvent'
 import { boundingExtent } from 'ol/extent'
 import { useEffect, useRef } from 'react'
-import { fieldEdit, formatHa } from '../../copy/en'
+import { formatHa } from '../../copy/en'
 import type { Point, Polygon } from '../../data/scenarios'
 import { bounds, nearestOnLine, outlinePath, pointInPolygon } from '../../logic/geometry'
 import { mapStyle } from '../../ui/mapStyles'
@@ -55,7 +55,7 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
     const b = bounds(yard)
     chip.current?.setPosition(fm.coord({ x: (b.minX + b.maxX) / 2, y: b.minY - 7 }))
     const el = chip.current?.getElement()
-    if (el) el.textContent = fieldEdit.yard.label(formatHa(d.yardHa))
+    if (el) el.textContent = d.words.label(formatHa(d.yardHa))
     handles.current.forEach((o) => {
       const p = yard[o.get('i') as number]
       if (p) o.setPosition(fm.coord(p))
@@ -104,7 +104,7 @@ export function YardOnMap({ fm, d, interactive, settled }: { fm: FarmMap; d: Yar
       el.type = 'button'
       el.className = 'map-handle'
       el.dataset.corner = ''
-      el.setAttribute('aria-label', `${fieldEdit.yard.corner(i + 1)}. ${fieldEdit.yard.keys}`)
+      el.setAttribute('aria-label', `${latest.current.words.corner(i + 1)}. ${latest.current.words.keys}`)
       let dragging = false
       el.addEventListener('pointerdown', (e) => {
         e.preventDefault()

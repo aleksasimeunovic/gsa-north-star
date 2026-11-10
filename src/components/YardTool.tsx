@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { fieldEdit, formatHa } from '../copy/en'
+import { fieldEdit, formatHa, shapeTools } from '../copy/en'
 import type { Point, Polygon } from '../data/scenarios'
-import { pullOutline, removeCorner, sameLine, tidyOutline, yardHa, yardProblem, type YardProblem } from '../logic/geometry'
+import { outlinePath, pullOutline, removeCorner, sameLine, scaledHa, snapToAny, stripProblem, tidyOutline, yardHa, yardProblem, type YardProblem } from '../logic/geometry'
 import { VisuallyHidden } from '../ui/Layout'
 import { MapStatus, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
 
@@ -13,9 +13,16 @@ const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x
  * outline from the photo. He pulls its edge anywhere (it bends there), moves its corners, or drags the whole
  * yard onto the house. A move that would leave a bad shape stops at the last good one and says why, so a yard
  * outside the field, crossing itself or too small to matter never exists.
+ * The same editing serves the road strip (`kind: 'road'`): GSA's outline from the land map, which he moves if
+ * the road took more or less of his field. With Snap on, a corner joins GSA's outline or the field's edge.
+ * `recordHa` for the road is the land map's strip area, so his outline counts as its share.
  */
-export function useYardDraft(field: Polygon, recordHa: number, start: Polygon) {
-  const [yard, setYard] = useState(start)
+export function useYardDraft(field: Polygon, recordHa: number, start: Polygon, kind: 'yard' | 'road' = 'yard', initial: Polygon = start) {
+  const words = kind === 'road' ? fieldEdit.road : fieldEdit.yard
+  const problemOf = kind === 'road' ? stripProblem : yardProblem
+  const [snap, setSnap] = useState(true)
+  const [snapped, setSnapped] = useState(false)
+  const [yard, setYard] = useState(initial)
   const [past, setPast] = useState<Polygon[]>([])
   const [future, setFuture] = useState<Polygon[]>([])
   const [selected, setSelected] = useState<number | null>(null)
@@ -29,8 +36,14 @@ export function useYardDraft(field: Polygon, recordHa: number, start: Polygon) {
     setPast((p) => [...p, cur.current])
     setFuture([])
   }
+  const snapped_ = (p: Point) => {
+    if (!snap) return p
+    const r = snapToAny(p, [outlinePath(start), outlinePath(field)])
+    setSnapped(r.snapped)
+    return r.point
+  }
   const tryShape = (next: Polygon) => {
-    const problem = yardProblem(field, next)
+    const problem = problemOf(field, next)
     setStopped(problem)
     if (problem) return false
     cur.current = next
@@ -55,14 +68,14 @@ export function useYardDraft(field: Polygon, recordHa: number, start: Polygon) {
       setSelected(r.corner)
       return r.corner
     },
-    move: (i: number, p: Point) => tryShape(cur.current.map((q, k) => (k === i ? p : q))),
+    move: (i: number, p: Point) => tryShape(cur.current.map((q, k) => (k === i ? snapped_(p) : q))),
     /** The whole yard, by as far as he dragged it. */
     shift: (from: Polygon, by: Point) => tryShape(from.map((q) => ({ x: q.x + by.x, y: q.y + by.y }))),
     /** Letting go: a corner on a straight stretch isn't a corner, and a press that moved nothing leaves nothing to undo. */
     letGo: (i: number | null) => {
       if (i !== null) {
         const tidy = tidyOutline(cur.current, i)
-        if (tidy !== cur.current && !yardProblem(field, tidy)) {
+        if (tidy !== cur.current && !problemOf(field, tidy)) {
           cur.current = tidy
           setYard(tidy)
           setSelected(null)
@@ -97,7 +110,14 @@ export function useYardDraft(field: Polygon, recordHa: number, start: Polygon) {
   return {
     field,
     yard,
-    yardHa: yard.length && field.length ? yardHa(field, recordHa, yard) : 0,
+    yardHa: !yard.length || !field.length ? 0 : kind === 'road' ? scaledHa(start, recordHa, yard) : yardHa(field, recordHa, yard),
+    words,
+    snap,
+    setSnap: (on: boolean) => {
+      setSnap(on)
+      setSnapped(false)
+    },
+    snapped,
     moves,
     remember,
     selected,
@@ -114,23 +134,29 @@ export function useYardDraft(field: Polygon, recordHa: number, start: Polygon) {
 
 export type YardDraft = ReturnType<typeof useYardDraft>
 
-/** On the map while he edits: why a move stopped, then Undo, Redo and Reset (Remove while a corner is selected). */
+/**
+ * On the map while he edits, the same island as the divider line: why a move stopped or that a corner joined
+ * an edge, then Undo, Redo, Snap and Reset (Remove while a corner is selected).
+ */
 export function YardIsland({ d }: { d: YardDraft }) {
-  const t = fieldEdit.yard
+  const t = shapeTools
+  const w = d.words
   return (
     <>
       <div aria-live="polite">
-        {d.stopped && <MapStatus>{t.stopped[d.stopped]}</MapStatus>}
-        <VisuallyHidden>{t.label(formatHa(d.yardHa))}</VisuallyHidden>
+        {d.stopped ? <MapStatus>{w.stopped[d.stopped]}</MapStatus> : d.snap && d.snapped ? <MapStatus icon="snap">{t.joined}</MapStatus> : null}
+        <VisuallyHidden>{w.label(formatHa(d.yardHa))}</VisuallyHidden>
       </div>
-      <ToolIsland label={t.tools}>
+      <ToolIsland label={w.tools}>
         <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} disabled={!d.canUndo} onClick={d.undo} />
         <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} disabled={!d.canRedo} onClick={d.redo} />
+        <ToolDivider />
+        <ToolButton icon="snap" caption={t.snap} hint={t.snapHint} on={d.snap} onClick={() => d.setSnap(!d.snap)} />
         <ToolDivider />
         {d.selected !== null && d.yard.length > 3 ? (
           <ToolButton icon="close" caption={t.remove} hint={t.removeHint} onClick={() => d.moves.drop(d.selected!)} />
         ) : (
-          <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} disabled={d.moves.isReset} onClick={d.moves.reset} />
+          <ToolButton icon="reset" caption={t.reset} hint={w.resetHint} disabled={d.moves.isReset} onClick={d.moves.reset} />
         )}
       </ToolIsland>
     </>

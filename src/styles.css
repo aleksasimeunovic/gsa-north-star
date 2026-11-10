@@ -581,3 +581,4 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
   .resolved { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: start; }
   .resolved > button { grid-column: 2; justify-self: start; }
 }
+.answer > button { margin-left: auto; }

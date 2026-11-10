@@ -339,3 +339,18 @@ export const areaWithout = (field: Polygon, recordHa: number, yard?: Polygon) =>
 
 /** The yard's own share of the record's area, as he sees it on the map. */
 export const yardHa = (field: Polygon, recordHa: number, yard: Polygon) => roundHa(recordHa - areaWithout(field, recordHa, yard))
+
+/**
+ * What's wrong with a strip he marks inside a field (the road), or null. Unlike a yard it may sit on the field's
+ * edge, since the road runs along it, but never past it.
+ */
+export function stripProblem(field: Polygon, strip: Polygon): YardProblem | null {
+  if (outlineCrosses(strip)) return 'crosses_itself'
+  const onOrIn = (p: Point) => pointInPolygon(p, field) || closestOnPath(p, ring(field)).dist <= 0.5
+  if (!strip.every(onOrIn)) return 'touches_edge'
+  if (polygonAreaHa(strip) < MIN_YARD_HA) return 'too_small'
+  return null
+}
+
+/** A shape's share of a record's area, scaled from the shape the record was given for. */
+export const scaledHa = (ref: Polygon, refHa: number, poly: Polygon) => roundHa((refHa * polygonAreaHa(poly)) / polygonAreaHa(ref))

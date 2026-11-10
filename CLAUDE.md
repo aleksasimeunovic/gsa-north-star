@@ -279,7 +279,7 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 18 (Aleksa, 4 Nov):** the map experience, motion and states, after research into GIS editing on phones: a loupe above the finger, quiet field corners, the farmland shown only when it matters, the sliver past it veiled orange, GSA's line drawing itself in, panel and map lighting the same part, snapping felt and seen, purposeful motion under reduced-motion rules, never a grey button without a reason, the answer in view on a phone.
 
-**Round 21 (Aleksa, 10 Nov):** the river field is the Tree line field; secondary buttons stronger; Snap in the island; the road field's old shape runs onto the road; the parcel he bought asked on the map like the others; a lower payment is a fact; a finished part lists its decisions with Change (see `docs/decisions.md` 371 to 380).
+**Round 21 (Aleksa, 10 Nov):** the river field is the Tree line field; secondary buttons stronger; Snap in the island; the road field's old shape runs onto the road; the parcel he bought asked on the map like the others; a lower payment is a fact; a finished part lists its decisions with Change (see `docs/decisions.md` 371 to 380). Then: the road strip and the house and yard are edited like the divider line, confirm first, the same island with Snap, and actions are buttons, never links (381 to 383).
 
 **Round 19 (Aleksa, 4 Nov):** alternatives for the key decision points across the whole application, in the Figma file North Star only (frames 5 to 12), never in the code; every state of the journey audited for clipping and keyboard focus at 360, 768, 1024 and 1280 px.
 
