@@ -513,4 +513,4 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 425. **White on the photo or on a dark fill is a token** (`--on-inverse`), not a hex in the stylesheet.
 426. **Primary actions, audited**: on every task and map step the way forward is alone in the pinned slot at the bottom of its card or panel (`StageAction`), Back is in the action bar or beside the step, and secondary actions are bordered buttons. The two exceptions stay on purpose: Save sits right under a field he types into (his herd count, his account number), so the field is never covered.
 427. `src/copy/en.ts`: 5,196 to 5,141 words (`wc -w`).
-
+428. **The case study outline is a Figma Slides deck of 24 text-only slides** (headline, one sentence, a description of the one artifact), in six sections: the original service, tested with FAO, then the three North Star stories (adaptive application, guided parcel delineation, decision support), then judgement and next steps. `docs/case-study-outline.md` mirrors it. Rejected: adding screenshots now (Earl: agree the argument first).

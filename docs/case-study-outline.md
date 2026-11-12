@@ -1,73 +1,36 @@
 # Case study outline: GSA North Star
 
-Working outline for the presentation, built from Earl's email of 4 November. It uses only facts already in `CLAUDE.md` and `docs/decisions.md`. Anything marked **[Aleksa]** needs your material: nothing there should be invented.
+The outline lives as a Figma Slides deck: https://www.figma.com/slides/28xKhjOfLXqQwCovnzk6Oo
 
-**Story in one line (Earl, 31 Oct):** I transformed a specialist GIS workflow into a guided task that farmers can complete using their existing knowledge of their land.
+Earl's brief (5 and 11 Nov): each slide has a takeaway headline, one sentence explaining the point, and a description of the single artifact that supports it. No visuals yet. The story shows three things: the complexity of the original service, the GSA work designed and tested with FAO, and the independent North Star, told through three design stories. It uses only facts from `CLAUDE.md` and `docs/decisions.md`. **[Aleksa]** marks a slide that needs your material; nothing there is invented.
 
 **Principle:** the complexity of the application should reflect the complexity of the farm, not the complexity of the government's policies.
 
----
+| # | Section | Headline | Artifact |
+|---|---|---|---|
+| 1 | The original service | GSA North Star: an application as complex as the farm, not as complex as the policy | Title, role on each part, one still |
+| 2 | | Applying for a subsidy meant rebuilding your farm for the government every year | Journey map of the Before story **[Aleksa]** |
+| 3 | | A mistake cost so much that farmers paid for a free application | Milan and Jelena, side by side |
+| 4 | | Farmers were on phones, and the service assumed a computer | Four FAO research findings as numbers |
+| 5 | Tested with FAO | I turned the process into eight plain-language steps and tested it with 44 farmers and advisors | The eight steps in one strip **[Aleksa]** |
+| 6 | | Farmers drew their fields without learning a single land term | The original drawing screen and quote **[Aleksa]** |
+| 7 | | A constant overview of errors gave farmers the confidence to submit | Error linked to its answer, two quotes |
+| 8 | | The tested product was easier, yet year two still meant doing it all again | Annotated year-two flow **[Aleksa]** |
+| 9 | Adaptive application | The North Star changes the job from reconstructing the farm to confirming it | The visual product model |
+| 10 | | Three design stories carry the proposal, and nothing else needs equal weight | One frame per story |
+| 11 | | GSA opens with what it knows and asks only about what changed | Herd question beside the tested ear-tag task |
+| 12 | | Every answer reshapes the application, and Milan sees it happen | Recording or three stills of the list changing |
+| 13 | | When Milan and a record disagree, GSA keeps both and says who settles it | The 38 and 41 state with its four answers |
+| 14 | Parcel delineation | A proposed boundary beats a blank map | Confirmation step, and the three rejected approaches |
+| 15 | | Correcting the line is direct, forgiving and impossible to break | Three phone frames at 360 px |
+| 16 | | A change on the map carries through the whole application | "What this changes" with arrows to land, measures, estimate |
+| 17 | | The road strip shows what happens when Milan disagrees with the government's map | Hatched strip beside the dispute panel |
+| 18 | Decision support | Measures become decisions Milan can make, not a checklist to tick | Green cover measure open |
+| 19 | | Choosing a measure adds only what is missing, and the estimate says what is still provisional | List and estimate before and after a tick |
+| 20 | | Readiness is one honest count on every screen, kept apart from money | Summary not ready, ready, receipt |
+| 21 | Judgement | The strongest decisions were the ones I reversed | Table of four reversals from the decision log |
+| 22 | | The hard part was never the screens | Who owns which record **[Aleksa]** |
+| 23 | | What is tested, what is mandated and what is still an assumption | Three columns |
+| 24 | | Next: put the North Star in front of farmers on their own phones | Prototype link, walkthrough, two validation questions |
 
-## 1. The original problem
-
-- Milan's Before story: subsidies are the part of his income the weather can't touch. Measures opened at different times, three registries to match, cadastral numbers he'd never needed, several office visits per subsidy, agencies charging up to €40 for a free application (P1 to P12).
-- Jelena's side: about 20 applications a day, typing other people's applications.
-- FAO field research: about 70% of farmers own a smartphone; under half of 55 to 74 year olds use computers. Sessions expired mid-entry; farmers missed the final "finish" button; no action history across advisors.
-- **[Aleksa]** One image of the old process (the office, the paper, the old app).
-
-## 2. The product I designed and tested (FAO)
-
-- 8-step wizard, 44 usability sessions with farmers and advisors.
-- What was tested: plain-language measures, the herd filled in from the registry, drawing fields on a satellite photo kept inside eligible land, errors linked to the answer that needs fixing, last year's fields returning in year two.
-- The three farmer quotes and three advisor quotes in `CLAUDE.md` section 4 (translated by you).
-- **[Aleksa]** Screens of the original drawing interaction, and the observations from the 44 sessions that the North Star answers (where farmers got stuck placing points, finding the field, recovering from mistakes, reading areas). Earl asked for these specifically.
-
-## 3. The limits that led to the North Star
-
-- Even when tested and easier, the second year still meant rebuilding the farm: checking line by line, removing animals one ear tag at a time, redrawing a field that changed crop with Jelena's help.
-- The shift: from rebuilding the farm every year to confirming it. GSA starts from what it knows, finds what may have changed, shows the evidence, then asks.
-- Status: North Star is a proposal, not built or tested, and outside the UN scope.
-
-## 4. Three strategic decisions (most of the presentation)
-
-Ten points of comparison with the original GIS experience are working material (the North Star Figma file). They support these three decisions and aren't presented one by one.
-
-### Decision 1: start with a proposed boundary, not a blank map (product strategy)
-
-- GSA proposes the divider line along the edge the satellite photo shows. Milan's first question is "Is this where the crop changes?", and if it is, he confirms without touching the map (round 16). Editing exists only for when GSA is wrong.
-- Why the proposed line beat the three other approaches explored (tapping a detected area, brushing over it, placing points with a crosshair): only a proposed line can be accepted as it is and still corrected precisely.
-- Trust the photo less: the line is worded as a guess; he can move it freely, reset it or reject it for a straight line. Satellite data only flags; it never decides what he planted.
-- Evidence: the four approaches in Figma; the river field at 1.08 and 1.32 ha.
-
-### Decision 2: precision and recovery through direct manipulation and constraints (interaction design)
-
-- He pulls the line or the field's edge from anywhere, and it bends there; no point is ever placed on empty ground.
-- An impossible shape can't exist (crossing itself, a part under 0.10 ha); the move stops at the last good position and the map says why, where he's looking.
-- But a registered boundary isn't assumed correct: going past the registered farmland is flagged for the land registry, with both areas kept, not prevented (round 16).
-- Undo, Redo and Reset only; snapping works on its own with a way off; a slider for anyone who finds dragging hard.
-- Evidence: handle sizes and states, the toolbar variations (four in Figma), snapping, validation states.
-
-### Decision 3: connect the change on the map to the rest of the application (systems thinking)
-
-- Before he confirms: what changes, what stays the same, what needs his decision. The usual split changes no money because both crops pay the same per hectare, which is more credible than inventing a payment change.
-- After he confirms: land, crops, measures, readiness and the estimate all follow, worked out rather than stored.
-- GSA points out new possibilities (certified seed for sunflowers) but never applies for a measure on his behalf.
-- The road strip as the one exception: Milan disagrees with the government's map; both areas kept, who settles it, what he must do, what happens next.
-
-## 5. What made it difficult (seniority)
-
-- **[Aleksa]** Organisational challenges you mentioned to Earl (who owns which registry, what the ministry would need to agree to, UN scope).
-- **[Aleksa]** Technical challenges (satellite edge detection quality, registry data with no history, matching three registries).
-- What went wrong in both the original redesign and this one, which you told Earl you'd cover. **[Aleksa]**
-- Decisions reversed along the way, from `docs/decisions.md`: blocking the edge at the registered farmland (250) became a flagged disagreement (262); four helpers on the toolbar (233) became Undo, Redo, Reset (263); editing first (rounds 13 to 15) became confirming first (260).
-
-## 6. Assumptions that still need validation
-
-- To confirm with the ministry: items awaiting verification don't block submission; amendments until a national deadline; household pigs need no declaration; unsown land stops counting for plant production; the 0.10 ha minimum part.
-- Design assumptions: snapping within 6 m; touch distances on the line and handles; the registered area counting while an edge is checked.
-- To validate with farmers: whether Milan can drag the line on his own phone at 360 px without panning the map; whether "confirm first" is trusted or rubber-stamped. No claim about better usability holds until the North Star is tested.
-
-## 7. Close
-
-- The walkthrough of the after story (Earl, 31 Oct). **[Aleksa]** Recording.
-- Link to the prototype.
+Next, once Earl agrees the structure: choose which prototype moments get the most room, which alternatives to show (the four boundary approaches and the toolbar variations are in the Figma file North Star), and only then add visuals.
