@@ -1,7 +1,7 @@
 import { Suspense, useRef, useState, type ReactNode } from 'react'
 import { en, formatDinars, formatHa, formatNumber, map, split, tasks } from '../copy/en'
 import type { Measure, MeasureId, Requirement, Suggestion } from '../data/scenarios'
-import { fitting, goalGain, measureGaps, readyToApply, shown } from '../logic/status'
+import { fitting, measureGaps, readyToApply, shown } from '../logic/status'
 import { carriedFields, fieldChoices, newCrops, riverParts } from '../logic/farm'
 import type { PartName } from '../logic/geometry'
 import type { MeasureValue } from '../state/actions'
@@ -28,7 +28,6 @@ const t = tasks.measures
 const fieldName = (id: string) => (id.startsWith('river:') ? tasks.suggest.riverPart(split.part[id.slice(6) as PartName]) : en.fields[id as keyof typeof en.fields])
 const req = (r: Requirement) => tasks.requirement[r.id]
 const aboutThousand = (n: number) => formatDinars(Math.round(n / 1000) * 1000)
-const quantity = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2))
 const userReqs = (m: Measure) => m.requirements.filter((r) => r.kind !== 'auto')
 
 /** What the measure pays, worked out on his own numbers where the rate is known. */
@@ -52,12 +51,25 @@ function shortLine(m: Measure, d: Derived, g: Suggestion | undefined, fresh: Ret
   return t.why[m.id] ?? ''
 }
 
+/** Whether the records are enough, or what only he can add: a suggestion is never the same as being eligible. */
+function basisLine(m: Measure, d: Derived): string {
+  const receipts = m.requirements.some((r) => r.id === 'receipts') ? d.items.find((i) => i.id === 'receipts')?.detail : undefined
+  const needs = [
+    ...userReqs(m).filter((r) => !r.when).map((r) => req(r).short),
+    ...(receipts === 'receipts_unreadable' ? [tasks.auto.blurryShort] : receipts === 'receipts_missing' ? [req({ id: 'receipts', kind: 'auto' }).short] : []),
+  ]
+  return needs.length ? t.basis.adds(needs.join(', ')) : t.basis.records
+}
+
 /**
  * Choosing measures, in the order that helps him decide: last year's, then the ones GSA recommends, then the
  * rest that fit, closed. Each is a checkbox: ticking it is his choice, and opens what it needs right under it.
  * It counts as applied once everything is in; a required answer left empty turns red once he moves on from
  * the measure. No apply button: the part's own Continue becomes the primary action once every ticked measure
- * is complete. Name and one line on the card; everything else about it opens in a side panel.
+ * is complete. On the card: its name, why it may fit, and whether GSA's records are enough or what he adds.
+ * Ticked, it says what GSA already has, what is still needed from him, what the state still checks and what it
+ * does to his estimate. Measures that don't fit are listed last with the reason, and never with advice on how
+ * to qualify: that is planning his farm, not his application.
  */
 export function MeasuresBody() {
   const { derived, state, dispatch } = useApp()
@@ -69,6 +81,7 @@ export function MeasuresBody() {
   const last = fit.filter((m) => m.lastYear)
   const ofSuggestions = suggested.map((g) => fit.find((m) => m.id === g.measureId)!)
   const more = fit.filter((m) => !m.lastYear && !isSuggested(m.id))
+  const not = s.measures.filter((m) => !m.fits)
   const [moreOpen, setMoreOpen] = useState(more.some((m) => chosen.includes(m.id)))
   // A ticked measure shows what's missing in red only once he has moved on from it.
   const [touched, setTouched] = useState<MeasureId[]>([])
@@ -117,6 +130,7 @@ export function MeasuresBody() {
             <span className="measure-text">
               <span className="measure-name">{en.measures[m.id]}</span>
               <span className="measure-line">{shortLine(m, derived, g, fresh)}</span>
+              {!on && <span className="measure-basis">{basisLine(m, derived)}</span>}
             </span>
           </label>
           {on && ready && (
@@ -128,7 +142,7 @@ export function MeasuresBody() {
             type="button"
             className="measure-about"
             aria-haspopup="dialog"
-            aria-label={t.goalOpen(en.measures[m.id])}
+            aria-label={t.aboutOpen(en.measures[m.id])}
             onClick={(e) => {
               opener.current = e.currentTarget
               setAbout(m)
@@ -141,7 +155,7 @@ export function MeasuresBody() {
           <MeasureFields
             m={m}
             inputs={inputs}
-            suggestedFields={g?.fields}
+            g={g}
             showErrors={invalid}
             onChange={(k, v) => draft(chosen, { ...inputs, [k]: v })}
           />
@@ -159,15 +173,30 @@ export function MeasuresBody() {
       </section>
       {ofSuggestions.length > 0 && (
         <section className="measure-group" data-suggested aria-labelledby="m-suggested">
-          <h4 id="m-suggested" className="group-title">
-            <Icon name="change" /> {t.groupSuggested}
-          </h4>
+          <div className="measure-group-head">
+            <h4 id="m-suggested" className="group-title">
+              <Icon name="change" /> {t.groupSuggested}
+            </h4>
+            <Text variant="small">{t.suggestedLead}</Text>
+          </div>
           <ul className="measure-list">{ofSuggestions.map(option)}</ul>
         </section>
       )}
       {more.length > 0 && (
         <Disclosure label={t.groupMore(more.length)} open={moreOpen} onOpenChange={setMoreOpen}>
           <ul className="measure-list">{more.map(option)}</ul>
+        </Disclosure>
+      )}
+      {not.length > 0 && (
+        <Disclosure label={t.groupNot(not.length)}>
+          <ul className="measure-list">
+            {not.map((m) => (
+              <li key={m.id} className="measure-not">
+                <span className="measure-name">{en.measures[m.id]}</span>
+                <span className="measure-line">{t.notFit[m.id]}</span>
+              </li>
+            ))}
+          </ul>
         </Disclosure>
       )}
       <Drawer open={!!about} title={about ? en.measures[about.id] : ''} onClose={() => setAbout(null)} returnFocusTo={opener}>
@@ -219,33 +248,52 @@ function PanelSection({ title, children }: { title: string; children: ReactNode 
 }
 
 /**
- * Under a ticked measure: what GSA already has and what he adds, each in the form that fits it.
- * A required answer left empty is red once he has moved on. An answer that rules it out says so.
+ * Under a ticked measure, always in the same order: why GSA suggests it (only where it does, with the evidence
+ * on the map), what GSA already has, what is still needed from him, then what the state still checks and what
+ * it does to his estimate. A required answer left empty is red once he has moved on. An answer that rules it
+ * out says so.
  */
-function MeasureFields({ m, inputs, suggestedFields, showErrors, onChange }: { m: Measure; inputs: Inputs; suggestedFields?: string[]; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void }) {
+function MeasureFields({ m, inputs, g, showErrors, onChange }: { m: Measure; inputs: Inputs; g?: Suggestion; showErrors: boolean; onChange: (key: string, v: MeasureValue) => void }) {
   const { derived, state } = useApp()
+  const b = t.body
   const gaps = measureGaps(m, inputs)
   const ruledOut = m.requirements.find((r) => r.blocks !== undefined && inputs[`${m.id}.${r.id}`] === r.blocks)
+  const visible = m.requirements.filter((r) => shown(m, r, inputs))
+  const auto = visible.filter((r) => r.kind === 'auto')
+  const own = visible.filter((r) => r.kind !== 'auto')
+  const suggestedFields = g?.fields && carriedFields(g.fields, derived.scenario, state.answers)
+  const checks = tasks.suggest.checks[m.id]
   return (
     <div className="measure-fields">
       {ruledOut && <Banner tone="attention">{req(ruledOut).ruledOut}</Banner>}
-      {m.requirements
-        .filter((r) => shown(m, r, inputs))
-        .map((r) =>
-          r.kind === 'auto' ? (
+      {g && (
+        <BodyPart title={b.why}>
+          <Text>{g.evidence === 'green_all_winter' ? tasks.suggest.long.green_all_winter : tasks.suggest.long.inseminations(g.count ?? 0)}</Text>
+          {suggestedFields && <FieldsOnMap ids={suggestedFields} label={en.measures[m.id]} show={t.showThese} />}
+        </BodyPart>
+      )}
+      {(auto.length > 0 || g) && (
+        <BodyPart title={b.has}>
+          {g && <HasLine>{g.evidence === 'green_all_winter' ? tasks.suggest.has.green_all_winter : tasks.suggest.has.inseminations(g.count ?? 0)}</HasLine>}
+          {auto.map((r) => (
             <Stack key={r.id} gap="sm">
               <AutoLine r={r} d={derived} />
-              {r.id === 'land' && <FieldsOnMap ids={[...derived.scenario.fields.map((f) => f.id as string), ...state.answers.newFields.map((f) => f.id)]} label={en.measures[m.id]} />}
+              {r.id === 'land' && <FieldsOnMap ids={[...derived.scenario.fields.map((f) => f.id as string), ...state.answers.newFields.map((f) => f.id)]} label={en.measures[m.id]} show={t.showAll} />}
             </Stack>
-          ) : (
+          ))}
+        </BodyPart>
+      )}
+      {own.length > 0 && (
+        <BodyPart title={b.add}>
+          {own.map((r) => (
             <Stack key={r.id} gap="sm">
               {/* The fields GSA's evidence was about: suggested, never ticked for him. One tap uses them. */}
               {r.kind === 'fields' && suggestedFields && !(inputs[`${m.id}.${r.id}`] as string[] | undefined)?.length && (
                 <div>
-                  <Button onClick={() => onChange(`${m.id}.${r.id}`, carriedFields(suggestedFields, derived.scenario, state.answers))}>
+                  <Button onClick={() => onChange(`${m.id}.${r.id}`, suggestedFields)}>
                     {/* The evidence line above names the fields; the button stays one line. */}
                     {tasks.suggest.useFields}
-                    <VisuallyHidden>: {carriedFields(suggestedFields, derived.scenario, state.answers).map((f) => fieldName(f)).join(', ')}</VisuallyHidden>
+                    <VisuallyHidden>: {suggestedFields.map((f) => fieldName(f)).join(', ')}</VisuallyHidden>
                   </Button>
                 </div>
               )}
@@ -256,9 +304,38 @@ function MeasureFields({ m, inputs, suggestedFields, showErrors, onChange }: { m
                 onChange={(v) => onChange(`${m.id}.${r.id}`, v)}
               />
             </Stack>
-          ),
-        )}
+          ))}
+        </BodyPart>
+      )}
+      {checks && (
+        <BodyPart title={b.checks}>
+          <Text>{checks}</Text>
+        </BodyPart>
+      )}
+      <BodyPart title={b.estimate}>
+        <Text>{m.rateDinars ? amountLine(m, derived) : t.panel.noRate}</Text>
+      </BodyPart>
     </div>
+  )
+}
+
+/** One group inside a ticked measure: a small label, then what belongs to it. */
+function BodyPart({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="measure-part">
+      <h5 className="label-title">{title}</h5>
+      {children}
+    </section>
+  )
+}
+
+/** Something GSA already has, marked neutrally: green is only for what he has finished. */
+function HasLine({ children, missing }: { children: ReactNode; missing?: boolean }) {
+  return (
+    <p className="auto-line">
+      {missing ? <StatusBadge mark="error" iconOnly /> : <span className="auto-mark"><Icon name="check" size="sm" /></span>}
+      <span>{children}</span>
+    </p>
   )
 }
 
@@ -307,7 +384,7 @@ function FieldMapButton({ id }: { id: string }) {
  * The fields a measure covers, on the photo on request: they stand out, his other fields stay faint. Only
  * there once a field is chosen, so the button always has something to show.
  */
-function FieldsOnMap({ ids, label }: { ids: string[]; label: string }) {
+function FieldsOnMap({ ids, label, show }: { ids: string[]; label: string; show: string }) {
   const { derived } = useApp()
   const [open, setOpen] = useState(false)
   const s = derived.scenario
@@ -317,9 +394,9 @@ function FieldsOnMap({ ids, label }: { ids: string[]; label: string }) {
   return (
     <div className="flex flex-col gap-[var(--gap-inline)]">
       <div>
-        <Button variant="link" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Button aria-expanded={open} onClick={() => setOpen(!open)}>
           <Icon name="map" size="sm" />
-          {open ? t.hideMap : t.showAll}
+          {open ? t.hideMap : show}
         </Button>
       </div>
       {open && (
@@ -333,107 +410,28 @@ function FieldsOnMap({ ids, label }: { ids: string[]; label: string }) {
   )
 }
 
-/** A rough figure for his household: the nearest thousand, so it never reads as a promise. */
-const goalAbout = (m: Measure) => aboutThousand(goalGain(m.goal!))
-
-/**
- * What he still lacks for the measures that don't fit his farm yet: what to do and what it could mean for his
- * household, in a line each. The name opens everything about the measure in a side panel.
- */
-export function MeasureGoals() {
-  const { derived } = useApp()
-  const goals = derived.scenario.measures.filter((m) => m.goal)
-  const [open, setOpen] = useState<Measure | null>(null)
-  const opener = useRef<HTMLElement | null>(null)
-  if (!goals.length) return null
-  return (
-    <section className="records" aria-labelledby="goals-title">
-      <h3 id="goals-title" className="records-title"><Icon name="goal" size="sm" /> {t.goalsTitle}</h3>
-      <dl className="records-rows">
-        {goals.map((m) => (
-          <div key={m.id} className="records-row">
-            <div className="records-text">
-              <dt>
-                <button
-                  type="button"
-                  className="goal-open"
-                  aria-haspopup="dialog"
-                  aria-label={t.goalOpen(en.measures[m.id])}
-                  onClick={(e) => {
-                    opener.current = e.currentTarget
-                    setOpen(m)
-                  }}
-                >
-                  {en.measures[m.id]} <Icon name="details_open" size="sm" />
-                </button>
-              </dt>
-              <dd className="records-value">{t.goal[m.goal!.kind](m.goal!.left)}</dd>
-              <dd className="goal-gain">{t.gain(goalAbout(m))}</dd>
-            </div>
-          </div>
-        ))}
-      </dl>
-      <Drawer open={!!open} title={open ? en.measures[open.id] : ''} onClose={() => setOpen(null)} returnFocusTo={opener}>
-        {open && <GoalPanel m={open} />}
-      </Drawer>
-    </section>
-  )
-}
-
-/**
- * Everything about a measure he can't apply for yet, in the order he cares about: what he is missing,
- * what it could mean for his household, then what he'd give and what the state checks.
- */
-function GoalPanel({ m }: { m: Measure }) {
-  const g = m.goal!
-  const p = t.goalPanel
-  const about = t.goalAbout[m.id]!
-  return (
-    <div className="panel-sections">
-      <Text>{about.pays}</Text>
-      <PanelSection title={p.need}>
-        <ul className="panel-list">
-          {[t.goal[g.kind](g.left), ...about.steps].map((x) => <li key={x}>{x}</li>)}
-        </ul>
-        <Text variant="small">{p.then}</Text>
-      </PanelSection>
-      <PanelSection title={p.household}>
-        <Text>{t.gain(goalAbout(m))}</Text>
-        <Text variant="small">{p.working[g.gain.unit](quantity(g.gain.quantity), formatNumber(g.gain.rateDinars))}. {p.caveat}</Text>
-      </PanelSection>
-      <PanelSection title={p.provide}>
-        <Text>{about.provide}</Text>
-      </PanelSection>
-      <PanelSection title={p.checks}>
-        <Text>{about.checks}</Text>
-      </PanelSection>
-    </div>
-  )
-}
-
-/** Something GSA already has, shown so he sees it counts. */
+/** Something GSA already has, shown so he sees it counts; a receipt it can't read says so and where to fix it. */
 function AutoLine({ r, d }: { r: Requirement; d: Derived }) {
   const a = tasks.auto
-  const receipts = d.items.find((i) => i.id === 'receipts')
+  const receipts = d.items.find((i) => i.id === 'receipts')?.detail
+  const files = d.scenario.documents.flatMap((x) => x.files).length
+  const problem = r.id === 'receipts' && (receipts === 'receipts_missing' || receipts === 'receipts_unreadable')
   const value =
     r.id === 'land'
       ? a.land(formatHa(d.farm.fields.totalHa), d.farm.fields.count)
       : r.id === 'receipts'
-        ? receipts?.detail === 'receipts_missing'
+        ? receipts === 'receipts_missing'
           ? a.receiptsMissing
-          : a.receipts(d.scenario.documents.flatMap((x) => x.files).length)
+          : receipts === 'receipts_unreadable'
+            ? a.receiptsBlurry(files)
+            : a.receipts(files)
         : r.id === 'calvings'
           ? a.calvings(d.scenario.herd?.cowsCalved ?? 0)
           : a.fertiliser_receipt
-  const missing = r.id === 'receipts' && receipts?.detail === 'receipts_missing'
-  // Already there, so it's marked neutrally: green is only for what he has finished.
   return (
-    <p className="auto-line">
-      {missing ? <StatusBadge mark="error" iconOnly /> : <span className="auto-mark"><Icon name="check" size="sm" /></span>}
-      <span>
-        <strong>{req(r).label}</strong>: {value}
-      </span>
-    </p>
+    <HasLine missing={problem}>
+      <strong>{req(r).label}</strong>: {value}
+    </HasLine>
   )
 }
 

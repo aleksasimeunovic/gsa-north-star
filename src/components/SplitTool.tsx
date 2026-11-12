@@ -34,7 +34,7 @@ import { ChoiceButtons } from '../ui/ChoiceButtons'
 import { Answers } from '../ui/Fact'
 import { Inline, Stack, Text, VisuallyHidden } from '../ui/Layout'
 import { PanelHead, StageAction } from '../ui/MapStage'
-import { MapStatus, RemoveHint, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
+import { EditTools, MapStatus, RemoveHint, SnapStatus } from '../ui/MapTools'
 import { Note } from '../ui/Note'
 import { Select } from '../ui/Select'
 import { useApp } from './AppContext'
@@ -297,9 +297,9 @@ export function partLabels(d: SplitDraft, step: 'line' | 'crops' | 'effects'): [
 }
 
 /**
- * Step 1's toolbar, once he edits: direct manipulation does the work, so the island holds only Undo, Redo and
- * Reset (Remove while a point is selected). Snapping works on its own, and the map says when it joined an edge,
- * and Snap sits in the island so he always sees whether it is on. Why a move stopped is said in the same place, and so is an edge past the
+ * Step 1's toolbar, once he edits: direct manipulation does the work, so the island holds only Undo and Reset
+ * (Redo once he has undone something). Snapping works on its own: the map says when a point joined an edge, with
+ * the way to stop it right there. Why a move stopped is said in the same place, and so is an edge past the
  * registered farmland, which is flagged for a check rather than stopped.
  */
 export function LineTools({ d }: { d: SplitDraft }) {
@@ -313,22 +313,28 @@ export function LineTools({ d }: { d: SplitDraft }) {
   useEffect(() => {
     if (d.snapped && d.snap) navigator.vibrate?.(8)
   }, [d.snapped, d.snap])
+  const setSnap = (on: boolean) => {
+    d.setSnap(on)
+    d.setSnapped(false)
+  }
   const status = d.stopped ? (
     <MapStatus>
       {copy.stopped[d.stopped]}
       {d.stopped === 'too_small' && <Note kind="design" />}
     </MapStatus>
   ) : d.snap && d.snapped ? (
-    <MapStatus icon="snap">
-      {t.joined} <Note kind="design" />
-    </MapStatus>
+    <SnapStatus on joined onChange={setSnap}>
+      <Note kind="design" />
+    </SnapStatus>
   ) : d.pastLand ? (
     <MapStatus>
       {copy.pastLand} <Note kind="design" />
     </MapStatus>
-  ) : (
+  ) : !d.snap ? (
+    <SnapStatus on={false} joined={false} onChange={setSnap} />
+  ) : d.selected ? (
     <RemoveHint />
-  )
+  ) : null
 
   return (
     <>
@@ -352,27 +358,13 @@ export function LineTools({ d }: { d: SplitDraft }) {
           />
         </label>
       )}
-      <ToolIsland label={t.label}>
-        <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} idle={t.undoIdle} disabled={!d.canUndo} onClick={d.undo} />
-        <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} idle={t.redoIdle} disabled={!d.canRedo} onClick={d.redo} />
-        <ToolDivider />
-        {/* Snapping is always in view, so he can see whether it is on and turn it off or on in one tap. */}
-        <ToolButton
-          icon="snap"
-          caption={t.snap}
-          hint={d.snap ? t.snapOn : t.snapOff}
-          on={d.snap}
-          onClick={() => {
-            d.setSnap(!d.snap)
-            d.setSnapped(false)
-          }}
-        />
-        <ToolDivider />
-        <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} idle={t.resetIdle} disabled={moves.isReset} onClick={moves.reset} />
-      </ToolIsland>
+      <EditTools label={t.label} canUndo={d.canUndo} canRedo={d.canRedo} onUndo={d.undo} onRedo={d.redo} reset={{ hint: t.resetHint, idle: t.resetIdle, disabled: moves.isReset, onClick: moves.reset }} />
     </>
   )
 }
+
+/** Still exactly the line GSA drew from the photo: a suggestion until he confirms it or moves it. */
+export const isGsaLine = (d: SplitDraft) => followsEdge(d.draft.line, edgeOf(d.record)) && !d.draft.boundary
 
 /**
  * Step 1, confirmation first: GSA's line is a suggestion from the photo, and the usual answer is that it's right,
@@ -380,7 +372,7 @@ export function LineTools({ d }: { d: SplitDraft }) {
  * straight line. The tools are on the map.
  */
 export function LineStep({ d, title, onNext }: { d: SplitDraft; title: string; onNext: () => void }) {
-  const onEdge = followsEdge(d.draft.line, edgeOf(d.record)) && !d.draft.boundary
+  const onEdge = isGsaLine(d)
 
   // On a keyboard, undo and redo work as everywhere else.
   useEffect(() => {
@@ -411,7 +403,7 @@ export function LineStep({ d, title, onNext }: { d: SplitDraft; title: string; o
   if (!d.editing)
     return (
       <>
-        <PanelHead id="split-title" title={title}>
+        <PanelHead id="split-title" title={copy.check.question}>
           {/* Said on a phone too: the line is a suggestion, not a fact. */}
           <Text variant="secondary">
             {onEdge ? copy.check.suggested : copy.check.yours} <Note kind="ai" />
@@ -421,9 +413,10 @@ export function LineStep({ d, title, onNext }: { d: SplitDraft; title: string; o
         <StageAction>
           <ChoiceButtons
             legend={copy.check.question}
+            quiet
             options={[
               { value: 'yes' as const, label: copy.check.yes },
-              { value: 'no' as const, label: copy.check.no },
+              { value: 'no' as const, label: copy.check.no, icon: 'edit' as const },
             ]}
             onChoose={(v) => (v === 'yes' ? onNext() : d.setEditing(true))}
           />

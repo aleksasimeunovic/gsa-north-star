@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SCENARIOS } from '../data/scenarios'
-import { goalGain, measureGaps, orderMeasures } from './status'
+import { measureGaps, orderMeasures } from './status'
 import { derive } from './derive'
 import { halfSplit, play, run } from './testUtils'
 
@@ -42,9 +42,10 @@ describe('status per item', () => {
     expect(item(r, 'measures')).toMatchObject({ status: 'action_required', detail: 'measures_incomplete', missing: ['green_cover'] })
   })
 
-  it('what he lacks is worked out on his own numbers, for every measure that does not fit yet', () => {
-    const goals = SCENARIOS.second_year.measures.filter((m) => !m.fits)
-    expect(goals.map((m) => goalGain(m.goal!))).toEqual([120_000, 128_000, 50_000])
+  it('three measures do not fit his farm, and carry no advice on how to qualify', () => {
+    const not = SCENARIOS.second_year.measures.filter((m) => !m.fits)
+    expect(not.map((m) => m.id)).toEqual(['organic', 'milk', 'fattening'])
+    expect(not.every((m) => !('goal' in m))).toBe(true)
   })
 
   it('an unreadable receipt needs a new photo; sending it does not confirm the receipts for him', () => {

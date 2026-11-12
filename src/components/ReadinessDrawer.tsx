@@ -13,8 +13,8 @@ const ICON = { error: 'error', todo: 'warning', look: 'warning', info: 'info', d
 const KIND = { ...en.readiness.group, done: en.mark.done }
 
 /**
- * Only what went wrong and what to look at, never the work he simply hasn't reached: what to fix (red),
- * then what he can submit with but should look at (a check). Each row takes him to the
+ * Everything the bar counts, in the order that matters: what to fix (red), what he hasn't done yet, then what
+ * he can submit with but should look at (a check). Each row takes him to the
  * place it is about.
  */
 export function ReadinessDrawer({ open, onClose, onPick, returnFocusTo }: { open: boolean; onClose: () => void; onPick: (id: TaskId) => void; returnFocusTo: RefObject<HTMLElement> }) {
@@ -38,6 +38,13 @@ function ActionPoints({ onPick }: { onPick: (id: TaskId) => void }) {
         <Group severity="error">
           {r.errors.map((id) => (
             <Row key={id} severity="error" title={title(id)} hint={taskSummary(id, derived, state)} onClick={() => onPick(id)} />
+          ))}
+        </Group>
+      )}
+      {r.todo.length > 0 && (
+        <Group severity="todo">
+          {r.todo.map((id) => (
+            <Row key={id} severity="todo" title={title(id)} hint={taskSummary(id, derived, state)} onClick={() => onPick(id)} />
           ))}
         </Group>
       )}

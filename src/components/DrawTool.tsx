@@ -5,7 +5,7 @@ import { closeProblem, cornerProblem, drawIssues, drawnHa, insertCorner, leaveOu
 import { sameLine } from '../logic/geometry'
 import { Button } from '../ui/Button'
 import { VisuallyHidden } from '../ui/Layout'
-import { MapStatus, RemoveHint, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
+import { EditTools, MapStatus, RemoveHint } from '../ui/MapTools'
 
 type Shape = { corners: Point[]; closed: boolean }
 const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } }
@@ -210,7 +210,7 @@ export function DrawIsland({ d, onCreate }: { d: FieldDraw; onCreate: () => void
           <MapStatus key={m.text} error={m.error} action={m.fix ? { label: t.leaveOut, onClick: d.leaveOut } : undefined}>{m.text}</MapStatus>
         ))}
         {!msgs.length && d.cross?.closes && !d.closed && <MapStatus icon="info">{t.onFirst}</MapStatus>}
-        {!msgs.length && !d.cross?.closes && d.corners.length > 0 && <RemoveHint />}
+        {!msgs.length && !d.cross?.closes && d.selected !== null && <RemoveHint />}
         <VisuallyHidden>{t.areaSaid(formatHa(d.areaHa), d.corners.length)}</VisuallyHidden>
       </div>
       {/* Once there are three corners, the field can be made; until it's big enough the line above says why. */}
@@ -219,16 +219,7 @@ export function DrawIsland({ d, onCreate }: { d: FieldDraw; onCreate: () => void
           {t.create(formatHa(drawnHa(d.corners)))}
         </Button>
       )}
-      <ToolIsland label={t.tools}>
-        <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} short disabled={!d.canUndo} onClick={d.undo} />
-        <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} short disabled={!d.canRedo} onClick={d.redo} />
-        {d.closed && (
-          <>
-            <ToolDivider />
-            <ToolButton icon="reset" caption={t.reset} hint={t.resetHint} disabled={d.isReset} onClick={d.reset} />
-          </>
-        )}
-      </ToolIsland>
+      <EditTools label={t.tools} short canUndo={d.canUndo} canRedo={d.canRedo} onUndo={d.undo} onRedo={d.redo} reset={d.closed ? { hint: t.resetHint, disabled: d.isReset, onClick: d.reset } : undefined} />
     </>
   )
 }

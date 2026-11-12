@@ -21,7 +21,7 @@ interface Props {
   mode: 'preview' | 'explore'
   label: string
   /** The split line, drawn on the map; he moves it when interactive. */
-  split?: { d: SplitDraft; interactive: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }
+  split?: { d: SplitDraft; interactive: boolean; proposed?: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }
   /** Hide what the photo flagged, to compare it with last year's field. */
   /** His own outline of the road strip, drawn instead of the land map's. */
   roadStrip?: { polygon: Polygon; ha: number }

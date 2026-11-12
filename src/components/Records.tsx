@@ -41,8 +41,9 @@ const KINDS: Kind[] = ['details', 'animals', 'land', 'documents']
 
 /**
  * What GSA has about this part, right now: his details on the first part, then his animals, his fields and his
- * documents, each in its own shape. A line says where it stands, and a pen changes it, in the place that asks
- * about it or as a correction to the record's owner. Where there is more than fits beside the task, it opens
+ * documents, each in its own shape. It has one purpose: the state of his farm, line by line, each saying whether
+ * it is still only the record, confirmed by him, or waiting for a check. It is not a second way around the part
+ * (the outline above it is). Change is only on a line no task asks about: a correction to the record's owner. Where there is more than fits beside the task, it opens
  * in a side panel: every detail, every animal, every field.
  */
 export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) => void }) {
@@ -62,7 +63,8 @@ export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) =
   return (
     <section className="records" aria-labelledby={`records-${step}`}>
       <h3 id={`records-${step}`} className="records-title">{copy.titles[kind]}</h3>
-      <RecordList rows={rows} onOpen={onOpen} />
+      {/* Beside the task this is a summary: the part's outline is the one way to a question, so a line that a task asks about has no Change here. */}
+      <RecordList rows={rows} onOpen={onOpen} summary />
       {(step === 'land' || full) && (
         <div className="records-foot">
           {step === 'land' && (
@@ -92,11 +94,11 @@ export function Records({ step, onOpen }: { step: StepId; onOpen: (id: TaskId) =
   )
 }
 
-export function RecordList({ rows, onOpen }: { rows: RecordRow[]; onOpen: (id: TaskId) => void }) {
+export function RecordList({ rows, onOpen, summary }: { rows: RecordRow[]; onOpen: (id: TaskId) => void; summary?: boolean }) {
   return (
     <dl className="records-rows">
       {rows.map((r) => (
-        <Row key={r.key} row={r} onOpen={onOpen} />
+        <Row key={r.key} row={summary && r.edit && 'open' in r.edit ? { ...r, edit: undefined } : r} onOpen={onOpen} />
       ))}
     </dl>
   )

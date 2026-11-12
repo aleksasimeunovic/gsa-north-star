@@ -139,6 +139,8 @@
   --shadow-float: 0 8px 24px -8px rgb(28 42 34 / 0.45);
   /* A light ring that keeps a mark readable on any part of the photo */
   --map-halo: rgb(255 255 255 / 0.85);
+  /* White on the photo and on a dark or coloured fill: map handles, chips, the island's active tool, a filled checkbox */
+  --on-inverse: #fff;
   --topbar-h: 64px;
   /* The sticky stepper under the header, and the action bar at the bottom, so a stage can fill what's between */
   --stepper-h: 92px;
@@ -205,6 +207,11 @@
   @media (min-width: 768px) { h1 { font-size: 2rem; } }
   h2 { font-size: 1.375rem; }
   h3 { font-size: 1.125rem; }
+  /* One rule for type: the serif names a screen, a task or a card (h1 to h3). Anything that labels a group
+     inside a card is the body sans, semibold: h4 for a group, h5 or .label-title for a part of it. */
+  h4, h5, .label-title, .panel-title, .effects-group h3 { font-family: var(--font-body); font-weight: 600; letter-spacing: 0; line-height: 1.375; }
+  h4, .panel-title { font-size: 1rem; }
+  h5, .label-title { margin: 0; font-size: 0.875rem; color: var(--muted-foreground); }
   :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
   [tabindex='-1']:focus { outline: none; }
   [hidden] { display: none !important; }

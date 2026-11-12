@@ -49,7 +49,7 @@ const same = (a: Selected, b: Selected) => !!a && !!b && a.on === b.on && a.i ==
  * edges he can follow (the photo's, his field's as registered) show as dashed guides once he has left them.
  * While he works, the farmland registered around the field shows too: the edge can't go past it.
  */
-export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: FarmMap; d: SplitDraft; interactive: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }) {
+export function SplitOnMap({ fm, d, interactive, proposed, labels, onPickPart }: { fm: FarmMap; d: SplitDraft; interactive: boolean; proposed?: boolean; labels: [string, string]; onPickPart?: (i: 0 | 1) => void }) {
   const latest = useRef({ d, moves: splitMoves(d), onPickPart })
   latest.current = { d, moves: splitMoves(d), onPickPart }
   const handles = useRef<Overlay[]>([])
@@ -71,9 +71,11 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
 
   // What's written on each part: two chips over the photo that never catch a press.
   useEffect(() => {
-    chips.current = [0, 1].map(() => {
+    // The third names GSA's line as a suggestion, for as long as it is one.
+    chips.current = [0, 1, 2].map((i) => {
       const el = document.createElement('div')
       el.className = 'map-chip'
+      if (i === 2) el.dataset.proposed = ''
       const o = new Overlay({ element: el, positioning: 'center-center', stopEvent: false })
       fm.map.addOverlay(o)
       return o
@@ -109,7 +111,12 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
     }
     add(new LineString(outlinePath(poly).map(fm.coord)), 'field', 'outline')
     if (!r) return
-    const splitLine = add(new LineString(line.map(fm.coord)), 'split', 'split')
+    // Dashed while it is only GSA's suggestion; solid once he has confirmed it or made it his own.
+    const splitLine = add(new LineString(line.map(fm.coord)), proposed ? 'proposed' : 'split', 'split')
+    const mid = line[Math.floor(line.length / 2)]
+    const before = line[Math.floor(line.length / 2) - 1] ?? mid
+    chips.current[2]?.setPosition(proposed ? fm.coord({ x: (mid.x + before.x) / 2, y: (mid.y + before.y) / 2 }) : undefined)
+    if (proposed) chips.current[2]!.getElement()!.textContent = copy.check.onMap
     // The first time GSA's line appears, it draws itself along the edge, so he sees it is a proposal being made.
     if (!drawnIn.current) {
       drawnIn.current = true
@@ -127,7 +134,7 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       if (p) o.setPosition(fm.coord(p))
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fm, key, labels[0], labels[1], !!r, lineGuide, fieldGuide, interactive, showLand, d.pastLand])
+  }, [fm, key, labels[0], labels[1], !!r, lineGuide, fieldGuide, interactive, proposed, showLand, d.pastLand])
 
   useEffect(() => () => fm.extra.clear(), [fm])
 
@@ -243,7 +250,9 @@ export function SplitOnMap({ fm, d, interactive, labels, onPickPart }: { fm: Far
       // The point he moves pulses once when it joins an edge.
       el?.toggleAttribute('data-snapped', sel && d.snapped && d.snap)
     })
-  }, [d.selected, d.snapped, d.snap, shape])
+    // The field's own corners stay out of sight until he reaches for its edge: he came to move the line.
+    if (interactive) fm.map.getViewport().toggleAttribute('data-edge', !!d.draft.boundary || d.selected?.on === 'field')
+  }, [fm, interactive, d.selected, d.snapped, d.snap, d.draft.boundary, shape])
 
   // Pulling the line or the field's edge: pressing anywhere on it makes a point there, or takes the one he pressed near.
   useEffect(() => {

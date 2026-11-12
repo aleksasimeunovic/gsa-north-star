@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Action } from '../state/actions'
-import { daysLeft } from './readiness'
+import { daysLeft, outstanding } from './readiness'
 import { ready, run } from './testUtils'
 
 describe('application state', () => {
@@ -14,6 +14,12 @@ describe('application state', () => {
   it('counts every thing left, across the parts', () => {
     // Cows that calved are the registry's record: reused, not asked (round 10, Aleksa).
     expect(run('second_year').list.todo).toHaveLength(8)
+  })
+
+  it('one thing to fix never reads as the only thing left', () => {
+    // The blurry receipt is the one error; everything he hasn't answered still counts.
+    expect(outstanding(run('second_year').report)).toEqual({ left: 8, fix: 1 })
+    expect(outstanding(run('second_year', ...ready).report)).toEqual({ left: 0, fix: 0 })
   })
 
   it('ready to submit once nothing needs his action', () => {

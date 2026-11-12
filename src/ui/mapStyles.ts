@@ -76,14 +76,15 @@ export function labelStyle(text: string, opts: { strong?: boolean; align?: 'left
  * - flag: what the satellite flagged, a light veil and a dashed line, so the photo underneath stays readable
  * - editing: an outline he is moving (road, yard): a light veil and a solid edge, so the edge he follows stays visible
  * - strip: what changed hands, hatched so it never relies on colour
- * - split: the line that splits a field
+ * - split: the line that splits a field, once it is his
+ * - proposed: the same line while it is only GSA's suggestion, dashed like everything GSA found and he hasn't confirmed
  * - guide: the edge in the photo, once the line has left it
  * - spot: land in question that isn't his field yet (the parcel he bought)
  * - hover: the part of his field under the pointer, when tapping it does something
  * - error: a part with something wrong (no crop yet), veiled red with a red edge, so the map points at what the panel says
  * - lit: fields a measure covers, brighter than the rest
  */
-export type MapRole = 'field' | 'faint' | 'land' | 'flag' | 'editing' | 'strip' | 'split' | 'guide' | 'spot' | 'hover' | 'error' | 'lit'
+export type MapRole = 'field' | 'faint' | 'land' | 'flag' | 'editing' | 'strip' | 'split' | 'proposed' | 'guide' | 'spot' | 'hover' | 'error' | 'lit'
 
 export function mapStyle(role: MapRole): Style[] {
   switch (role) {
@@ -101,6 +102,8 @@ export function mapStyle(role: MapRole): Style[] {
       return [new Style({ fill: new Fill({ color: fills().hatch }) }), ...line(2)]
     case 'split':
       return line(3)
+    case 'proposed':
+      return line(3, [10, 6])
     case 'guide':
       return line(1.5, [6, 5])
     case 'hover':

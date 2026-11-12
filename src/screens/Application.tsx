@@ -2,7 +2,7 @@ import { bar, home, steps } from '../copy/en'
 import { isMapTask } from '../logic/application'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
-import { MeasureGoals } from '../components/MeasureBodies'
+import { EstimateBlock } from '../components/EstimateBlock'
 import { Records } from '../components/Records'
 import { FieldEditor } from '../components/NewField'
 import { StepOutline } from '../components/StepOutline'
@@ -82,7 +82,8 @@ export function Application({ target, review, field }: { target: string | null; 
               {/* Once the part is done, its decisions are listed in the main column instead. */}
               {step.left > 0 && <StepOutline flow={flow} />}
               <Records step={step.id} onOpen={(id) => flow.show(id)} />
-              {step.id === 'measures' && <MeasureGoals />}
+              {/* Beside the choice: what each tick does to his estimate, and what is still provisional. */}
+              {step.id === 'measures' && <EstimateBlock />}
             </aside>
           </div>
         )}

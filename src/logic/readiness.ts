@@ -86,6 +86,13 @@ export function readinessReport(s: Scenario, a: Answers, tasks: Task[]): Report 
   return { verdict, errors, todo, warnings, info }
 }
 
+/**
+ * Everything still between him and submitting, counted the same way on every screen: what to fix and what he
+ * hasn't done yet. The bar, the drawer and the Summary all say this, so one thing to fix never reads as the
+ * only thing left.
+ */
+export const outstanding = (r: Report) => ({ left: r.errors.length + r.todo.length, fix: r.errors.length })
+
 const DAY_MS = 86_400_000
 
 /** Days left in the window, counting the closing day. 0 once it has closed. */

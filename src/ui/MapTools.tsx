@@ -66,7 +66,42 @@ export function MapStatus({ children, error, icon, action }: { children: ReactNo
   )
 }
 
-/** How to take a point out, said above the tools while he edits: there is no button for it. */
+/**
+ * The same tools wherever he moves a shape on the map: Undo, then Reset. Redo is only there once he has undone
+ * something, so the island never holds a tool he can't use yet. Snapping has no tool: it works on its own.
+ */
+export function EditTools({ label, canUndo, canRedo, onUndo, onRedo, reset, short }: { label: string; canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void; reset?: { hint: string; idle?: string; disabled: boolean; onClick: () => void }; short?: boolean }) {
+  const t = shapeTools
+  return (
+    <ToolIsland label={label}>
+      <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} idle={t.undoIdle} short={short} disabled={!canUndo} onClick={onUndo} />
+      {canRedo && <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} short={short} onClick={onRedo} />}
+      {reset && (
+        <>
+          <ToolDivider />
+          <ToolButton icon="reset" caption={t.reset} hint={reset.hint} idle={reset.idle} disabled={reset.disabled} onClick={reset.onClick} />
+        </>
+      )}
+    </ToolIsland>
+  )
+}
+
+/**
+ * Snapping said where it happens: that a point joined an edge, with the way to stop it; and, while it is off,
+ * that points stay where he puts them, with the way back.
+ */
+export function SnapStatus({ on, joined, onChange, children }: { on: boolean; joined: boolean; onChange: (on: boolean) => void; children?: ReactNode }) {
+  if (on && joined)
+    return (
+      <MapStatus icon="snap" action={{ label: shapeTools.snapStop, onClick: () => onChange(false) }}>
+        {shapeTools.joined} {children}
+      </MapStatus>
+    )
+  if (!on) return <MapStatus icon="info" action={{ label: shapeTools.snapStart, onClick: () => onChange(true) }}>{shapeTools.snapOff}</MapStatus>
+  return null
+}
+
+/** How to take a point out, said above the tools while he has one selected: there is no button for it. */
 export function RemoveHint() {
   return (
     <MapStatus icon="info">

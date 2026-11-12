@@ -1,5 +1,5 @@
 // All UI text. British spelling, plain language, short sentences, no em dashes.
-import type { FieldId, PartCrop, GoalKind, MeasureId, Office, ScenarioId } from '../data/scenarios'
+import type { FieldId, PartCrop, MeasureId, Office, ScenarioId } from '../data/scenarios'
 import type { StepId, WorkId } from '../logic/application'
 import type { CaseState } from '../logic/advisor'
 import type { Source } from '../logic/farm'
@@ -40,9 +40,8 @@ export const en = {
     headline: {
       renewal: 'Renew your status before you can submit',
       blocked: 'Not ready to submit yet',
-      fix: (n: number) => (n === 1 ? '1 thing to fix' : `${n} things to fix`),
+      left: (n: number, fix: number) => `${n === 1 ? '1 thing left' : `${n} things left`}${fix ? `, ${fix} to fix` : ''}`,
       look: (n: number) => (n === 1 ? '1 thing to look at' : `${n} things to look at`),
-      fixAndLook: (fix: number, look: number) => `${fix} to fix, ${look} to look at`,
       ready_with_warnings: (n: number) => (n === 1 ? 'Ready to submit, 1 thing to look at' : `Ready to submit, ${n} things to look at`),
       ready: 'Ready to submit',
       submitted: 'Submitted',
@@ -215,9 +214,17 @@ export const tasks = {
   suggest: {
     green_cover: 'Your tree line and upper fields stayed green all winter',
     insemination: (n: number) => `${n} inseminations by your vet since last April`,
+    /** The evidence in full, then what it might mean, worded as a possibility. */
+    long: {
+      green_all_winter: 'The satellite photos show your tree line and upper fields green from November to March. That may be the cover this measure pays for.',
+      inseminations: (n: number) => `The animal registry shows ${n} inseminations by your vet since last April.`,
+    },
+    has: { green_all_winter: 'Winter satellite photos of your fields', inseminations: (n: number) => `${n} inseminations in the animal registry` },
     checks: {
-      green_cover: 'The state still checks they stay covered',
-      insemination: "The state checks your vet's certificate",
+      plant_production: 'Your receipts, and the area you farm',
+      cows_raising_calves: 'Each calving in the animal registry',
+      green_cover: 'That the fields stay covered until spring',
+      insemination: "Your vet's certificate",
     } as Partial<Record<MeasureId, string>>,
     useFields: 'Use these fields',
     riverPart: (part: string) => `Tree line field (${part.toLowerCase()})`,
@@ -351,56 +358,27 @@ export const tasks = {
   measures: {
     lead: (fit: number) => `Tick the ones you want, out of ${fit}`,
     groupLast: 'You applied for these last year',
-    groupSuggested: 'GSA recommends for your farm',
-    groupMore: (n: number) => `${n} more measures you can apply for`,
+    groupSuggested: 'May also fit your farm',
+    suggestedLead: 'From your records and the satellite photos. The state decides whether you qualify',
+    groupMore: (n: number) => `${n} more you can apply for`,
+    groupNot: (n: number) => `${n} that don't fit your farm this year`,
+    notFit: { organic: 'For land certified as organic', milk: 'For farms that sell milk to a dairy', fattening: 'For cattle kept for fattening' } as Partial<Record<MeasureId, string>>,
+    /** Under a measure's name: whether the records are enough, or what only he can add. */
+    basis: { records: 'GSA has what it needs', adds: (list: string) => `You add: ${list}` },
+    /** Inside a ticked measure, always in this order. */
+    body: { why: 'Why GSA suggests it', has: 'GSA already has', add: 'Still needed from you', checks: 'The state still checks', estimate: 'In your estimate' },
+    showThese: 'Show these fields on the map',
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
     appliedFor: (n: number) => (n === 1 ? 'Applied for 1 measure' : `Applied for ${n} measures`),
-    goalsTitle: 'What you need for more support',
-    goal: {
-      organic_months: (n: number) => `Keep your land organic for ${n} more months`,
-      dairy_cows: (n: number) => `You need ${n} more dairy cows`,
-      fattening_cattle: (n: number) => `You need ${n} more cattle in fattening`,
-    } satisfies Record<GoalKind, (n: number) => string>,
-    gain: (about: string) => `About ${about} more a year for your household`,
-    goalOpen: (name: string) => `All about ${name}`,
+    aboutOpen: (name: string) => `All about ${name}`,
     showMap: 'Show on map',
     showOne: (field: string) => `Show ${field} on the map`,
     showAll: 'Show your fields on the map',
     hideMap: 'Hide the map',
-    /** The side panel: everything about a measure he can't apply for yet. */
-    goalPanel: {
-      household: 'What it could mean for your household',
-      working: { ha: (qty: string, rate: string) => `${qty} ha × ${rate} dinars`, animal: (qty: string, rate: string) => `${qty} animals × ${rate} dinars` },
-      caveat: "An estimate: it depends on that year's rates and checks",
-      need: "What you're missing",
-      then: 'Then you can apply next year',
-      checks: 'What the state checks',
-      provide: "What you'd provide",
-    },
-    goalAbout: {
-      organic: {
-        pays: 'Per hectare farmed without synthetic fertiliser or sprays',
-        steps: ['Have a certification body confirm your land is organic'],
-        checks: 'That your land is certified organic and stays so',
-        provide: 'Your organic certificate',
-      },
-      milk: {
-        pays: 'Support for each dairy cow whose milk you sell to a dairy',
-        steps: ['Sign a contract with a dairy'],
-        checks: "Your cows in the registry, and the dairy's milk report",
-        provide: 'Your contract with the dairy',
-      },
-      fattening: {
-        pays: 'Support for each animal you fatten and sell for slaughter',
-        steps: ['Keep each one on your farm until it is sold', 'Register each one in the animal registry'],
-        checks: 'Each animal in the animal registry, and when it was sold',
-        provide: 'Your sale or slaughter receipts',
-      },
-    } as Partial<Record<MeasureId, { pays: string; steps: string[]; checks: string; provide: string }>>,
     panel: {
-      why: 'Why it fits your farm',
+      why: 'Why it may fit your farm',
       pays: 'What it could pay you',
       noRate: 'The amount is worked out after checks',
       give: "What you'd give",
@@ -475,6 +453,8 @@ export const tasks = {
     land: (ha: string, n: number) => `${ha} in ${n} fields`,
     receipts: (n: number) => `${n} files you uploaded`,
     receiptsMissing: 'Still to upload',
+    receiptsBlurry: (n: number) => `${n} files, 1 too blurry to read. Fix it in Documents`,
+    blurryShort: 'a clearer diesel receipt',
     calvings: (n: number) => `${n} cows calved`,
     fertiliser_receipt: 'Found in your receipts',
   },
@@ -516,12 +496,10 @@ export const shapeTools = {
   undoHint: 'Undo your last move',
   redo: 'Redo',
   redoHint: 'Redo your last move',
-  snap: 'Snap',
-  snapHint: 'Snap to edges on the photo',
-  snapOn: 'On: points join edges on the photo',
-  snapOff: 'Off: points stay where you put them',
+  snapOff: 'Points stay where you put them',
+  snapStop: "Don't join",
+  snapStart: 'Join edges',
   undoIdle: 'Nothing to undo yet',
-  redoIdle: 'Nothing to redo',
   joined: 'Joined the edge on the photo',
   reset: 'Reset',
   removeMouse: 'Double-click a point to remove it',
@@ -534,7 +512,8 @@ export const split = {
   step: (n: number) => `Step ${n} of 3`,
   lineTitle: 'Where does the crop change?',
   check: {
-    suggested: 'GSA drew this from the photo, so it may be wrong.',
+    suggested: 'GSA drew the dashed line from the photo. It may be wrong.',
+    onMap: "GSA's suggestion",
     yours: 'Your line.',
     question: 'Is this where the crop changes?',
     yes: "Yes, that's right",
@@ -605,6 +584,7 @@ export const split = {
 
 export const finish = {
   submit: {
+    leftIn: (count: string, parts: number) => `${count}, in ${parts === 1 ? '1 part' : `${parts} parts`}`,
     readyTitle: 'Ready to submit. The state still checks:',
     goTo: (what: string) => `Go to: ${what}`,
     awaitingNote: 'You can still submit',

@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { en, tasks } from '../copy/en'
-import type { Report } from '../logic/readiness'
+import { outstanding, type Report } from '../logic/readiness'
 import { Icon } from '../ui/Icon'
 import { useApp } from './AppContext'
 
@@ -9,18 +9,17 @@ import { useApp } from './AppContext'
  * The count lives in the open part of the stepper and in the drawer this opens.
  */
 /**
- * The bar speaks only when there's something beyond the questions he is working through: something to fix
- * (red), something to look at (a check, orange), or that he can submit (green). Questions
- * he hasn't reached are never counted here; the stepper and the part's outline show those, so the bar never
- * reads as a finish line that moves. It opens everything in the drawer.
+ * While anything is left, the bar says how much, everything counted: what to fix and what he hasn't done yet,
+ * so one blurry receipt never reads as the only thing between him and submitting. Red only when something is
+ * wrong; otherwise the orange sign for work not done. It opens all of it in the drawer.
  */
 export const ReadinessBar = forwardRef<HTMLButtonElement, { onOpen: () => void; expanded: boolean; next?: string | null }>(function ReadinessBar({ onOpen, expanded }, ref) {
   const { derived } = useApp()
   const r = derived.report
-  const h = en.readiness.headline
   const working = r.verdict === 'blocked' || r.verdict === 'renewal'
-  const tone = r.errors.length ? 'error' : working ? (r.warnings.length ? 'warning' : null) : r.verdict === 'ready_with_warnings' ? 'warning' : r.verdict === 'submitted' ? null : 'complete'
-  const text = r.errors.length ? h.fix(r.errors.length) : working ? h.look(r.warnings.length) : readinessHeadline(r)
+  const o = outstanding(r)
+  const tone = working ? (o.fix ? 'error' : 'warning') : r.verdict === 'ready_with_warnings' ? 'warning' : r.verdict === 'submitted' ? null : 'complete'
+  const text = readinessCount(r)
   return (
     <div className="readiness" data-tone={tone ?? undefined} aria-live="polite" aria-atomic="true">
       {tone && (
@@ -50,10 +49,10 @@ export function readinessHeadline(r: Report) {
   return h[r.verdict]
 }
 
-/** The drawer's title: what to fix and what to look at, never the work still ahead of him. */
+/** The verdict in a few words, the same in the bar, the drawer's title and the Summary. */
 export function readinessCount(r: Report) {
-  const h = en.readiness.headline
-  if (r.verdict !== 'blocked' && r.verdict !== 'renewal') return readinessHeadline(r)
-  if (r.errors.length && r.warnings.length) return h.fixAndLook(r.errors.length, r.warnings.length)
-  return r.errors.length ? h.fix(r.errors.length) : h.look(r.warnings.length)
+  if (r.verdict === 'renewal') return en.readiness.headline.renewal
+  if (r.verdict !== 'blocked') return readinessHeadline(r)
+  const o = outstanding(r)
+  return en.readiness.headline.left(o.left, o.fix)
 }

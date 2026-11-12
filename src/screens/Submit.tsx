@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { bar, finish } from '../copy/en'
+import { bar, en, finish } from '../copy/en'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
 import { EstimateBlock } from '../components/EstimateBlock'
 import { PartSummary } from '../components/PartSummary'
+import { readinessCount } from '../components/ReadinessBar'
 import { UnchangedReview } from '../components/UnchangedReview'
 import type { Flow } from '../components/useApplicationFlow'
 import { STATE_CHECKS, submitCheck } from '../logic/submit'
 import { Icon } from '../ui/Icon'
 import { Card } from '../ui/Card'
 import { Checkbox } from '../ui/Checkbox'
-import { Stack } from '../ui/Layout'
+import { Stack, Text } from '../ui/Layout'
 
 /**
  * The last part: his application part by part, with what is left to do inside each part, the estimate and
@@ -27,6 +28,16 @@ export function SubmitStep({ flow }: { flow: Flow }) {
 
   return (
     <Stack gap="lg">
+      {/* The verdict first, with everything still outstanding counted, never only the one thing to fix. */}
+      {left.length > 0 && (
+        <div className="submit-verdict" data-tone={derived.report.errors.length ? 'error' : 'warning'}>
+          <Icon name={derived.report.errors.length ? 'error' : 'warning'} />
+          <div>
+            <h2>{en.readiness.headline.blocked}</h2>
+            <Text variant="secondary">{finish.submit.leftIn(readinessCount(derived.report), derived.list.steps.filter((st) => st.id !== 'submit' && st.left > 0).length)}</Text>
+          </div>
+        </div>
+      )}
       <div className="submit-picture">
         <PartSummary onPick={goTo} />
         <div className="submit-side">

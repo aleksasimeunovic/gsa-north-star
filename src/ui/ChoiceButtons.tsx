@@ -5,7 +5,8 @@ import { Icon } from './Icon'
 interface Props<T extends string> {
   legend: string
   hint?: string
-  options: { value: T; label: string }[]
+  /** `icon`: one sign per kind of answer everywhere: a tick for yes, a pen for "I'll change it", a cross for a flat no. Yes and no get theirs by value. */
+  options: { value: T; label: string; icon?: 'yes' | 'no' | 'edit' }[]
   onChoose: (value: T) => void
   /** The heading above already asks it: the legend stays for screen readers only. */
   quiet?: boolean
@@ -21,12 +22,15 @@ export function ChoiceButtons<T extends string>({ legend, hint, options, onChoos
         {hint && <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{hint}</span>}
       </p>
       <div className="grid grid-cols-1 gap-[var(--gap-buttons)] sm:grid-cols-2">
-        {options.map((o) => (
-          <Button key={o.value} variant="choice" onClick={() => onChoose(o.value)}>
-            {(o.value === 'yes' || o.value === 'no') && <Icon name={o.value === 'yes' ? 'yes' : 'no'} />}
-            {o.label}
-          </Button>
-        ))}
+        {options.map((o) => {
+          const icon = o.icon ?? (o.value === 'yes' ? 'yes' : o.value === 'no' ? 'no' : undefined)
+          return (
+            <Button key={o.value} variant="choice" onClick={() => onChoose(o.value)}>
+              {icon && <Icon name={icon} />}
+              {o.label}
+            </Button>
+          )
+        })}
       </div>
     </div>
   )

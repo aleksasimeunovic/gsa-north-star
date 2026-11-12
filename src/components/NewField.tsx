@@ -239,8 +239,8 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
             legend={copy.yard.title}
             options={[
               { value: 'yes' as const, label: copy.yard.yes },
-              { value: 'no' as const, label: copy.yard.no },
-              { value: 'none' as const, label: copy.yard.none },
+              { value: 'no' as const, label: copy.yard.no, icon: 'edit' as const },
+              { value: 'none' as const, label: copy.yard.none, icon: 'no' as const },
             ]}
             onChoose={(v) => {
               if (v === 'no') return yd.setEditing(true)

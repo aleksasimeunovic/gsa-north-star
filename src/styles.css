@@ -176,8 +176,8 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-map { margin: 0; }
 /* A ticked measure says where it stands in its box too: orange while something is still to fill in, red when it's wrong */
 .measure-option[data-state='open'] { border-color: var(--warning-border); }
-.measure-option[data-state='open'] > .measure-head [data-slot='checkbox'][data-state='checked'] { background: var(--warning); border-color: var(--warning); color: #fff; }
-.measure-option[data-state='error'] > .measure-head [data-slot='checkbox'][data-state='checked'] { background: var(--error); border-color: var(--error); color: #fff; }
+.measure-option[data-state='open'] > .measure-head [data-slot='checkbox'][data-state='checked'] { background: var(--warning); border-color: var(--warning); color: var(--on-inverse); }
+.measure-option[data-state='error'] > .measure-head [data-slot='checkbox'][data-state='checked'] { background: var(--error); border-color: var(--error); color: var(--on-inverse); }
 .measure-fields { display: flex; flex-direction: column; gap: var(--gap-group); margin: 0 var(--space-4) var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border); }
 .measure-fields .auto-line { padding: 0; background: none; }
 .auto-mark { display: inline-flex; color: var(--muted-foreground); }
@@ -191,13 +191,18 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-text { min-width: 0; display: flex; flex-direction: column; gap: var(--gap-row); }
 .measure-name { font-weight: 500; line-height: 1.375; }
 .measure-line { font-size: 0.875rem; color: var(--muted-foreground); }
+/* On a phone the name keeps the row: where it stands drops under it */
+@media (max-width: 480px) { .measure-head { flex-wrap: wrap; } .measure-check { flex-basis: calc(100% - 52px); } .measure-state { order: 3; padding: 0 0 var(--space-2) calc(20px + var(--gap-list)); } }
+.measure-basis { font-size: 0.875rem; font-weight: 500; }
+.measure-group-head { display: flex; flex-direction: column; gap: var(--gap-row); }
+.measure-part { display: flex; flex-direction: column; gap: var(--gap-heading); }
+.measure-not { display: flex; flex-direction: column; gap: var(--gap-row); padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--row-radius); }
 .measure-about { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .measure-about:hover { border-color: var(--hover-border); color: var(--foreground); }
 .measure-about:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 /* A side panel: one heading style, one body style, one quiet style for workings; sections clearly apart */
 .panel-sections { display: flex; flex-direction: column; gap: var(--gap-section); }
 .panel-section { display: flex; flex-direction: column; gap: var(--gap-heading); }
-.panel-title { font-size: 1rem; }
 .panel-list { margin: 0; padding-left: var(--space-5); list-style: disc; display: flex; flex-direction: column; gap: var(--gap-snug); }
 .drawer-scrim { position: fixed; inset: 0; z-index: 39; background: rgb(0 0 0 / 0.5); animation: scrim-in 0.2s ease-out; }
 @keyframes scrim-in { from { opacity: 0; } }
@@ -207,14 +212,14 @@ button.drawer-row:hover { background: var(--hover); }
 .map-figure { margin: 0; display: flex; flex-direction: column; gap: var(--gap-inline); }
 .map-frame { position: relative; display: flex; flex-direction: column; gap: var(--gap-inline); }
 /* When the photo was taken: on every map, over the photo */
-.map-date { position: absolute; left: 8px; bottom: 8px; z-index: 1; margin: 0; padding: 2px var(--space-2); border-radius: 8px; background: rgb(0 0 0 / 0.65); color: #fff; font-size: 0.75rem; line-height: 1.5; pointer-events: none; }
+.map-date { position: absolute; left: 8px; bottom: 8px; z-index: 1; margin: 0; padding: 2px var(--space-2); border-radius: 8px; background: rgb(0 0 0 / 0.65); color: var(--on-inverse); font-size: 0.75rem; line-height: 1.5; pointer-events: none; }
 .map-link { cursor: pointer; border-radius: 16px; transition: box-shadow 0.15s; }
 .map-link:hover { box-shadow: 0 0 0 3px var(--border); }
 .farm-map { width: 100%; height: 280px; position: relative; background: var(--foreground); border-radius: 16px; overflow: hidden; }
 .map-frame[data-mode='explore'] .farm-map, .farm-map[data-mode='draw'] { height: clamp(260px, 42vh, 520px); touch-action: none; }
 @media (min-width: 768px) { .map-frame[data-mode='explore'] .farm-map, .farm-map[data-mode='draw'] { height: clamp(320px, 50vh, 560px); } }
 @media (min-width: 1024px) { .map-frame[data-mode='preview'] .farm-map { height: 300px; } }
-.farm-map[data-loading] { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.875rem; }
+.farm-map[data-loading] { display: flex; align-items: center; justify-content: center; color: var(--on-inverse); font-size: 0.875rem; }
 .farm-map:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .farm-map .ol-zoom { top: 12px; left: 12px; display: flex; flex-direction: column; gap: var(--gap-inline); }
 .farm-map .ol-zoom button, .map-tool { width: var(--map-tool); height: var(--map-tool); display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0; font-size: 1.25rem; font-weight: 400; line-height: 1; background: var(--card); color: var(--foreground); border: 0; border-radius: 10px; box-shadow: var(--shadow-card); cursor: pointer; transition: background-color 0.15s; }
@@ -230,7 +235,7 @@ button.drawer-row:hover { background: var(--hover); }
 /* Handles are small marks in a large hit area, so they never cover the edge he is checking. White and dark, never the primary green. */
 .map-handle { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
 /* Vertex states after the GSA map kit: a white dot on a dark ring; a halo on hover; selected and dragging, a ring around it. */
-.map-handle::before { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); transition: transform 0.1s, box-shadow 0.1s; }
+.map-handle::before { content: ''; position: absolute; inset: 15px; border-radius: 50%; background: var(--on-inverse); box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); transition: transform 0.1s, box-shadow 0.1s; }
 .map-handle::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0); transition: box-shadow 0.1s; pointer-events: none; }
 .map-handle:hover::after { box-shadow: 0 0 0 2px var(--map-halo), 0 0 0 4px rgb(0 0 0 / 0.25); }
 .map-handle:active { cursor: grabbing; }
@@ -238,16 +243,19 @@ button.drawer-row:hover { background: var(--hover); }
 /* The field's corners are quiet dots until he reaches for one, so the line he came to move stands out; the area that answers a press stays full size */
 .map-handle[data-corner]::before { inset: 18.5px; box-shadow: 0 0 0 1.5px var(--foreground), 0 1px 3px rgb(0 0 0 / 0.35); }
 .map-handle[data-corner]:hover::before, .map-handle[data-corner]:focus-visible::before, .map-handle[data-corner][data-selected]::before, .map-handle[data-corner][data-dragging]::before { inset: 16px; box-shadow: 0 0 0 2px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); }
-.map-handle::before { transition: inset 0.12s, transform 0.1s, box-shadow 0.1s; }
+.ol-viewport:not([data-edge]) .map-handle[data-corner]:not(:hover):not(:focus-visible)::before { opacity: 0; }
+.map-handle::before { transition: inset 0.12s, transform 0.1s, box-shadow 0.1s, opacity 0.15s; }
 .map-handle[data-selected]::before, .map-handle[data-dragging]::before { transform: scale(1.15); }
 .map-handle[data-selected]::after, .map-handle[data-dragging]::after { box-shadow: 0 0 0 2.5px var(--foreground), 0 0 0 5px var(--map-halo); }
 .map-handle:focus { outline: none; }
 /* A finger needs more room than a mouse: the mark stays small, the area it answers to grows */
 @media (pointer: coarse) { .map-handle { width: 56px; height: 56px; } .map-handle::before { inset: 21px; } .map-handle[data-corner]::before { inset: 24.5px; } .map-handle[data-corner][data-selected]::before, .map-handle[data-corner][data-dragging]::before { inset: 22px; } .map-handle::after { inset: 15px; } }
-.map-handle:focus-visible::after { box-shadow: 0 0 0 2.5px var(--ring), 0 0 0 5px #fff; }
-.map-ghost { width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--foreground); opacity: 0.85; pointer-events: none; }
+.map-handle:focus-visible::after { box-shadow: 0 0 0 2.5px var(--ring), 0 0 0 5px var(--on-inverse); }
+.map-ghost { width: 10px; height: 10px; border-radius: 50%; background: var(--on-inverse); box-shadow: 0 0 0 2px var(--foreground); opacity: 0.85; pointer-events: none; }
 /* Notes on the photo: readable on any field, and they never catch a press */
-.map-chip { padding: 3px var(--space-2); border-radius: 8px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; white-space: nowrap; pointer-events: none; }
+/* GSA's suggestion is named on the line itself, lighter than what is his */
+.map-chip[data-proposed] { background: var(--card); color: var(--foreground); box-shadow: var(--shadow-float); }
+.map-chip { padding: 3px var(--space-2); border-radius: 8px; background: var(--foreground); color: var(--on-inverse); font-size: 0.8125rem; font-weight: 500; line-height: 1.4; white-space: nowrap; pointer-events: none; }
 .map-chip[hidden] { display: none; }
 @media (prefers-reduced-motion: no-preference) {
   .map-chip { animation: chip-in 0.3s ease-out both; }
@@ -264,28 +272,28 @@ button.drawer-row:hover { background: var(--hover); }
 .tool { transition: background-color 0.15s, color 0.15s, scale 0.12s; }
 .tool:not([aria-disabled]):hover { background: var(--hover); }
 .tool:not([aria-disabled]):active { scale: 0.94; }
-.tool[data-on] { background: var(--foreground); color: #fff; }
-.tool[data-on] span { color: #fff; }
+.tool[data-on] { background: var(--foreground); color: var(--on-inverse); }
+.tool[data-on] span { color: var(--on-inverse); }
 .tool[aria-disabled] { color: color-mix(in oklch, var(--muted-foreground) 50%, transparent); cursor: default; background: none; }
 .tool[aria-disabled] span { color: color-mix(in oklch, var(--muted-foreground) 50%, transparent); }
 .tool:focus-visible, .tool-option:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .tool-divider { width: 1px; height: 32px; flex: none; margin: 0 2px; background: var(--border); }
 .tool-option { padding: var(--space-2) var(--space-3); border: 0; border-radius: 10px; background: none; color: var(--foreground); font: inherit; font-size: 0.8125rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 0.15s; }
 .tool-option:hover { background: var(--hover); }
-.tool-option[aria-pressed='true'] { background: var(--foreground); color: #fff; }
+.tool-option[aria-pressed='true'] { background: var(--foreground); color: var(--on-inverse); }
 /* With the sliding thumb, the pressed option is drawn by the thumb under it */
 .tool-island[data-switch] { position: relative; isolation: isolate; }
 .tool-thumb { position: absolute; left: 0; top: 4px; bottom: 4px; z-index: -1; border-radius: 10px; background: var(--foreground); transition: translate 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), width 0.22s cubic-bezier(0.2, 0.8, 0.3, 1); }
 .tool-island[data-switch]:has(.tool-thumb) .tool-option[aria-pressed='true'] { background: none; }
 .tool-option { position: relative; transition: color 0.2s; }
 /* Why the line stopped, right where he is working */
-.map-status { display: inline-flex; align-items: center; gap: var(--gap-inline); margin: 0; padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--foreground); color: #fff; font-size: 0.8125rem; font-weight: 500; line-height: 1.4; box-shadow: var(--shadow-float); }
+.map-status { display: inline-flex; align-items: center; gap: var(--gap-inline); margin: 0; padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--foreground); color: var(--on-inverse); font-size: 0.8125rem; font-weight: 500; line-height: 1.4; box-shadow: var(--shadow-float); }
 .map-status svg { flex: none; color: var(--warning); }
 .map-status[data-error] { box-shadow: inset 0 0 0 1.5px var(--error), var(--shadow-float); }
 .map-status[data-error] svg { color: var(--error); }
-.map-status[data-info] svg { color: #fff; }
-.map-status-action { margin-left: var(--space-1); padding: 0; border: 0; background: none; color: #fff; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 32px; pointer-events: auto; }
-.map-status-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+.map-status[data-info] svg { color: var(--on-inverse); }
+.map-status-action { margin-left: var(--space-1); padding: 0; border: 0; background: none; color: var(--on-inverse); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 32px; pointer-events: auto; }
+.map-status-action:focus-visible { outline: 2px solid var(--on-inverse); outline-offset: 2px; border-radius: 4px; }
 .effects-group { display: flex; flex-direction: column; gap: var(--gap-inline); }
 .effects-group h3 { margin: 0; font-size: 0.875rem; font-weight: 600; }
 .tool-slider { display: flex; align-items: center; gap: var(--gap-list); width: min(420px, 100%); padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--card); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; box-shadow: var(--shadow-float); }
@@ -413,7 +421,7 @@ button.drawer-row:hover { background: var(--hover); }
 
 /* Kept from last year: closed by default, quiet zebra rows, no colour, so it never competes with the next action */
 .records { background: var(--card); border: 1px solid var(--border); border-radius: var(--panel-radius); padding: var(--panel-pad); display: flex; flex-direction: column; gap: var(--gap-inline); }
-.records-title { margin: 0; display: flex; align-items: center; gap: var(--gap-inline); font-size: 1rem; color: var(--muted-foreground); }
+.records-title { margin: 0; display: flex; align-items: center; gap: var(--gap-inline); font-size: 1rem; }
 /* Rows are divided by a hairline, never shaded, so nothing reads as hover or selection. */
 .records-rows { margin: 0; display: flex; flex-direction: column; }
 .records-row { display: flex; flex-direction: column; gap: 0; padding: var(--space-3) 0; border-top: 1px solid var(--border); }
@@ -437,8 +445,6 @@ button.drawer-row:hover { background: var(--hover); }
 .records-text { display: flex; flex-direction: column; gap: var(--gap-row); }
 .records-text dd { margin: 0; }
 .records-text dt { font-size: 0.9375rem; color: var(--muted-foreground); }
-.records-text dd.goal-gain { font-size: 0.875rem; font-weight: 500; }
-.goal-section { display: flex; flex-direction: column; gap: var(--gap-heading); }
 /* Change: an underlined word with no box, so it sits on the value's line like text */
 .records-pen { flex: none; padding: 0; border: 0; background: none; font: inherit; font-size: 0.9375rem; font-weight: 500; line-height: 1.5; color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); cursor: pointer; transition: text-decoration-color 0.15s; }
 .records-pen:hover { text-decoration-color: currentColor; }
@@ -477,10 +483,10 @@ button.drawer-row:hover { background: var(--hover); }
 #declaration { scroll-margin-block: calc(var(--bar-h) + var(--space-10)); }
 
 /* The loupe: what's under his finger, twice as large, floating above it */
-.map-loupe { position: absolute; left: 0; top: 0; z-index: 5; width: 132px; height: 132px; border-radius: 50%; overflow: hidden; pointer-events: none; background: var(--foreground); box-shadow: 0 0 0 3px #fff, var(--shadow-float); opacity: 0; scale: 0.6; transition: opacity 0.12s, scale 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.map-loupe { position: absolute; left: 0; top: 0; z-index: 5; width: 132px; height: 132px; border-radius: 50%; overflow: hidden; pointer-events: none; background: var(--foreground); box-shadow: 0 0 0 3px var(--on-inverse), var(--shadow-float); opacity: 0; scale: 0.6; transition: opacity 0.12s, scale 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
 .map-loupe[data-on] { opacity: 1; scale: 1; }
 .map-loupe canvas { width: 100%; height: 100%; display: block; }
-.map-loupe::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2.5px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); }
+.map-loupe::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--on-inverse); box-shadow: 0 0 0 2.5px var(--foreground), 0 1px 4px rgb(0 0 0 / 0.4); }
 
 /*
  * Motion with a purpose, never decoration: what just arrived rises in, what floats over the map lifts in, a
@@ -517,14 +523,14 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 
 /* Drawing a field: the cross where the next corner goes. White on the photo, red where a corner can't go,
    a ring once it sits on his first corner, so he sees he can close the field. */
-.map-cross { position: relative; width: 44px; height: 44px; pointer-events: none; color: #fff; filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.9)); }
+.map-cross { position: relative; width: 44px; height: 44px; pointer-events: none; color: var(--on-inverse); filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.9)); }
 .map-cross::before, .map-cross::after { content: ''; position: absolute; background: currentColor; }
 .map-cross::before { left: 21px; top: 0; width: 2px; height: 44px; clip-path: polygon(0 0, 100% 0, 100% 38%, 0 38%, 0 62%, 100% 62%, 100% 100%, 0 100%); }
 .map-cross::after { top: 21px; left: 0; height: 2px; width: 44px; clip-path: polygon(0 0, 38% 0, 38% 100%, 0 100%, 0 0, 62% 0, 100% 0, 100% 100%, 62% 100%); }
-.map-cross[data-state='error'] { color: var(--error); filter: drop-shadow(0 0 1.5px #fff); }
+.map-cross[data-state='error'] { color: var(--error); filter: drop-shadow(0 0 1.5px var(--on-inverse)); }
 .map-cross[data-state='snapped']::before, .map-cross[data-state='snapped']::after { box-shadow: none; }
 .map-cross[data-state='snapped'] { scale: 1.1; }
-.map-cross[data-state='closes'] { color: var(--success); filter: drop-shadow(0 0 1.5px #fff); }
+.map-cross[data-state='closes'] { color: var(--success); filter: drop-shadow(0 0 1.5px var(--on-inverse)); }
 .map-cross[data-state='closes'] { background: radial-gradient(circle, transparent 11px, currentColor 11.5px, currentColor 13px, transparent 13.5px); border-radius: 50%; }
 @media (prefers-reduced-motion: no-preference) { .map-cross { transition: scale 0.12s, color 0.12s; } }
 /* A corner of a field he draws: a white dot on a dark ring, larger than a split's bend so it reads as a corner */
@@ -533,15 +539,15 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 @media (pointer: coarse) { .map-handle[data-vertex]::before { inset: 20px; } }
 /* The middle of an edge: smaller and hollow, so it reads as "pull here to bend", not as a corner */
 .map-handle[data-mid]::before { inset: 17px; background: rgb(255 255 255 / 0.55); box-shadow: 0 0 0 1.5px var(--foreground); }
-.map-handle[data-mid]:hover::before, .map-handle[data-mid][data-dragging]::before { background: #fff; }
+.map-handle[data-mid]:hover::before, .map-handle[data-mid][data-dragging]::before { background: var(--on-inverse); }
 @media (pointer: coarse) { .map-handle[data-mid]::before { inset: 23px; } }
 /* While he pulls one point, the other middles step aside until he lets go */
 .ol-viewport[data-pulling] .map-handle[data-mid]:not([data-dragging]) { visibility: hidden; }
 /* Chips while he draws: an edge's length quietly, the area strong and in the shape's colour */
 .map-chip[data-kind='edge'] { padding: 1px 6px; font-size: 0.75rem; background: rgb(0 0 0 / 0.65); }
-.map-chip[data-kind='area-ok'] { background: #fff; color: var(--foreground); font-weight: 600; }
-.map-chip[data-kind='area-look'] { background: var(--warning); color: #fff; font-weight: 600; }
-.map-chip[data-kind='area-error'] { background: var(--error); color: #fff; font-weight: 600; }
+.map-chip[data-kind='area-ok'] { background: var(--on-inverse); color: var(--foreground); font-weight: 600; }
+.map-chip[data-kind='area-look'] { background: var(--warning); color: var(--on-inverse); font-weight: 600; }
+.map-chip[data-kind='area-error'] { background: var(--error); color: var(--on-inverse); font-weight: 600; }
 /* The one big button under his thumb: a corner at the cross */
 .map-create { box-shadow: var(--shadow-float); }
 .map-create[aria-disabled] { cursor: not-allowed; }
@@ -555,9 +561,6 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 @media (pointer: coarse) { .fine-only { display: none; } }
 .coarse-only { display: none; }
 @media (pointer: coarse) { .coarse-only { display: inline; } }
-.goal-open { display: inline-flex; align-items: center; gap: var(--gap-snug); padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
-.goal-open:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
-.goal-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
 
 /* A hidden digit keeps its width under a dot, so a number is as long hidden as shown */
 .account-mask { position: relative; color: transparent; }
@@ -595,7 +598,7 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 .next > h3:has(+ p) { margin-bottom: calc(var(--gap-heading) - var(--gap-group)); }
 
 /* What a handle or a press on the line does, said beside it when a mouse rests there */
-.map-tip { position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 0; padding: 2px var(--space-2); border-radius: 8px; background: var(--foreground); color: #fff; font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; line-height: 1.5; white-space: nowrap; pointer-events: none; opacity: 0; }
+.map-tip { position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 0; padding: 2px var(--space-2); border-radius: 8px; background: var(--foreground); color: var(--on-inverse); font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; line-height: 1.5; white-space: nowrap; pointer-events: none; opacity: 0; }
 .map-ghost { position: relative; }
 .map-handle .map-tip { bottom: calc(100% - 8px); }
 @media (hover: hover) {
@@ -618,9 +621,17 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 
 /* What a tool does, above it when a mouse rests there or it has focus; a grey one says why it is grey */
 .tool { position: relative; }
-.tool::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; padding: var(--space-1) var(--space-2); border-radius: 8px; background: var(--foreground); color: #fff; font-size: 0.75rem; font-weight: 500; line-height: 1.4; white-space: nowrap; pointer-events: none; opacity: 0; box-shadow: var(--shadow-float); }
+.tool::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; padding: var(--space-1) var(--space-2); border-radius: 8px; background: var(--foreground); color: var(--on-inverse); font-size: 0.75rem; font-weight: 500; line-height: 1.4; white-space: nowrap; pointer-events: none; opacity: 0; box-shadow: var(--shadow-float); }
 .tool:focus-visible::after { opacity: 1; }
 @media (hover: hover) { .tool:hover::after { opacity: 1; transition: opacity 0.15s 0.4s; } }
 .tool:first-child::after { left: 0; translate: 0 0; }
 .tool:last-child::after { left: auto; right: 0; translate: 0 0; }
 .answer > button { margin-left: auto; }
+
+/* The Summary's verdict: the same sign and words as the bar, said first */
+.submit-verdict { display: flex; align-items: flex-start; gap: var(--gap-list); }
+.submit-verdict > svg { flex: none; margin-top: var(--space-1); }
+.submit-verdict[data-tone='error'] > svg { color: var(--error); }
+.submit-verdict[data-tone='warning'] > svg { color: var(--warning); }
+.submit-verdict > div { display: flex; flex-direction: column; gap: var(--gap-heading); }
+.submit-verdict h2 { margin: 0; font-size: 1.5rem; }

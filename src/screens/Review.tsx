@@ -3,7 +3,7 @@ import { en, fieldEdit, formatDateYear, formatHa, map, split, tasks } from '../c
 import type { Field, FieldId, Polygon } from '../data/scenarios'
 import { ActionBar } from '../components/ActionBar'
 import { useApp } from '../components/AppContext'
-import { CropsStep, EffectsStep, forgetSplitDraft, LineStep, LineTools, partLabels, useSplitDraft } from '../components/SplitTool'
+import { CropsStep, EffectsStep, forgetSplitDraft, isGsaLine, LineStep, LineTools, partLabels, useSplitDraft } from '../components/SplitTool'
 import { useYardDraft, YardIsland } from '../components/YardTool'
 import { roundHa } from '../logic/geometry'
 import { FarmMap, MapFacts, MapFallback, RoadDispute, mapContext, taskSummary } from '../components/TaskBodies'
@@ -157,6 +157,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
                 ? {
                     d: draft,
                     interactive: step === 'line' && draft.editing,
+                    proposed: step === 'line' && !draft.editing && isGsaLine(draft),
                     labels: partLabels(draft, step),
                     onPickPart: step === 'crops' ? (i) => document.getElementById(`part-crop-${i}`)?.focus() : undefined,
                   }
@@ -340,7 +341,7 @@ function RoadReview({ onAnswer, head }: BodyProps) {
                 legend={r.question}
                 options={[
                   { value: 'yes' as const, label: split.check.yes },
-                  { value: 'edit' as const, label: split.check.no },
+                  { value: 'edit' as const, label: split.check.no, icon: 'edit' as const },
                   { value: 'no' as const, label: r.no },
                 ]}
                 onChoose={(v) => (v === 'edit' ? d.setEditing(true) : save(v))}

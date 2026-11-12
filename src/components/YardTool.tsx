@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
-import { fieldEdit, formatHa, shapeTools } from '../copy/en'
+import { fieldEdit, formatHa } from '../copy/en'
 import type { Point, Polygon } from '../data/scenarios'
 import { outlinePath, pullOutline, removeCorner, sameLine, scaledHa, snapToAny, stripProblem, tidyOutline, yardHa, yardProblem, type YardProblem } from '../logic/geometry'
 import { VisuallyHidden } from '../ui/Layout'
-import { MapStatus, RemoveHint, ToolButton, ToolDivider, ToolIsland } from '../ui/MapTools'
+import { EditTools, MapStatus, RemoveHint, SnapStatus } from '../ui/MapTools'
 
 const STEP_M = 1
 const ARROWS: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } }
@@ -137,25 +137,17 @@ export type YardDraft = ReturnType<typeof useYardDraft>
 
 /**
  * On the map while he edits, the same island as the divider line: why a move stopped or that a corner joined
- * an edge, or how to take a corner out (a double click), then Undo, Redo, Snap and Reset.
+ * an edge (with the way to stop it), or how to take out the corner he selected, then Undo and Reset.
  */
 export function YardIsland({ d }: { d: YardDraft }) {
-  const t = shapeTools
   const w = d.words
   return (
     <>
       <div aria-live="polite">
-        {d.stopped ? <MapStatus>{w.stopped[d.stopped]}</MapStatus> : d.snap && d.snapped ? <MapStatus icon="snap">{t.joined}</MapStatus> : <RemoveHint />}
+        {d.stopped ? <MapStatus>{w.stopped[d.stopped]}</MapStatus> : (d.snap && d.snapped) || !d.snap ? <SnapStatus on={d.snap} joined={d.snapped} onChange={d.setSnap} /> : d.selected !== null ? <RemoveHint /> : null}
         <VisuallyHidden>{w.label(formatHa(d.yardHa))}</VisuallyHidden>
       </div>
-      <ToolIsland label={w.tools}>
-        <ToolButton icon="undo" caption={t.undo} hint={t.undoHint} idle={t.undoIdle} disabled={!d.canUndo} onClick={d.undo} />
-        <ToolButton icon="redo" caption={t.redo} hint={t.redoHint} idle={t.redoIdle} disabled={!d.canRedo} onClick={d.redo} />
-        <ToolDivider />
-        <ToolButton icon="snap" caption={t.snap} hint={d.snap ? t.snapOn : t.snapOff} on={d.snap} onClick={() => d.setSnap(!d.snap)} />
-        <ToolDivider />
-        <ToolButton icon="reset" caption={t.reset} hint={w.resetHint} idle={w.resetIdle} disabled={d.moves.isReset} onClick={d.moves.reset} />
-      </ToolIsland>
+      <EditTools label={w.tools} canUndo={d.canUndo} canRedo={d.canRedo} onUndo={d.undo} onRedo={d.redo} reset={{ hint: w.resetHint, idle: w.resetIdle, disabled: d.moves.isReset, onClick: d.moves.reset }} />
     </>
   )
 }
