@@ -540,3 +540,4 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 446. **A row's hover has the same room on all four sides** (12 px in the Summary's parts), and the arrow into a measure is square again (44 px), not as tall as its card.
 447. **Every title is the serif, in the text colour, never grey; everything else is the body sans** (Aleksa). Group labels inside cards (h4, h5) are now serif too. This reverses 424, where they were sans.
 448. `src/copy/en.ts`: 5,148 to 5,141 words (`wc -w`).
+449. **The case study deck says less per slide**: one large statement with its key words in green, one short line, a one-line artifact description, and a dark slide opening each section, after the two decks Earl reviewed. Still text only (Earl, 5 Nov: no visuals until the outline is agreed). Rejected: a full sentence of explanation on every slide (about 60 words a slide; now about 35).
