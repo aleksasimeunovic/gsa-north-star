@@ -51,6 +51,12 @@ function shortLine(m: Measure, d: Derived, g: Suggestion | undefined, fresh: Ret
   return t.why[m.id] ?? ''
 }
 
+/** A receipt this measure relies on is missing or can't be read. */
+function receiptProblem(m: Measure, d: Derived): boolean {
+  const receipts = d.items.find((i) => i.id === 'receipts')?.detail
+  return m.requirements.some((r) => r.id === 'receipts') && (receipts === 'receipts_unreadable' || receipts === 'receipts_missing')
+}
+
 /** Whether the records are enough, or what only he can add: a suggestion is never the same as being eligible. */
 function basisLine(m: Measure, d: Derived): string {
   const receipts = m.requirements.some((r) => r.id === 'receipts') ? d.items.find((i) => i.id === 'receipts')?.detail : undefined
@@ -112,6 +118,8 @@ export function MeasuresBody() {
     const g = suggested.find((x) => x.measureId === m.id)
     const ready = readyToApply(m, inputs)
     const invalid = on && !ready && touched.includes(m.id)
+    // A receipt it relies on can't be read: the same fact as in Documents, so it never reads as applied.
+    const toFix = on && ready && receiptProblem(m, derived)
     const box = `apply-${m.id}`
     return (
       <li
@@ -119,7 +127,7 @@ export function MeasuresBody() {
         id={`measure-${m.id}`}
         className="measure-option"
         data-on={on || undefined}
-        data-state={on ? (ready ? 'applied' : invalid ? 'error' : 'open') : undefined}
+        data-state={on ? (toFix || invalid ? 'error' : ready ? 'applied' : 'open') : undefined}
         onBlur={(e) => {
           if (on && !ready && !e.currentTarget.contains(e.relatedTarget as Node | null)) setTouched((ts) => (ts.includes(m.id) ? ts : [...ts, m.id]))
         }}
@@ -133,9 +141,14 @@ export function MeasuresBody() {
               {!on && <span className="measure-basis">{basisLine(m, derived)}</span>}
             </span>
           </label>
-          {on && ready && (
+          {on && ready && !toFix && (
             <span className="measure-state" data-ready>
               <Icon name="complete" size="sm" /> {t.applied}
+            </span>
+          )}
+          {toFix && (
+            <span className="measure-state" data-fix>
+              <Icon name="error" size="sm" /> {t.toFix}
             </span>
           )}
           <button

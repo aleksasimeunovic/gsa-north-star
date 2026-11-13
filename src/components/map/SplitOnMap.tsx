@@ -115,7 +115,8 @@ export function SplitOnMap({ fm, d, interactive, proposed, labels, onPickPart }:
     const splitLine = add(new LineString(line.map(fm.coord)), proposed ? 'proposed' : 'split', 'split')
     const mid = line[Math.floor(line.length / 2)]
     const before = line[Math.floor(line.length / 2) - 1] ?? mid
-    chips.current[2]?.setPosition(proposed ? fm.coord({ x: (mid.x + before.x) / 2, y: (mid.y + before.y) / 2 }) : undefined)
+    // Named on the map while he decides; in the editor the dashes say it, so no chip sits over a handle.
+    chips.current[2]?.setPosition(proposed && !interactive ? fm.coord({ x: (mid.x + before.x) / 2, y: (mid.y + before.y) / 2 }) : undefined)
     if (proposed) chips.current[2]!.getElement()!.textContent = copy.check.onMap
     // The first time GSA's line appears, it draws itself along the edge, so he sees it is a proposal being made.
     if (!drawnIn.current) {

@@ -183,6 +183,7 @@ button.drawer-row:hover { background: var(--hover); }
 .auto-mark { display: inline-flex; color: var(--muted-foreground); }
 .measure-state { flex: none; display: inline-flex; align-items: center; gap: var(--gap-inline); font-size: 0.875rem; font-weight: 500; }
 .measure-state[data-ready] { color: var(--success); }
+.measure-state[data-fix] { color: var(--error); }
 .measure-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--gap-inline); }
 .measure-head { display: flex; align-items: center; gap: var(--gap-list); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); }
 /* The whole row ticks the box, so the target is the size of the card */

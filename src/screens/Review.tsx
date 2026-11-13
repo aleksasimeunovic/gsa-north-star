@@ -157,7 +157,7 @@ function RiverReview({ onAnswer, head }: BodyProps) {
                 ? {
                     d: draft,
                     interactive: step === 'line' && draft.editing,
-                    proposed: step === 'line' && !draft.editing && isGsaLine(draft),
+                    proposed: step === 'line' && isGsaLine(draft),
                     labels: partLabels(draft, step),
                     onPickPart: step === 'crops' ? (i) => document.getElementById(`part-crop-${i}`)?.focus() : undefined,
                   }

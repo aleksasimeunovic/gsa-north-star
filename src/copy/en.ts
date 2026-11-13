@@ -92,7 +92,7 @@ export const en = {
     none: 'Your estimate appears once you choose your measures',
     afterChecks: 'Your measures are worked out after checks',
     provisional: (what: string) => `Provisional until you've checked ${what}`,
-    pending: { field_river: 'the tree line field', field_road: 'the road field', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
+    pending: { field_river: 'the tree line field', field_road: 'the road field', field_bought: 'the parcel you bought', measures: 'your measures', receipts: 'your input receipts' } as Record<string, string>,
     about: (d: string) => `About ${d}`,
     unpriced: (n: number) => (n === 1 ? 'Plus 1 more measure, worked out after checks' : `Plus ${n} more measures, worked out after checks`),
     caveat: 'The payment still depends on inspection and final eligibility.',
@@ -410,6 +410,7 @@ export const tasks = {
     newCrop: (crop: string) => `New: you sow ${crop} on the tree line field this year`,
     stillToFill: (list: string) => `Still to fill in: ${list}`,
     applied: 'Applied',
+    toFix: 'Needs fixing',
     ruledOut: "Can't be paid this year",
     attached: (name: string) => `Attached: ${name}`,
     error: {
