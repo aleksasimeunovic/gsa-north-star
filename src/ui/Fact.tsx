@@ -3,7 +3,7 @@ export function Answers({ items }: { items: [string, string][] }) {
   return (
     <dl className="grid gap-[var(--gap-list)] rounded-xl border p-4">
       {items.map(([q, a]) => (
-        <div key={q} className="grid gap-[var(--gap-heading)]">
+        <div key={q} className="grid gap-[var(--gap-row)]">
           <dt className="text-sm text-muted-foreground">{q}</dt>
           <dd className="font-medium">{a}</dd>
         </div>

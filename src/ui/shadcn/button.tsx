@@ -14,6 +14,8 @@ export const buttonVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground enabled:hover:bg-border',
         ghost: 'enabled:hover:bg-hover',
         link: 'text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground justify-start text-left px-1',
+        danger: 'border-[1.5px] border-error/40 bg-card font-semibold text-error shadow-xs enabled:hover:bg-error-surface enabled:hover:border-error',
+        destructive: 'bg-error text-[var(--on-inverse)] shadow-xs enabled:hover:brightness-90',
         prototype: 'border border-dashed border-meta bg-meta-surface text-meta',
       },
       size: {

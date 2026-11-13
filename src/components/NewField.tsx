@@ -17,12 +17,39 @@ import { ActionBar } from './ActionBar'
 import { useApp } from './AppContext'
 import { FarmMap, MapFallback } from './TaskBodies'
 import { ChoiceButtons } from '../ui/ChoiceButtons'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useYardDraft, YardIsland } from './YardTool'
 import type { Flow } from './useApplicationFlow'
 
 
 /** A new field in one line: its name, area and crop. */
 export const fieldLine = (f: NewField) => copy.line(f.name, formatHa(f.areaHa), en.crops[f.crop])
+
+/** Deleting a field he added: red, apart from the way forward, and asked once more before it happens. */
+function DeleteField({ name, onDelete }: { name?: string; onDelete: () => void }) {
+  const [asking, setAsking] = useState(false)
+  return (
+    <>
+      <Button variant="danger" className="action-apart" onClick={() => setAsking(true)}>
+        <Icon name="delete" size="sm" />
+        {copy.remove}
+      </Button>
+      <ConfirmDialog
+        open={asking}
+        title={copy.removeAsk(name)}
+        confirm={copy.remove}
+        cancel={copy.removeNo}
+        onCancel={() => setAsking(false)}
+        onConfirm={() => {
+          setAsking(false)
+          onDelete()
+        }}
+      >
+        <p>{copy.removeNote}</p>
+      </ConfirmDialog>
+    </>
+  )
+}
 
 /** A still picture of the parcel he bought, his other fields faint around it. */
 function BoughtPreview({ field }: { field?: NewField }) {
@@ -75,7 +102,7 @@ export function AddedBody({ id }: { id: string }) {
       <StageAction>
         <Inline>
           <Button onClick={() => go('field', field.id)}>{copy.change}</Button>
-          <Button onClick={() => dispatch({ type: 'remove_field', id: field.id })}>{copy.remove}</Button>
+          <DeleteField name={field.name} onDelete={() => dispatch({ type: 'remove_field', id: field.id })} />
         </Inline>
       </StageAction>
     </Stack>
@@ -199,6 +226,15 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
       {(backFn || !(isBought || existing)) && <StepHeader step={step} of={isBought || existing ? 0 : of} label={isBought || existing ? '' : copy.step(step, of)} back={backFn && { label: bar.back, onClick: backFn }} />}
       <PanelHead id="field-title" title={stage === 'place' ? copy.place : stage === 'draw' ? (d.closed ? drawField.editTitle : drawField.title) : stage === 'yard' ? (yd.editing ? copy.yard.editTitle : copy.yard.title) : copy.details}>
         {polygon && stage !== 'draw' && <p className="hint">{yard ? copy.yard.without(formatHa(areaHa)) : formatHa(areaHa)}</p>}
+        {/* Its edges decide its size, so the way back to them sits with the size. */}
+        {stage === 'details' && drawing && (
+          <div>
+            <Button onClick={() => setStage('draw')}>
+              <Icon name="edit" size="sm" />
+              {copy.edges}
+            </Button>
+          </div>
+        )}
         {stage === 'yard' && !yd.editing && <Text variant="secondary">{copy.yard.why}</Text>}
         {stage === 'place' && <Text>{copy.placeHint}</Text>}
         {stage === 'draw' && <Text variant="secondary">{d.closed ? drawField.editHint : d.corners.length === 0 ? drawField.start : d.corners.length < 3 ? drawField.next : drawField.three}</Text>}
@@ -289,7 +325,7 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
               <Icon name="forward" size="sm" />
             </Button>
             {/* Deleting is there as soon as the field exists, so a wrong drawing never has to be undone corner by corner. */}
-            <Button onClick={remove}>{copy.remove}</Button>
+            <DeleteField name={existing?.name} onDelete={remove} />
           </Inline>
         </StageAction>
       )}
@@ -326,17 +362,12 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
                 save(polygon)
               }}
             >
-              <Field label={copy.name} hint={copy.nameHint} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
+              <Field label={copy.name} example={copy.nameExample} error={nameError} value={name} onChange={(e) => setName(e.target.value)} />
               <RadioGroup legend={copy.crop} options={CROPS.map((c) => ({ value: c, label: en.crops[c] }))} value={crop} error={cropError} onChange={(c) => { setCrop(c); setCropError(undefined) }} />
-              {(existing || drawing) && (
-                <div>
-                  <Button onClick={remove}>{copy.remove}</Button>
-                </div>
-              )}
               <StageAction>
                 <Inline>
                   <Button type="submit" variant="primary">{existing ? copy.saveChanges : copy.save}</Button>
-                  {drawing && <Button onClick={() => setStage('draw')}>{copy.edges}</Button>}
+                  {(existing || drawing) && <DeleteField name={name.trim() || existing?.name} onDelete={remove} />}
                 </Inline>
               </StageAction>
             </form>

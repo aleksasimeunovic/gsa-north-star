@@ -86,14 +86,17 @@ export function MeasuresBody() {
   const isSuggested = (id: MeasureId) => suggested.some((g) => g.measureId === id)
   const last = fit.filter((m) => m.lastYear)
   const ofSuggestions = suggested.map((g) => fit.find((m) => m.id === g.measureId)!)
-  const more = fit.filter((m) => !m.lastYear && !isSuggested(m.id))
+  const fresh = newCrops(derived.scenario, state.answers)[0]
+  // A crop he sows for the first time is a reason too: the split carries through to what GSA recommends.
+  const isRecommended = (m: Measure) => !m.lastYear && (isSuggested(m.id) || (m.id === 'certified_seed' && !!fresh))
+  const recommended = [...ofSuggestions, ...fit.filter((m) => isRecommended(m) && !isSuggested(m.id))]
+  const more = fit.filter((m) => !m.lastYear && !isRecommended(m))
   const not = s.measures.filter((m) => !m.fits)
   const [moreOpen, setMoreOpen] = useState(more.some((m) => chosen.includes(m.id)))
   // A ticked measure shows what's missing in red only once he has moved on from it.
   const [touched, setTouched] = useState<MeasureId[]>([])
   const [about, setAbout] = useState<Measure | null>(null)
   const opener = useRef<HTMLElement | null>(null)
-  const fresh = newCrops(derived.scenario, state.answers)[0]
 
   // Nothing is ticked or filled in for him: GSA prepares, only Milan declares.
   const draft = (next: MeasureId[], nextInputs: Inputs) => {
@@ -178,49 +181,78 @@ export function MeasuresBody() {
   }
 
   return (
-    <Stack gap="group">
-      <Text>{t.lead(fit.length)}</Text>
+    <Stack gap="section">
       <section className="measure-group" aria-labelledby="m-last">
         <h4 id="m-last" className="group-title">{t.groupLast}</h4>
         <ul className="measure-list">{last.map(option)}</ul>
       </section>
-      {ofSuggestions.length > 0 && (
-        <section className="measure-group" data-suggested aria-labelledby="m-suggested">
+      {recommended.length > 0 && (
+        <section className="measure-group" data-recommended aria-labelledby="m-suggested">
           <div className="measure-group-head">
-            <h4 id="m-suggested" className="group-title">
-              <Icon name="change" /> {t.groupSuggested}
-            </h4>
+            <h4 id="m-suggested" className="group-title">{t.groupSuggested}</h4>
             <Text variant="small">{t.suggestedLead}</Text>
           </div>
-          <ul className="measure-list">{ofSuggestions.map(option)}</ul>
+          <ul className="measure-list">{recommended.map(option)}</ul>
         </section>
       )}
-      {more.length > 0 && (
-        <Disclosure label={t.groupMore(more.length)} open={moreOpen} onOpenChange={setMoreOpen}>
-          <ul className="measure-list">{more.map(option)}</ul>
-        </Disclosure>
-      )}
-      {not.length > 0 && (
-        <Disclosure label={t.groupNot(not.length)}>
-          <ul className="measure-list">
-            {not.map((m) => (
-              <li key={m.id} className="measure-not">
-                <span className="measure-name">{en.measures[m.id]}</span>
-                <span className="measure-line">{t.notFit[m.id]}</span>
-              </li>
-            ))}
-          </ul>
-        </Disclosure>
-      )}
+      {/* The rest of the full list, closed: two rows of one list. */}
+      <div className="measure-rest">
+        {more.length > 0 && (
+          <Disclosure label={t.groupMore(more.length)} open={moreOpen} onOpenChange={setMoreOpen}>
+            <ul className="measure-list">{more.map(option)}</ul>
+          </Disclosure>
+        )}
+        {not.length > 0 && (
+          <Disclosure label={t.groupNot(not.length)}>
+            <ul className="measure-list">
+              {not.map((m) => (
+                <li key={m.id}>
+                  {/* The whole row opens the reason: with nothing to tick, the row is the target. */}
+                  <button
+                    type="button"
+                    className="measure-not"
+                    aria-haspopup="dialog"
+                    onClick={(e) => {
+                      opener.current = e.currentTarget
+                      setAbout(m)
+                    }}
+                  >
+                    <span className="measure-text">
+                      <span className="measure-name">{en.measures[m.id]}</span>
+                      <span className="measure-line">{t.notFit[m.id]}</span>
+                    </span>
+                    <Icon name="details_open" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Disclosure>
+        )}
+      </div>
       <Drawer open={!!about} title={about ? en.measures[about.id] : ''} onClose={() => setAbout(null)} returnFocusTo={opener}>
-        {about && <MeasurePanel m={about} g={suggested.find((x) => x.measureId === about.id)} />}
+        {about && (about.fits ? <MeasurePanel m={about} g={suggested.find((x) => x.measureId === about.id)} recommended={isRecommended(about)} /> : <NotFitPanel m={about} />)}
       </Drawer>
     </Stack>
   )
 }
 
 /** Everything about a measure he can apply for, in his terms: why it fits, what it could pay, what he gives. */
-function MeasurePanel({ m, g }: { m: Measure; g?: Suggestion }) {
+function NotFitPanel({ m }: { m: Measure }) {
+  return (
+    <div className="panel-sections">
+      {m.lacks && (
+        <PanelSection title={t.notPanel.why}>
+          <Text>{t.lacks[m.lacks.kind](m.lacks.left)}</Text>
+        </PanelSection>
+      )}
+      <PanelSection title={t.notPanel.for}>
+        <Text>{t.notFit[m.id]}</Text>
+      </PanelSection>
+    </div>
+  )
+}
+
+function MeasurePanel({ m, g, recommended }: { m: Measure; g?: Suggestion; recommended: boolean }) {
   const { derived, state } = useApp()
   const p = t.panel
   const fresh = newCrops(derived.scenario, state.answers)[0]
@@ -229,7 +261,7 @@ function MeasurePanel({ m, g }: { m: Measure; g?: Suggestion }) {
   const checks = tasks.suggest.checks[m.id]
   return (
     <div className="panel-sections">
-      <PanelSection title={p.why}>
+      <PanelSection title={recommended ? p.whyRecommended : p.why}>
         <Text>{shortLine({ ...m, lastYear: false }, derived, g, fresh)}</Text>
       </PanelSection>
       <PanelSection title={p.pays}>
@@ -468,11 +500,11 @@ function RequirementInput({ r, value, error, onChange }: { r: Requirement; value
         </Stack>
       )
     case 'number':
-      return <Field label={c.label} hint={c.hint} error={error} focusOnError={false} inputMode="numeric" value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <Field label={c.label} hint={c.hint} example={c.example} error={error} focusOnError={false} inputMode="numeric" value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'text':
-      return <Field label={c.label} hint={c.hint} error={error} focusOnError={false} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <Field label={c.label} hint={c.hint} example={c.example} error={error} focusOnError={false} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'longtext':
-      return <Field multiline rows={3} label={c.label} hint={c.hint} error={error} focusOnError={false} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <Field multiline rows={3} label={c.label} hint={c.hint} example={c.example} error={error} focusOnError={false} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'choice':
       return (
         <div>

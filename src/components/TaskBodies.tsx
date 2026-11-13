@@ -406,7 +406,7 @@ function BankBody() {
         >
           {/* Wide enough for the whole number, and the button right under it, never floating over it. */}
           <Stack gap="group">
-            <Field label={b.label} hint={b.hint} error={error} inputMode="numeric" width="long" value={value} onChange={(e) => setValue(e.target.value)} />
+            <Field label={b.label} hint={b.hint} example={b.example} error={error} inputMode="numeric" width="long" value={value} onChange={(e) => setValue(e.target.value)} />
             <div>
               <Button type="submit" variant="primary">{b.save}</Button>
             </div>

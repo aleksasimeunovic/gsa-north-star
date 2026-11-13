@@ -7,6 +7,8 @@ import { Icon } from './Icon'
 interface Common {
   label: string
   hint?: string
+  /** An example of a good answer, shown in the empty field. */
+  example?: string
   error?: string
   /** short: a few digits. long: a whole account number. Text fields take the full width. */
   width?: 'short' | 'long'
@@ -38,10 +40,11 @@ export function Field(props: InputProps | TextareaProps) {
         </span>
       )}
       {props.multiline ? (
-        <Textarea {...strip(props)} id={id} aria-describedby={describedBy} aria-invalid={!!error || undefined} />
+        <Textarea {...strip(props)} placeholder={props.example} id={id} aria-describedby={describedBy} aria-invalid={!!error || undefined} />
       ) : (
         <Input
           {...strip(props)}
+          placeholder={props.example}
           id={id}
           aria-describedby={describedBy}
           aria-invalid={!!error || undefined}
@@ -53,6 +56,6 @@ export function Field(props: InputProps | TextareaProps) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function strip({ label: _l, hint: _h, error: _e, multiline: _m, width: _w, focusOnError: _f, ...rest }: any) {
+function strip({ label: _l, hint: _h, example: _x, error: _e, multiline: _m, width: _w, focusOnError: _f, ...rest }: any) {
   return rest
 }

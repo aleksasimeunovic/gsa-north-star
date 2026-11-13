@@ -2,11 +2,11 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react'
 import { Button as Base } from './shadcn/button'
 import { useDensity } from './Density'
 
-type Variant = 'primary' | 'secondary' | 'link' | 'choice' | 'prototype' | 'ghost'
+type Variant = 'primary' | 'secondary' | 'link' | 'choice' | 'prototype' | 'ghost' | 'danger' | 'destructive'
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }
 
 // Semantic variants mapped onto shadcn's. Density decides the size; every variant but link is the same height.
-const MAP = { primary: 'default', secondary: 'outline', link: 'link', choice: 'outline', prototype: 'prototype', ghost: 'ghost' } as const
+const MAP = { primary: 'default', secondary: 'outline', link: 'link', choice: 'outline', prototype: 'prototype', ghost: 'ghost', danger: 'danger', destructive: 'destructive' } as const
 
 export const Button = forwardRef<HTMLButtonElement, Props>(function Button({ variant = 'secondary', type = 'button', className, ...rest }, ref) {
   const compact = useDensity() === 'compact'
