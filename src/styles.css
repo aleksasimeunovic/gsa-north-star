@@ -196,6 +196,7 @@ button.drawer-row:hover { background: var(--hover); }
 /* On a phone the name keeps the row: where it stands drops under it */
 @media (max-width: 480px) { .measure-head { flex-wrap: wrap; } .measure-check { flex-basis: calc(100% - 60px); } .measure-state { order: 3; padding: 0 0 var(--space-2) calc(20px + var(--gap-list)); } }
 .measure-basis { font-size: 0.875rem; font-weight: 500; }
+@media (max-width: 480px) { .measure-group[data-recommended] { padding: var(--space-3); } }
 .measure-rest { display: flex; flex-direction: column; gap: var(--gap-row); }
 .measure-group-head { display: flex; flex-direction: column; gap: var(--gap-row); }
 .measure-part { display: flex; flex-direction: column; gap: var(--gap-heading); }

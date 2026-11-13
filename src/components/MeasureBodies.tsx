@@ -241,13 +241,10 @@ function NotFitPanel({ m }: { m: Measure }) {
   return (
     <div className="panel-sections">
       {m.lacks && (
-        <PanelSection title={t.notPanel.why}>
-          <Text>{t.lacks[m.lacks.kind](m.lacks.left)}</Text>
+        <PanelSection title={t.whyNot}>
+          <Text>{t.notFit[m.id]}. {t.lacks[m.lacks.kind](m.lacks.left)}.</Text>
         </PanelSection>
       )}
-      <PanelSection title={t.notPanel.for}>
-        <Text>{t.notFit[m.id]}</Text>
-      </PanelSection>
     </div>
   )
 }
@@ -261,7 +258,7 @@ function MeasurePanel({ m, g, recommended }: { m: Measure; g?: Suggestion; recom
   const checks = tasks.suggest.checks[m.id]
   return (
     <div className="panel-sections">
-      <PanelSection title={recommended ? p.whyRecommended : p.why}>
+      <PanelSection title={recommended ? t.body.why : p.why}>
         <Text>{shortLine({ ...m, lastYear: false }, derived, g, fresh)}</Text>
       </PanelSection>
       <PanelSection title={p.pays}>
@@ -271,11 +268,11 @@ function MeasurePanel({ m, g, recommended }: { m: Measure; g?: Suggestion; recom
       {own.length > 0 && (
         <PanelSection title={p.give}>
           <ul className="panel-list">{own.map((r) => <li key={r.id}>{req(r).label}</li>)}</ul>
-          {known.length > 0 && <Text variant="small">{p.known(known.map((r) => req(r).short).join(', '))}</Text>}
+          {known.length > 0 && <Text variant="small">{t.body.has}: {known.map((r) => req(r).short).join(', ')}</Text>}
         </PanelSection>
       )}
       {checks && (
-        <PanelSection title={p.checks}>
+        <PanelSection title={t.body.checks}>
           <Text>{checks}</Text>
         </PanelSection>
       )}

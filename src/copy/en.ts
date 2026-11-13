@@ -211,11 +211,9 @@ export const tasks = {
     done: (n: number) => `${n} cows calved`,
   },
 
-  /** Why it may fit, what the state checks, what he provides. */
   suggest: {
     green_cover: 'Your tree line and upper fields stayed green all winter',
     insemination: (n: number) => `${n} inseminations by your vet since last April`,
-    /** The evidence in full, then what it might mean, worded as a possibility. */
     long: {
       green_all_winter: 'The satellite photos show your tree line and upper fields green from November to March. That may be the cover this measure pays for.',
       inseminations: (n: number) => `The animal registry shows ${n} inseminations by your vet since last April.`,
@@ -359,20 +357,17 @@ export const tasks = {
   measures: {
     groupLast: 'You applied for these last year',
     groupSuggested: 'Recommended for your farm',
-    suggestedLead: 'From your records and the satellite photos, and the state decides whether you qualify',
+    suggestedLead: 'The state decides whether you qualify',
     groupMore: (n: number) => `${n} more you can apply for`,
     groupNot: (n: number) => `${n} you can't apply for this year`,
-    notPanel: { for: 'What it is for', why: "Why you can't apply this year" },
-    /** The exact reason, from his records: a fact, never advice on how to qualify. */
+    whyNot: "Why you can't apply this year",
     lacks: {
-      organic_months: (n: number) => `Your land needs ${n} more months of organic farming before it can be certified.`,
-      dairy_cows: (n: number) => `The animal registry shows ${n} fewer dairy cows on your farm than this measure asks for.`,
-      fattening_cattle: (n: number) => `The animal registry shows ${n} fewer cattle in fattening on your farm than this measure asks for.`,
+      organic_months: (n: number) => `Your land needs ${n} more months as organic before it can be certified`,
+      dairy_cows: (n: number) => `The animal registry shows ${n} dairy cows fewer than this measure asks for`,
+      fattening_cattle: (n: number) => `The animal registry shows ${n} cattle in fattening fewer than this measure asks for`,
     },
     notFit: { organic: 'For land certified as organic', milk: 'For farms that sell milk to a dairy', fattening: 'For cattle kept for fattening' } as Partial<Record<MeasureId, string>>,
-    /** Under a measure's name: whether the records are enough, or what only he can add. */
     basis: { records: 'GSA has what it needs', adds: (list: string) => `You add: ${list}` },
-    /** Inside a ticked measure, always in this order. */
     body: { why: 'Why GSA recommends it', has: 'GSA already has', add: 'Still needed from you', checks: 'The state still checks', estimate: 'In your estimate' },
     showThese: 'Show these fields on the map',
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
@@ -386,12 +381,9 @@ export const tasks = {
     hideMap: 'Hide the map',
     panel: {
       why: 'Why it may fit your farm',
-      whyRecommended: 'Why GSA recommends it',
       pays: 'What it could pay you',
       noRate: 'The amount is worked out after checks',
       give: "What you'd give",
-      known: (list: string) => `GSA already has: ${list}`,
-      checks: 'What the state checks',
     },
     pays: {
       fertiliser: 'Part of the cost of mineral fertiliser',
@@ -682,7 +674,7 @@ export const fieldEdit = {
   change: 'Change',
   remove: 'Delete field',
   removeAsk: (name?: string) => (name ? `Delete ${name}?` : 'Delete this field?'),
-  removeNote: "It leaves this year's application, and you can add it again",
+  removeNote: 'You can add it again',
   removeNo: 'Keep it',
   draw: 'Draw new parcel on the map',
   edges: 'Change its edges',
