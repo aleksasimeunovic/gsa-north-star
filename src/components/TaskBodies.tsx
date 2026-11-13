@@ -12,6 +12,7 @@ import { Button } from '../ui/Button'
 import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
 import { Compare, Stack, Text, VisuallyHidden } from '../ui/Layout'
+import { Icon } from '../ui/Icon'
 import { Problem } from '../ui/Problem'
 import { Answers } from '../ui/Fact'
 import { Account } from '../ui/Account'
@@ -350,13 +351,22 @@ function ReceiptsBody() {
   const blurry = detail === 'receipts_unreadable' ? doc?.unreadable : undefined
   return (
     <Stack gap="section">
-      <ul className="plain-list">
-        {(doc?.files ?? []).map((f) => (
-          <li key={f.name} data-error={f.name === blurry || undefined}>
-            <strong>{f.name}</strong> {formatDate(f.date)}
-            {f.name === blurry && <Problem>{tasks.unreadable.context}</Problem>}
-          </li>
-        ))}
+      {/* Each file as what it is: its name, what kind of file, when he added it, and whether GSA could read it. */}
+      <ul className="file-list">
+        {(doc?.files ?? []).map((f) => {
+          const [name, ext] = f.name.split('.')
+          return (
+            <li key={f.name} className="file-row" data-error={f.name === blurry || undefined}>
+              <span className="file-icon" aria-hidden="true"><Icon name="documents" /></span>
+              <span className="have-text">
+                <strong>{name}</strong>
+                <span>{tasks.receipts.file(ext === 'pdf' ? tasks.receipts.pdf : tasks.receipts.photo, formatDate(f.date))}</span>
+                {f.name === blurry && <Problem>{tasks.unreadable.context}</Problem>}
+              </span>
+              {f.name !== blurry && <span className="file-ok"><Icon name="check" size="sm" /> {tasks.receipts.readable}</span>}
+            </li>
+          )
+        })}
       </ul>
       {blurry ? (
         <StageAction>

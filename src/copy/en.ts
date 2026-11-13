@@ -214,10 +214,7 @@ export const tasks = {
   suggest: {
     green_cover: 'Your tree line and upper fields stayed green all winter',
     insemination: (n: number) => `${n} inseminations by your vet since last April`,
-    long: {
-      green_all_winter: 'The satellite photos show your tree line and upper fields green from November to March. That may be the cover this measure pays for.',
-      inseminations: (n: number) => `The animal registry shows ${n} inseminations by your vet since last April.`,
-    },
+    long: 'The satellite photos show your tree line and upper fields green from November to March. That may be the cover this measure pays for.',
     has: { green_all_winter: 'Winter satellite photos of your fields', inseminations: (n: number) => `${n} inseminations in the animal registry` },
     checks: {
       plant_production: 'Your receipts, and the area you farm',
@@ -368,8 +365,14 @@ export const tasks = {
     },
     notFit: { organic: 'For land certified as organic', milk: 'For farms that sell milk to a dairy', fattening: 'For cattle kept for fattening' } as Partial<Record<MeasureId, string>>,
     basis: { records: 'GSA has what it needs', adds: (list: string) => `You add: ${list}` },
-    body: { why: 'Why GSA recommends it', has: 'GSA already has', add: 'Still needed from you', checks: 'The state still checks', estimate: 'In your estimate' },
-    showThese: 'Show these fields on the map',
+    body: {
+      why: 'Why GSA recommends it',
+      has: (n: number) => `GSA already has ${n === 1 ? '1 thing' : `${n} things`}`,
+      add: 'Needed from you',
+      progress: (done: number, n: number) => `${done} of ${n} added`,
+      left: (n: number) => `${n} to add`,
+      checks: 'The state still checks',
+    },
     chosen: (n: number, fit: number) => `${n} of ${fit} chosen`,
     plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} dinars, about ${total}`,
     cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} dinars, about ${total}`,
@@ -377,8 +380,6 @@ export const tasks = {
     aboutOpen: (name: string) => `All about ${name}`,
     showMap: 'Show on map',
     showOne: (field: string) => `Show ${field} on the map`,
-    showAll: 'Show your fields on the map',
-    hideMap: 'Hide the map',
     panel: {
       why: 'Why it may fit your farm',
       pays: 'What it could pay you',
@@ -430,7 +431,7 @@ export const tasks = {
     land: { label: 'Your fields', short: 'fields' },
     receipts: { label: 'Your input receipts', short: 'receipts' },
     calvings: { label: 'Calvings in the animal registry', short: 'calvings' },
-    fertiliser_receipt: { label: 'Fertiliser receipt.pdf, from your receipts', short: 'fertiliser receipt' },
+    fertiliser_receipt: { label: 'Fertiliser receipt', short: 'fertiliser receipt' },
     who_works: { label: 'Who works your land?', short: 'who works your land', options: { own: 'I do, with my own tractor', contractor: 'A contractor does' } },
     contract: { label: 'Your contract with the contractor', short: 'contract' },
     seed_label: { label: 'The label from the seed bag', hint: 'A photo is enough', short: 'seed label' },
@@ -452,9 +453,9 @@ export const tasks = {
 
   auto: {
     land: (ha: string, n: number) => `${ha} in ${n} fields`,
-    receipts: (n: number) => `${n} files you uploaded`,
+    files: (n: number) => `${n} files`,
     receiptsMissing: 'Still to upload',
-    receiptsBlurry: (n: number) => `${n} files, 1 too blurry to read. Fix it in Documents`,
+    receiptsBlurry: '1 is too blurry to read. Fix it in Documents',
     blurryShort: 'a clearer diesel receipt',
     calvings: (n: number) => `${n} cows calved`,
     fertiliser_receipt: 'Found in your receipts',
@@ -464,6 +465,10 @@ export const tasks = {
     needed: 'Plant production support needs them',
     upload: 'Choose a photo or PDF',
     files: (n: number) => `${n} files attached`,
+    file: (kind: string, date: string) => `${kind}, added ${date}`,
+    pdf: 'PDF',
+    photo: 'Photo',
+    readable: 'Readable',
   },
 
 }

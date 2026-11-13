@@ -290,6 +290,8 @@ Rounds 1 to 9 are done (see `docs/decisions.md`): one list that shrinks, evidenc
 
 **Round 26 (Aleksa, 13 Nov):** details across Land and Measures: label and value closer, status beside the task's name, deleting a field in red with a confirmation, examples inside the fields, an applied measure in green, "Recommended for your farm" with the reason on each card, and why a measure can't be applied for (see `docs/decisions.md` 432 to 441).
 
+**Round 27 (Aleksa, 14 Nov):** a ticked measure leads with what he still adds, numbered and counted, with what GSA has folded away; one "Show on map" everywhere; receipts as readable file rows; equal hover padding; every title serif and never grey, which reverses round 25's sans group labels (see `docs/decisions.md` 442 to 448).
+
 **Round 19 (Aleksa, 4 Nov):** alternatives for the key decision points across the whole application, in the Figma file North Star only (frames 5 to 12), never in the code; every state of the journey audited for clipping and keyboard focus at 360, 768, 1024 and 1280 px.
 
 Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and reset. Design notes are switched off (Aleksa, 3 Nov).

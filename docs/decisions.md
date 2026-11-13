@@ -530,3 +530,13 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 439. **A measure he can't apply for says exactly why, on request**: the whole row opens a side panel with the fact from his records ("The animal registry shows 2 dairy cows fewer than this measure asks for"). The three figures are the round 12 placeholders, back as facts only: no rate, no gain, no steps to qualify (418 stands). Rejected: the reason on the row (it read as advice), and no reason at all (he is left guessing).
 440. **Measures: no line telling him to tick**, groups a section apart, and the way into a measure's details is as tall as its card.
 441. `src/copy/en.ts`: 5,159 to 5,148 words (`wc -w`).
+
+## Round 27 (Aleksa, 14 Nov): measure cards, files, hover and type
+
+442. **A ticked measure leads with what he still has to add**, numbered, each number turning to a green tick once it is in, with "1 of 2 added" beside the heading and "1 to add" on the card's own line. What GSA already has is folded under "GSA already has 2 things". The state's checks and the amount are in the measure's side panel and the estimate beside the list, not repeated in the card. A receipt the measure relies on that can't be read stays in view, because it is his to fix. This replaces the five fixed groups of 420. Rejected: everything open at once (what he owed was the third group of five).
+443. **One "Show on map" everywhere**: a quiet button on the right of its line that opens the land on the photo in a side panel, for one field, for the fields GSA's evidence is about (on the recommended card itself, before he ticks it) and for all his fields. Rejected: the "Why GSA recommends it" block with its own bordered button and a map opening inside the card; the full evidence sentence is in the side panel.
+444. **What GSA has reads as a name with its value under it**, like a line of "Your fields": "Your input receipts (3 files)", "Your fields / 9.00 ha in 5 fields". The same in every "what GSA has" panel: the name is never grey.
+445. **A receipt is a row that says what it is**: its name without the file ending, "PDF, added 12 March", and "Readable" or what is wrong with it. Rejected: file names and dates in a plain list.
+446. **A row's hover has the same room on all four sides** (12 px in the Summary's parts), and the arrow into a measure is square again (44 px), not as tall as its card.
+447. **Every title is the serif, in the text colour, never grey; everything else is the body sans** (Aleksa). Group labels inside cards (h4, h5) are now serif too. This reverses 424, where they were sans.
+448. `src/copy/en.ts`: 5,148 to 5,141 words (`wc -w`).

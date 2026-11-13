@@ -185,6 +185,8 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-state { flex: none; display: inline-flex; align-items: center; gap: var(--gap-inline); font-size: 0.875rem; font-weight: 500; }
 .measure-state[data-ready] { color: var(--success); }
 .measure-state[data-fix] { color: var(--error); }
+.measure-state[data-open] { color: var(--warning-text); }
+.measure-state[data-open] svg { color: var(--warning); }
 .measure-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--gap-inline); }
 .measure-head { display: flex; align-items: center; gap: var(--gap-list); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); }
 /* The whole row ticks the box, so the target is the size of the card */
@@ -194,7 +196,7 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-name { font-weight: 500; line-height: 1.375; }
 .measure-line { font-size: 0.875rem; color: var(--muted-foreground); }
 /* On a phone the name keeps the row: where it stands drops under it */
-@media (max-width: 480px) { .measure-head { flex-wrap: wrap; } .measure-check { flex-basis: calc(100% - 60px); } .measure-state { order: 3; padding: 0 0 var(--space-2) calc(20px + var(--gap-list)); } }
+@media (max-width: 480px) { .measure-head { flex-wrap: wrap; } .measure-check { flex-basis: calc(100% - 112px); } .measure-state { order: 3; padding: 0 0 var(--space-2) calc(20px + var(--gap-list)); } }
 .measure-basis { font-size: 0.875rem; font-weight: 500; }
 @media (max-width: 480px) { .measure-group[data-recommended] { padding: var(--space-3); } }
 .measure-rest { display: flex; flex-direction: column; gap: var(--gap-row); }
@@ -205,7 +207,7 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-not:hover { border-color: var(--hover-border); }
 .measure-not:hover > svg { color: var(--foreground); }
 .measure-not:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-.measure-about { flex: none; align-self: stretch; width: 48px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.measure-about { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .measure-about:hover { border-color: var(--hover-border); color: var(--foreground); }
 .measure-about:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 /* A side panel: one heading style, one body style, one quiet style for workings; sections clearly apart */
@@ -303,7 +305,7 @@ button.drawer-row:hover { background: var(--hover); }
 .map-status-action { margin-left: var(--space-1); padding: 0; border: 0; background: none; color: var(--on-inverse); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 32px; pointer-events: auto; }
 .map-status-action:focus-visible { outline: 2px solid var(--on-inverse); outline-offset: 2px; border-radius: 4px; }
 .effects-group { display: flex; flex-direction: column; gap: var(--gap-inline); }
-.effects-group h3 { margin: 0; font-size: 0.875rem; font-weight: 600; }
+.effects-group h3 { margin: 0; font-size: 0.9375rem; }
 .tool-slider { display: flex; align-items: center; gap: var(--gap-list); width: min(420px, 100%); padding: var(--space-2) var(--space-3); border-radius: 12px; background: var(--card); font-size: 0.8125rem; font-weight: 500; white-space: nowrap; box-shadow: var(--shadow-float); }
 .tool-slider input { flex: 1; min-width: 0; accent-color: var(--foreground); }
 /* A phone has no room for six captions: undo, redo and reset are known by their icons */
@@ -400,7 +402,7 @@ button.drawer-row:hover { background: var(--hover); }
 .part-summary-head h3 { margin-right: auto; font-size: 1.125rem; }
 .part-summary-icon { display: inline-flex; color: var(--muted-foreground); }
 .part-summary-left { font-size: 0.875rem; color: var(--muted-foreground); }
-.part-summary .drawer-row { padding: var(--space-2) var(--space-3); }
+
 .drawer-mark[data-severity='done'] { color: var(--success); }
 .status-section { display: flex; flex-direction: column; gap: var(--gap-snug); }
 .status-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--gap-list); }
@@ -452,7 +454,7 @@ button.drawer-row:hover { background: var(--hover); }
 .records-all { display: flex; flex-direction: column; gap: var(--gap-section); }
 .records-text { display: flex; flex-direction: column; gap: var(--gap-row); }
 .records-text dd { margin: 0; }
-.records-text dt { font-size: 0.9375rem; color: var(--muted-foreground); }
+.records-text dt { font-size: 0.9375rem; font-weight: 600; }
 /* Change: an underlined word with no box, so it sits on the value's line like text */
 .records-pen { flex: none; padding: 0; border: 0; background: none; font: inherit; font-size: 0.9375rem; font-weight: 500; line-height: 1.5; color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent); cursor: pointer; transition: text-decoration-color 0.15s; }
 .records-pen:hover { text-decoration-color: currentColor; }
@@ -655,3 +657,29 @@ html { scroll-padding-top: calc(var(--topbar-h) + var(--stepper-h)); scroll-padd
 @media (max-width: 479px) { .confirm-dialog-actions > * { flex: 1 1 100%; } }
 /* Deleting stands apart from the way forward: pushed to the far end of the row */
 .stage-action .action-apart { margin-left: auto; }
+
+/* What he still adds to a measure: numbered, each number turning to a tick, with a count of what is in */
+.need-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--gap-list); }
+.need-count { font-size: 0.875rem; font-weight: 500; color: var(--warning-text); }
+.need-count[data-done] { color: var(--success); }
+.need-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--gap-group); }
+.need { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--gap-list); align-items: start; }
+.need-mark { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 1000px; border: 1.5px solid var(--control-border); font-size: 0.8125rem; font-weight: 600; }
+.need[data-done] .need-mark { border-color: var(--success); background: var(--success); color: var(--on-inverse); }
+/* What GSA already has: a name with its value under it, like a line of his record, the map on the right */
+.have-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.have-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-list); padding: var(--space-3) 0; border-top: 1px solid var(--border); }
+.have-list > .have-row:first-child { border-top: 0; padding-top: var(--space-1); }
+.have-row[data-problem] { padding: 0; border: 0; }
+.have-text { min-width: 0; display: flex; flex-direction: column; gap: var(--gap-row); font-size: 0.9375rem; }
+.have-text strong { font-weight: 600; }
+/* One button for land on the map, wherever it appears */
+.show-map { flex: none; }
+/* His receipts, one file a row: what it is, when he added it, whether GSA could read it */
+.file-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--row-radius); }
+.file-row { display: flex; align-items: flex-start; gap: var(--gap-list); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border); }
+.file-row:first-child { border-top: 0; }
+.file-icon { display: inline-flex; margin-top: 2px; color: var(--muted-foreground); }
+.file-row .have-text { flex: 1; }
+.file-row[data-error] .file-icon { color: var(--error); }
+.file-ok { flex: none; display: inline-flex; align-items: center; gap: var(--gap-snug); font-size: 0.875rem; color: var(--muted-foreground); }
