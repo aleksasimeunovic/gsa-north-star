@@ -13,7 +13,7 @@ export function derive(state: AppState) {
   const base = SCENARIOS[state.scenarioId]
   const scenario = farmAsAnswered(base, state.answers)
   const items = deriveItems(scenario, state.answers, milanCaseState(state))
-  const list = applicationList(scenario, state.answers, items, state.role)
+  const list = applicationList(scenario, state.answers, items)
   return {
     base,
     scenario,

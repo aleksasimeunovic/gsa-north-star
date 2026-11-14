@@ -1,5 +1,6 @@
-import { advisor, en, home } from './copy/en'
+import { en, home } from './copy/en'
 import { daysLeft } from './logic/readiness'
+import { AdvisorSwitcher } from './components/AdvisorSwitcher'
 import { AppContext } from './components/AppContext'
 import { PrototypeControls } from './components/PrototypeControls'
 import { derive } from './logic/derive'
@@ -19,11 +20,12 @@ export function App() {
   const derived = derive(state)
   const submitted = !!state.answers.submittedAt
   const left = daysLeft(derived.scenario.today, derived.scenario.window.closes)
-  // Off by default: what's tested, a mandate or an assumption is for reviewers, never for Milan.
+  // Jelena sees a farmer's application exactly as he does; only her problems are denser.
+  const density = screen === 'queue' ? 'compact' : 'comfortable'
 
   const main =
     screen === 'queue' ? (
-      <AdvisorQueue />
+      <AdvisorQueue initial={target} />
     ) : screen === 'renewal' ? (
       <Renewal />
     ) : (screen === 'receipt' || screen === 'submit') && submitted ? (
@@ -41,23 +43,18 @@ export function App() {
 
   return (
     <AppContext.Provider value={{ state, derived, dispatch, go }}>
-      <DensityContext.Provider value={derived.list.density}>
+      <DensityContext.Provider value={density}>
         <NotesContext.Provider value={false}>
-          <div className="page" data-screen={screen} data-density={derived.list.density}>
+          <div className="page" data-screen={screen} data-density={density}>
             <header className="topbar">
               <a href="#/welcome" className="brand">
                 {en.appName} <span className="brand-sub">{en.appSub}</span>
               </a>
-              {state.role === 'farmer' && !submitted && (
+              {state.role === 'advisor' && <AdvisorSwitcher screen={screen} />}
+              {!submitted && screen !== 'queue' && (
                 <span className="deadline" title={home.deadline(left, derived.scenario.window.closes)}>
                   <Icon name="deadline" size="sm" /> <span>{home.daysLeft(left)}<span className="deadline-more"> {home.toApply}</span></span> <Note kind="eu_mandate" />
                 </span>
-              )}
-              {state.role === 'advisor' && (
-                <nav aria-label="Advisor" className="advisor-nav">
-                  <a href="#/queue" aria-current={screen === 'queue' ? 'page' : undefined}>{advisor.nav.queue}</a>
-                  <a href="#/welcome" aria-current={screen !== 'queue' ? 'page' : undefined}>{advisor.nav.milan}</a>
-                </nav>
               )}
               {savedAt && (
                 <span className="saved">

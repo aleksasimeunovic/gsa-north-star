@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advisorQueue, followUpDate, milanCaseState, milanOutcome } from './advisor'
+import { advisorFarmers, advisorQueue, followUpDate, milanCaseState, milanOutcome } from './advisor'
 import { derive } from './derive'
 import { play } from './testUtils'
 
@@ -80,5 +80,20 @@ describe('advisor queue', () => {
     const milan = advisorQueue(s).find((c) => c.id === 'milan_herd')!
     expect(milan).toMatchObject({ state: 'assigned', reply: 'Sold in March.' })
     expect(milanCaseState(s)).toBe('assigned')
+  })
+})
+
+describe('advisor farmers', () => {
+  it('lists Milan with his application even before he sends her anything; who needs her comes first', () => {
+    const f = advisorFarmers(play('second_year'))
+    expect(f.map((x) => [x.name, x.needsHer, x.hasApplication])).toEqual([
+      ["Milan's neighbour, Bečanj", 1, false],
+      ['Milan Dragović', 0, true],
+    ])
+  })
+
+  it("counts a farmer's cases by who acts next", () => {
+    const s = play('second_year', ...sendHerd, { type: 'advisor_act', caseId: 'milan_herd', act: 'referred' })
+    expect(advisorFarmers(s).find((x) => x.hasApplication)).toMatchObject({ needsHer: 0, waiting: 1, resolved: 0 })
   })
 })

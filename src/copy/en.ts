@@ -213,7 +213,7 @@ export const tasks = {
   suggest: {
     green_cover: 'Your tree line and upper fields stayed green all winter',
     insemination: (n: number) => `${n} inseminations by your vet since last April`,
-    long: 'The satellite photos show your tree line and upper fields green from November to March. That may be the cover this measure pays for.',
+    long: 'Satellite photos show your tree line and upper fields green from November to March, which may be the cover this measure pays for.',
     has: { green_all_winter: 'Winter satellite photos of your fields', inseminations: (n: number) => `${n} inseminations in the animal registry` },
     checks: {
       plant_production: 'Your receipts, and the area you farm',
@@ -357,9 +357,9 @@ export const tasks = {
     groupNot: (n: number) => `${n} you can't apply for this year`,
     whyNot: "Why you can't apply this year",
     lacks: {
-      organic_months: (n: number) => `Your land needs ${n} more months as organic before it can be certified`,
-      dairy_cows: (n: number) => `The animal registry shows ${n} dairy cows fewer than this measure asks for`,
-      fattening_cattle: (n: number) => `The animal registry shows ${n} cattle in fattening fewer than this measure asks for`,
+      organic_months: (n: number) => `Your land needs ${n} more months as organic to be certified`,
+      dairy_cows: (n: number) => `The animal registry shows ${n} dairy cows too few`,
+      fattening_cattle: (n: number) => `The animal registry shows ${n} cattle in fattening too few`,
     },
     notFit: { organic: 'For land certified as organic', milk: 'For farms that sell milk to a dairy', fattening: 'For cattle kept for fattening' } as Partial<Record<MeasureId, string>>,
     basis: { records: 'GSA has what it needs', adds: (list: string) => `You add: ${list}` },
@@ -510,7 +510,7 @@ export const shapeTools = {
   removeTouch: 'Double-tap a point to remove it',
 }
 
-const EDGE_STOP = "The line stops at your field's edge: land outside it gets no support"
+const EDGE_STOP = "The line stops at your field's edge"
 
 export const split = {
   step: (n: number) => `Step ${n} of 3`,
@@ -528,7 +528,7 @@ export const split = {
   sliderOn: 'Hard to drag? Use a slider',
   sliderOff: 'Hide the slider',
   fieldNow: (ha: string, by: string, more: boolean) => `You say your field is ${ha}, ${by} ${more ? 'more' : 'less'}.`,
-  pastLand: 'Past the registered farmland. The land registry will check it',
+  pastLand: 'Past the registered farmland: the land registry checks it',
   pastLandCounts: (ha: string) => `Until then ${ha} counts.`,
   bendLabel: (n: number) => `Bend ${n} in the line`,
   cornerLabel: (n: number) => `Corner ${n} of your field`,
@@ -547,7 +547,7 @@ export const split = {
     edge: EDGE_STOP,
     leaves_field: EDGE_STOP,
     crosses_itself: "The line can't cross itself, so it stopped here",
-    too_small: 'Each part needs at least 0.10 ha, so the line stopped here',
+    too_small: 'Each part needs at least 0.10 ha',
   },
   part: { top: 'Tree line side', bottom: 'Road side', left: 'Left part', right: 'Right part' },
   partArea: (part: string, area: string) => `${part} ${area}`,
@@ -594,7 +594,7 @@ export const finish = {
     awaitingNote: 'You can still submit',
     checks: {
       eligibility: 'That you and each measure are eligible',
-      records: 'Your answers against the animal registry and the land map',
+      records: 'Your answers against the registries',
       inspection: 'Some farms are inspected on the ground',
       payment: 'The final amount, which may differ from the estimate',
     },
@@ -636,7 +636,7 @@ export const records = {
   more: { details: 'More data', animals: 'All about your animals', land: 'All your fields', documents: 'All your files' },
   save: 'Send',
   cancel: 'Cancel',
-  correctionHint: "The record's office checks it, and its value counts until then",
+  correctionHint: "The record's office checks it; its value counts until then",
   numberError: 'Enter a whole number, like 14',
   textError: 'Enter the right value',
   youSaid: (v: string) => `You said ${v}`,
@@ -724,9 +724,9 @@ export const drawField = {
   title: 'Draw your field',
   start: 'Click or tap each corner of your field on the map.',
   next: 'Go round your field, one corner at a time.',
-  three: 'Add more corners, or close the field on your first one.',
+  three: 'Add corners, or close the field on your first one.',
   editTitle: "Check your field's edges",
-  editHint: "Pull a corner, or an edge's middle dot, to where your field ends.",
+  editHint: "Pull a corner or an edge's middle to where your field ends.",
   continue: 'Continue',
   onFirst: 'On your first corner',
   create: (ha: string) => `Create the field, ${ha}`,
@@ -765,7 +765,16 @@ export const proto = {
 }
 
 export const advisor = {
-  nav: { queue: 'Problems sent to you', milan: "Milan's application" },
+  farmers: {
+    title: 'Your farmers',
+    none: 'Sent you nothing',
+    needsYou: (n: number) => `${n} needs you`,
+    waiting: (n: number) => `${n} waiting on others`,
+    resolved: (n: number) => `${n} resolved`,
+    nothingOnYou: 'Nothing waits on you',
+    application: 'Application',
+    current: 'Open now',
+  },
   title: 'Problems sent to you',
   shortcuts: 'J next, K previous, O open',
   listLabel: 'Cases',

@@ -1,5 +1,5 @@
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Copy, CircleAlert, CircleCheck,
+  ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Copy, CircleAlert, Inbox, UserRound, CircleCheck,
   CircleX, Clock, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, LocateFixed, Magnet, Map, Minus, Trash2,
   PencilLine, PiggyBank, Plus, Receipt, Redo2, RotateCcw, Satellite, Send, Slash, SlidersHorizontal, Sprout, Undo2, Upload, Wheat, X, type LucideIcon,
 } from 'lucide-react'
@@ -42,6 +42,8 @@ const ICONS = {
   locate: LocateFixed,
   upload: Upload,
   expand: ChevronDown,
+  farmer: UserRound,
+  inbox: Inbox,
   disclose: ChevronRight,
   close: X,
   copy: Copy,

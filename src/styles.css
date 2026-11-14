@@ -16,9 +16,27 @@
 .saved { margin-left: auto; display: inline-flex; align-items: center; gap: var(--gap-snug); font-size: 0.8125rem; color: var(--success); }
 .prototype-launcher { margin-left: auto; }
 .saved ~ .prototype-launcher { margin-left: 0; }
-.advisor-nav { display: flex; gap: var(--gap-snug); padding: var(--space-1); border-radius: 12px; background: var(--card); border: 1px solid var(--border); }
-.advisor-nav a { min-height: 36px; padding: 0 var(--space-3); border-radius: 8px; display: inline-flex; align-items: center; font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none; }
-.advisor-nav a[aria-current='page'] { background: var(--muted); color: var(--foreground); font-weight: 600; }
+/* Jelena's switcher between farmers, and the open farmer at a glance */
+.advisor-switch { min-width: 0; display: flex; align-items: center; gap: var(--gap-list); }
+.advisor-switch-button { min-width: 0; min-height: 36px; display: inline-flex; align-items: center; gap: var(--gap-inline); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: 1000px; background: var(--card); font: inherit; font-size: 0.875rem; font-weight: 600; color: var(--foreground); cursor: pointer; transition: border-color 0.15s, background-color 0.15s; }
+.advisor-switch-button:hover { border-color: var(--hover-border); }
+.advisor-switch-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.advisor-switch-button > svg { flex: none; color: var(--muted-foreground); }
+.advisor-switch-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.advisor-glance { font-size: 0.8125rem; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 899px) { .advisor-glance { display: none; } }
+/* On a phone the switcher keeps its sign; its label is said to screen readers */
+@media (max-width: 639px) { .advisor-switch ~ .deadline { display: none; } .advisor-switch { flex: none; } .advisor-switch-name { display: none; } .advisor-switch-button { min-height: 44px; } }
+.farmer-list { list-style: none; margin: 0 calc(-1 * var(--space-3)); padding: 0; display: flex; flex-direction: column; gap: var(--gap-row); }
+.farmer-row { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: var(--gap-list); align-items: start; padding: var(--space-3); border: 0; border-radius: 12px; background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
+.farmer-row:hover { background: var(--hover); }
+.farmer-row[aria-current] { background: var(--muted); box-shadow: inset 0 0 0 1px var(--hover-border); }
+.farmer-row > svg { margin-top: 2px; color: var(--muted-foreground); }
+.farmer-row > svg:last-child { align-self: center; }
+.farmer-text { min-width: 0; display: flex; flex-direction: column; gap: var(--gap-row); font-size: 0.875rem; color: var(--muted-foreground); }
+.farmer-text strong { font-size: 1rem; font-weight: 600; color: var(--foreground); }
+.farmer-case { color: var(--foreground); }
+.farmer-current { align-self: center; font-size: 0.8125rem; font-weight: 500; }
 /* On a phone the deadline stays (the one date he must not miss); the sub-brand goes, and Saved keeps only its tick */
 @media (max-width: 639px) { .brand-sub { display: none; } .deadline { padding: 2px 10px; gap: var(--gap-heading); } .deadline-more { display: none; } .prototype-launcher button { padding-inline: 10px; } .saved-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 

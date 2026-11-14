@@ -551,3 +551,7 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 454. **Side columns stick to the top when the main column scrolls** and scroll inside themselves only when taller than the window (Summary and every part).
 455. **A toast is one line and leaves after 4 seconds, with no draining line and no "Next:" subtitle**; it still waits while pointed at or focused, so Undo stays reachable.
 456. `src/copy/en.ts`: 5,141 to 5,116 words (`wc -w`).
+457. **Jelena sees Milan's application exactly as he does** (comfortable density, the deadline, the same stepper, cards and buttons), rather than a denser copy, so what she says on the phone matches his screen. Only her problems stay compact. Density moved out of the application list (a screen decision, not a list rule).
+458. **A farmer switcher replaces the two-tab advisor nav**: one button in her header names what is open (her problems or a farmer) and opens "Your farmers": her problems with how many need her, then each farmer with what he sent her, each problem's next owner, and his application's count of what is left. Beside the button, the open farmer at a glance ("Sent you nothing", or what needs her and what waits on others). Ordered by what needs her.
+459. **A farmer without an application in GSA opens on the problem he sent** (the neighbour), since the scenario holds only Milan's application; cases stay decidable without it.
+460. `src/copy/en.ts`: 5,116 to 5,115 words (`wc -w`); the switcher's lines were paid for by tightening long hints.

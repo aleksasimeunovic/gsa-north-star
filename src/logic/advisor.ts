@@ -106,3 +106,35 @@ export function advisorQueue(state: AppState): AdvisorCase[] {
     })
     .sort(byPriority)
 }
+
+/** A farmer Jelena works with: what they sent her, how much of it waits on her, and whether GSA holds their application. */
+export interface AdvisorFarmer {
+  name: string
+  cases: AdvisorCase[]
+  /** Cases where the next action is hers. */
+  needsHer: number
+  /** Cases where someone else acts next (the farmer or an office). */
+  waiting: number
+  resolved: number
+  /** Only Milan's application is in this scenario; another farmer opens on his problem. */
+  hasApplication: boolean
+}
+
+/** Every farmer with a case, and Milan whose application she can open; the ones who need her first. */
+export function advisorFarmers(state: AppState): AdvisorFarmer[] {
+  const cases = advisorQueue(state)
+  const names = [...new Set([MILAN_CASE.farmer, ...cases.map((c) => c.farmer)])]
+  return names
+    .map((name): AdvisorFarmer => {
+      const own = cases.filter((c) => c.farmer === name)
+      return {
+        name,
+        cases: own,
+        needsHer: own.filter((c) => c.state === 'assigned').length,
+        waiting: own.filter((c) => c.state === 'waiting_farmer' || c.state === 'waiting_office').length,
+        resolved: own.filter((c) => c.state === 'resolved').length,
+        hasApplication: name === MILAN_CASE.farmer,
+      }
+    })
+    .sort((x, y) => y.needsHer - x.needsHer || y.waiting - x.waiting)
+}

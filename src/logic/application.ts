@@ -1,5 +1,5 @@
 import type { Scenario } from '../data/scenarios'
-import type { Answers, Role } from '../state/actions'
+import type { Answers } from '../state/actions'
 import { isRenewed } from './readiness'
 import { markOf, type Mark } from './severity'
 import type { Item, ItemId, Status } from './status'
@@ -69,7 +69,6 @@ export interface ApplicationList {
   /** The one next action. 'submit' once nothing needs his action; null once submitted. */
   next: TaskId | 'submit' | null
   steps: Step[]
-  density: 'comfortable' | 'compact'
 }
 
 export const CHANGE_TASKS: TaskId[] = ['bank', 'herd', 'pigs']
@@ -133,7 +132,7 @@ const order = (t: Task) => (t.id === 'renewal' ? -1 : STEPS.indexOf(t.step) * 10
  * - Exactly one next action: the first task that needs him, then submit.
  * - Advisor: same list, denser.
  */
-export function applicationList(s: Scenario, a: Answers, items: Item[], role: Role): ApplicationList {
+export function applicationList(s: Scenario, a: Answers, items: Item[]): ApplicationList {
   const all: Task[] = []
   if (!s.renewed) {
     const status = isRenewed(s, a) ? 'complete' : 'action_required'
@@ -162,7 +161,6 @@ export function applicationList(s: Scenario, a: Answers, items: Item[], role: Ro
     done: sorted.filter((t) => t.status === 'complete'),
     next,
     steps,
-    density: role === 'advisor' ? 'compact' : 'comfortable',
   }
 }
 

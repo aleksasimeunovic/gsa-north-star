@@ -113,17 +113,10 @@ describe('application list', () => {
   it('no animals: no herd, pigs or calvings task, and no animals part', () => {
     const s = { ...SCENARIOS.second_year, herd: null, pigs: null }
     const a = emptyAnswers()
-    const list = applicationList(s, a, deriveItems(s, a), 'farmer')
+    const list = applicationList(s, a, deriveItems(s, a))
     expect(ids(list.todo)).not.toContain('herd')
     expect(ids(list.todo)).not.toContain('calvings')
     expect(list.steps.map((st) => st.id)).toEqual(['details', 'land', 'measures', 'documents', 'submit'])
-  })
-
-  it('advisor: same list, denser', () => {
-    expect(run('second_year').list.density).toBe('comfortable')
-    const s = SCENARIOS.second_year
-    const a = emptyAnswers()
-    expect(applicationList(s, a, deriveItems(s, a), 'advisor').density).toBe('compact')
   })
 
   it('reports only the work his last answer removed', () => {

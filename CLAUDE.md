@@ -141,7 +141,7 @@ The application is one list of named tasks. It is also the readiness view.
 | Always | Inside the open part, exactly one next action, open, the most visible thing on screen. Once the part is done, "Continue: <next part>" is the primary action |
 | Kinds of work | Within each part, changes first because they shape the rest, then choices (measures), then yearly confirmations |
 | An answer adds work | The toast says what, in one line; the finish line never moves silently |
-| Advisor signs in | Same list, denser, what needs action first |
+| Advisor signs in | A farmer's application is identical to what he sees; only her problems are denser |
 
 Structure by what Milan has to accomplish, not by the smallest step count. There is no target number of steps.
 
@@ -226,6 +226,7 @@ Paths:
 ### Jelena (advisor mode): small, don't let it grow
 - Sign in as Jelena via prototype controls. A queue of only escalated problems (the neighbour's inherited parcel; since round 11 Milan's herd disagreement stays with the animal registry and doesn't reach her), each with full context.
 - Case states name who acts next: **needs Jelena**, **referred to <office>** (awaiting its response), **needs farmer action**, **resolved**. A referral moves responsibility; resolved needs the record owner's decision recorded as the outcome, never right after a referral. Show when she should follow up, worked out from the application deadline. Each case carries enough to decide without opening the application (parcel dispute: map preview, registry record, farmer's explanation, deadline).
+- A farmer switcher in her header (round 28): her problems and every farmer she works with, each with what he sent her, who acts next and where his application stands. Milan's application opens exactly as he sees it, with what he sent her beside the switcher.
 - Desktop first (checked at 1280 px). Grouped by state; within hers: blocks submission, then close to the deadline. The national deadline shows only within 7 days.
 - Milan sees the same state on his item, e.g. "Jelena asked the animal registry to check."
 - Keyboard shortcuts and an action history per application (who did what, when).
@@ -301,7 +302,7 @@ Prototype controls (floating "Prototype" button): persona (Milan or Jelena) and 
 shadcn/ui components live in `src/ui/shadcn/` and our semantic primitives in `src/ui/` wrap them. Tokens follow shadcn/ui's semantic names (`--background`, `--card`, `--primary`, `--muted-foreground`, `--border`, `--ring`, `--radius`, plus `--success`, `--warning`, `--info`, `--meta` for status and design notes) in two tiers: primitives, then semantic. Components only use the semantic tier, so a theme is one file. Icons come from lucide (shadcn's set) through `src/ui/Icon.tsx`, by meaning. So:
 - Components outside `src/ui/` never contain styling decisions; they compose primitives.
 - Primitives use semantic props (`variant="primary"`, `status="awaiting_verification"`, `density="comfortable" | "compact"`), not visual ones.
-- Density is a context: Milan = comfortable (larger targets), Jelena = compact. Same components.
+- Density is a context: a farmer's application is comfortable for both of them; Jelena's problems are compact. Same components.
 
 ## 12. Accessibility and UX non-negotiables
 

@@ -116,10 +116,14 @@ function CaseDetail({ c }: { c: AdvisorCase }) {
 }
 
 /** Advisor mode: only hard cases, ordered by what matters, each saying who acts next. */
-export function AdvisorQueue() {
+export function AdvisorQueue({ initial }: { initial?: string | null }) {
   const { state, dispatch } = useApp()
   const cases = advisorQueue(state)
-  const [currentId, setCurrentId] = useState(cases[0]?.id)
+  const [currentId, setCurrentId] = useState(initial ?? cases[0]?.id)
+  // Picked from the farmer switcher while the queue is open.
+  useEffect(() => {
+    if (initial) setCurrentId(initial)
+  }, [initial])
   const rows = useRef<(HTMLButtonElement | null)[]>([])
   const index = Math.max(0, cases.findIndex((x) => x.id === currentId))
   const c = cases[index]
