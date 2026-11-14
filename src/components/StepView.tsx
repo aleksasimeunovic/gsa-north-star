@@ -152,7 +152,5 @@ export function AfterAnswerToast({ flow, onMap }: { flow: Flow; onMap?: boolean 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [a, line])
   if (!a || a === seen || !line) return null
-  // Under it, what comes next: the next task in this part, or the next part once this one is done.
-  const next = flow.focusTask?.status === 'action_required' ? flow.title(flow.focusTask.id) : finished && flow.nextStep ? steps.name[flow.nextStep.id] : undefined
-  return <Toast id={count.current} kind={line.kind} title={line.title} detail={next && copy.next(next)} onClose={() => setSeen(a)} undo={state.past.length > 0 ? { label: copy.undo, hint: copy.undoLabel, onClick: () => dispatch({ type: 'undo' }) } : undefined} />
+  return <Toast id={count.current} kind={line.kind} title={line.title} onClose={() => setSeen(a)} undo={state.past.length > 0 ? { label: copy.undo, hint: copy.undoLabel, onClick: () => dispatch({ type: 'undo' }) } : undefined} />
 }

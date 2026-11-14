@@ -10,6 +10,7 @@ import { Button } from '../ui/Button'
 import { Checkbox, CheckboxGroup } from '../ui/Checkbox'
 import { Checkbox as CheckboxBase } from '../ui/shadcn/checkbox'
 import { Disclosure } from '../ui/Disclosure'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/shadcn/collapsible'
 import { Drawer } from '../ui/Drawer'
 import { Field } from '../ui/Field'
 import { FileInput } from '../ui/FileInput'
@@ -187,58 +188,68 @@ export function MeasuresBody() {
   }
 
   return (
-    <Stack gap="section">
-      <section className="measure-group" aria-labelledby="m-last">
-        <h4 id="m-last" className="group-title">{t.groupLast}</h4>
+    <div className="measure-groups">
+      <MeasureGroup id="m-last" title={t.groupLast} defaultOpen>
         <ul className="measure-list">{last.map(option)}</ul>
-      </section>
+      </MeasureGroup>
       {recommended.length > 0 && (
-        <section className="measure-group" data-recommended aria-labelledby="m-suggested">
-          <div className="measure-group-head">
-            <h4 id="m-suggested" className="group-title">{t.groupSuggested}</h4>
-            <Text variant="small">{t.suggestedLead}</Text>
-          </div>
+        <MeasureGroup id="m-suggested" title={t.groupSuggested} defaultOpen>
           <ul className="measure-list">{recommended.map(option)}</ul>
-        </section>
+        </MeasureGroup>
       )}
-      {/* The rest of the full list, closed: two rows of one list. */}
-      <div className="measure-rest">
-        {more.length > 0 && (
-          <Disclosure label={t.groupMore(more.length)} open={moreOpen} onOpenChange={setMoreOpen}>
-            <ul className="measure-list">{more.map(option)}</ul>
-          </Disclosure>
-        )}
-        {not.length > 0 && (
-          <Disclosure label={t.groupNot(not.length)}>
-            <ul className="measure-list">
-              {not.map((m) => (
-                <li key={m.id}>
-                  {/* The whole row opens the reason: with nothing to tick, the row is the target. */}
-                  <button
-                    type="button"
-                    className="measure-not"
-                    aria-haspopup="dialog"
-                    onClick={(e) => {
-                      opener.current = e.currentTarget
-                      setAbout(m)
-                    }}
-                  >
-                    <span className="measure-text">
-                      <span className="measure-name">{en.measures[m.id]}</span>
-                      <span className="measure-line">{t.notFit[m.id]}</span>
-                    </span>
-                    <Icon name="details_open" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Disclosure>
-        )}
-      </div>
+      {more.length > 0 && (
+        <MeasureGroup id="m-more" title={t.groupMore(more.length)} open={moreOpen} onOpenChange={setMoreOpen}>
+          <ul className="measure-list">{more.map(option)}</ul>
+        </MeasureGroup>
+      )}
+      {not.length > 0 && (
+        <MeasureGroup id="m-not" title={t.groupNot(not.length)}>
+          <ul className="measure-list">
+            {not.map((m) => (
+              <li key={m.id}>
+                {/* The whole row opens the reason: with nothing to tick, the row is the target. */}
+                <button
+                  type="button"
+                  className="measure-not"
+                  aria-haspopup="dialog"
+                  onClick={(e) => {
+                    opener.current = e.currentTarget
+                    setAbout(m)
+                  }}
+                >
+                  <span className="measure-text">
+                    <span className="measure-name">{en.measures[m.id]}</span>
+                    <span className="measure-line">{t.notFit[m.id]}</span>
+                  </span>
+                  <Icon name="details_open" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </MeasureGroup>
+      )}
       <Drawer open={!!about} title={about ? en.measures[about.id] : ''} onClose={() => setAbout(null)} returnFocusTo={opener}>
         {about && (about.fits ? <MeasurePanel m={about} g={suggested.find((x) => x.measureId === about.id)} recommended={isRecommended(about)} /> : <NotFitPanel m={about} />)}
       </Drawer>
-    </Stack>
+    </div>
+  )
+}
+
+/** One group of measures as an accordion: its name always in its head, which opens and closes it. */
+function MeasureGroup({ id, title, children, defaultOpen = false, open, onOpenChange }: { id: string; title: string; children: ReactNode; defaultOpen?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  const [own, setOwn] = useState(defaultOpen)
+  return (
+    <Collapsible asChild open={open ?? own} onOpenChange={onOpenChange ?? setOwn}>
+      <section className="measure-group" aria-labelledby={id}>
+        <h4 className="group-title">
+          <CollapsibleTrigger id={id} className="measure-group-trigger">
+            {title}
+            <Icon name="disclose" />
+          </CollapsibleTrigger>
+        </h4>
+        <CollapsibleContent className="measure-group-body">{children}</CollapsibleContent>
+      </section>
+    </Collapsible>
   )
 }
 

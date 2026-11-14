@@ -86,11 +86,9 @@
 .toast-icon { flex: none; display: inline-flex; margin-right: var(--space-2); color: var(--muted-foreground); }
 .toast-icon[data-kind='done'] { color: var(--success); }
 .toast-icon[data-kind='waiting'] { color: var(--warning); }
-.toast-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-row); margin: 0 var(--space-2) 0 0; }
-.toast-detail { font-size: 0.8125rem; color: var(--muted-foreground); }
+.toast-text { flex: 1; min-width: 0; margin: 0 var(--space-2) 0 0; font-size: 0.9375rem; font-weight: 600; }
 /* On a phone it sits at the top, so it never covers the action he needs next */
 @media (max-width: 639px) { .toast { top: calc(var(--topbar-h) + var(--space-1)); bottom: auto; left: 16px; right: 16px; width: auto; } }
-.toast-title { font-size: 0.9375rem; font-weight: 600; }
 .toast-action { flex: none; min-width: 36px; min-height: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: none; color: var(--foreground); font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background-color 0.15s; }
 .toast-action:hover { background: var(--hover); }
 .toast-action:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
@@ -98,10 +96,6 @@
 @media (prefers-reduced-motion: no-preference) {
   .toast { animation: toast-in 0.25s ease-out; overflow: hidden; }
   .toast[data-leaving] { opacity: 0; translate: 0 6px; transition: opacity 0.18s, translate 0.18s; }
-  /* How long it stays, as a line draining along its foot; it stops while he points at it */
-  .toast::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--border); transform-origin: left; animation: toast-time var(--toast-time, 4s) linear both; }
-  .toast[data-paused]::after { animation-play-state: paused; }
-  @keyframes toast-time { from { scale: 1 1; } to { scale: 0 1; } }
   @keyframes toast-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 }
 
@@ -149,6 +143,8 @@
 .drawer-group { display: flex; flex-direction: column; gap: var(--gap-heading); }
 .drawer-group + .drawer-group { margin-top: var(--space-4); }
 .drawer-list { list-style: none; padding: 0; margin: 0 calc(-1 * var(--space-3)); display: flex; flex-direction: column; gap: var(--gap-row); }
+/* Rows reach out to the card's edge on every side, the foot too, so the last row's hover is as far from the bottom as from the sides */
+:is(.part-summary, .card, .drawer-section) > .drawer-list:last-child { margin-bottom: calc(-1 * var(--space-3)); }
 .drawer-row { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: var(--gap-list); align-items: start; padding: var(--space-3); border: 0; border-radius: 12px; background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
 .drawer-row[data-static] { cursor: default; grid-template-columns: auto 1fr; }
 button.drawer-row:hover { background: var(--hover); }
@@ -163,9 +159,15 @@ button.drawer-row:hover { background: var(--hover); }
 .item-list { list-style: none; padding: 0; margin: var(--space-2) 0 0; display: flex; flex-direction: column; gap: var(--gap-list); }
 
 /* Measures */
-.measure-group { display: flex; flex-direction: column; gap: var(--gap-list); }
-/* What GSA recommends is one region of its own, so it never reads as part of what he chose last year */
-.measure-group[data-recommended] { padding: var(--panel-pad); border-radius: var(--stage-radius); background: var(--muted); }
+/* Every group of measures is one region of its own, an accordion: its head opens and closes it, and says so on hover */
+.measure-groups { display: flex; flex-direction: column; gap: var(--gap-group); }
+.measure-group { border-radius: var(--stage-radius); background: var(--muted); }
+.measure-group-trigger { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: var(--gap-list); padding: var(--space-4) var(--panel-pad); border: 0; border-radius: var(--stage-radius); background: none; font: inherit; color: var(--foreground); text-align: left; cursor: pointer; transition: background-color 0.15s; }
+.measure-group-trigger:hover { background: color-mix(in oklch, var(--foreground) 6%, var(--muted)); }
+.measure-group-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.measure-group-trigger > svg { flex: none; color: var(--muted-foreground); transition: rotate 0.15s; }
+.measure-group-trigger[data-state='open'] > svg { rotate: 90deg; }
+.measure-group-body { padding: 0 var(--panel-pad) var(--panel-pad); }
 /* A chosen measure: selected, with what it needs from him right under it */
 .measure-option { scroll-margin-top: calc(var(--topbar-h) + 100px); display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--row-radius); background: var(--card); transition: border-color 0.15s, background-color 0.15s; }
 .measure-option:hover { border-color: var(--hover-border); }
@@ -198,9 +200,7 @@ button.drawer-row:hover { background: var(--hover); }
 /* On a phone the name keeps the row: where it stands drops under it */
 @media (max-width: 480px) { .measure-head { flex-wrap: wrap; } .measure-check { flex-basis: calc(100% - 112px); } .measure-state { order: 3; padding: 0 0 var(--space-2) calc(20px + var(--gap-list)); } }
 .measure-basis { font-size: 0.875rem; font-weight: 500; }
-@media (max-width: 480px) { .measure-group[data-recommended] { padding: var(--space-3); } }
-.measure-rest { display: flex; flex-direction: column; gap: var(--gap-row); }
-.measure-group-head { display: flex; flex-direction: column; gap: var(--gap-row); }
+@media (max-width: 480px) { .measure-group-trigger { padding-inline: var(--space-3); } .measure-group-body { padding: 0 var(--space-3) var(--space-3); } }
 .measure-part { display: flex; flex-direction: column; gap: var(--gap-heading); }
 .measure-not { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--gap-list); min-height: 44px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--row-radius); background: var(--card); font: inherit; color: inherit; text-align: left; cursor: pointer; transition: border-color 0.15s; }
 .measure-not > svg { flex: none; margin-right: var(--space-2); color: var(--muted-foreground); }
@@ -331,7 +331,9 @@ button.drawer-row:hover { background: var(--hover); }
 .map-stage { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: max(520px, calc(100dvh - var(--topbar-h) - var(--stepper-h) - var(--bar-h) - var(--space-6))); border-radius: 24px; overflow: hidden; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-card); }
 .map-stage-map { position: relative; min-height: 0; min-width: 0; }
 .map-stage-panel { display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; overflow-y: auto; padding: var(--space-6) var(--space-6) 0; border-left: 1px solid var(--border); }
-.map-stage-panel::after { content: ''; flex: none; height: var(--space-2); }
+.map-stage-panel:not(:has(.stage-action)) { padding-bottom: var(--space-6); }
+/* The docked answer is as far from the panel's bottom as from its sides */
+.map-stage-panel .stage-action { padding-bottom: var(--space-6); }
 /* Answers stacked in the narrow panel, so each reads in one line */
 .map-stage-panel [role='group'] > .grid { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 1023px) {
@@ -347,8 +349,8 @@ button.drawer-row:hover { background: var(--hover); }
   .map-stage[data-working] .review-head, .map-stage[data-working] .answer > span:first-child, .map-stage[data-working] .split-lead { display: none; }
   .split-head h2 { font-size: 1.125rem; line-height: 1.3; }
   .map-stage-panel { overflow: visible; border-left: 0; border-top: 1px solid var(--border); padding: var(--space-5) var(--space-5) 0; gap: var(--gap-section); }
-  .map-stage-panel .stage-action { position: static; }
-  .map-stage-panel::after { display: none; }
+  .map-stage-panel .stage-action { position: static; padding-bottom: var(--space-5); }
+  .map-stage-panel:not(:has(.stage-action)) { padding-bottom: var(--space-5); }
 }
 .map-frame[data-fill] { height: 100%; position: relative; }
 .map-frame[data-fill] .farm-map, .map-frame[data-fill] .farm-map[data-mode='draw'] { height: 100%; border-radius: 0; }
@@ -377,6 +379,13 @@ button.drawer-row:hover { background: var(--hover); }
 .estimate-basis[data-provisional] { padding: var(--space-3) var(--space-4); border-radius: 12px; background: var(--warning-surface); }
 .submit-picture, .submit-side { display: flex; flex-direction: column; gap: var(--gap-object); }
 @media (min-width: 768px) { .submit-picture { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; } }
+/* Beside a column that scrolls, the side stays at the top; taller than the room, it scrolls inside itself */
+@media (min-width: 768px) {
+  .submit-side { position: sticky; top: calc(var(--topbar-h) + 96px); max-height: calc(100dvh - var(--topbar-h) - 96px - var(--space-4)); overflow-y: auto; scrollbar-width: thin; }
+}
+@media (min-width: 1024px) {
+  .app-side { max-height: calc(100dvh - var(--topbar-h) - 96px - var(--bar-h) - var(--space-4)); overflow-y: auto; scrollbar-width: thin; }
+}
 
 /* Advisor mode: Jelena at a desk */
 .queue-layout { display: flex; flex-direction: column; gap: var(--gap-object); padding-top: var(--space-4); }
@@ -473,7 +482,8 @@ button.drawer-row:hover { background: var(--hover); }
   .page[data-screen='welcome'] .main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .page[data-screen='welcome'] .step { flex: 1; min-height: 0; }
   .page[data-screen='welcome'] .app-layout { flex: 1; min-height: 0; align-items: stretch; }
-  .page[data-screen='welcome'] .app-side { position: static; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .page[data-screen='welcome'] .app-side { position: static; min-height: 0; max-height: none; overflow-y: auto; scrollbar-width: thin; }
+  .page[data-screen='welcome'] .submit-side { top: 0; max-height: calc(100dvh - var(--topbar-h) - 96px - var(--bar-h) - var(--space-4)); }
   .page[data-screen='welcome'] .flow { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
   .page[data-screen='welcome'] .step-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; margin-inline: calc(-1 * var(--space-1)); padding: 0 var(--space-1) var(--space-4); }
   .page[data-screen='welcome'] .next:has(.map-figure) { flex: 1; min-height: 0; }

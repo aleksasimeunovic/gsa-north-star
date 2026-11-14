@@ -130,13 +130,12 @@ export const home = {
   },
 }
 
-/** What his last answer did, in one line, and what comes next. */
+/** What his last answer did, in one line. */
 export const after = {
   done: (task: string) => `${task} saved`,
   waiting: (task: string) => `${task} sent for a check`,
   removed: (work: string) => `No longer needed: ${work.toLowerCase()}`,
   more: (work: string) => `Added: ${work.toLowerCase()}`,
-  next: (what: string) => `Next: ${what}`,
   undo: 'Undo',
   undoLabel: 'Undo your last answer',
 }
@@ -354,7 +353,6 @@ export const tasks = {
   measures: {
     groupLast: 'You applied for these last year',
     groupSuggested: 'Recommended for your farm',
-    suggestedLead: 'The state decides whether you qualify',
     groupMore: (n: number) => `${n} more you can apply for`,
     groupNot: (n: number) => `${n} you can't apply for this year`,
     whyNot: "Why you can't apply this year",
@@ -367,7 +365,7 @@ export const tasks = {
     basis: { records: 'GSA has what it needs', adds: (list: string) => `You add: ${list}` },
     body: {
       why: 'Why GSA recommends it',
-      has: (n: number) => `GSA already has ${n === 1 ? '1 thing' : `${n} things`}`,
+      has: (n: number) => `Already on record (${n})`,
       add: 'Needed from you',
       progress: (done: number, n: number) => `${done} of ${n} added`,
       left: (n: number) => `${n} to add`,

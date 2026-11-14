@@ -12,7 +12,8 @@ interface Props<T extends string> {
   quiet?: boolean
 }
 
-/** One question answered with a large button per answer, for when answering moves him on. */
+/** One question answered with a large button per answer, for when answering moves him on. The first answer is
+ *  the usual, positive one (GSA's best guess), so it is the primary action. */
 export function ChoiceButtons<T extends string>({ legend, hint, options, onChoose, quiet }: Props<T>) {
   const id = useId()
   return (
@@ -22,10 +23,10 @@ export function ChoiceButtons<T extends string>({ legend, hint, options, onChoos
         {hint && <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{hint}</span>}
       </p>
       <div className="grid grid-cols-1 gap-[var(--gap-buttons)] sm:grid-cols-2">
-        {options.map((o) => {
+        {options.map((o, i) => {
           const icon = o.icon ?? (o.value === 'yes' ? 'yes' : o.value === 'no' ? 'no' : undefined)
           return (
-            <Button key={o.value} variant="choice" onClick={() => onChoose(o.value)}>
+            <Button key={o.value} variant={i === 0 ? 'primary' : 'choice'} className={i === 0 ? 'justify-start text-left' : undefined} onClick={() => onChoose(o.value)}>
               {icon && <Icon name={icon} />}
               {o.label}
             </Button>

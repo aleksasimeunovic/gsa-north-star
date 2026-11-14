@@ -394,10 +394,12 @@ export function FieldEditor({ id, flow }: { id: string; flow: Flow }) {
           {head}
           <StageAction>
             <div className="flex flex-col gap-[var(--gap-buttons)]">
-              {s.otherLand.map((l) => (
+              {/* The registered farmland is the usual answer, so the first is the primary action. */}
+              {s.otherLand.map((l, i) => (
                 <Button
                   key={l.id}
-                  variant="choice"
+                  variant={i === 0 ? 'primary' : 'choice'}
+                  className={i === 0 ? 'justify-start text-left' : undefined}
                   onClick={() => {
                     setLandId(l.id)
                     setStage('details')

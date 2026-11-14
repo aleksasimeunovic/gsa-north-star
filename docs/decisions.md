@@ -541,3 +541,13 @@ Research behind it: GIS editors for phones put a magnifier above the finger, bec
 447. **Every title is the serif, in the text colour, never grey; everything else is the body sans** (Aleksa). Group labels inside cards (h4, h5) are now serif too. This reverses 424, where they were sans.
 448. `src/copy/en.ts`: 5,148 to 5,141 words (`wc -w`).
 449. **The case study deck says less per slide**: one large statement with its key words in green, one short line, a one-line artifact description, and a dark slide opening each section, after the two decks Earl reviewed. Still text only (Earl, 5 Nov: no visuals until the outline is agreed). Rejected: a full sentence of explanation on every slide (about 60 words a slide; now about 35).
+
+## Round 28 (Aleksa, 14 Nov): accordions, one primary, docked padding, sticky sides, quiet toasts
+
+450. **Every group of measures is the same muted region and an accordion** (last year and recommended open, the rest closed; the head keeps its name and darkens on hover), rather than one recommended panel and bare disclosures, so every group affords opening the same way. Groups sit as far apart as the heading is from the first one (`--gap-group`). "The state decides whether you qualify" is cut: it helped no decision.
+451. **"Already on record (n)"** replaces "GSA already has n things": a professional count label, not chatty prose.
+452. **The first answer of every choice group is the primary button** (GSA's best guess, the positive flow: Yes, Yes that's right, the registered farmland), rather than all answers outlined, so every step has one primary action.
+453. **A docked answer is as far from the panel's bottom as from its sides** (24 px on a computer, 20 on a phone); the spacer after it is gone. The Summary's part cards end their rows with the same inset on the foot as on the sides.
+454. **Side columns stick to the top when the main column scrolls** and scroll inside themselves only when taller than the window (Summary and every part).
+455. **A toast is one line and leaves after 4 seconds, with no draining line and no "Next:" subtitle**; it still waits while pointed at or focused, so Undo stays reachable.
+456. `src/copy/en.ts`: 5,141 to 5,116 words (`wc -w`).
