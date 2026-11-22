@@ -194,6 +194,11 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-group-trigger > svg { flex: none; color: var(--muted-foreground); transition: rotate 0.15s; }
 .measure-group-trigger[data-state='open'] > svg { rotate: 90deg; }
 .measure-group-body { padding: 0 var(--panel-pad) var(--panel-pad); }
+.measure-group-head { position: relative; }
+.measure-group-head[data-action] .measure-group-trigger { column-gap: calc(var(--gap-list) * 2 + 9rem); }
+.measure-group-action { position: absolute; top: 50%; right: calc(var(--panel-pad) + 16px + var(--gap-list)); translate: 0 -50%; }
+/* On a phone the action takes its own line under the title, so the title never wraps under it */
+@media (max-width: 480px) { .measure-group-head[data-action] .measure-group-trigger { column-gap: var(--gap-list); } .measure-group-head[data-action] { display: flex; flex-direction: column; } .measure-group-action { position: static; translate: none; padding: 0 var(--space-3) var(--space-3); } }
 /* A chosen measure: selected, with what it needs from him right under it */
 .measure-option { scroll-margin-top: calc(var(--topbar-h) + 100px); display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--row-radius); background: var(--card); transition: border-color 0.15s, background-color 0.15s; }
 .measure-option:hover { border-color: var(--hover-border); }

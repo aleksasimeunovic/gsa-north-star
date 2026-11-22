@@ -106,8 +106,11 @@ export const en = {
     unpriced: (n: number) => (n === 1 ? 'Plus 1 more measure, worked out after checks' : `Plus ${n} more measures, worked out after checks`),
     caveat: 'The payment still depends on inspection and final eligibility.',
     how: 'How is this worked out?',
-    plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} = ${total}`,
-    cows: (n: number, rate: string, total: string) => `${n} cows that calved × ${rate} = ${total}`,
+    land: (ha: string) => `Your fields add up to ${ha}`,
+    plant: (ha: string, rate: string, total: string) => `${ha} × ${rate} a hectare = ${total}`,
+    cows: (n: number, from: string, to: string, rate: string, total: string) => `${n} cows calved from ${from} to ${to}, so ${n} × ${rate} a cow = ${total}`,
+    sum: (exact: string) => `Together that's ${exact}`,
+    total: (exact: string, about: string) => `Together that's ${exact}, which rounds to about ${about}`,
   },
 
   scenarios: {
@@ -361,6 +364,7 @@ export const tasks = {
 
   measures: {
     groupLast: 'You applied for these last year',
+    applyAll: 'Apply to all again',
     groupSuggested: 'Recommended for your farm',
     groupMore: (n: number) => `${n} more you can apply for`,
     groupNot: (n: number) => `${n} you can't apply for this year`,

@@ -189,7 +189,19 @@ export function MeasuresBody() {
 
   return (
     <div className="measure-groups">
-      <MeasureGroup id="m-last" title={t.groupLast} defaultOpen>
+      <MeasureGroup
+        id="m-last"
+        title={t.groupLast}
+        defaultOpen
+        action={
+          // One tap ticks them all again; still his tap, and each then asks what it needs.
+          last.some((m) => !chosen.includes(m.id)) && (
+            <Button variant="secondary" onClick={() => draft([...chosen, ...last.map((m) => m.id)], inputs)}>
+              {t.applyAll}
+            </Button>
+          )
+        }
+      >
         <ul className="measure-list">{last.map(option)}</ul>
       </MeasureGroup>
       {recommended.length > 0 && (
@@ -226,17 +238,21 @@ export function MeasuresBody() {
 }
 
 /** One group of measures as an accordion: its name always in its head, which opens and closes it. */
-function MeasureGroup({ id, title, children, defaultOpen = false, open, onOpenChange }: { id: string; title: string; children: ReactNode; defaultOpen?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+function MeasureGroup({ id, title, children, defaultOpen = false, open, onOpenChange, action }: { id: string; title: string; children: ReactNode; defaultOpen?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void; action?: ReactNode }) {
   const [own, setOwn] = useState(defaultOpen)
   return (
     <Collapsible asChild open={open ?? own} onOpenChange={onOpenChange ?? setOwn}>
       <section className="measure-group" aria-labelledby={id}>
-        <h4 className="group-title">
-          <CollapsibleTrigger id={id} className="measure-group-trigger">
-            {title}
-            <Icon name="disclose" />
-          </CollapsibleTrigger>
-        </h4>
+        {/* An action sits beside the chevron, over the head, since a button can't hold another. */}
+        <div className="measure-group-head" data-action={action ? true : undefined}>
+          <h4 className="group-title">
+            <CollapsibleTrigger id={id} className="measure-group-trigger">
+              {title}
+              <Icon name="disclose" />
+            </CollapsibleTrigger>
+          </h4>
+          {action && <div className="measure-group-action">{action}</div>}
+        </div>
         <CollapsibleContent className="measure-group-body">{children}</CollapsibleContent>
       </section>
     </Collapsible>
@@ -273,7 +289,7 @@ function MeasurePanel({ m, g, recommended }: { m: Measure; g?: Suggestion; recom
   )
 }
 
-function PanelSection({ title, children }: { title: string; children: ReactNode }) {
+export function PanelSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="panel-section">
       <h3 className="panel-title">{title}</h3>
