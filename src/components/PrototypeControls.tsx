@@ -17,8 +17,9 @@ export function PrototypeControls() {
   return (
     <>
       <div className="prototype-launcher">
-        <Button ref={opener} variant="prototype" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(!open)}>
-          {proto.open}
+        <Button ref={opener} variant="prototype" aria-label={proto.open} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(!open)}>
+          <Icon name="prototype" size="sm" className="prototype-icon" />
+          <span className="prototype-label">{proto.open}</span>
           <Icon name="expand" size="sm" />
         </Button>
       </div>

@@ -23,6 +23,15 @@ export const en = {
   appName: 'GSA',
   appSub: 'Subsidies 2026',
   saved: 'Saved',
+  /** The Save button in the header. Autosave already keeps everything; this lets him see it. */
+  saveButton: {
+    save: 'Save',
+    saved: 'Saved',
+    at: (time: string) => `at ${time}`,
+    announce: (time: string) => `Everything you have done is saved, at ${time}.`,
+    failed: 'Not saved',
+    failedHint: 'This browser is not keeping your answers. Keep this page open until you submit.',
+  },
   yes: 'Yes',
   no: 'No',
   change: 'Change',

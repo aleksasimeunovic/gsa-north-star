@@ -160,17 +160,34 @@ export function reducer(state: AppState, { action, at }: Stamped): AppState {
 }
 
 export function useStore() {
-  const [state, rawDispatch] = useReducer(reducer, undefined, () => loadState() ?? fresh('second_year'))
+  const [stored] = useState(loadState)
+  const [state, rawDispatch] = useReducer(reducer, undefined, () => stored ?? fresh('second_year'))
   const [savedAt, setSavedAt] = useState<string | null>(null)
+  const [saveFailed, setSaveFailed] = useState(false)
+  // Bumped on every tap of Save, so the confirmation shows again even within the same minute.
+  const [saveTap, setSaveTap] = useState(0)
 
   const arrived = useRef(state)
+  const latest = useRef(state)
+  latest.current = state
 
   useEffect(() => {
     const saved = saveState(state)
+    setSaveFailed(!saved)
     // "Saved" appears once he has changed something, not on arrival.
     if (saved && state !== arrived.current) setSavedAt(new Date().toISOString())
   }, [state])
 
+  /** His Save button: the same save autosave does, run now, so he sees it happen. */
+  const saveNow = useCallback(() => {
+    const saved = saveState(latest.current)
+    setSaveFailed(!saved)
+    if (saved) setSavedAt(new Date().toISOString())
+    setSaveTap((n) => n + 1)
+    return saved
+  }, [])
+
   const dispatch = useCallback((action: Action) => rawDispatch({ action, at: new Date().toISOString() }), [])
-  return { state, dispatch, savedAt }
+  // He came back to answers kept from an earlier visit, so they are already saved.
+  return { state, dispatch, savedAt, saveFailed, saveTap, saveNow, restored: stored !== null }
 }

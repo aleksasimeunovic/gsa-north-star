@@ -3,6 +3,7 @@ import { daysLeft } from './logic/readiness'
 import { AdvisorSwitcher } from './components/AdvisorSwitcher'
 import { AppContext } from './components/AppContext'
 import { PrototypeControls } from './components/PrototypeControls'
+import { SaveButton } from './components/SaveButton'
 import { derive } from './logic/derive'
 import { AdvisorQueue } from './screens/AdvisorQueue'
 import { Application } from './screens/Application'
@@ -15,7 +16,7 @@ import { Icon } from './ui/Icon'
 import { Note, NotesContext } from './ui/Note'
 
 export function App() {
-  const { state, dispatch, savedAt } = useStore()
+  const { state, dispatch, savedAt, saveFailed, saveTap, saveNow, restored } = useStore()
   const { screen, target, go } = useHashScreen()
   const derived = derive(state)
   const submitted = !!state.answers.submittedAt
@@ -56,10 +57,16 @@ export function App() {
                   <Icon name="deadline" size="sm" /> <span>{home.daysLeft(left)}<span className="deadline-more"> {home.toApply}</span></span> <Note kind="eu_mandate" />
                 </span>
               )}
-              {savedAt && (
+              {!submitted && screen !== 'queue' ? (
                 <span className="saved">
-                  <Icon name="check" size="sm" /> <span className="saved-text">{en.saved}</span>
+                  <SaveButton savedAt={savedAt} restored={restored} failed={saveFailed} tap={saveTap} onSave={saveNow} />
                 </span>
+              ) : (
+                savedAt && (
+                  <span className="saved">
+                    <Icon name="check" size="sm" /> <span className="saved-text">{en.saved}</span>
+                  </span>
+                )
               )}
               <PrototypeControls />
             </header>

@@ -1,7 +1,7 @@
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Baby, Beef, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Copy, CircleAlert, Inbox, UserRound, CircleCheck,
   CircleX, Clock, History, FileText, FlaskConical, HandCoins, IdCard, Info, Landmark, ListChecks, LocateFixed, Magnet, Map, Minus, Trash2,
-  PencilLine, PiggyBank, Plus, Receipt, Redo2, RotateCcw, Satellite, Send, Slash, SlidersHorizontal, Sprout, Undo2, Upload, Wheat, X, type LucideIcon,
+  PencilLine, PiggyBank, Plus, Receipt, Redo2, RotateCcw, Satellite, Save, Send, Slash, SlidersHorizontal, Sprout, Undo2, Upload, Wheat, X, type LucideIcon,
 } from 'lucide-react'
 import { useDensity } from './Density'
 
@@ -26,6 +26,7 @@ const ICONS = {
   yes: CircleCheck,
   no: CircleX,
   check: Check,
+  save: Save,
   now: ArrowRight,
   back: ArrowLeft,
   forward: ArrowRight,
