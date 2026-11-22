@@ -364,13 +364,11 @@ export const tasks = {
     groupSuggested: 'Recommended for your farm',
     groupMore: (n: number) => `${n} more you can apply for`,
     groupNot: (n: number) => `${n} you can't apply for this year`,
-    whyNot: "Why you can't apply this year",
     lacks: {
-      organic_months: (n: number) => `Your land needs ${n} more months as organic to be certified`,
-      dairy_cows: (n: number) => `The animal registry shows ${n} dairy cows too few`,
-      fattening_cattle: (n: number) => `The animal registry shows ${n} cattle in fattening too few`,
+      organic_months: (n: number, gain: string) => `Your land needs ${n} more months as organic to get about ${gain} more next year`,
+      dairy_cows: (n: number, gain: string) => `You're missing ${n} dairy cows to get about ${gain} more next year`,
+      fattening_cattle: (n: number, gain: string) => `You're missing ${n} cattle in fattening to get about ${gain} more next year`,
     },
-    notFit: { organic: 'For land certified as organic', milk: 'For farms that sell milk to a dairy', fattening: 'For cattle kept for fattening' } as Partial<Record<MeasureId, string>>,
     basis: { records: 'GSA has what it needs', adds: (list: string) => `You add: ${list}` },
     body: {
       why: 'Why GSA recommends it',

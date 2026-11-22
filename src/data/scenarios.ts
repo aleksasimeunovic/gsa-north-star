@@ -79,8 +79,11 @@ export interface Measure {
   fits: boolean
   lastYear: boolean
   requirements: Requirement[]
-  /** Why he can't apply this year: what his records are short of (prototype placeholders). */
-  lacks?: { kind: 'organic_months' | 'dairy_cows' | 'fattening_cattle'; left: number }
+  /**
+   * Why he can't apply this year: what his records are short of, and about what the measure could add next year
+   * once he isn't (prototype placeholders; no real rate stands behind these amounts).
+   */
+  lacks?: { kind: 'organic_months' | 'dairy_cows' | 'fattening_cattle'; left: number; nextYearDinars: number }
 }
 
 export interface Document {
@@ -276,9 +279,9 @@ const MEASURES: Measure[] = [
     ],
   },
   // In the list so he can see why they aren't offered: GSA never tells him to change his farm to qualify.
-  { id: 'organic', fits: false, lastYear: false, requirements: [], lacks: { kind: 'organic_months', left: 2 } },
-  { id: 'milk', fits: false, lastYear: false, requirements: [], lacks: { kind: 'dairy_cows', left: 2 } },
-  { id: 'fattening', fits: false, lastYear: false, requirements: [], lacks: { kind: 'fattening_cattle', left: 5 } },
+  { id: 'organic', fits: false, lastYear: false, requirements: [], lacks: { kind: 'organic_months', left: 2, nextYearDinars: 160_000 } },
+  { id: 'milk', fits: false, lastYear: false, requirements: [], lacks: { kind: 'dairy_cows', left: 2, nextYearDinars: 125_000 } },
+  { id: 'fattening', fits: false, lastYear: false, requirements: [], lacks: { kind: 'fattening_cattle', left: 5, nextYearDinars: 60_000 } },
 ]
 
 const RECEIPTS = [

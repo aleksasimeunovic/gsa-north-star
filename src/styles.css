@@ -223,16 +223,14 @@ button.drawer-row:hover { background: var(--hover); }
 .measure-text { min-width: 0; display: flex; flex-direction: column; gap: var(--gap-row); }
 .measure-name { font-weight: 500; line-height: 1.375; }
 .measure-line { font-size: 0.875rem; color: var(--muted-foreground); }
+/* A measure he can't apply for: an X, its name, and what his records are short of. Nothing to open, so not a button */
+.measure-not { display: flex; align-items: flex-start; gap: var(--gap-list); padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--row-radius); background: var(--card); }
+.measure-not > svg { flex: none; margin-top: 2px; color: var(--muted-foreground); }
 /* On a phone the name keeps the row: where it stands drops under it */
 @media (max-width: 480px) { .measure-head { flex-wrap: wrap; } .measure-check { flex-basis: calc(100% - 112px); } .measure-state { order: 3; padding: 0 0 var(--space-2) calc(20px + var(--gap-list)); } }
 .measure-basis { font-size: 0.875rem; font-weight: 500; }
 @media (max-width: 480px) { .measure-group-trigger { padding-inline: var(--space-3); } .measure-group-body { padding: 0 var(--space-3) var(--space-3); } }
 .measure-part { display: flex; flex-direction: column; gap: var(--gap-heading); }
-.measure-not { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--gap-list); min-height: 44px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--row-radius); background: var(--card); font: inherit; color: inherit; text-align: left; cursor: pointer; transition: border-color 0.15s; }
-.measure-not > svg { flex: none; margin-right: var(--space-2); color: var(--muted-foreground); }
-.measure-not:hover { border-color: var(--hover-border); }
-.measure-not:hover > svg { color: var(--foreground); }
-.measure-not:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .measure-about { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--row-radius); background: none; color: var(--muted-foreground); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .measure-about:hover { border-color: var(--hover-border); color: var(--foreground); }
 .measure-about:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }

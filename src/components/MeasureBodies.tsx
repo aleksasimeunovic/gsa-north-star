@@ -206,30 +206,20 @@ export function MeasuresBody() {
         <MeasureGroup id="m-not" title={t.groupNot(not.length)}>
           <ul className="measure-list">
             {not.map((m) => (
-              <li key={m.id}>
-                {/* The whole row opens the reason: with nothing to tick, the row is the target. */}
-                <button
-                  type="button"
-                  className="measure-not"
-                  aria-haspopup="dialog"
-                  onClick={(e) => {
-                    opener.current = e.currentTarget
-                    setAbout(m)
-                  }}
-                >
-                  <span className="measure-text">
-                    <span className="measure-name">{en.measures[m.id]}</span>
-                    <span className="measure-line">{t.notFit[m.id]}</span>
-                  </span>
-                  <Icon name="details_open" />
-                </button>
+              <li key={m.id} className="measure-not">
+                <Icon name="close" />
+                <span className="measure-text">
+                  <span className="measure-name">{en.measures[m.id]}</span>
+                  {/* What his own records are short of, and what it could be worth once they aren't. */}
+                  {m.lacks && <span className="measure-line">{t.lacks[m.lacks.kind](m.lacks.left, formatDinars(m.lacks.nextYearDinars))}</span>}
+                </span>
               </li>
             ))}
           </ul>
         </MeasureGroup>
       )}
       <Drawer open={!!about} title={about ? en.measures[about.id] : ''} onClose={() => setAbout(null)} returnFocusTo={opener}>
-        {about && (about.fits ? <MeasurePanel m={about} g={suggested.find((x) => x.measureId === about.id)} recommended={isRecommended(about)} /> : <NotFitPanel m={about} />)}
+        {about && <MeasurePanel m={about} g={suggested.find((x) => x.measureId === about.id)} recommended={isRecommended(about)} />}
       </Drawer>
     </div>
   )
@@ -254,18 +244,6 @@ function MeasureGroup({ id, title, children, defaultOpen = false, open, onOpenCh
 }
 
 /** Everything about a measure he can apply for, in his terms: why it fits, what it could pay, what he gives. */
-function NotFitPanel({ m }: { m: Measure }) {
-  return (
-    <div className="panel-sections">
-      {m.lacks && (
-        <PanelSection title={t.whyNot}>
-          <Text>{t.notFit[m.id]}. {t.lacks[m.lacks.kind](m.lacks.left)}.</Text>
-        </PanelSection>
-      )}
-    </div>
-  )
-}
-
 function MeasurePanel({ m, g, recommended }: { m: Measure; g?: Suggestion; recommended: boolean }) {
   const { derived, state } = useApp()
   const p = t.panel
